@@ -1,26 +1,47 @@
 console.log("Content script loaded")
 
+// Constants for the different types
+const CONTENT_TYPES = {
+  detail_npc: {
+    endpoint: "npc_detail",
+    idType: "character_id",
+  },
+  detail_weapon: {
+    endpoint: "weapon_detail",
+    idType: "weapon_id",
+  },
+  detail_summon: {
+    endpoint: "summon_detail",
+    idType: "summon_id",
+  },
+}
+
 // Function to extract info from hash URL
 function extractInfoFromHash(hash) {
-  // Format: #archive/detail_npc/20725160/0/0/1/3040284000/3/0/archive_npc
+  // Format: #archive/detail_xxx/20725160/0/0/1/1040506000/1/0
   const parts = hash.split("/")
+  const type = parts[1] // detail_npc, detail_weapon, or detail_summon
+
   return {
+    type: type,
     uid: parts[2],
-    characterId: parts[6],
+    contentId: parts[6],
+    endpoint: CONTENT_TYPES[type]?.endpoint,
+    idType: CONTENT_TYPES[type]?.idType,
   }
 }
 
 // Function to observe hash changes
 function observeChanges() {
   function processHash(hash) {
-    if (hash.includes("archive/detail_npc")) {
+    if (hash.includes("archive/detail_")) {
       const info = extractInfoFromHash(hash)
-      if (info.uid && info.characterId) {
+      if (info.uid && info.contentId && info.endpoint) {
         chrome.storage.local.set({
-          lastNpcInfo: info,
+          lastContentInfo: info,
           timestamp: Date.now(),
         })
-        console.log("Stored character info:", info)
+        console.log("Stored content info:", info)
       }
     }
   }
@@ -39,19 +60,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Content script received message:", message)
 
   if (message.action === "fetchData") {
-    chrome.storage.local.get(["lastNpcInfo"], async function (result) {
-      if (!result.lastNpcInfo) {
+    chrome.storage.local.get(["lastContentInfo"], async function (result) {
+      if (!result.lastContentInfo) {
         chrome.runtime.sendMessage({
           action: "error",
           error:
-            "No character data found. Please make sure you're on a character page.",
+            "No content data found. Please make sure you're on a character, weapon, or summon page.",
         })
         return
       }
 
       try {
+        const info = result.lastContentInfo
         const timestamp = Date.now()
-        const url = `https://game.granbluefantasy.jp/archive/npc_detail?_=${timestamp}&t=${timestamp}&uid=${result.lastNpcInfo.uid}`
+        const url = `https://game.granbluefantasy.jp/archive/${info.endpoint}?_=${timestamp}&t=${timestamp}&uid=${info.uid}`
 
         console.log("Attempting to fetch:", url)
 
@@ -85,17 +107,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           "X-VERSION": version,
         }
 
-        // Create payload matching the game's request
+        // Create base payload
         const payload = {
           special_token: null,
-          user_id: result.lastNpcInfo.uid,
+          user_id: info.uid,
           kind_name: "0",
           attribute: "0",
           event_id: null,
           story_id: null,
-          character_id: result.lastNpcInfo.characterId,
-          style: 1,
         }
+
+        // Add the specific ID based on content type
+        payload[info.idType] = info.contentId
+
+        console.log("Using payload:", payload)
 
         // Make the request
         const response = await fetch(url, {
