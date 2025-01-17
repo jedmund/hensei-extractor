@@ -3,32 +3,145 @@
   <head>
     <style>
       body {
-        width: 200px;
-        padding: 10px;
+        width: 300px;
+        padding: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: lightgray;
       }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: white;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
       button {
         width: 100%;
-        padding: 8px;
+        padding: 10px;
         background-color: #4caf50;
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
       }
+
       button:hover {
         background-color: #45a049;
       }
+
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
       #status {
-        margin-top: 10px;
-        text-align: center;
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .status-info {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #bbdefb;
+        border-radius: 6px;
+      }
+
+      .status-success {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+        border-radius: 6px;
+      }
+
+      .status-error {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+        border-radius: 6px;
+      }
+
+      .info-text {
+        font-size: 13px;
         color: #666;
-        white-space: pre-wrap;
+        margin: 8px 0;
+        line-height: 1.4;
+      }
+
+      .header {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .version {
+        font-size: 12px;
+        color: #666;
+        padding: 4px 8px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+
+      .divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 12px 0;
+      }
+
+      .feature-list {
+        padding-left: 16px;
+        margin: 8px 0;
+        list-style-type: none;
+      }
+
+      .feature-list li {
+        position: relative;
+        padding-left: 8px;
+      }
+
+      .feature-list li::before {
+        content: "\2022";
+        position: absolute;
+        left: -12px;
+        color: #4caf50;
       }
     </style>
   </head>
   <body>
-    <button id="copyData">Copy Character Data</button>
-    <div id="status"></div>
+    <div class="container">
+      <div class="header">
+        Granblue Data Extractor
+        <span id="version" class="version">...</span>
+      </div>
+
+      <div class="info-text">
+        Currently supports:
+        <ul class="feature-list">
+          <li>Character Data</li>
+          <li>Party Data</li>
+          <li>Weapon Data</li>
+          <li>Summon Data</li>
+        </ul>
+      </div>
+
+      <button id="copyData">Copy game data</button>
+
+      <div id="status" style="display: none"></div>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>
