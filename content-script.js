@@ -17,24 +17,23 @@ const CONTENT_TYPES = {
   party: {
     endpoint: "party/deck",
   },
-  // List types
   list: {
     weapon: {
-      endpoint: "weapon/list/1",
+      endpoint: "weapon/list",
       containerEndpoint: "weapon/container_list",
     },
-    summon: {
-      endpoint: "summon/list/1",
-      containerEndpoint: "summon/container_list",
-    },
     npc: {
-      endpoint: "npc/list/1",
+      endpoint: "npc/list",
       containerEndpoint: "npc/container_list",
+    },
+    summon: {
+      endpoint: "summon/list",
+      containerEndpoint: "summon/container_list",
     },
   },
 }
 
-// Standard payloads for different list types
+// Standard payloads
 const LIST_PAYLOADS = {
   standard: {
     special_token: null,
@@ -51,9 +50,21 @@ const LIST_PAYLOADS = {
 // Initialize state
 let initialized = false
 
-// Function to extract Game.version from existing script tags
+// Function to get current page number from URL
+function getCurrentPage() {
+  const hash = window.location.hash
+  if (hash.includes("/list/")) {
+    const parts = hash.split("/")
+    const possiblePage = parseInt(parts[2])
+    if (!isNaN(possiblePage)) {
+      return possiblePage
+    }
+  }
+  return 1
+}
+
+// Function to extract Game.version from page
 function findGameVersion() {
-  // Look for script tags containing Game.version
   const scripts = document.getElementsByTagName("script")
   for (const script of scripts) {
     if (script.textContent && script.textContent.includes("Game.version")) {
@@ -67,10 +78,8 @@ function findGameVersion() {
     }
   }
 
-  // Look for version in other common places
-  const allScripts = document.getElementsByTagName("script")
   const versionRegex = /"version"\s*:\s*"(\d+)"/
-  for (const script of allScripts) {
+  for (const script of scripts) {
     if (script.textContent) {
       const match = script.textContent.match(versionRegex)
       if (match) {
@@ -80,7 +89,6 @@ function findGameVersion() {
     }
   }
 
-  // Look for meta tags that might contain version info
   const metas = document.getElementsByTagName("meta")
   for (const meta of metas) {
     if (meta.name === "version" || meta.name === "game-version") {
@@ -93,114 +101,80 @@ function findGameVersion() {
   return null
 }
 
+// Function to create info object for list pages
+function createListInfo(type) {
+  const page = getCurrentPage()
+  return {
+    type: "standard_list",
+    listType: type,
+    endpoint: `${CONTENT_TYPES.list[type].endpoint}/${page}`,
+    payload: LIST_PAYLOADS.standard,
+  }
+}
+
+// Function to create info object for detail pages
+function createDetailInfo(hash) {
+  const parts = hash.split("/")
+  const type = parts[1]
+  return {
+    type: type,
+    uid: parts[2],
+    contentId: parts[6],
+    endpoint: CONTENT_TYPES[type]?.endpoint,
+    idType: CONTENT_TYPES[type]?.idType,
+  }
+}
+
+// Function to create info object for party pages
+function createPartyInfo() {
+  return {
+    type: "party",
+    endpoint: CONTENT_TYPES.party.endpoint,
+  }
+}
+
 // Function to extract info from hash URL
-function extractInfoFromHash(hash) {
-  // Handle container list URLs
-  if (hash.includes("/container/list/")) {
-    const parts = hash.split("/")
-    const type = parts[3] // weapon, summon, or npc
-    const containerId = parts[4]
-
-    if (CONTENT_TYPES.list[type]) {
-      return {
-        type: "container_list",
-        listType: type,
-        endpoint: `${CONTENT_TYPES.list[type].containerEndpoint}/1/${containerId}`,
-        payload: LIST_PAYLOADS.container,
-      }
-    }
+function extractInfoFromHash(hash, listType = null) {
+  // If listType is provided, we're explicitly requesting list data
+  if (listType && CONTENT_TYPES.list[listType]) {
+    return createListInfo(listType)
   }
 
-  // Handle regular list URLs
-  if (hash === "#list" || hash.startsWith("#list/")) {
-    let type = "weapon" // default to weapon if not specified
-
-    // Check if a specific type is mentioned in the URL
-    if (hash.includes("/")) {
-      const parts = hash.split("/")
-      const requestedType = parts[1]
-      if (CONTENT_TYPES.list[requestedType]) {
-        type = requestedType
-      }
-    }
-
-    return {
-      type: "standard_list",
-      listType: type,
-      endpoint: CONTENT_TYPES.list[type].endpoint,
-      payload: LIST_PAYLOADS.standard,
-    }
-  }
-
-  // Handle party URLs
-  if (hash.startsWith("#party/")) {
-    return {
-      type: "party",
-      endpoint: CONTENT_TYPES.party.endpoint,
-    }
-  }
-
-  // Handle existing archive URLs
+  // Otherwise handle based on URL
   if (hash.includes("archive/detail_")) {
-    const parts = hash.split("/")
-    const type = parts[1]
+    return createDetailInfo(hash)
+  }
 
-    return {
-      type: type,
-      uid: parts[2],
-      contentId: parts[6],
-      endpoint: CONTENT_TYPES[type]?.endpoint,
-      idType: CONTENT_TYPES[type]?.idType,
-    }
+  if (hash.startsWith("#party/")) {
+    return createPartyInfo()
   }
 
   return null
 }
 
 // Function to update stored info
-async function updateStoredInfo() {
+async function updateStoredInfo(listType = null) {
   const hash = window.location.hash
-  const isListUrl =
-    hash === "#list" ||
-    hash.startsWith("#list/") ||
-    hash.includes("/container/list/")
+  const info = extractInfoFromHash(hash, listType)
+  const gameVersion = findGameVersion()
 
-  if (
-    hash.includes("archive/detail_") ||
-    hash.startsWith("#party/") ||
-    isListUrl
-  ) {
-    const info = extractInfoFromHash(hash)
-    const gameVersion = findGameVersion()
-
-    if (!gameVersion) {
-      console.log("No game version found")
-      return null
-    }
-
-    console.log("Found game version:", gameVersion)
-
-    // Check if we have necessary info based on type
-    const hasRequiredInfo =
-      info.type === "standard_list" ||
-      info.type === "container_list" ||
-      info.type === "party" ||
-      (info.uid && info.contentId && info.endpoint)
-
-    if (hasRequiredInfo) {
-      const state = {
-        ...info,
-        gameVersion: gameVersion,
-        timestamp: Date.now(),
-      }
-
-      await chrome.storage.local.set({
-        lastContentInfo: state,
-      })
-      console.log("Stored content info:", state)
-      return state
-    }
+  if (!gameVersion) {
+    console.log("No game version found")
+    return null
   }
+
+  if (info) {
+    const state = {
+      ...info,
+      gameVersion: gameVersion,
+      timestamp: Date.now(),
+    }
+
+    await chrome.storage.local.set({ lastContentInfo: state })
+    console.log("Stored content info:", state)
+    return state
+  }
+
   return null
 }
 
@@ -209,18 +183,84 @@ async function initialize() {
   if (initialized) return
 
   console.log("Initializing content script...")
-
-  // Update stored info
   const info = await updateStoredInfo()
 
   if (info) {
-    // Listen for hash changes
-    window.addEventListener("hashchange", updateStoredInfo)
+    window.addEventListener("hashchange", () => updateStoredInfo())
     initialized = true
     console.log("Content script successfully initialized")
   }
 
   return info
+}
+
+// Function to create request options
+function createRequestOptions(info) {
+  const options = {
+    method: info.type === "party" ? "GET" : "POST",
+    headers: {
+      Accept: "application/json, text/javascript, */*; q=0.01",
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      "X-VERSION": info.gameVersion,
+      Origin: "https://game.granbluefantasy.jp",
+      Referer: "https://game.granbluefantasy.jp/",
+    },
+    credentials: "include",
+  }
+
+  if (info.type !== "party") {
+    if (info.type === "standard_list" || info.type === "container_list") {
+      options.body = JSON.stringify(info.payload)
+    } else {
+      options.body = JSON.stringify({
+        special_token: null,
+        user_id: info.uid,
+        kind_name: "0",
+        attribute: "0",
+        event_id: null,
+        story_id: null,
+        [info.idType]: info.contentId,
+      })
+    }
+  }
+
+  return options
+}
+
+// Function to create request URL
+function createRequestUrl(info) {
+  const currentTimestamp = Date.now()
+  const baseUrl = "https://game.granbluefantasy.jp"
+  const userId = window.Game?.userId
+  const params = `_=${currentTimestamp}&t=${currentTimestamp}&uid=${
+    userId || info.uid
+  }`
+
+  if (
+    info.type === "standard_list" ||
+    info.type === "container_list" ||
+    info.type === "party"
+  ) {
+    return `${baseUrl}/${info.endpoint}?${params}`
+  }
+
+  return `${baseUrl}/archive/${info.endpoint}?${params}`
+}
+
+// Function to make the API request
+async function makeRequest(info) {
+  const url = createRequestUrl(info)
+  const options = createRequestOptions(info)
+
+  console.log("Making request:", { url, options })
+  const response = await fetch(url, options)
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json()
 }
 
 // Function to observe DOM changes
@@ -248,7 +288,6 @@ observeDOM()
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Content script received message:", message)
 
-  // Handle ping messages
   if (message.action === "ping") {
     sendResponse({ status: "ok" })
     return
@@ -256,83 +295,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "fetchData") {
     chrome.storage.local.get(["lastContentInfo"], async function (result) {
-      if (!result.lastContentInfo) {
-        // Try to initialize one more time
-        const info = await initialize()
-        if (!info) {
-          chrome.runtime.sendMessage({
-            action: "error",
-            error:
-              "No content data found. Please refresh the page and try again.",
-          })
-          return
-        }
-        result.lastContentInfo = info
-      }
-
       try {
-        const info = result.lastContentInfo
-        const currentTimestamp = Date.now()
-        let url
-
-        // Construct URL based on type
-        if (info.type === "standard_list" || info.type === "container_list") {
-          url = `https://game.granbluefantasy.jp/${info.endpoint}?_=${currentTimestamp}&t=${currentTimestamp}&uid=${window.Game?.userId}`
-        } else if (info.type === "party") {
-          url = `https://game.granbluefantasy.jp/${info.endpoint}?_=${currentTimestamp}&t=${currentTimestamp}&uid=${window.Game?.userId}`
-        } else {
-          url = `https://game.granbluefantasy.jp/archive/${info.endpoint}?_=${currentTimestamp}&t=${currentTimestamp}&uid=${info.uid}`
-        }
-
-        console.log("Game version:", info.gameVersion)
-        console.log("Attempting to fetch:", url)
-
-        const requestOptions = {
-          method: info.type === "party" ? "GET" : "POST",
-          headers: {
-            Accept: "application/json, text/javascript, */*; q=0.01",
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-            "X-VERSION": info.gameVersion,
-            Origin: "https://game.granbluefantasy.jp",
-            Referer: "https://game.granbluefantasy.jp/",
-          },
-          credentials: "include",
-        }
-
-        // Add appropriate payload based on type
-        if (info.type !== "party") {
-          if (info.type === "standard_list" || info.type === "container_list") {
-            requestOptions.body = JSON.stringify(info.payload)
-          } else {
-            requestOptions.body = JSON.stringify({
-              special_token: null,
-              user_id: info.uid,
-              kind_name: "0",
-              attribute: "0",
-              event_id: null,
-              story_id: null,
-              [info.idType]: info.contentId,
-            })
-          }
-        }
-
-        const response = await fetch(url, requestOptions)
-
-        console.log("Response status:", response.status)
-        console.log(
-          "Response headers:",
-          Object.fromEntries(response.headers.entries())
-        )
-
-        if (!response.ok) {
-          const errorText = await response.text()
+        // Always update stored info, using listType if provided
+        const info = await updateStoredInfo(message.listType)
+        if (!info) {
           throw new Error(
-            `HTTP error! status: ${response.status}, response: ${errorText}`
+            "No content data found. Please refresh the page and try again."
           )
         }
 
-        const data = await response.json()
+        const data = await makeRequest(info)
         chrome.runtime.sendMessage({
           action: "dataFetched",
           data: JSON.stringify(data, null, 2),
