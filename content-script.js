@@ -103,6 +103,22 @@ function findGameVersion() {
   return null
 }
 
+function findUserIdFromServerProps() {
+  const serverProps = document.getElementById("server-props")
+  if (serverProps && serverProps.textContent) {
+    try {
+      const data = JSON.parse(serverProps.textContent)
+      if (data.userId) {
+        console.log("Found userId in server-props:", data.userId)
+        return data.userId
+      }
+    } catch (error) {
+      console.error("Error parsing server-props JSON:", error)
+    }
+  }
+  return null
+}
+
 // Function to create info object for list pages
 function createListInfo(type, pageNumber) {
   const page = pageNumber || getCurrentPage()
@@ -234,7 +250,11 @@ function createRequestOptions(info) {
 function createRequestUrl(info) {
   const currentTimestamp = Date.now()
   const baseUrl = "https://game.granbluefantasy.jp"
-  const userId = window.Game?.userId
+
+  // Use the user ID from server-props if available; fallback to window.Game?.userId or info.uid
+  const userIdFromProps = findUserIdFromServerProps()
+  const userId = userIdFromProps || window.Game?.userId || info.uid
+
   const params = `_=${currentTimestamp}&t=${currentTimestamp}&uid=${
     userId || info.uid
   }`
