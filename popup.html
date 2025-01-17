@@ -20,10 +20,44 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
-      #listButtons {
+      .header {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 12px;
         display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .version {
+        font-size: 12px;
+        color: #666;
+        padding: 4px 8px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+
+      #listControls {
+        display: none; /* Hidden by default, shown only if we're on a #list URL */
         flex-direction: column;
         gap: 8px;
+      }
+
+      label {
+        font-size: 14px;
+        color: #333;
+      }
+
+      select,
+      input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
       }
 
       button {
@@ -45,30 +79,6 @@
       button:disabled {
         background-color: #cccccc;
         cursor: not-allowed;
-      }
-
-      button.weapon {
-        background-color: #2196f3;
-      }
-
-      button.weapon:hover {
-        background-color: #1976d2;
-      }
-
-      button.character {
-        background-color: #9c27b0;
-      }
-
-      button.character:hover {
-        background-color: #7b1fa2;
-      }
-
-      button.summon {
-        background-color: #ff9800;
-      }
-
-      button.summon:hover {
-        background-color: #f57c00;
       }
 
       #status {
@@ -97,46 +107,6 @@
         color: #c62828;
         border: 1px solid #ffcdd2;
       }
-
-      .header {
-        font-size: 16px;
-        font-weight: 500;
-        color: #333;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .version {
-        font-size: 12px;
-        color: #666;
-        padding: 4px 8px;
-        background: #f5f5f5;
-        border-radius: 4px;
-        font-family: monospace;
-      }
-
-      .divider {
-        height: 1px;
-        background-color: #e0e0e0;
-        margin: 12px 0;
-      }
-
-      #singleButton {
-        display: block; /* Shown by default */
-      }
-
-      #listButtons {
-        display: none; /* Hidden by default */
-      }
-
-      .info-text {
-        font-size: 13px;
-        color: #666;
-        margin: 8px 0;
-        line-height: 1.4;
-      }
     </style>
   </head>
   <body>
@@ -146,19 +116,29 @@
         <span id="version" class="version">...</span>
       </div>
 
-      <div id="singleButton">
-        <button id="copyData">Copy game data</button>
+      <!-- A container for the list controls (dropdown + page input). 
+           This will only be shown if the user is on a #list URL -->
+      <div id="listControls">
+        <label for="dataTypeSelect">Select data type:</label>
+        <select id="dataTypeSelect">
+          <option value="weapon">Weapons</option>
+          <option value="npc">Characters</option>
+          <option value="summon">Summons</option>
+        </select>
+
+        <label for="pageNumberInput">Page number:</label>
+        <input
+          type="number"
+          id="pageNumberInput"
+          placeholder="Page number"
+          value="1"
+          min="1"
+        />
       </div>
 
-      <div id="listButtons">
-        <button id="copyWeapon" class="weapon">Copy weapon list</button>
-        <button id="copyCharacter" class="character">
-          Copy character list
-        </button>
-        <button id="copySummon" class="summon">Copy summon list</button>
-      </div>
+      <button id="copyData">Copy data</button>
 
-      <div id="status" style="display: none"></div>
+      <div id="status" class=""></div>
     </div>
     <script src="popup.js"></script>
   </body>

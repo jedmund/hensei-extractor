@@ -78,6 +78,7 @@ function findGameVersion() {
     }
   }
 
+  // Fallback: look for "version" : "123" style
   const versionRegex = /"version"\s*:\s*"(\d+)"/
   for (const script of scripts) {
     if (script.textContent) {
@@ -89,6 +90,7 @@ function findGameVersion() {
     }
   }
 
+  // Fallback: meta tag
   const metas = document.getElementsByTagName("meta")
   for (const meta of metas) {
     if (meta.name === "version" || meta.name === "game-version") {
@@ -102,8 +104,8 @@ function findGameVersion() {
 }
 
 // Function to create info object for list pages
-function createListInfo(type) {
-  const page = getCurrentPage()
+function createListInfo(type, pageNumber) {
+  const page = pageNumber || getCurrentPage()
   return {
     type: "standard_list",
     listType: type,
@@ -134,10 +136,10 @@ function createPartyInfo() {
 }
 
 // Function to extract info from hash URL
-function extractInfoFromHash(hash, listType = null) {
+function extractInfoFromHash(hash, listType = null, pageNumber = null) {
   // If listType is provided, we're explicitly requesting list data
   if (listType && CONTENT_TYPES.list[listType]) {
-    return createListInfo(listType)
+    return createListInfo(listType, pageNumber)
   }
 
   // Otherwise handle based on URL
@@ -153,9 +155,9 @@ function extractInfoFromHash(hash, listType = null) {
 }
 
 // Function to update stored info
-async function updateStoredInfo(listType = null) {
+async function updateStoredInfo(listType = null, pageNumber = null) {
   const hash = window.location.hash
-  const info = extractInfoFromHash(hash, listType)
+  const info = extractInfoFromHash(hash, listType, pageNumber)
   const gameVersion = findGameVersion()
 
   if (!gameVersion) {
@@ -284,7 +286,7 @@ function observeDOM() {
 // Start observing DOM changes
 observeDOM()
 
-// Listen for messages
+// Listen for messages from popup or background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Content script received message:", message)
 
@@ -294,10 +296,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "fetchData") {
-    chrome.storage.local.get(["lastContentInfo"], async function (result) {
+    chrome.storage.local.get(["lastContentInfo"], async function () {
       try {
         // Always update stored info, using listType if provided
-        const info = await updateStoredInfo(message.listType)
+        const info = await updateStoredInfo(
+          message.listType,
+          message.pageNumber
+        )
         if (!info) {
           throw new Error(
             "No content data found. Please refresh the page and try again."
