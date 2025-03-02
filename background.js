@@ -1,4 +1,16 @@
-// Function to ensure content script is loaded before sending a message
+/**
+ * @fileoverview Background script for the Granblue Fantasy Chrome extension.
+ * This script listens for messages from the popup and ensures that the content script
+ * is loaded into the active tab before forwarding requests. If the content script is not loaded,
+ * it injects it into the page and then forwards the message.
+ */
+
+/**
+ * Ensures that the content script is loaded in the specified tab by pinging it.
+ * If not loaded, injects the content script.
+ * @param {number} tabId - The ID of the tab to check/inject.
+ * @returns {Promise<boolean>} Resolves to true when the content script is loaded.
+ */
 async function ensureContentScriptLoaded(tabId) {
   try {
     // Ping the content script
@@ -25,8 +37,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
         try {
           await ensureContentScriptLoaded(tabs[0].id)
 
-          // Forward the request to the content script,
-          // including listType and pageNumber if provided
+          // Forward the request to the content script, including listType and pageNumber if provided
           await chrome.tabs.sendMessage(tabs[0].id, {
             action: "fetchData",
             listType: message.listType || null,
@@ -48,6 +59,9 @@ chrome.runtime.onMessage.addListener((message, sender) => {
         })
       }
     })
+  } else if (message.action === "urlReady") {
+    // Open the URL in a new tab when we receive the urlReady message
+    chrome.runtime.sendMessage(message)
   }
 
   return true

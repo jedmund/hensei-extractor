@@ -1,4 +1,11 @@
-console.log("Content script loaded")
+/**
+ * @fileoverview Content script for the Granblue Fantasy Chrome extension.
+ * This script is injected into the Granblue Fantasy game page. It extracts game
+ * information (such as version and user ID), builds request data based on the URL hash,
+ * listens for DOM and hash changes, makes API requests to fetch game details or party data,
+ * and uploads party data to Granblue Team. It also communicates with the background and popup
+ * scripts via chrome.runtime messaging.
+ */
 
 // Constants for the different types
 const CONTENT_TYPES = {
@@ -50,7 +57,10 @@ const LIST_PAYLOADS = {
 // Initialize state
 let initialized = false
 
-// Function to get current page number from URL
+/**
+ * Retrieves the current page number from the window's location hash.
+ * @returns {number} The current page number, or 1 if not found.
+ */
 function getCurrentPage() {
   const hash = window.location.hash
   if (hash.includes("/list/")) {
@@ -63,7 +73,10 @@ function getCurrentPage() {
   return 1
 }
 
-// Function to extract Game.version from page
+/**
+ * Searches for the game version within script tags or meta tags in the document.
+ * @returns {string|null} The found game version, or null if not found.
+ */
 function findGameVersion() {
   const scripts = document.getElementsByTagName("script")
   for (const script of scripts) {
@@ -103,6 +116,10 @@ function findGameVersion() {
   return null
 }
 
+/**
+ * Extracts the user ID from the server-props element in the document.
+ * @returns {string|null} The user ID if found, or null otherwise.
+ */
 function findUserIdFromServerProps() {
   const serverProps = document.getElementById("server-props")
   if (serverProps && serverProps.textContent) {
@@ -119,7 +136,12 @@ function findUserIdFromServerProps() {
   return null
 }
 
-// Function to create info object for list pages
+/**
+ * Creates an info object for list pages based on type and page number.
+ * @param {string} type - The list type (e.g., 'weapon', 'npc', 'summon').
+ * @param {number} [pageNumber] - The page number to use; if not provided, retrieves from URL.
+ * @returns {Object} The info object for the list page.
+ */
 function createListInfo(type, pageNumber) {
   const page = pageNumber || getCurrentPage()
   return {
@@ -130,7 +152,11 @@ function createListInfo(type, pageNumber) {
   }
 }
 
-// Function to create info object for detail pages
+/**
+ * Creates an info object for detail pages based on the URL hash.
+ * @param {string} hash - The URL hash string.
+ * @returns {Object} The info object for a detail page.
+ */
 function createDetailInfo(hash) {
   const parts = hash.split("/")
   const type = parts[1]
@@ -143,7 +169,10 @@ function createDetailInfo(hash) {
   }
 }
 
-// Function to create info object for party pages
+/**
+ * Creates an info object for party pages.
+ * @returns {Object} The info object for a party page.
+ */
 function createPartyInfo() {
   return {
     type: "party",
@@ -151,7 +180,13 @@ function createPartyInfo() {
   }
 }
 
-// Function to extract info from hash URL
+/**
+ * Extracts information from the URL hash to determine which API request to make.
+ * @param {string} hash - The current URL hash.
+ * @param {string|null} [listType=null] - Optional list type for list pages.
+ * @param {number|null} [pageNumber=null] - Optional page number for list pages.
+ * @returns {Object|null} The extracted info object or null if none applies.
+ */
 function extractInfoFromHash(hash, listType = null, pageNumber = null) {
   // If listType is provided, we're explicitly requesting list data
   if (listType && CONTENT_TYPES.list[listType]) {
@@ -170,7 +205,12 @@ function extractInfoFromHash(hash, listType = null, pageNumber = null) {
   return null
 }
 
-// Function to update stored info
+/**
+ * Updates the stored content info in chrome.storage.local based on the current URL hash.
+ * @param {string|null} [listType=null] - Optional list type for list pages.
+ * @param {number|null} [pageNumber=null] - Optional page number for list pages.
+ * @returns {Promise<Object|null>} The updated info object, or null if no info found.
+ */
 async function updateStoredInfo(listType = null, pageNumber = null) {
   const hash = window.location.hash
   const info = extractInfoFromHash(hash, listType, pageNumber)
@@ -196,7 +236,10 @@ async function updateStoredInfo(listType = null, pageNumber = null) {
   return null
 }
 
-// Initialize the content script
+/**
+ * Initializes the content script by updating stored info and adding a hashchange listener.
+ * @returns {Promise<Object|null>} The info object if initialization was successful.
+ */
 async function initialize() {
   if (initialized) return
 
@@ -212,7 +255,11 @@ async function initialize() {
   return info
 }
 
-// Function to create request options
+/**
+ * Creates request options for the API call based on the info object.
+ * @param {Object} info - The info object containing details about the API request.
+ * @returns {Object} The options object for the fetch call.
+ */
 function createRequestOptions(info) {
   const options = {
     method: info.type === "party" ? "GET" : "POST",
@@ -246,7 +293,11 @@ function createRequestOptions(info) {
   return options
 }
 
-// Function to create request URL
+/**
+ * Creates the URL for the API request based on the info object.
+ * @param {Object} info - The info object containing details about the API request.
+ * @returns {string} The fully constructed request URL with query parameters.
+ */
 function createRequestUrl(info) {
   const currentTimestamp = Date.now()
   const baseUrl = "https://game.granbluefantasy.jp"
@@ -270,7 +321,12 @@ function createRequestUrl(info) {
   return `${baseUrl}/archive/${info.endpoint}?${params}`
 }
 
-// Function to make the API request
+/**
+ * Makes an API request based on the provided info object.
+ * @param {Object} info - The info object containing details about the API request.
+ * @returns {Promise<Object>} A promise resolving to the JSON response.
+ * @throws {Error} Throws an error if the HTTP response is not OK.
+ */
 async function makeRequest(info) {
   const url = createRequestUrl(info)
   const options = createRequestOptions(info)
@@ -285,7 +341,10 @@ async function makeRequest(info) {
   return response.json()
 }
 
-// Function to observe DOM changes
+/**
+ * Observes DOM mutations to detect when the page's game version becomes available,
+ * then initializes the content script.
+ */
 function observeDOM() {
   const observer = new MutationObserver((mutations) => {
     if (!initialized) {
@@ -301,6 +360,76 @@ function observeDOM() {
     childList: true,
     subtree: true,
   })
+}
+
+/**
+ * Makes an API request using authentication information from chrome.storage.
+ * @param {string} url - The URL to send the request to.
+ * @param {Object} requestBody - The body of the request.
+ * @returns {Promise<Response>} The fetch response promise.
+ * @throws {Error} Throws an error if no authentication token is found.
+ */
+async function makeRequestWithAuth(url, requestBody) {
+  const { gbAuth } = await chrome.storage.local.get(["gbAuth"])
+  if (!gbAuth || !gbAuth.access_token) {
+    throw new Error("Not authenticated; no token available.")
+  }
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${gbAuth.access_token}`,
+  }
+
+  return fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(requestBody),
+  })
+}
+
+/**
+ * Uploads party data to the Granblue Team API.
+ * @param {Object} payload - The payload containing the party data.
+ * @returns {Promise<Object|null>} The API response data if successful, or null if not authenticated.
+ * @throws {Error} Throws an error if the upload request fails.
+ */
+async function uploadDataToGranblueTeam(payload) {
+  // Load your stored auth info from local storage
+  const { gbAuth } = await chrome.storage.local.get(["gbAuth"])
+  if (!gbAuth || !gbAuth.access_token) {
+    console.warn("No auth token found; cannot upload party data.")
+    return null
+  }
+
+  // Make the POST request
+  const response = await fetch("https://api.granblue.team/api/v1/import", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${gbAuth.access_token}`, // Important
+    },
+    body: JSON.stringify({
+      import: payload, // The server expects a top-level "import" key
+    }),
+  })
+
+  if (response.ok) {
+    const result = await response.json()
+
+    // Compile the final URL and send it back to the popup
+    const finalUrl = `https://granblue.team/p/${result.shortcode}`
+    chrome.runtime.sendMessage({
+      action: "urlReady",
+      url: finalUrl,
+      shortcode: result.shortcode,
+    })
+
+    console.log("Import success:", result)
+    return result
+  } else {
+    const errorText = await response.text()
+    throw new Error(`Import request failed (${response.status}): ${errorText}`)
+  }
 }
 
 // Start observing DOM changes
@@ -330,6 +459,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         const data = await makeRequest(info)
+
+        if (info.type === "party") {
+          // Or, if you want to post for everything, remove this check
+          await uploadDataToGranblueTeam(data)
+        }
+
         chrome.runtime.sendMessage({
           action: "dataFetched",
           data: JSON.stringify(data, null, 2),

@@ -1,145 +1,106 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      body {
-        width: 300px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: lightgray;
-        padding: 4px;
-      }
-
-      .container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        background: white;
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .header {
-        font-size: 16px;
-        font-weight: 500;
-        color: #333;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .version {
-        font-size: 12px;
-        color: #666;
-        padding: 4px 8px;
-        background: #f5f5f5;
-        border-radius: 4px;
-        font-family: monospace;
-      }
-
-      #listControls {
-        display: none; /* Hidden by default, shown only if we're on a #list URL */
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      label {
-        font-size: 14px;
-        color: #333;
-      }
-
-      select,
-      input[type="number"] {
-        width: 100%;
-        padding: 8px;
-        font-size: 14px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
-      }
-
-      button {
-        width: 100%;
-        padding: 10px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.2s;
-      }
-
-      button:hover {
-        background-color: #45a049;
-      }
-
-      button:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-      }
-
-      #status {
-        margin-top: 12px;
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 14px;
-        line-height: 1.4;
-        display: none;
-      }
-
-      .status-info {
-        background-color: #e3f2fd;
-        color: #1976d2;
-        border: 1px solid #bbdefb;
-      }
-
-      .status-success {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-        border: 1px solid #c8e6c9;
-      }
-
-      .status-error {
-        background-color: #ffebee;
-        color: #c62828;
-        border: 1px solid #ffcdd2;
-      }
-    </style>
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        Granblue Export
-        <span id="version" class="version">...</span>
+    <div id="mainPane" class="main pane">
+      <div class="top">
+        <div class="header">
+          <div class="title">
+            <p>granblue.team</p>
+            <h1>Account Importer</h1>
+          </div>
+          <img
+            id="avatar"
+            class="avatar"
+            src="https://granblue.team/profile/npc@2x.png"
+          />
+        </div>
+
+        <div class="message">
+          <p>
+            This extension lets you quickly and easily import your parties and
+            inventory into granblue.team.
+          </p>
+        </div>
       </div>
 
-      <!-- A container for the list controls (dropdown + page input). 
-           This will only be shown if the user is on a #list URL -->
-      <div id="listControls">
-        <label for="dataTypeSelect">Select data type:</label>
-        <select id="dataTypeSelect">
-          <option value="weapon">Weapons</option>
-          <option value="npc">Characters</option>
-          <option value="summon">Summons</option>
-        </select>
-
-        <label for="pageNumberInput">Page number:</label>
-        <input
-          type="number"
-          id="pageNumberInput"
-          placeholder="Page number"
-          value="1"
-          min="1"
-        />
+      <div id="import-container" class="buttons">
+        <div class="blue notice import" id="import-notice">
+          <p id="import-status"></p>
+        </div>
+        <a id="importButton" class="button btn-green">Import party</a>
+        <a id="copyButton" class="button btn-white">Copy data</a>
       </div>
 
-      <button id="copyData">Copy data</button>
+      <div id="warning" class="notice">
+        <div class="notice-text">
+          <p>
+            Although this extension doesn't alter game code, please use it at
+            your own risk.
+          </p>
+          <p>
+            granblue.team assumes no responsibility for any account suspensions
+            or bans that may result from its use.
+          </p>
+        </div>
+        <a id="acknowledgeButton" class="button btn-stroke small"
+          >I understand</a
+        >
+      </div>
 
-      <div id="status" class=""></div>
+      <!-- Buttons container; hidden when user is logged in -->
+      <div id="main-buttons" class="buttons">
+        <!-- Sign up button (green) -->
+        <a
+          id="signupButton"
+          class="button btn-green"
+          target="_blank"
+          href="https://granblue.team/auth/register"
+          >Sign up</a
+        >
+        <!-- Log in button (outlined) -->
+        <a id="showLogin" class="button btn-white">Log in</a>
+      </div>
     </div>
-    <script src="popup.js"></script>
+
+    <!-- Login Pane (slides in from the right) -->
+    <div id="loginPane" class="sliding pane login">
+      <div class="header">
+        <div class="title">
+          <p>granblue.team</p>
+          <h1>Log in</h1>
+        </div>
+        <button id="backToMain" class="close">&times;</button>
+      </div>
+      <div id="loginForm" class="subsection">
+        <input type="text" id="loginUsername" placeholder="Email address" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <a id="loginButton" class="button btn-green">Login</a>
+      </div>
+      <div id="loginStatus"></div>
+    </div>
+
+    <!-- Logged-In Pane (slides in from the right) -->
+    <div id="loggedInPane" class="sliding pane logged-in">
+      <div class="header">
+        <div class="title">
+          <p>granblue.team</p>
+          <!-- Username will be updated dynamically -->
+          <h1 id="loggedInUsername">Username</h1>
+        </div>
+        <button id="closeLoggedInPane" class="close">&times;</button>
+      </div>
+
+      <a id="showWarning" class="link">Show extension disclaimer</a>
+
+      <div class="buttons">
+        <a id="goToProfileButton" class="button btn-white">Go to profile</a>
+        <a id="logoutButton" class="button btn-white">Log out</a>
+      </div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

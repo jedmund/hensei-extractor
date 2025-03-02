@@ -11,7 +11,10 @@
     "scripting",
     "cookies"
   ],
-  "host_permissions": ["https://game.granbluefantasy.jp/*"],
+  "host_permissions": [
+    "https://game.granbluefantasy.jp/*",
+    "https://api.granblue.team/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

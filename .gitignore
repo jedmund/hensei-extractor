@@ -1,5 +1,17 @@
-/.aidigestignore
-/.DS_Store
-/build
-/cert
-/cookie-sample.json
+# Don't commit AI Digest files or DS_Store files
+.aidigestignore
+.DS_Store
+
+# Don't commit certificates or extension builds
+build/
+cert/
+
+# Don't commit sample data
+examples/
+cookie-sample.json
+
+# Don't commit environment variables
+.env
+
+# Don't commit the built manifest.json (since it has keys)
+manifest.json

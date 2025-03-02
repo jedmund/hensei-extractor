@@ -1,0 +1,11 @@
+{
+  "name": "hensei-extractor",
+  "version": "1.0.0",
+  "description": "A Chrome extension that extracts data from Granblue Fantasy",
+  "main": "background.js",
+  "scripts": {
+    "build": "node build-manifest.js"
+  },
+  "author": "Justin Edmund",
+  "license": "MIT"
+}
