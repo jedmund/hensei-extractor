@@ -44,7 +44,7 @@ export async function performLogin(username, password) {
  */
 export async function fetchUserInfo(username, accessToken) {
   const response = await fetch(
-    `https://api.granblue.team/api/v1/users/info/${username}`,
+    `https://api.granblue.team/v1/users/info/${username}`,
     {
       method: "GET",
       headers: {
