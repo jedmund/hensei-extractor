@@ -1,26 +1,46 @@
 /**
- * Performs the login request.
- * @param {string} username
- * @param {string} password
- * @returns {Promise<Object>} Returns the gbAuth object.
+ * @fileoverview Authentication functions for the Granblue Fantasy Chrome extension.
+ * Handles login and user information requests to the Granblue Team API.
+ */
+
+/**
+ * Performs the login request to Granblue Team API.
+ * @param {string} username - User's email address.
+ * @param {string} password - User's password.
+ * @returns {Promise<Object>} Returns the formatted auth object.
+ * @throws {Error} If login fails.
  */
 export async function performLogin(username, password) {
-  const response = await fetch("https://api.granblue.team/oauth/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: username,
-      password,
-      grant_type: "password",
-    }),
-  })
+  try {
+    const response = await fetch("https://api.granblue.team/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: username,
+        password,
+        grant_type: "password",
+      }),
+    })
 
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`Login failed: ${errText}`)
+    if (!response.ok) {
+      const errText = await response.text()
+      throw new Error(`Login failed: ${errText}`)
+    }
+
+    const data = await response.json()
+    return formatAuthData(data)
+  } catch (error) {
+    console.error("Login error:", error)
+    throw error
   }
+}
 
-  const data = await response.json()
+/**
+ * Formats the raw auth data into a more usable structure.
+ * @param {Object} data - Raw auth data from the API.
+ * @returns {Object} Formatted auth object with token and user info.
+ */
+function formatAuthData(data) {
   const nowMs = Date.now()
   const expiresMs = nowMs + data.expires_in * 1000
 
@@ -37,26 +57,32 @@ export async function performLogin(username, password) {
 }
 
 /**
- * Fetches additional user information.
- * @param {string} username
- * @param {string} accessToken
+ * Fetches additional user information from Granblue Team API.
+ * @param {string} username - User's username.
+ * @param {string} accessToken - OAuth access token.
  * @returns {Promise<Object>} The user info object.
+ * @throws {Error} If the request fails.
  */
 export async function fetchUserInfo(username, accessToken) {
-  const response = await fetch(
-    `https://api.granblue.team/v1/users/info/${username}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+  try {
+    const response = await fetch(
+      `https://api.granblue.team/v1/users/info/${username}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
 
-  if (!response.ok) {
-    console.error("[fetchUserInfo] Error fetching user info:", error)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user info: ${response.status}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching user info:", error)
     throw error
   }
-  return await response.json()
 }

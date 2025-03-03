@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Popup script for the Granblue Fantasy Chrome extension.
+ * Handles user interaction with the popup UI, login, and data operations.
+ */
+
 import { performLogin, fetchUserInfo } from "./auth.js"
 import {
   updateAvatarImage,
@@ -8,127 +13,112 @@ import {
   resetStatus
 } from "./ui.js"
 
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Element references
-  const showLoginBtn = document.getElementById("showLogin")
-  const avatarImg = document.getElementById("avatar")
-  const backToMainBtn = document.getElementById("backToMain")
-  const mainPane = document.getElementById("mainPane")
-  const loginPane = document.getElementById("loginPane")
-  const loggedInPane = document.getElementById("loggedInPane")
-  const closeLoggedInPaneBtn = document.getElementById("closeLoggedInPane")
-  const mainButtons = document.getElementById("main-buttons")
-  const loginButton = document.getElementById("loginButton")
-  const logoutButton = document.getElementById("logoutButton")
-  const goToProfileButton = document.getElementById("goToProfileButton")
-  const loginStatus = document.getElementById("loginStatus")
-  const acknowledgeButton = document.getElementById("acknowledgeButton")
-  const showWarning = document.getElementById("showWarning")
-  const warningNotice = document.getElementById("warning")
-  const importButton = document.getElementById("importButton")
-  const copyButton = document.getElementById("copyButton")
+  initializeEventListeners()
+  refreshAuthUI()
+})
 
-  // Helper functions for login status updates
-  function updateLoginStatus(message, type = "info") {
-    loginStatus.style.display = "block"
-    loginStatus.textContent = message
-    loginStatus.className = `status-${type}`
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+
+/**
+ * Sets up all event listeners for the popup
+ */
+function initializeEventListeners() {
+  // Get element references
+  const elements = {
+    showLogin: document.getElementById("showLogin"),
+    avatar: document.getElementById("avatar"),
+    backToMain: document.getElementById("backToMain"),
+    mainPane: document.getElementById("mainPane"),
+    loginPane: document.getElementById("loginPane"),
+    loggedInPane: document.getElementById("loggedInPane"),
+    closeLoggedInPane: document.getElementById("closeLoggedInPane"),
+    mainButtons: document.getElementById("main-buttons"),
+    loginButton: document.getElementById("loginButton"),
+    logoutButton: document.getElementById("logoutButton"),
+    goToProfile: document.getElementById("goToProfileButton"),
+    acknowledge: document.getElementById("acknowledgeButton"),
+    showWarning: document.getElementById("showWarning"),
+    warning: document.getElementById("warning"),
+    importButton: document.getElementById("importButton"),
+    copyButton: document.getElementById("copyButton")
   }
-  function resetLoginStatus() {
-    loginStatus.style.display = "none"
-    loginStatus.textContent = ""
-    loginStatus.className = ""
-  }
 
-  // Listener for the "I understand" button.
-  acknowledgeButton.addEventListener("click", () => {
-    chrome.storage.local.set({ noticeAcknowledged: true }, () => {
-      warningNotice.style.display = "none"
-      mainButtons.style.display = "flex"
-    })
+  // Set up UI navigation handlers
+  setupNavigationHandlers(elements)
+  
+  // Set up authentication handlers
+  setupAuthHandlers(elements)
+  
+  // Set up warning notice handlers
+  setupWarningHandlers(elements)
+  
+  // Set up data operation handlers
+  setupDataHandlers(elements)
+
+  // Set up message listener
+  chrome.runtime.onMessage.addListener(handleMessages)
+}
+
+/**
+ * Sets up handlers for navigating between panes
+ */
+function setupNavigationHandlers(elements) {
+  // Show login pane
+  elements.showLogin.addEventListener("click", () => {
+    elements.mainPane.classList.add("inactive")
+    elements.loginPane.classList.add("active")
   })
 
-  // Listener for the "Show Warning" button in the logged-in pane.
-  showWarning.addEventListener("click", () => {
-    chrome.storage.local.set({ noticeAcknowledged: false }, () => {
-      // When the warning is re-enabled, update the UI.
-      refreshAuthUI()
-    })
+  // Back to main from login
+  elements.backToMain.addEventListener("click", () => {
+    elements.mainPane.classList.remove("inactive")
+    elements.loginPane.classList.remove("active")
   })
 
-  // Show the login pane when the "Log in" button is clicked.
-  showLoginBtn.addEventListener("click", () => {
-    mainPane.classList.add("inactive")
-    loginPane.classList.add("active")
+  // Close logged in pane
+  elements.closeLoggedInPane.addEventListener("click", () => {
+    elements.mainPane.classList.remove("inactive")
+    elements.loggedInPane.classList.remove("active")
   })
 
-  // Close the login pane.
-  backToMainBtn.addEventListener("click", () => {
-    mainPane.classList.remove("inactive")
-    loginPane.classList.remove("active")
-  })
-
-  // When clicking the avatar, show the logged-in pane if authenticated; otherwise, show the login pane.
-  avatarImg.addEventListener("click", async () => {
+  // Avatar click (show profile if logged in, else login)
+  elements.avatar.addEventListener("click", async () => {
     const { noticeAcknowledged, gbAuth } = await chrome.storage.local.get([
       "noticeAcknowledged",
       "gbAuth",
     ])
-    console.log("noticeAcknowledged:", noticeAcknowledged) // Debug log
 
-    console.log(noticeAcknowledged)
-    // Only allow opening the login pane if the warning has been acknowledged
+    // Only proceed if warning acknowledged
     if (!noticeAcknowledged) {
-      // Remove and force a reflow to re‑trigger the animation.
-      warningNotice.classList.remove("shake")
-      void warningNotice.offsetWidth
-
-      // Add shake animation to the notice element.
-      warningNotice.classList.add("shake")
-      // Remove the class after the animation completes (500ms).
-      setTimeout(() => warningNotice.classList.remove("shake"), 500)
+      shakeWarningNotice(elements.warning)
       return
     }
 
-    mainPane.classList.add("inactive")
+    elements.mainPane.classList.add("inactive")
 
     if (gbAuth && gbAuth.access_token) {
-      document.getElementById("loggedInUsername").textContent =
-        gbAuth.user.username
-      loggedInPane.classList.add("active")
-      mainButtons.style.display = "none"
+      document.getElementById("loggedInUsername").textContent = gbAuth.user.username
+      elements.loggedInPane.classList.add("active")
+      elements.mainButtons.style.display = "none"
     } else {
-      loginPane.classList.add("active")
+      elements.loginPane.classList.add("active")
     }
   })
+}
 
-  // Close the logged-in pane.
-  closeLoggedInPaneBtn.addEventListener("click", () => {
-    mainPane.classList.remove("inactive")
-    loggedInPane.classList.remove("active")
-  })
-
-  // "Go to profile" button.
-  goToProfileButton.addEventListener("click", async () => {
-    const { gbAuth } = await chrome.storage.local.get("gbAuth")
-    if (gbAuth && gbAuth.user && gbAuth.user.username) {
-      const profileUrl = `https://granblue.team/${gbAuth.user.username}`
-      chrome.tabs.create({ url: profileUrl })
-    }
-  })
-
-  // "Log out" button.
-  logoutButton.addEventListener("click", async () => {
-    await chrome.storage.local.remove(["gbAuth", "noticeAcknowledged"])
-    loggedInPane.classList.remove("active")
-    mainPane.classList.remove("inactive")
-    warningNotice.style.display = "flex"
-    updateAvatarImage()
-    resetMainMessage()
-  })
-
-  // Login button handler.
-  loginButton.addEventListener("click", async () => {
+/**
+ * Sets up handlers for authentication actions
+ */
+function setupAuthHandlers(elements) {
+  // Login button
+  elements.loginButton.addEventListener("click", async () => {
     const username = document.getElementById("loginUsername").value.trim()
     const password = document.getElementById("loginPassword").value.trim()
 
@@ -137,16 +127,16 @@ document.addEventListener("DOMContentLoaded", () => {
       return
     }
 
-    loginButton.disabled = true
+    elements.loginButton.disabled = true
     updateLoginStatus("Logging in...", "info")
 
     try {
-      // Perform login and store auth data.
+      // Perform login and store auth data
       let gbAuth = await performLogin(username, password)
       await chrome.storage.local.set({ gbAuth })
       updateLoginStatus("Login successful!", "success")
 
-      // Fetch additional user info.
+      // Fetch additional user info
       const userInfo = await fetchUserInfo(
         gbAuth.user.username,
         gbAuth.access_token
@@ -158,14 +148,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       await chrome.storage.local.set({ gbAuth })
 
-      // Update the avatar in the UI.
+      // Update the avatar in the UI
       updateAvatarImage(userInfo.avatar)
 
-      // Slide out the login pane after a short delay.
+      // Slide out the login pane after a short delay
       setTimeout(() => {
-        loginPane.classList.remove("active")
-        mainPane.classList.remove("inactive")
-        mainButtons.style.display = "none"
+        elements.loginPane.classList.remove("active")
+        elements.mainPane.classList.remove("inactive")
+        elements.mainButtons.style.display = "none"
         resetLoginStatus()
         updateMainMessage()
       }, 1500)
@@ -173,185 +163,299 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(err)
       updateLoginStatus(err.message || "Login error", "error")
     } finally {
-      loginButton.disabled = false
+      elements.loginButton.disabled = false
     }
   })
 
-  // Import team button handler
-  importButton.addEventListener("click", async function () {
+  // Go to profile button
+  elements.goToProfile.addEventListener("click", async () => {
+    const { gbAuth } = await chrome.storage.local.get("gbAuth")
+    if (gbAuth && gbAuth.user && gbAuth.user.username) {
+      const profileUrl = `https://granblue.team/${gbAuth.user.username}`
+      chrome.tabs.create({ url: profileUrl })
+    }
+  })
+
+  // Logout button
+  elements.logoutButton.addEventListener("click", async () => {
+    await chrome.storage.local.remove(["gbAuth", "noticeAcknowledged"])
+    elements.loggedInPane.classList.remove("active")
+    elements.mainPane.classList.remove("inactive")
+    elements.warning.style.display = "flex"
+    updateAvatarImage()
+    resetMainMessage()
+  })
+}
+
+/**
+ * Sets up handlers for warning notice
+ */
+function setupWarningHandlers(elements) {
+  // Acknowledge warning
+  elements.acknowledge.addEventListener("click", () => {
+    chrome.storage.local.set({ noticeAcknowledged: true }, () => {
+      elements.warning.style.display = "none"
+      elements.mainButtons.style.display = "flex"
+    })
+  })
+
+  // Show warning button
+  elements.showWarning.addEventListener("click", () => {
+    chrome.storage.local.set({ noticeAcknowledged: false }, () => {
+      refreshAuthUI()
+    })
+  })
+}
+
+/**
+ * Sets up handlers for data operations (import/copy)
+ */
+function setupDataHandlers(elements) {
+  // Import button
+  elements.importButton.addEventListener("click", async () => {
     console.log("Importing...")
-    importButton.disabled = true
+    elements.importButton.disabled = true
   
     try {
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      })
-  
-      // Ensure we're on a Granblue Fantasy game page
-      if (!tab.url.includes("game.granbluefantasy.jp")) {
+      const activeTab = await getActiveTab()
+      
+      if (!isGranblueFantasyPage(activeTab.url)) {
         updateStatus("Please navigate to a Granblue Fantasy game page", "error")
-        importButton.disabled = false
+        elements.importButton.disabled = false
         return
       }
-  
-      // Check if we're on a detail page or party page
-      const isDetailPage = tab.url.includes("#archive/detail_")
-      const isPartyPage = tab.url.includes("#party/")
-  
-      if (!isDetailPage && !isPartyPage) {
+      
+      if (!isValidDataPage(activeTab.url)) {
         updateStatus(
           "Please navigate to a party, weapon, character, or summon page to import.",
           "error"
         )
-        importButton.disabled = false
+        elements.importButton.disabled = false
         return
       }
-  
-      // For import button, we want to upload the data to the server
-      console.log("Sending getData with uploadData=true")
+      
+      // Send message to upload data
       chrome.runtime.sendMessage({
         action: "getData",
-        uploadData: true // This flag indicates we want to upload the data
+        uploadData: true
       })
     } catch (error) {
-      importButton.disabled = false
+      elements.importButton.disabled = false
       updateStatus("Error: " + (error.message || "Unknown error"), "error")
     }
   })
 
-  copyButton.addEventListener("click", async function () {
+  // Copy button
+  elements.copyButton.addEventListener("click", async () => {
     console.log("Copying...")
-    copyButton.disabled = true
+    elements.copyButton.disabled = true
   
     try {
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      })
-  
-      // Ensure we're on a Granblue Fantasy game page
-      if (!tab.url.includes("game.granbluefantasy.jp")) {
+      const activeTab = await getActiveTab()
+      
+      if (!isGranblueFantasyPage(activeTab.url)) {
         updateStatus("Please navigate to a Granblue Fantasy game page", "error")
-        copyButton.disabled = false
+        elements.copyButton.disabled = false
         return
       }
-  
-      // Check if we're on a detail page or party page
-      const isDetailPage = tab.url.includes("#archive/detail_")
-      const isPartyPage = tab.url.includes("#party/")
-  
-      if (!isDetailPage && !isPartyPage) {
+      
+      if (!isValidDataPage(activeTab.url)) {
         updateStatus(
           "Please navigate to a party, weapon, character, or summon page to copy.",
           "error"
         )
-        copyButton.disabled = false
+        elements.copyButton.disabled = false
         return
       }
-  
-      // For copy button, we just want to fetch the data without uploading
+      
+      // Send message to copy data without uploading
       chrome.runtime.sendMessage({
         action: "getData",
-        uploadData: false // This flag indicates we don't want to upload
+        uploadData: false
       })
     } catch (error) {
-      copyButton.disabled = false
+      elements.copyButton.disabled = false
       updateStatus("Error: " + (error.message || "Unknown error"), "error")
     }
   })
-  
-  // Handle messages from content script / background
-  chrome.runtime.onMessage.addListener((message) => {
-    console.log("Popup received message:", message)
-  
-    if (message.action === "dataFetched") {
-      if (message.version) {
-        // Update version display if available
-        const versionElem = document.querySelector(".version")
-        if (versionElem) {
-          versionElem.textContent = message.version
-        }
-      }
-  
-      // Handle different data types
-      const dataType = message.dataType || "unknown"
-      
-      // Handle upload results if any
-      if (message.uploadResult) {
-        if (message.uploadResult.error) {
-          // Show error message
-          updateStatus(message.uploadResult.error, "error")
-        } else if (message.uploadResult.shortcode) {
-          // For party data with shortcode - redirect to party page
-          chrome.tabs.create({ url: `https://granblue.team/p/${message.uploadResult.shortcode}` }, () => {
-            window.close() // Close popup after redirecting
-          })
-          return // Early return to avoid clipboard copy
-        } else if (message.uploadResult.message) {
-          // For detail data with success message
-          updateStatus(`✓ ${message.uploadResult.message}`, "success")
-          setTimeout(() => {
-            resetStatus()
-          }, 2000)
-          
-          // Also copy to clipboard for convenience
-          navigator.clipboard
-            .writeText(message.data)
-            .then(() => {
-              console.log("Data also copied to clipboard")
-            })
-            .catch((err) => {
-              console.error("Clipboard error:", err)
-            })
-            
-          importButton.disabled = false
-          copyButton.disabled = false
-          return // Early return
-        }
-      }
-      
-      // If we're here, we're just copying to clipboard (no upload or upload failed)
-      navigator.clipboard
-        .writeText(message.data)
-        .then(() => {
-          // Show different success message based on data type
-          if (dataType === "party") {
-            updateStatus("✓ Party data copied!", "success")
-          } else if (dataType === "detail_npc") {
-            updateStatus("✓ Character data copied!", "success")
-          } else if (dataType === "detail_weapon") {
-            updateStatus("✓ Weapon data copied!", "success") 
-          } else if (dataType === "detail_summon") {
-            updateStatus("✓ Summon data copied!", "success")
-          } else {
-            updateStatus("✓ Data copied to clipboard!", "success")
-          }
-          
-          setTimeout(() => {
-            resetStatus()
-          }, 2000)
-        })
-        .catch((err) => {
-          console.error("Clipboard error:", err)
-          updateStatus("Failed to copy data", "error")
-        })
-        .finally(() => {
-          importButton.disabled = false
-          copyButton.disabled = false
-        })
-    } else if (message.action === "error") {
-      updateStatus(message.error, "error")
-      importButton.disabled = false
-      copyButton.disabled = false
-    } else if (message.action === "urlReady") {
-      // Open the URL in a new tab and close the extension
-      chrome.tabs.create({ url: message.url }, () => {
-        window.close()
-      })
-    }
-  })
+}
 
-  // Initialize the UI based on authentication status.
-  refreshAuthUI()
-})
+/**
+ * Retrieves the active tab
+ */
+async function getActiveTab() {
+  const tabs = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  })
+  
+  if (!tabs || !tabs[0]) {
+    throw new Error("No active tab found")
+  }
+  
+  return tabs[0]
+}
+
+/**
+ * Checks if the URL is a Granblue Fantasy game page
+ */
+function isGranblueFantasyPage(url) {
+  return url.includes("game.granbluefantasy.jp")
+}
+
+/**
+ * Checks if the URL is a valid data page (detail or party)
+ */
+function isValidDataPage(url) {
+  return url.includes("#archive/detail_") || url.includes("#party/")
+}
+
+// ==========================================
+// MESSAGE HANDLING
+// ==========================================
+
+/**
+ * Handles messages from content script / background
+ */
+function handleMessages(message) {
+  console.log("Popup received message:", message)
+
+  if (message.action === "dataFetched") {
+    handleDataFetched(message)
+  } else if (message.action === "error") {
+    updateStatus(message.error, "error")
+    enableButtons()
+  } else if (message.action === "urlReady") {
+    // Open the URL in a new tab and close the extension
+    chrome.tabs.create({ url: message.url }, () => {
+      window.close()
+    })
+  }
+}
+
+/**
+ * Handles dataFetched messages
+ */
+function handleDataFetched(message) {
+  updateVersionDisplay(message.version)
+  
+  // Handle upload results if any
+  if (message.uploadResult) {
+    if (message.uploadResult.error) {
+      // Show error message
+      updateStatus(message.uploadResult.error, "error")
+    } else if (message.uploadResult.shortcode) {
+      // For party data with shortcode - redirect to party page
+      chrome.tabs.create({ url: `https://granblue.team/p/${message.uploadResult.shortcode}` }, () => {
+        window.close() // Close popup after redirecting
+      })
+      return // Early return to avoid clipboard copy
+    } else if (message.uploadResult.message) {
+      // For detail data with success message
+      updateStatus(`✓ ${message.uploadResult.message}`, "success")
+      setTimeout(resetStatus, 2000)
+      
+      // Also copy to clipboard for convenience
+      copyToClipboard(message.data, "Data also copied to clipboard")
+      enableButtons()
+      return // Early return
+    }
+  }
+  
+  // If we're here, we're just copying to clipboard (no upload or upload failed)
+  const successMessage = getSuccessMessageForType(message.dataType)
+  copyToClipboard(message.data, successMessage)
+}
+
+/**
+ * Updates the version display if available
+ */
+function updateVersionDisplay(version) {
+  if (version) {
+    const versionElem = document.querySelector(".version")
+    if (versionElem) {
+      versionElem.textContent = version
+    }
+  }
+}
+
+/**
+ * Gets an appropriate success message based on data type
+ */
+function getSuccessMessageForType(dataType) {
+  if (dataType === "party") {
+    return "✓ Party data copied!"
+  } else if (dataType === "detail_npc") {
+    return "✓ Character data copied!"
+  } else if (dataType === "detail_weapon") {
+    return "✓ Weapon data copied!"
+  } else if (dataType === "detail_summon") {
+    return "✓ Summon data copied!"
+  } else {
+    return "✓ Data copied to clipboard!"
+  }
+}
+
+/**
+ * Copies data to clipboard and shows a success message
+ */
+function copyToClipboard(data, successMessage) {
+  navigator.clipboard
+    .writeText(data)
+    .then(() => {
+      updateStatus(successMessage, "success")
+      setTimeout(resetStatus, 2000)
+    })
+    .catch((err) => {
+      console.error("Clipboard error:", err)
+      updateStatus("Failed to copy data", "error")
+    })
+    .finally(enableButtons)
+}
+
+/**
+ * Re-enables the import and copy buttons
+ */
+function enableButtons() {
+  document.getElementById("importButton").disabled = false
+  document.getElementById("copyButton").disabled = false
+}
+
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
+
+/**
+ * Updates the login status message
+ */
+function updateLoginStatus(message, type = "info") {
+  const loginStatus = document.getElementById("loginStatus")
+  loginStatus.style.display = "block"
+  loginStatus.textContent = message
+  loginStatus.className = `status-${type}`
+}
+
+/**
+ * Resets the login status message
+ */
+function resetLoginStatus() {
+  const loginStatus = document.getElementById("loginStatus")
+  loginStatus.style.display = "none"
+  loginStatus.textContent = ""
+  loginStatus.className = ""
+}
+
+/**
+ * Adds shake animation to the warning notice
+ */
+function shakeWarningNotice(warningElement) {
+  // Remove and force a reflow to re‑trigger the animation
+  warningElement.classList.remove("shake")
+  void warningElement.offsetWidth
+
+  // Add shake animation to the notice element
+  warningElement.classList.add("shake")
+  
+  // Remove the class after the animation completes
+  setTimeout(() => warningElement.classList.remove("shake"), 600)
+}

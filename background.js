@@ -6,65 +6,82 @@
  */
 
 /**
- * Ensures that the content script is loaded in the specified tab by pinging it.
+ * Ensures the content script is loaded in the tab by pinging it.
  * If not loaded, injects the content script.
  * @param {number} tabId - The ID of the tab to check/inject.
  * @returns {Promise<boolean>} Resolves to true when the content script is loaded.
  */
 async function ensureContentScriptLoaded(tabId) {
   try {
-    // Ping the content script
+    // Try to ping the content script
     await chrome.tabs.sendMessage(tabId, { action: "ping" })
     return true
   } catch (error) {
     console.log("Content script not loaded, injecting...")
+    
+    // Inject the content script
     await chrome.scripting.executeScript({
       target: { tabId: tabId },
       files: ["content-script.js"],
     })
+    
+    // Wait a moment for the script to initialize
     await new Promise((resolve) => setTimeout(resolve, 500))
     return true
   }
 }
 
+/**
+ * Handles the getData action from the popup.
+ * Ensures content script is loaded and forwards the message.
+ * @param {Object} message - The message from the popup.
+ */
+async function handleGetDataRequest(message) {
+  // Find the active tab
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+  const activeTab = tabs[0]
+  
+  if (!activeTab) {
+    console.error("No active tab found")
+    chrome.runtime.sendMessage({
+      action: "error",
+      error: "No active game tab found.",
+    })
+    return
+  }
+  
+  try {
+    // Make sure content script is loaded
+    await ensureContentScriptLoaded(activeTab.id)
+    
+    // Forward the request to the content script
+    console.log("Background forwarding message with uploadData:", message.uploadData)
+    await chrome.tabs.sendMessage(activeTab.id, {
+      action: "fetchData",
+      uploadData: message.uploadData,
+      listType: message.listType || null,
+      pageNumber: message.pageNumber || null,
+    })
+  } catch (error) {
+    console.error("Error sending message:", error)
+    chrome.runtime.sendMessage({
+      action: "error",
+      error: "Failed to communicate with page. Please refresh and try again.",
+    })
+  }
+}
+
 // Listen for messages from popup.js
-chrome.runtime.onMessage.addListener((message, sender) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Background received message:", message)
 
   if (message.action === "getData") {
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs[0]) {
-        try {
-          await ensureContentScriptLoaded(tabs[0].id)
-
-          // Forward the request to the content script, including upload flag
-          console.log("Background forwarding message with uploadData:", message.uploadData)
-          await chrome.tabs.sendMessage(tabs[0].id, {
-            action: "fetchData",
-            uploadData: message.uploadData,
-            listType: message.listType || null,
-            pageNumber: message.pageNumber || null,
-          })
-        } catch (error) {
-          console.error("Error sending message:", error)
-          chrome.runtime.sendMessage({
-            action: "error",
-            error:
-              "Failed to communicate with page. Please refresh and try again.",
-          })
-        }
-      } else {
-        console.error("No active tab found")
-        chrome.runtime.sendMessage({
-          action: "error",
-          error: "No active game tab found.",
-        })
-      }
-    })
+    handleGetDataRequest(message)
   } else if (message.action === "urlReady") {
-    // Open the URL in a new tab when we receive the urlReady message
+    // Forward the urlReady message back to the popup
     chrome.runtime.sendMessage(message)
   }
 
+  // Required for async message handling
   return true
 })
