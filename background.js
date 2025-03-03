@@ -37,9 +37,11 @@ chrome.runtime.onMessage.addListener((message, sender) => {
         try {
           await ensureContentScriptLoaded(tabs[0].id)
 
-          // Forward the request to the content script, including listType and pageNumber if provided
+          // Forward the request to the content script, including upload flag
+          console.log("Background forwarding message with uploadData:", message.uploadData)
           await chrome.tabs.sendMessage(tabs[0].id, {
             action: "fetchData",
+            uploadData: message.uploadData,
             listType: message.listType || null,
             pageNumber: message.pageNumber || null,
           })
