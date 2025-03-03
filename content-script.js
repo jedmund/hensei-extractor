@@ -160,10 +160,16 @@ function createListInfo(type, pageNumber) {
 function createDetailInfo(hash) {
   const parts = hash.split("/")
   const type = parts[1]
+  // Make sure we have a content ID
+  const contentId = parts[6] || null
+  if (!contentId) {
+    console.error("No content ID found in URL:", hash)
+  }
+  
   return {
     type: type,
     uid: parts[2],
-    contentId: parts[6],
+    contentId: contentId,
     endpoint: CONTENT_TYPES[type]?.endpoint,
     idType: CONTENT_TYPES[type]?.idType,
   }
@@ -402,7 +408,7 @@ async function uploadDataToGranblueTeam(payload) {
   }
 
   // Make the POST request
-  const response = await fetch("https://api.granblue.team/api/v1/import", {
+  const response = await fetch("https://api.granblue.team/v1/import", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -432,6 +438,63 @@ async function uploadDataToGranblueTeam(payload) {
   }
 }
 
+/**
+ * Uploads detail data (weapon, character, summon) to Granblue Team API.
+ * @param {Object} data - The data to upload.
+ * @param {string} type - The type of data (detail_npc, detail_weapon, detail_summon).
+ * @returns {Promise<Object>} The API response.
+ */
+async function uploadDetailDataToGranblueTeam(data, type) {
+  // Load your stored auth info from local storage
+  const { gbAuth } = await chrome.storage.local.get(["gbAuth"])
+  if (!gbAuth || !gbAuth.access_token) {
+    console.warn("No auth token found; cannot upload detail data.")
+    return { error: "Not authenticated; please log in to upload data." }
+  }
+
+  // Map content type to endpoint
+  let endpoint
+  if (type === "detail_npc") {
+    endpoint = "characters"
+  } else if (type === "detail_weapon") {
+    endpoint = "weapons"
+  } else if (type === "detail_summon") {
+    endpoint = "summons"
+  } else {
+    console.error(`Unknown detail type: ${type}`)
+    return { error: `Unknown detail type: ${type}` }
+  }
+
+  // Determine language from game data or fall back to user preference
+  let lang = "en"
+  if (data.cjs && data.cjs.includes("_jp/")) {
+    lang = "jp"
+  } else if (gbAuth.language === "ja") {
+    lang = "jp"
+  }
+
+  console.log(`Uploading ${endpoint} data with language: ${lang}`)
+
+  // Use correct path - fix api/v1 to v1
+  const response = await fetch(`https://api.granblue.team/v1/import/${endpoint}?lang=${lang}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${gbAuth.access_token}`
+    },
+    body: JSON.stringify(data)
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`Import request failed (${response.status}):`, errorText)
+    return { error: `Failed to upload data (${response.status}): ${errorText}` }
+  }
+
+  const result = await response.json()
+  return result
+}
+
 // Start observing DOM changes
 observeDOM()
 
@@ -459,16 +522,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         const data = await makeRequest(info)
+        let uploadResult = null
 
+        // Handle different data types
         if (info.type === "party") {
-          // Or, if you want to post for everything, remove this check
-          await uploadDataToGranblueTeam(data)
+          // For party pages, upload to Granblue.team
+          uploadResult = await uploadDataToGranblueTeam(data)
+        } else if (info.type === "detail_npc" || info.type === "detail_weapon" || info.type === "detail_summon") {
+          // For detail pages, upload to appropriate endpoint if requested
+          if (message.uploadData === true) {
+            console.log(`Uploading ${info.type} data`)
+            uploadResult = await uploadDetailDataToGranblueTeam(data, info.type)
+          } else {
+            console.log(`Fetched ${info.type} data (no upload)`)
+          }
         }
 
         chrome.runtime.sendMessage({
           action: "dataFetched",
           data: JSON.stringify(data, null, 2),
+          uploadResult: uploadResult,
           version: info.gameVersion,
+          dataType: info.type
         })
       } catch (error) {
         console.error("Fetch error:", error)

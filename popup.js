@@ -4,6 +4,8 @@ import {
   updateMainMessage,
   resetMainMessage,
   refreshAuthUI,
+  updateStatus,
+  resetStatus
 } from "./ui.js"
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -179,86 +181,153 @@ document.addEventListener("DOMContentLoaded", () => {
   importButton.addEventListener("click", async function () {
     console.log("Importing...")
     importButton.disabled = true
-
+  
     try {
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       })
-
+  
       // Ensure we're on a Granblue Fantasy game page
       if (!tab.url.includes("game.granbluefantasy.jp")) {
         updateStatus("Please navigate to a Granblue Fantasy game page", "error")
         importButton.disabled = false
         return
       }
-      // Ensure the current page is a party page
-      if (!tab.url.includes("#party/")) {
+  
+      // Check if we're on a detail page or party page
+      const isDetailPage = tab.url.includes("#archive/detail_")
+      const isPartyPage = tab.url.includes("#party/")
+  
+      if (!isDetailPage && !isPartyPage) {
         updateStatus(
-          "Not a party page. Please navigate to a party page to import.",
+          "Please navigate to a party, weapon, character, or summon page to import.",
           "error"
         )
         importButton.disabled = false
         return
       }
-
-      // Send a message to background.js (which will forward to the content script)
+  
+      // For import button, we want to upload the data to the server
+      console.log("Sending getData with uploadData=true")
       chrome.runtime.sendMessage({
         action: "getData",
+        uploadData: true // This flag indicates we want to upload the data
       })
     } catch (error) {
       importButton.disabled = false
+      updateStatus("Error: " + (error.message || "Unknown error"), "error")
     }
   })
 
   copyButton.addEventListener("click", async function () {
     console.log("Copying...")
     copyButton.disabled = true
-
+  
     try {
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       })
-
+  
       // Ensure we're on a Granblue Fantasy game page
       if (!tab.url.includes("game.granbluefantasy.jp")) {
         updateStatus("Please navigate to a Granblue Fantasy game page", "error")
-        importButton.disabled = false
+        copyButton.disabled = false
         return
       }
-      // Ensure the current page is a party page
-      if (!tab.url.includes("#party/")) {
+  
+      // Check if we're on a detail page or party page
+      const isDetailPage = tab.url.includes("#archive/detail_")
+      const isPartyPage = tab.url.includes("#party/")
+  
+      if (!isDetailPage && !isPartyPage) {
         updateStatus(
-          "Not a party page. Please navigate to a party page to import.",
+          "Please navigate to a party, weapon, character, or summon page to copy.",
           "error"
         )
-        importButton.disabled = false
+        copyButton.disabled = false
         return
       }
-
-      // Send a message to background.js (which will forward to the content script)
+  
+      // For copy button, we just want to fetch the data without uploading
       chrome.runtime.sendMessage({
         action: "getData",
+        uploadData: false // This flag indicates we don't want to upload
       })
     } catch (error) {
-      importButton.disabled = false
+      copyButton.disabled = false
+      updateStatus("Error: " + (error.message || "Unknown error"), "error")
     }
   })
-
+  
   // Handle messages from content script / background
   chrome.runtime.onMessage.addListener((message) => {
     console.log("Popup received message:", message)
-
+  
     if (message.action === "dataFetched") {
       if (message.version) {
-        updateVersion(message.version)
+        // Update version display if available
+        const versionElem = document.querySelector(".version")
+        if (versionElem) {
+          versionElem.textContent = message.version
+        }
       }
-
+  
+      // Handle different data types
+      const dataType = message.dataType || "unknown"
+      
+      // Handle upload results if any
+      if (message.uploadResult) {
+        if (message.uploadResult.error) {
+          // Show error message
+          updateStatus(message.uploadResult.error, "error")
+        } else if (message.uploadResult.shortcode) {
+          // For party data with shortcode - redirect to party page
+          chrome.tabs.create({ url: `https://granblue.team/p/${message.uploadResult.shortcode}` }, () => {
+            window.close() // Close popup after redirecting
+          })
+          return // Early return to avoid clipboard copy
+        } else if (message.uploadResult.message) {
+          // For detail data with success message
+          updateStatus(`✓ ${message.uploadResult.message}`, "success")
+          setTimeout(() => {
+            resetStatus()
+          }, 2000)
+          
+          // Also copy to clipboard for convenience
+          navigator.clipboard
+            .writeText(message.data)
+            .then(() => {
+              console.log("Data also copied to clipboard")
+            })
+            .catch((err) => {
+              console.error("Clipboard error:", err)
+            })
+            
+          importButton.disabled = false
+          copyButton.disabled = false
+          return // Early return
+        }
+      }
+      
+      // If we're here, we're just copying to clipboard (no upload or upload failed)
       navigator.clipboard
         .writeText(message.data)
         .then(() => {
-          updateStatus("\u2714 Data copied to clipboard!", "success")
+          // Show different success message based on data type
+          if (dataType === "party") {
+            updateStatus("✓ Party data copied!", "success")
+          } else if (dataType === "detail_npc") {
+            updateStatus("✓ Character data copied!", "success")
+          } else if (dataType === "detail_weapon") {
+            updateStatus("✓ Weapon data copied!", "success") 
+          } else if (dataType === "detail_summon") {
+            updateStatus("✓ Summon data copied!", "success")
+          } else {
+            updateStatus("✓ Data copied to clipboard!", "success")
+          }
+          
           setTimeout(() => {
             resetStatus()
           }, 2000)
@@ -269,10 +338,12 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .finally(() => {
           importButton.disabled = false
+          copyButton.disabled = false
         })
     } else if (message.action === "error") {
       updateStatus(message.error, "error")
       importButton.disabled = false
+      copyButton.disabled = false
     } else if (message.action === "urlReady") {
       // Open the URL in a new tab and close the extension
       chrome.tabs.create({ url: message.url }, () => {

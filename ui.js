@@ -67,34 +67,58 @@ export function updateMainMessage() {
     const messageElem = document.querySelector("#mainPane .message")
     const importContainer = document.getElementById("import-container")
 
+    // Check if on a party page
     if (url.includes("#party")) {
-      // If on a party page, show the import container and hide the message.
+      // If on a party page, show the import container and hide the message
       if (importContainer) {
         importContainer.style.display = "flex"
       }
       if (messageElem) {
         messageElem.style.display = "none"
       }
+    } 
+    // Check if on a detail page (weapon, character, summon)
+    else if (url.includes("#archive/detail_")) {
+      // If on a detail page, show the import container and hide the message
+      if (importContainer) {
+        importContainer.style.display = "flex"
+        // Update button text for detail pages
+        const importButton = document.getElementById("importButton")
+        if (importButton) {
+          if (url.includes("detail_npc")) {
+            importButton.textContent = "Import character"
+          } else if (url.includes("detail_weapon")) {
+            importButton.textContent = "Import weapon"
+          } else if (url.includes("detail_summon")) {
+            importButton.textContent = "Import summon"
+          } else {
+            importButton.textContent = "Import data"
+          }
+        }
+      }
+      if (messageElem) {
+        messageElem.style.display = "none"
+      }
     } else {
-      // Otherwise, hide the import container.
+      // Otherwise, hide the import container
       if (importContainer) {
         importContainer.style.display = "none"
       }
       // And update the message:
       if (messageElem) {
-        // For example, if the URL doesn't match a specific list page, show the blue notice.
+        // For example, if the URL doesn't match a specific list page, show the blue notice
         if (!url.includes("#list") && !url.includes("#party/index/0/npc/0")) {
           messageElem.innerHTML = `
             <div class="blue notice">
-              <p>Navigate to a party or inventory team to get started</p>
+              <p>Navigate to a party, weapon, character, or summon to get started</p>
             </div>
           `
         } else {
-          // Otherwise revert to the default message.
+          // Otherwise revert to the default message
           messageElem.innerHTML = `
             <p>
-              This extension lets you quickly and easily import your parties and
-              inventory into granblue.team.
+              This extension lets you quickly and easily import your parties,
+              weapons, characters and summons into granblue.team.
             </p>
           `
         }
@@ -109,7 +133,8 @@ export function resetMainMessage() {
   if (messageElem) {
     messageElem.innerHTML = `
       <p>
-        This extension lets you quickly and easily import your parties and inventory into granblue.team.
+        This extension lets you quickly and easily import your parties, weapons, 
+        characters, and summons into granblue.team.
       </p>
     `
   }
