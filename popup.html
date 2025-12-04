@@ -9,7 +9,7 @@
         <div class="header">
           <div class="title">
             <p>granblue.team</p>
-            <h1>Account Importer</h1>
+            <h1>Data Extractor</h1>
           </div>
           <img
             id="avatar"
@@ -20,25 +20,50 @@
 
         <div class="message">
           <p>
-            This extension lets you quickly and easily import your parties and
-            inventory into granblue.team.
+            This extension passively captures your game data as you browse.
+            No additional requests are made to GBF servers.
           </p>
         </div>
       </div>
 
-      <div id="import-container" class="buttons">
-        <div class="blue notice import" id="import-notice">
-          <p id="import-status"></p>
+      <!-- Cache Status Section -->
+      <div id="cache-status" class="cache-status">
+        <div class="cache-header">
+          <span class="cache-title">Captured Data</span>
+          <span class="cache-hint">Click to select</span>
+          <button id="clearCacheButton" class="btn-link">Clear all</button>
         </div>
-        <a id="importButton" class="button btn-green">Import party</a>
-        <a id="copyButton" class="button btn-white">Copy data</a>
+        <div id="cache-items" class="cache-items">
+          <p class="cache-empty">Browse the game to capture data</p>
+        </div>
       </div>
 
+      <!-- Export/Copy Buttons -->
+      <div id="export-container" class="buttons">
+        <div class="notice import" id="import-notice">
+          <p id="import-status"></p>
+        </div>
+        <div class="site-selector">
+          <label for="siteSelect">Export to:</label>
+          <select id="siteSelect">
+            <option value="production">granblue.team</option>
+            <option value="staging">next.granblue.team</option>
+          </select>
+        </div>
+        <a id="exportButton" class="button btn-green" disabled>Export</a>
+        <a id="copyButton" class="button btn-white" disabled>Copy JSON</a>
+      </div>
+
+      <!-- Warning Notice -->
       <div id="warning" class="notice">
         <div class="notice-text">
           <p>
-            Although this extension doesn't alter game code, please use it at
-            your own risk.
+            This extension only reads data your browser has already received.
+            It does NOT make additional requests to GBF servers or modify game behavior.
+          </p>
+          <p>
+            While this is the safest approach, third-party tools are technically
+            against Terms of Service. Use at your own risk.
           </p>
           <p>
             granblue.team assumes no responsibility for any account suspensions
@@ -50,9 +75,8 @@
         >
       </div>
 
-      <!-- Buttons container; hidden when user is logged in -->
+      <!-- Auth Buttons (hidden when logged in) -->
       <div id="main-buttons" class="buttons">
-        <!-- Sign up button (green) -->
         <a
           id="signupButton"
           class="button btn-green"
@@ -60,7 +84,6 @@
           href="https://granblue.team/auth/register"
           >Sign up</a
         >
-        <!-- Log in button (outlined) -->
         <a id="showLogin" class="button btn-white">Log in</a>
       </div>
     </div>
@@ -87,7 +110,6 @@
       <div class="header">
         <div class="title">
           <p>granblue.team</p>
-          <!-- Username will be updated dynamically -->
           <h1 id="loggedInUsername">Username</h1>
         </div>
         <button id="closeLoggedInPane" class="close">&times;</button>

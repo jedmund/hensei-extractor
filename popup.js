@@ -1,17 +1,25 @@
 /**
  * @fileoverview Popup script for the Granblue Fantasy Chrome extension.
  * Handles user interaction with the popup UI, login, and data operations.
+ *
+ * This version uses passive data interception - it works with cached data
+ * that was captured as the user browsed the game, rather than making
+ * direct API calls to GBF servers.
  */
 
-import { performLogin, fetchUserInfo } from "./auth.js"
+import { performLogin, fetchUserInfo, getApiBaseUrl } from "./auth.js"
 import {
   updateAvatarImage,
   updateMainMessage,
   resetMainMessage,
   refreshAuthUI,
   updateStatus,
-  resetStatus
+  resetStatus,
+  updateCacheStatusDisplay,
+  getSelectedDataType,
+  setSelectedDataType
 } from "./ui.js"
+import { formatCacheStatus } from "./cache.js"
 
 // ==========================================
 // INITIALIZATION
@@ -19,8 +27,42 @@ import {
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeEventListeners()
+  initializeSiteSelector()
   refreshAuthUI()
+  refreshCacheStatus()
 })
+
+// ==========================================
+// SITE SELECTION
+// ==========================================
+
+/**
+ * Initialize the site selector with saved preference
+ */
+async function initializeSiteSelector() {
+  const siteSelect = document.getElementById("siteSelect")
+  if (!siteSelect) return
+
+  // Load saved preference
+  const { selectedSite } = await chrome.storage.local.get("selectedSite")
+  if (selectedSite) {
+    siteSelect.value = selectedSite
+  }
+
+  // Save preference when changed
+  siteSelect.addEventListener("change", async () => {
+    await chrome.storage.local.set({ selectedSite: siteSelect.value })
+  })
+}
+
+/**
+ * Get the currently selected site
+ * @returns {Promise<string>} 'production' or 'staging'
+ */
+async function getSelectedSite() {
+  const { selectedSite } = await chrome.storage.local.get("selectedSite")
+  return selectedSite || "production"
+}
 
 // ==========================================
 // EVENT LISTENERS
@@ -46,19 +88,20 @@ function initializeEventListeners() {
     acknowledge: document.getElementById("acknowledgeButton"),
     showWarning: document.getElementById("showWarning"),
     warning: document.getElementById("warning"),
-    importButton: document.getElementById("importButton"),
-    copyButton: document.getElementById("copyButton")
+    exportButton: document.getElementById("exportButton"),
+    copyButton: document.getElementById("copyButton"),
+    clearCacheButton: document.getElementById("clearCacheButton")
   }
 
   // Set up UI navigation handlers
   setupNavigationHandlers(elements)
-  
+
   // Set up authentication handlers
   setupAuthHandlers(elements)
-  
+
   // Set up warning notice handlers
   setupWarningHandlers(elements)
-  
+
   // Set up data operation handlers
   setupDataHandlers(elements)
 
@@ -71,25 +114,25 @@ function initializeEventListeners() {
  */
 function setupNavigationHandlers(elements) {
   // Show login pane
-  elements.showLogin.addEventListener("click", () => {
+  elements.showLogin?.addEventListener("click", () => {
     elements.mainPane.classList.add("inactive")
     elements.loginPane.classList.add("active")
   })
 
   // Back to main from login
-  elements.backToMain.addEventListener("click", () => {
+  elements.backToMain?.addEventListener("click", () => {
     elements.mainPane.classList.remove("inactive")
     elements.loginPane.classList.remove("active")
   })
 
   // Close logged in pane
-  elements.closeLoggedInPane.addEventListener("click", () => {
+  elements.closeLoggedInPane?.addEventListener("click", () => {
     elements.mainPane.classList.remove("inactive")
     elements.loggedInPane.classList.remove("active")
   })
 
   // Avatar click (show profile if logged in, else login)
-  elements.avatar.addEventListener("click", async () => {
+  elements.avatar?.addEventListener("click", async () => {
     const { noticeAcknowledged, gbAuth } = await chrome.storage.local.get([
       "noticeAcknowledged",
       "gbAuth",
@@ -118,7 +161,7 @@ function setupNavigationHandlers(elements) {
  */
 function setupAuthHandlers(elements) {
   // Login button
-  elements.loginButton.addEventListener("click", async () => {
+  elements.loginButton?.addEventListener("click", async () => {
     const username = document.getElementById("loginUsername").value.trim()
     const password = document.getElementById("loginPassword").value.trim()
 
@@ -168,7 +211,7 @@ function setupAuthHandlers(elements) {
   })
 
   // Go to profile button
-  elements.goToProfile.addEventListener("click", async () => {
+  elements.goToProfile?.addEventListener("click", async () => {
     const { gbAuth } = await chrome.storage.local.get("gbAuth")
     if (gbAuth && gbAuth.user && gbAuth.user.username) {
       const profileUrl = `https://granblue.team/${gbAuth.user.username}`
@@ -177,7 +220,7 @@ function setupAuthHandlers(elements) {
   })
 
   // Logout button
-  elements.logoutButton.addEventListener("click", async () => {
+  elements.logoutButton?.addEventListener("click", async () => {
     await chrome.storage.local.remove(["gbAuth", "noticeAcknowledged"])
     elements.loggedInPane.classList.remove("active")
     elements.mainPane.classList.remove("inactive")
@@ -192,7 +235,7 @@ function setupAuthHandlers(elements) {
  */
 function setupWarningHandlers(elements) {
   // Acknowledge warning
-  elements.acknowledge.addEventListener("click", () => {
+  elements.acknowledge?.addEventListener("click", () => {
     chrome.storage.local.set({ noticeAcknowledged: true }, () => {
       elements.warning.style.display = "none"
       elements.mainButtons.style.display = "flex"
@@ -200,7 +243,7 @@ function setupWarningHandlers(elements) {
   })
 
   // Show warning button
-  elements.showWarning.addEventListener("click", () => {
+  elements.showWarning?.addEventListener("click", () => {
     chrome.storage.local.set({ noticeAcknowledged: false }, () => {
       refreshAuthUI()
     })
@@ -208,106 +251,174 @@ function setupWarningHandlers(elements) {
 }
 
 /**
- * Sets up handlers for data operations (import/copy)
+ * Sets up handlers for data operations (export/copy)
  */
 function setupDataHandlers(elements) {
-  // Import button
-  elements.importButton.addEventListener("click", async () => {
-    console.log("Importing...")
-    elements.importButton.disabled = true
-  
+  // Export button - uploads cached data to granblue.team
+  elements.exportButton?.addEventListener("click", async () => {
+    elements.exportButton.disabled = true
+    updateStatus("Preparing export...", "info")
+
     try {
-      const activeTab = await getActiveTab()
-      
-      if (!isGranblueFantasyPage(activeTab.url)) {
-        updateStatus("Please navigate to a Granblue Fantasy game page", "error")
-        elements.importButton.disabled = false
+      // Get the selected data type and site
+      const dataType = getSelectedDataType()
+      const site = await getSelectedSite()
+
+      if (!dataType) {
+        updateStatus("Please select data to export.", "error")
+        elements.exportButton.disabled = false
         return
       }
-      
-      if (!isValidDataPage(activeTab.url)) {
-        updateStatus(
-          "Please navigate to a party, weapon, character, or summon page to import.",
-          "error"
-        )
-        elements.importButton.disabled = false
-        return
-      }
-      
-      // Send message to upload data
-      chrome.runtime.sendMessage({
-        action: "getData",
-        uploadData: true
+
+      // Get cached data
+      const response = await chrome.runtime.sendMessage({
+        action: 'getCachedData',
+        dataType: dataType
       })
+
+      if (response.error) {
+        updateStatus(response.error, "error")
+        elements.exportButton.disabled = false
+        return
+      }
+
+      // Upload based on data type
+      let uploadResponse
+      if (dataType === 'party') {
+        uploadResponse = await chrome.runtime.sendMessage({
+          action: 'uploadPartyData',
+          data: response.data,
+          site: site
+        })
+      } else if (dataType.startsWith('detail_')) {
+        uploadResponse = await chrome.runtime.sendMessage({
+          action: 'uploadDetailData',
+          data: response.data,
+          dataType: dataType,
+          site: site
+        })
+      } else if (dataType.startsWith('collection_')) {
+        uploadResponse = await chrome.runtime.sendMessage({
+          action: 'uploadCollectionData',
+          data: response.data,
+          dataType: dataType,
+          updateExisting: false,
+          site: site
+        })
+      } else {
+        updateStatus("List export not yet supported", "error")
+        elements.exportButton.disabled = false
+        return
+      }
+
+      if (uploadResponse.error) {
+        updateStatus(uploadResponse.error, "error")
+      } else if (uploadResponse.url) {
+        // Open the new party page
+        chrome.tabs.create({ url: uploadResponse.url })
+        window.close()
+      } else if (uploadResponse.created !== undefined) {
+        // Collection import result
+        const msg = `Imported: ${uploadResponse.created} new, ${uploadResponse.updated} updated, ${uploadResponse.skipped} skipped`
+        updateStatus(msg, "success")
+        setTimeout(resetStatus, 4000)
+      } else {
+        updateStatus("Export successful!", "success")
+        setTimeout(resetStatus, 2000)
+      }
     } catch (error) {
-      elements.importButton.disabled = false
-      updateStatus("Error: " + (error.message || "Unknown error"), "error")
+      updateStatus("Export failed: " + error.message, "error")
+    } finally {
+      elements.exportButton.disabled = false
     }
   })
 
-  // Copy button
-  elements.copyButton.addEventListener("click", async () => {
-    console.log("Copying...")
+  // Copy button - copies cached data to clipboard
+  elements.copyButton?.addEventListener("click", async () => {
     elements.copyButton.disabled = true
-  
+
     try {
-      const activeTab = await getActiveTab()
-      
-      if (!isGranblueFantasyPage(activeTab.url)) {
-        updateStatus("Please navigate to a Granblue Fantasy game page", "error")
+      const dataType = getSelectedDataType()
+      if (!dataType) {
+        updateStatus("Please select data to copy.", "error")
         elements.copyButton.disabled = false
         return
       }
-      
-      if (!isValidDataPage(activeTab.url)) {
-        updateStatus(
-          "Please navigate to a party, weapon, character, or summon page to copy.",
-          "error"
-        )
-        elements.copyButton.disabled = false
-        return
-      }
-      
-      // Send message to copy data without uploading
-      chrome.runtime.sendMessage({
-        action: "getData",
-        uploadData: false
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'getCachedData',
+        dataType: dataType
       })
+
+      if (response.error) {
+        updateStatus(response.error, "error")
+        elements.copyButton.disabled = false
+        return
+      }
+
+      const jsonString = JSON.stringify(response.data, null, 2)
+      await navigator.clipboard.writeText(jsonString)
+
+      updateStatus(`${getDataTypeName(dataType)} data copied!`, "success")
+      setTimeout(resetStatus, 2000)
     } catch (error) {
+      updateStatus("Copy failed: " + error.message, "error")
+    } finally {
       elements.copyButton.disabled = false
-      updateStatus("Error: " + (error.message || "Unknown error"), "error")
     }
   })
-}
 
-/**
- * Retrieves the active tab
- */
-async function getActiveTab() {
-  const tabs = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
+  // Clear cache button
+  elements.clearCacheButton?.addEventListener("click", async () => {
+    await chrome.runtime.sendMessage({ action: 'clearCache' })
+    setSelectedDataType(null)
+    updateStatus("Cache cleared", "info")
+    setTimeout(resetStatus, 2000)
+    refreshCacheStatus()
   })
-  
-  if (!tabs || !tabs[0]) {
-    throw new Error("No active tab found")
+}
+
+// ==========================================
+// CACHE STATUS
+// ==========================================
+
+/**
+ * Refresh and display cache status
+ */
+async function refreshCacheStatus() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getCacheStatus' })
+
+    if (response.error) {
+      updateCacheStatusDisplay(null, response.error)
+      return
+    }
+
+    const formatted = formatCacheStatus(response)
+    updateCacheStatusDisplay(formatted)
+  } catch (error) {
+    updateCacheStatusDisplay(null, "Could not get cache status")
   }
-  
-  return tabs[0]
 }
 
 /**
- * Checks if the URL is a Granblue Fantasy game page
+ * Get display name for data type
  */
-function isGranblueFantasyPage(url) {
-  return url.includes("game.granbluefantasy.jp")
-}
-
-/**
- * Checks if the URL is a valid data page (detail or party)
- */
-function isValidDataPage(url) {
-  return url.includes("#archive/detail_") || url.includes("#party/")
+function getDataTypeName(dataType) {
+  const names = {
+    party: 'Party',
+    detail_npc: 'Character',
+    detail_weapon: 'Weapon',
+    detail_summon: 'Summon',
+    list_npc: 'Character list',
+    list_weapon: 'Weapon list',
+    list_summon: 'Summon list',
+    collection_weapon: 'Weapon Collection',
+    collection_npc: 'Character Collection',
+    collection_summon: 'Summon Collection',
+    collection_artifact: 'Artifact Collection'
+  }
+  return names[dataType] || dataType
 }
 
 // ==========================================
@@ -318,107 +429,14 @@ function isValidDataPage(url) {
  * Handles messages from content script / background
  */
 function handleMessages(message) {
-  console.log("Popup received message:", message)
-
-  if (message.action === "dataFetched") {
-    handleDataFetched(message)
+  if (message.action === "dataCaptured") {
+    // New data was captured, refresh the status
+    refreshCacheStatus()
+    updateStatus(`${getDataTypeName(message.dataType)} data captured!`, "success")
+    setTimeout(resetStatus, 2000)
   } else if (message.action === "error") {
     updateStatus(message.error, "error")
-    enableButtons()
-  } else if (message.action === "urlReady") {
-    // Open the URL in a new tab and close the extension
-    chrome.tabs.create({ url: message.url }, () => {
-      window.close()
-    })
   }
-}
-
-/**
- * Handles dataFetched messages
- */
-function handleDataFetched(message) {
-  updateVersionDisplay(message.version)
-  
-  // Handle upload results if any
-  if (message.uploadResult) {
-    if (message.uploadResult.error) {
-      // Show error message
-      updateStatus(message.uploadResult.error, "error")
-    } else if (message.uploadResult.shortcode) {
-      // For party data with shortcode - redirect to party page
-      chrome.tabs.create({ url: `https://granblue.team/p/${message.uploadResult.shortcode}` }, () => {
-        window.close() // Close popup after redirecting
-      })
-      return // Early return to avoid clipboard copy
-    } else if (message.uploadResult.message) {
-      // For detail data with success message
-      updateStatus(`✓ ${message.uploadResult.message}`, "success")
-      setTimeout(resetStatus, 2000)
-      
-      // Also copy to clipboard for convenience
-      copyToClipboard(message.data, "Data also copied to clipboard")
-      enableButtons()
-      return // Early return
-    }
-  }
-  
-  // If we're here, we're just copying to clipboard (no upload or upload failed)
-  const successMessage = getSuccessMessageForType(message.dataType)
-  copyToClipboard(message.data, successMessage)
-}
-
-/**
- * Updates the version display if available
- */
-function updateVersionDisplay(version) {
-  if (version) {
-    const versionElem = document.querySelector(".version")
-    if (versionElem) {
-      versionElem.textContent = version
-    }
-  }
-}
-
-/**
- * Gets an appropriate success message based on data type
- */
-function getSuccessMessageForType(dataType) {
-  if (dataType === "party") {
-    return "✓ Party data copied!"
-  } else if (dataType === "detail_npc") {
-    return "✓ Character data copied!"
-  } else if (dataType === "detail_weapon") {
-    return "✓ Weapon data copied!"
-  } else if (dataType === "detail_summon") {
-    return "✓ Summon data copied!"
-  } else {
-    return "✓ Data copied to clipboard!"
-  }
-}
-
-/**
- * Copies data to clipboard and shows a success message
- */
-function copyToClipboard(data, successMessage) {
-  navigator.clipboard
-    .writeText(data)
-    .then(() => {
-      updateStatus(successMessage, "success")
-      setTimeout(resetStatus, 2000)
-    })
-    .catch((err) => {
-      console.error("Clipboard error:", err)
-      updateStatus("Failed to copy data", "error")
-    })
-    .finally(enableButtons)
-}
-
-/**
- * Re-enables the import and copy buttons
- */
-function enableButtons() {
-  document.getElementById("importButton").disabled = false
-  document.getElementById("copyButton").disabled = false
 }
 
 // ==========================================
@@ -430,6 +448,7 @@ function enableButtons() {
  */
 function updateLoginStatus(message, type = "info") {
   const loginStatus = document.getElementById("loginStatus")
+  if (!loginStatus) return
   loginStatus.style.display = "block"
   loginStatus.textContent = message
   loginStatus.className = `status-${type}`
@@ -440,6 +459,7 @@ function updateLoginStatus(message, type = "info") {
  */
 function resetLoginStatus() {
   const loginStatus = document.getElementById("loginStatus")
+  if (!loginStatus) return
   loginStatus.style.display = "none"
   loginStatus.textContent = ""
   loginStatus.className = ""
@@ -449,13 +469,14 @@ function resetLoginStatus() {
  * Adds shake animation to the warning notice
  */
 function shakeWarningNotice(warningElement) {
-  // Remove and force a reflow to re‑trigger the animation
+  if (!warningElement) return
+  // Remove and force a reflow to re-trigger the animation
   warningElement.classList.remove("shake")
   void warningElement.offsetWidth
 
   // Add shake animation to the notice element
   warningElement.classList.add("shake")
-  
+
   // Remove the class after the animation completes
   setTimeout(() => warningElement.classList.remove("shake"), 600)
 }
