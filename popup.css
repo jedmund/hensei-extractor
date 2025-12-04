@@ -1,37 +1,51 @@
 /* ==========================================
-   FONT DEFINITIONS - AGrot from AWS S3
+   CSS VARIABLES
    ========================================== */
-@font-face {
-  font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/437fb160c86d1771.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+:root {
+  /* Colors */
+  --color-primary: #1976d2;
+  --color-primary-light: #e3f2fd;
+  --color-primary-border: #bbdefb;
+  --color-success: #4caf50;
+  --color-success-light: #e8f5e9;
+  --color-success-border: #c8e6c9;
+  --color-error: #c62828;
+  --color-error-light: #ffebee;
+  --color-error-border: #ffcdd2;
+  --color-warning: #fffcd2;
+  --color-warning-border: rgba(0, 0, 0, 0.05);
+  --color-text: #333;
+  --color-text-muted: #666;
+  --color-text-light: #999;
+  --color-link: #275dc5;
+  --color-bg: #f8f9fa;
+  --color-bg-white: white;
+  --color-border: rgba(0, 0, 0, 0.18);
+  --color-border-light: rgba(0, 0, 0, 0.1);
 
-@font-face {
-  font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/db6054d73906f6d1.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
 
-@font-face {
-  font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/a9a1343791e012e7.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
 }
 
 /* ==========================================
    BASE STYLES
    ========================================== */
    body {
-    width: 300px;
-    height: 400px;
-    font-family: 'AGrot', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    width: 480px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: lightgray;
     padding: 4px;
     display: flex;
@@ -67,7 +81,7 @@
     overflow-y: scroll;
     overflow-x: hidden;
     gap: 16px;
-    height: 400px;
+    height: 575px;
   }
   
   .main {
@@ -96,7 +110,7 @@
     border-radius: 8px;
     padding: 16px;
     width: 80%;
-    height: 400px;
+    height: 575px;
     position: absolute;
     top: 4px;
     right: 0;
@@ -195,9 +209,6 @@
     color: #1c395b;
   }
   
-  .blue.import.notice {
-    display: none;
-  }
   
   /* Status messages */
   #status {
@@ -398,54 +409,30 @@
   }
 
 /* ==========================================
-   CACHE STATUS
+   CACHE ITEMS
    ========================================== */
-.cache-status {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.cache-header {
+.cache-items {
   display: flex;
-  align-items: center;
-  margin-bottom: 8px;
+  flex-direction: column;
   gap: 8px;
-}
-
-.cache-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.cache-hint {
-  font-size: 10px;
-  color: #999;
   flex: 1;
+  overflow-y: auto;
 }
 
 .btn-link {
   background: none;
   border: none;
   color: #666;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
+  text-align: left;
 }
 
 .btn-link:hover {
   background: rgba(0,0,0,0.05);
   color: #333;
-}
-
-.cache-items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .cache-empty,
@@ -464,43 +451,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  background: white;
-  border-radius: 6px;
-  border: 2px solid #e0e0e0;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .cache-item:hover {
-  border-color: #90caf9;
-  background: #e3f2fd;
-}
-
-.cache-item.available {
-  border-color: #c8e6c9;
-  background: #f1f8e9;
-}
-
-.cache-item.available:hover {
-  border-color: #81c784;
+  background: #ebebeb;
 }
 
 .cache-item.selected {
-  border-color: #1976d2;
-  background: #e3f2fd;
-  box-shadow: 0 0 0 1px #1976d2;
+  background: #e0e0e0;
 }
 
 .cache-item.stale {
-  border-color: #ffecb3;
-  background: #fffde7;
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
-}
-
-.cache-icon {
-  font-size: 14px;
 }
 
 .cache-name {
@@ -520,8 +488,13 @@
    ========================================== */
 #export-container {
   display: none;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
+}
+
+#export-container .button {
+  flex: 1;
+  padding: 12px 16px;
 }
 
 #export-container .button[disabled] {
@@ -530,34 +503,83 @@
   pointer-events: none;
 }
 
-.site-selector {
+
+/* ==========================================
+   SETTINGS PANE
+   ========================================== */
+.settings.pane {
+  justify-content: flex-start;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.settings-username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.settings-description {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-option {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
-}
-
-.site-selector label {
-  font-size: 12px;
-  color: #666;
-  white-space: nowrap;
-}
-
-.site-selector select {
-  flex: 1;
-  padding: 6px 8px;
-  font-size: 13px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.site-selector select:hover {
-  border-color: #bbb;
+.settings-option:hover {
+  background: #eee;
 }
 
-.site-selector select:focus {
-  outline: none;
-  border-color: #1976d2;
+.settings-option input[type="radio"] {
+  margin: 0;
+  accent-color: #1976d2;
+}
+
+.settings-option span {
+  font-size: 14px;
+  color: #333;
+}
+
+.settings-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
