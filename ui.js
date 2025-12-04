@@ -11,17 +11,26 @@ import { DATA_TYPE_ORDER } from './constants.js'
  */
 export function updateAvatarImage(avatarInfo) {
   const avatarImg = document.getElementById("avatar")
+  const mainPane = document.getElementById("mainPane")
   if (!avatarImg) return
 
   if (avatarInfo) {
     // Update to user's custom avatar
     avatarImg.src = `https://granblue.team/profile/${avatarInfo.picture}@2x.png`
-    // Add element-specific class
+    // Add element-specific class to avatar and main pane
     avatarImg.className = `avatar ${avatarInfo.element}`
+    if (mainPane) {
+      // Remove old element classes and add new one
+      mainPane.classList.remove('fire', 'water', 'earth', 'wind', 'light', 'dark')
+      mainPane.classList.add(avatarInfo.element)
+    }
   } else {
     // Reset to default avatar
     avatarImg.src = "https://granblue.team/profile/npc@2x.png"
     avatarImg.className = "avatar"
+    if (mainPane) {
+      mainPane.classList.remove('fire', 'water', 'earth', 'wind', 'light', 'dark')
+    }
   }
 }
 
