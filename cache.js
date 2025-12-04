@@ -3,23 +3,10 @@
  * Provides helper functions for formatting cache status and managing cache data.
  */
 
-// Cache TTL in milliseconds (30 minutes)
-export const CACHE_TTL_MS = 30 * 60 * 1000
+import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
 
-// Data type display names
-export const DATA_TYPE_NAMES = {
-  party: 'Party',
-  detail_npc: 'Character',
-  detail_weapon: 'Weapon',
-  detail_summon: 'Summon',
-  list_npc: 'Character List',
-  list_weapon: 'Weapon List',
-  list_summon: 'Summon List',
-  collection_weapon: 'Weapon Collection',
-  collection_npc: 'Character Collection',
-  collection_summon: 'Summon Collection',
-  collection_artifact: 'Artifact Collection'
-}
+// Re-export for backward compatibility
+export { CACHE_TTL_MS } from './constants.js'
 
 /**
  * Format a timestamp age into a human-readable string
@@ -58,14 +45,14 @@ export function formatCacheStatus(status) {
     if (!info.available) {
       formatted[type] = {
         ...info,
-        displayName: DATA_TYPE_NAMES[type] || type,
+        displayName: getDataTypeName(type),
         statusText: 'No data',
         statusClass: 'unavailable'
       }
     } else if (info.isStale) {
       formatted[type] = {
         ...info,
-        displayName: DATA_TYPE_NAMES[type] || type,
+        displayName: getDataTypeName(type),
         statusText: 'Stale - refresh needed',
         statusClass: 'stale'
       }
@@ -79,7 +66,7 @@ export function formatCacheStatus(status) {
 
       formatted[type] = {
         ...info,
-        displayName: DATA_TYPE_NAMES[type] || type,
+        displayName: getDataTypeName(type),
         statusText: statusText,
         statusClass: 'available'
       }
@@ -87,26 +74,4 @@ export function formatCacheStatus(status) {
   }
 
   return formatted
-}
-
-/**
- * Get appropriate icon for data type
- * @param {string} dataType - The data type
- * @returns {string} Icon character or emoji
- */
-export function getDataTypeIcon(dataType) {
-  const icons = {
-    party: '⚔️',
-    detail_npc: '👤',
-    detail_weapon: '🗡️',
-    detail_summon: '✨',
-    list_npc: '👥',
-    list_weapon: '🗡️',
-    list_summon: '✨',
-    collection_weapon: '🗡️',
-    collection_npc: '👥',
-    collection_summon: '✨',
-    collection_artifact: '💎'
-  }
-  return icons[dataType] || '📄'
 }

@@ -7,31 +7,7 @@
  * requests to GBF servers. All game data comes from intercepted responses.
  */
 
-// ==========================================
-// API URL HELPERS
-// ==========================================
-
-/**
- * Get the API base URL for the selected site
- * @param {string} site - 'production' or 'staging'
- * @returns {string} The API base URL
- */
-function getApiBaseUrl(site = 'production') {
-  return site === 'staging'
-    ? 'https://next-api.granblue.team'
-    : 'https://api.granblue.team'
-}
-
-/**
- * Get the site base URL (for party links, etc.)
- * @param {string} site - 'production' or 'staging'
- * @returns {string} The site base URL
- */
-function getSiteBaseUrl(site = 'production') {
-  return site === 'staging'
-    ? 'https://next.granblue.team'
-    : 'https://granblue.team'
-}
+import { getApiBaseUrl, getSiteBaseUrl, TIMEOUTS } from './constants.js'
 
 // ==========================================
 // MESSAGE HANDLING
@@ -121,26 +97,36 @@ async function findGBFTab() {
 }
 
 /**
- * Ensure the content script is loaded in the tab
+ * Ensure the content script is loaded in the tab.
+ * Uses retry logic instead of fixed delay for reliability.
  */
 async function ensureContentScriptLoaded(tabId) {
-  try {
-    await chrome.tabs.sendMessage(tabId, { action: 'ping' })
-  } catch (error) {
-    // Content script not loaded, inject it
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['content-script.js']
-    })
-    // Also inject the interceptor in MAIN world
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['injector.js'],
-      world: 'MAIN'
-    })
-    // Wait for scripts to initialize
-    await new Promise(resolve => setTimeout(resolve, 100))
+  const maxAttempts = TIMEOUTS.scriptInitMaxAttempts
+  const baseDelay = TIMEOUTS.scriptInitBase
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await chrome.tabs.sendMessage(tabId, { action: 'ping' })
+      return // Script is loaded and responding
+    } catch (error) {
+      if (attempt === 0) {
+        // First attempt failed - inject the scripts
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['content-script.js']
+        })
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['injector.js'],
+          world: 'MAIN'
+        })
+      }
+      // Wait with exponential backoff before retrying
+      await new Promise(resolve => setTimeout(resolve, baseDelay * (attempt + 1)))
+    }
   }
+
+  throw new Error('Content script failed to load after multiple attempts')
 }
 
 // ==========================================
