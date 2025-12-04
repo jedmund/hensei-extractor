@@ -32,16 +32,18 @@ export async function refreshAuthUI() {
     "gbAuth",
     "noticeAcknowledged"
   ])
-  
+
   const mainButtons = document.getElementById("main-buttons")
   const warningNotice = document.getElementById("warning")
-  
+  const exportContainer = document.getElementById("export-container")
+
   if (!mainButtons || !warningNotice) return
 
   // Handle logged in state
   if (gbAuth && gbAuth.access_token) {
     mainButtons.style.display = "none"
     warningNotice.style.display = "none"
+    if (exportContainer) exportContainer.style.display = "flex"
     updateMainMessage()
 
     // Update avatar if available
@@ -51,15 +53,17 @@ export async function refreshAuthUI() {
 
     // Update username in logged-in pane
     updateLoggedInUsername(gbAuth.user?.username)
-  } 
+  }
   // Handle logged out state
   else {
     if (noticeAcknowledged) {
       warningNotice.style.display = "none"
       mainButtons.style.display = "flex"
+      if (exportContainer) exportContainer.style.display = "none"
     } else {
       warningNotice.style.display = "flex"
       mainButtons.style.display = "none"
+      if (exportContainer) exportContainer.style.display = "none"
     }
   }
 }
@@ -76,97 +80,18 @@ function updateLoggedInUsername(username) {
 }
 
 /**
- * Updates the main message area based on current page URL.
- * Shows different messages depending on if user is on a valid game page.
+ * Updates the main message area.
  */
 export function updateMainMessage() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs || !tabs[0]) return
-    
-    const url = tabs[0].url
-    console.log("Active tab URL:", url)
+  const messageElem = document.querySelector("#mainPane .message")
+  if (!messageElem) return
 
-    const messageElem = document.querySelector("#mainPane .message")
-    const importContainer = document.getElementById("import-container")
-    
-    if (!messageElem || !importContainer) return
-
-    // Check if on a valid import page
-    if (isPartyPage(url) || isDetailPage(url)) {
-      // Show import buttons, hide message
-      showImportContainer(importContainer, url)
-      messageElem.style.display = "none"
-    } else {
-      // Show message, hide import container
-      showAppropriateMessage(messageElem, url)
-      importContainer.style.display = "none"
-    }
-  })
-}
-
-/**
- * Checks if URL is a party page.
- * @param {string} url - The URL to check.
- * @returns {boolean} True if it's a party page.
- */
-function isPartyPage(url) {
-  return url.includes("#party")
-}
-
-/**
- * Checks if URL is a detail page.
- * @param {string} url - The URL to check.
- * @returns {boolean} True if it's a detail page.
- */
-function isDetailPage(url) {
-  return url.includes("#archive/detail_")
-}
-
-/**
- * Shows the import container and updates button text based on page type.
- * @param {HTMLElement} container - The import container element.
- * @param {string} url - Current page URL.
- */
-function showImportContainer(container, url) {
-  container.style.display = "flex"
-  
-  // Update button text for different detail pages
-  const importButton = document.getElementById("importButton")
-  if (importButton && isDetailPage(url)) {
-    if (url.includes("detail_npc")) {
-      importButton.textContent = "Import character"
-    } else if (url.includes("detail_weapon")) {
-      importButton.textContent = "Import weapon"
-    } else if (url.includes("detail_summon")) {
-      importButton.textContent = "Import summon"
-    } else {
-      importButton.textContent = "Import data"
-    }
-  }
-}
-
-/**
- * Shows appropriate message based on URL.
- * @param {HTMLElement} messageElem - The message element.
- * @param {string} url - Current page URL.
- */
-function showAppropriateMessage(messageElem, url) {
-  // If not on a list or party page, show navigation instructions
-  if (!url.includes("#list") && !url.includes("#party/index/0/npc/0")) {
-    messageElem.innerHTML = `
-      <div class="blue notice">
-        <p>Navigate to a party, weapon, character, or summon to get started</p>
-      </div>
-    `
-  } else {
-    // Default message
-    messageElem.innerHTML = `
-      <p>
-        This extension lets you quickly and easily import your parties,
-        weapons, characters and summons into granblue.team.
-      </p>
-    `
-  }
+  messageElem.innerHTML = `
+    <p>
+      This extension passively captures your game data as you browse.
+      No additional requests are made to GBF servers.
+    </p>
+  `
   messageElem.style.display = "block"
 }
 
@@ -176,11 +101,11 @@ function showAppropriateMessage(messageElem, url) {
 export function resetMainMessage() {
   const messageElem = document.querySelector("#mainPane .message")
   if (!messageElem) return
-  
+
   messageElem.innerHTML = `
     <p>
-      This extension lets you quickly and easily import your parties, weapons, 
-      characters, and summons into granblue.team.
+      This extension passively captures your game data as you browse.
+      No additional requests are made to GBF servers.
     </p>
   `
   messageElem.style.display = "block"
@@ -194,11 +119,11 @@ export function resetMainMessage() {
 export function updateStatus(message, type = "info") {
   const notice = document.getElementById("import-notice")
   const status = document.getElementById("import-status")
-  
+
   if (!notice || !status) return
-  
+
   notice.style.display = "block"
-  notice.className = `status-${type}`
+  notice.className = `notice status-${type}`
   status.textContent = message
 }
 
@@ -208,10 +133,157 @@ export function updateStatus(message, type = "info") {
 export function resetStatus() {
   const notice = document.getElementById("import-notice")
   const status = document.getElementById("import-status")
-  
+
   if (!notice || !status) return
-  
+
   notice.style.display = "none"
-  notice.className = ""
+  notice.className = "notice"
   status.textContent = ""
+}
+
+// Currently selected data type for export
+let selectedDataType = null
+
+/**
+ * Gets the currently selected data type
+ * @returns {string|null} The selected data type or null
+ */
+export function getSelectedDataType() {
+  return selectedDataType
+}
+
+/**
+ * Sets the selected data type and updates button states
+ * @param {string|null} dataType - The data type to select
+ */
+export function setSelectedDataType(dataType) {
+  selectedDataType = dataType
+  updateButtonStates()
+}
+
+/**
+ * Updates the export/copy button enabled states based on selection
+ */
+function updateButtonStates() {
+  const exportButton = document.getElementById("exportButton")
+  const copyButton = document.getElementById("copyButton")
+
+  if (selectedDataType) {
+    exportButton?.removeAttribute("disabled")
+    copyButton?.removeAttribute("disabled")
+  } else {
+    exportButton?.setAttribute("disabled", "true")
+    copyButton?.setAttribute("disabled", "true")
+  }
+}
+
+/**
+ * Updates the cache status display in the popup.
+ * @param {Object} status - Formatted cache status object.
+ * @param {string} error - Error message if status couldn't be retrieved.
+ * @param {Function} onSelect - Callback when an item is selected.
+ */
+export function updateCacheStatusDisplay(status, error = null, onSelect = null) {
+  const cacheItems = document.getElementById("cache-items")
+  if (!cacheItems) return
+
+  if (error) {
+    cacheItems.innerHTML = `<p class="cache-error">${error}</p>`
+    setSelectedDataType(null)
+    return
+  }
+
+  if (!status) {
+    cacheItems.innerHTML = `<p class="cache-empty">Browse the game to capture data</p>`
+    setSelectedDataType(null)
+    return
+  }
+
+  // Check if any data is available
+  const hasData = Object.values(status).some(s => s.available)
+
+  if (!hasData) {
+    cacheItems.innerHTML = `<p class="cache-empty">Browse the game to capture data</p>`
+    setSelectedDataType(null)
+    return
+  }
+
+  // Build cache status HTML
+  let html = ''
+  const displayOrder = [
+    'party',
+    'detail_npc', 'detail_weapon', 'detail_summon',
+    'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
+    'list_npc', 'list_weapon', 'list_summon'
+  ]
+
+  let firstAvailable = null
+
+  for (const type of displayOrder) {
+    const info = status[type]
+    if (!info || !info.available) continue
+
+    if (!firstAvailable) firstAvailable = type
+
+    const icon = getDataTypeIcon(type)
+    const isSelected = selectedDataType === type
+    const selectedClass = isSelected ? 'selected' : ''
+
+    html += `
+      <div class="cache-item ${info.statusClass} ${selectedClass}" data-type="${type}">
+        <span class="cache-icon">${icon}</span>
+        <span class="cache-name">${info.displayName}</span>
+        <span class="cache-age">${info.statusText}</span>
+      </div>
+    `
+  }
+
+  cacheItems.innerHTML = html || `<p class="cache-empty">Browse the game to capture data</p>`
+
+  // Auto-select first available if nothing selected
+  if (!selectedDataType && firstAvailable) {
+    setSelectedDataType(firstAvailable)
+    // Update the UI to show selection
+    const firstItem = cacheItems.querySelector(`[data-type="${firstAvailable}"]`)
+    firstItem?.classList.add('selected')
+  }
+
+  // Add click handlers to cache items
+  const items = cacheItems.querySelectorAll('.cache-item[data-type]')
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const type = item.getAttribute('data-type')
+
+      // Don't allow selecting stale items
+      if (item.classList.contains('stale')) return
+
+      // Update selection
+      items.forEach(i => i.classList.remove('selected'))
+      item.classList.add('selected')
+      setSelectedDataType(type)
+
+      // Call the onSelect callback if provided
+      if (onSelect) onSelect(type)
+    })
+  })
+}
+
+/**
+ * Get icon for data type
+ */
+function getDataTypeIcon(dataType) {
+  const icons = {
+    party: '⚔️',
+    detail_npc: '👤',
+    detail_weapon: '🗡️',
+    detail_summon: '✨',
+    list_npc: '👥',
+    list_weapon: '🗡️',
+    list_summon: '✨',
+    collection_weapon: '🗡️',
+    collection_npc: '👥',
+    collection_summon: '✨',
+    collection_artifact: '💎'
+  }
+  return icons[dataType] || '📄'
 }
