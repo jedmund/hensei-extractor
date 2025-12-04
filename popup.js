@@ -7,11 +7,9 @@
  * direct API calls to GBF servers.
  */
 
-import { performLogin, fetchUserInfo, getApiBaseUrl } from "./auth.js"
+import { performLogin, fetchUserInfo } from "./auth.js"
 import {
   updateAvatarImage,
-  updateMainMessage,
-  resetMainMessage,
   refreshAuthUI,
   updateStatus,
   resetStatus,
@@ -20,6 +18,7 @@ import {
   setSelectedDataType
 } from "./ui.js"
 import { formatCacheStatus } from "./cache.js"
+import { getDataTypeName, TIMEOUTS } from "./constants.js"
 
 // ==========================================
 // INITIALIZATION
@@ -27,33 +26,9 @@ import { formatCacheStatus } from "./cache.js"
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeEventListeners()
-  initializeSiteSelector()
   refreshAuthUI()
   refreshCacheStatus()
 })
-
-// ==========================================
-// SITE SELECTION
-// ==========================================
-
-/**
- * Initialize the site selector with saved preference
- */
-async function initializeSiteSelector() {
-  const siteSelect = document.getElementById("siteSelect")
-  if (!siteSelect) return
-
-  // Load saved preference
-  const { selectedSite } = await chrome.storage.local.get("selectedSite")
-  if (selectedSite) {
-    siteSelect.value = selectedSite
-  }
-
-  // Save preference when changed
-  siteSelect.addEventListener("change", async () => {
-    await chrome.storage.local.set({ selectedSite: siteSelect.value })
-  })
-}
 
 /**
  * Get the currently selected site
@@ -79,8 +54,9 @@ function initializeEventListeners() {
     backToMain: document.getElementById("backToMain"),
     mainPane: document.getElementById("mainPane"),
     loginPane: document.getElementById("loginPane"),
-    loggedInPane: document.getElementById("loggedInPane"),
-    closeLoggedInPane: document.getElementById("closeLoggedInPane"),
+    settingsPane: document.getElementById("settingsPane"),
+    closeSettingsPane: document.getElementById("closeSettingsPane"),
+    settingsUsername: document.getElementById("settingsUsername"),
     mainButtons: document.getElementById("main-buttons"),
     loginButton: document.getElementById("loginButton"),
     logoutButton: document.getElementById("logoutButton"),
@@ -90,7 +66,8 @@ function initializeEventListeners() {
     warning: document.getElementById("warning"),
     exportButton: document.getElementById("exportButton"),
     copyButton: document.getElementById("copyButton"),
-    clearCacheButton: document.getElementById("clearCacheButton")
+    clearCacheButton: document.getElementById("clearCacheButton"),
+    exportSiteRadios: document.querySelectorAll('input[name="exportSite"]')
   }
 
   // Set up UI navigation handlers
@@ -125,17 +102,18 @@ function setupNavigationHandlers(elements) {
     elements.loginPane.classList.remove("active")
   })
 
-  // Close logged in pane
-  elements.closeLoggedInPane?.addEventListener("click", () => {
+  // Close settings pane
+  elements.closeSettingsPane?.addEventListener("click", () => {
     elements.mainPane.classList.remove("inactive")
-    elements.loggedInPane.classList.remove("active")
+    elements.settingsPane.classList.remove("active")
   })
 
-  // Avatar click (show profile if logged in, else login)
+  // Avatar click (show settings if logged in, else login)
   elements.avatar?.addEventListener("click", async () => {
-    const { noticeAcknowledged, gbAuth } = await chrome.storage.local.get([
+    const { noticeAcknowledged, gbAuth, selectedSite } = await chrome.storage.local.get([
       "noticeAcknowledged",
       "gbAuth",
+      "selectedSite"
     ])
 
     // Only proceed if warning acknowledged
@@ -147,12 +125,26 @@ function setupNavigationHandlers(elements) {
     elements.mainPane.classList.add("inactive")
 
     if (gbAuth && gbAuth.access_token) {
-      document.getElementById("loggedInUsername").textContent = gbAuth.user.username
-      elements.loggedInPane.classList.add("active")
-      elements.mainButtons.style.display = "none"
+      // Update settings pane with user info
+      elements.settingsUsername.textContent = gbAuth.user.username
+
+      // Set the correct radio button for export site
+      const siteValue = selectedSite || 'production'
+      elements.exportSiteRadios.forEach(radio => {
+        radio.checked = radio.value === siteValue
+      })
+
+      elements.settingsPane.classList.add("active")
     } else {
       elements.loginPane.classList.add("active")
     }
+  })
+
+  // Handle export site radio changes
+  elements.exportSiteRadios.forEach(radio => {
+    radio.addEventListener("change", async (e) => {
+      await chrome.storage.local.set({ selectedSite: e.target.value })
+    })
   })
 }
 
@@ -200,7 +192,6 @@ function setupAuthHandlers(elements) {
         elements.mainPane.classList.remove("inactive")
         elements.mainButtons.style.display = "none"
         resetLoginStatus()
-        updateMainMessage()
       }, 1500)
     } catch (err) {
       console.error(err)
@@ -222,11 +213,11 @@ function setupAuthHandlers(elements) {
   // Logout button
   elements.logoutButton?.addEventListener("click", async () => {
     await chrome.storage.local.remove(["gbAuth", "noticeAcknowledged"])
-    elements.loggedInPane.classList.remove("active")
+    elements.settingsPane.classList.remove("active")
     elements.mainPane.classList.remove("inactive")
     elements.warning.style.display = "flex"
+    elements.mainButtons.style.display = "flex"
     updateAvatarImage()
-    resetMainMessage()
   })
 }
 
@@ -242,8 +233,11 @@ function setupWarningHandlers(elements) {
     })
   })
 
-  // Show warning button
+  // Show warning button (from settings pane)
   elements.showWarning?.addEventListener("click", () => {
+    // Close settings pane and show warning
+    elements.settingsPane.classList.remove("active")
+    elements.mainPane.classList.remove("inactive")
     chrome.storage.local.set({ noticeAcknowledged: false }, () => {
       refreshAuthUI()
     })
@@ -401,25 +395,6 @@ async function refreshCacheStatus() {
   }
 }
 
-/**
- * Get display name for data type
- */
-function getDataTypeName(dataType) {
-  const names = {
-    party: 'Party',
-    detail_npc: 'Character',
-    detail_weapon: 'Weapon',
-    detail_summon: 'Summon',
-    list_npc: 'Character list',
-    list_weapon: 'Weapon list',
-    list_summon: 'Summon list',
-    collection_weapon: 'Weapon Collection',
-    collection_npc: 'Character Collection',
-    collection_summon: 'Summon Collection',
-    collection_artifact: 'Artifact Collection'
-  }
-  return names[dataType] || dataType
-}
 
 // ==========================================
 // MESSAGE HANDLING

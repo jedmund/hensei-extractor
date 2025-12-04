@@ -3,6 +3,8 @@
  * Manages UI state updates and display for the popup.
  */
 
+import { DATA_TYPE_ORDER } from './constants.js'
+
 /**
  * Updates the avatar image in the popup.
  * @param {Object} avatarInfo - Contains `picture` and `element` properties.
@@ -44,15 +46,14 @@ export async function refreshAuthUI() {
     mainButtons.style.display = "none"
     warningNotice.style.display = "none"
     if (exportContainer) exportContainer.style.display = "flex"
-    updateMainMessage()
 
     // Update avatar if available
     if (gbAuth.avatar) {
       updateAvatarImage(gbAuth.avatar)
     }
 
-    // Update username in logged-in pane
-    updateLoggedInUsername(gbAuth.user?.username)
+    // Update username in settings pane
+    updateSettingsUsername(gbAuth.user?.username)
   }
   // Handle logged out state
   else {
@@ -69,46 +70,14 @@ export async function refreshAuthUI() {
 }
 
 /**
- * Updates the username displayed in the logged-in pane.
+ * Updates the username displayed in the settings pane.
  * @param {string} username - The username to display.
  */
-function updateLoggedInUsername(username) {
-  const usernameElem = document.getElementById("loggedInUsername")
+function updateSettingsUsername(username) {
+  const usernameElem = document.getElementById("settingsUsername")
   if (usernameElem && username) {
     usernameElem.textContent = username
   }
-}
-
-/**
- * Updates the main message area.
- */
-export function updateMainMessage() {
-  const messageElem = document.querySelector("#mainPane .message")
-  if (!messageElem) return
-
-  messageElem.innerHTML = `
-    <p>
-      This extension passively captures your game data as you browse.
-      No additional requests are made to GBF servers.
-    </p>
-  `
-  messageElem.style.display = "block"
-}
-
-/**
- * Resets the main message to default.
- */
-export function resetMainMessage() {
-  const messageElem = document.querySelector("#mainPane .message")
-  if (!messageElem) return
-
-  messageElem.innerHTML = `
-    <p>
-      This extension passively captures your game data as you browse.
-      No additional requests are made to GBF servers.
-    </p>
-  `
-  messageElem.style.display = "block"
 }
 
 /**
@@ -210,28 +179,19 @@ export function updateCacheStatusDisplay(status, error = null, onSelect = null) 
 
   // Build cache status HTML
   let html = ''
-  const displayOrder = [
-    'party',
-    'detail_npc', 'detail_weapon', 'detail_summon',
-    'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
-    'list_npc', 'list_weapon', 'list_summon'
-  ]
-
   let firstAvailable = null
 
-  for (const type of displayOrder) {
+  for (const type of DATA_TYPE_ORDER) {
     const info = status[type]
     if (!info || !info.available) continue
 
     if (!firstAvailable) firstAvailable = type
 
-    const icon = getDataTypeIcon(type)
     const isSelected = selectedDataType === type
     const selectedClass = isSelected ? 'selected' : ''
 
     html += `
       <div class="cache-item ${info.statusClass} ${selectedClass}" data-type="${type}">
-        <span class="cache-icon">${icon}</span>
         <span class="cache-name">${info.displayName}</span>
         <span class="cache-age">${info.statusText}</span>
       </div>
@@ -268,22 +228,3 @@ export function updateCacheStatusDisplay(status, error = null, onSelect = null) 
   })
 }
 
-/**
- * Get icon for data type
- */
-function getDataTypeIcon(dataType) {
-  const icons = {
-    party: '⚔️',
-    detail_npc: '👤',
-    detail_weapon: '🗡️',
-    detail_summon: '✨',
-    list_npc: '👥',
-    list_weapon: '🗡️',
-    list_summon: '✨',
-    collection_weapon: '🗡️',
-    collection_npc: '👥',
-    collection_summon: '✨',
-    collection_artifact: '💎'
-  }
-  return icons[dataType] || '📄'
-}

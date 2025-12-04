@@ -18,38 +18,20 @@
           />
         </div>
 
-        <div class="message">
-          <p>
-            This extension passively captures your game data as you browse.
-            No additional requests are made to GBF servers.
-          </p>
-        </div>
       </div>
 
-      <!-- Cache Status Section -->
-      <div id="cache-status" class="cache-status">
-        <div class="cache-header">
-          <span class="cache-title">Captured Data</span>
-          <span class="cache-hint">Click to select</span>
-          <button id="clearCacheButton" class="btn-link">Clear all</button>
-        </div>
-        <div id="cache-items" class="cache-items">
-          <p class="cache-empty">Browse the game to capture data</p>
-        </div>
+      <!-- Cache Items (main content) -->
+      <div id="cache-items" class="cache-items">
+        <p class="cache-empty">Browse the game to capture data</p>
+      </div>
+
+      <!-- Status Notice -->
+      <div class="notice import" id="import-notice" style="display: none;">
+        <p id="import-status"></p>
       </div>
 
       <!-- Export/Copy Buttons -->
       <div id="export-container" class="buttons">
-        <div class="notice import" id="import-notice">
-          <p id="import-status"></p>
-        </div>
-        <div class="site-selector">
-          <label for="siteSelect">Export to:</label>
-          <select id="siteSelect">
-            <option value="production">granblue.team</option>
-            <option value="staging">next.granblue.team</option>
-          </select>
-        </div>
         <a id="exportButton" class="button btn-green" disabled>Export</a>
         <a id="copyButton" class="button btn-white" disabled>Copy JSON</a>
       </div>
@@ -105,20 +87,53 @@
       <div id="loginStatus"></div>
     </div>
 
-    <!-- Logged-In Pane (slides in from the right) -->
-    <div id="loggedInPane" class="sliding pane logged-in">
+    <!-- Settings Pane (slides in from the right) -->
+    <div id="settingsPane" class="sliding pane settings">
       <div class="header">
         <div class="title">
           <p>granblue.team</p>
-          <h1 id="loggedInUsername">Username</h1>
+          <h1>Settings</h1>
         </div>
-        <button id="closeLoggedInPane" class="close">&times;</button>
+        <button id="closeSettingsPane" class="close">&times;</button>
       </div>
 
-      <a id="showWarning" class="link">Show extension disclaimer</a>
+      <!-- Account Section -->
+      <div class="settings-section">
+        <div class="settings-label">Account</div>
+        <div class="settings-account">
+          <span id="settingsUsername" class="settings-username">Not logged in</span>
+          <a id="goToProfileButton" class="btn-link">View profile</a>
+        </div>
+      </div>
 
-      <div class="buttons">
-        <a id="goToProfileButton" class="button btn-white">Go to profile</a>
+      <!-- Export Target Section -->
+      <div class="settings-section">
+        <div class="settings-label">Export to</div>
+        <div class="settings-options">
+          <label class="settings-option">
+            <input type="radio" name="exportSite" value="production" checked />
+            <span>granblue.team</span>
+          </label>
+          <label class="settings-option">
+            <input type="radio" name="exportSite" value="staging" />
+            <span>next.granblue.team</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- About Section -->
+      <div class="settings-section">
+        <div class="settings-label">About</div>
+        <p class="settings-description">
+          This extension passively captures your game data as you browse.
+          No additional requests are made to GBF servers.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="settings-footer">
+        <a id="showWarning" class="btn-link">Show extension disclaimer</a>
+        <a id="clearCacheButton" class="btn-link">Clear captured data</a>
         <a id="logoutButton" class="button btn-white">Log out</a>
       </div>
     </div>
