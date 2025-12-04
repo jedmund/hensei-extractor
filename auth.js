@@ -3,6 +3,36 @@
  * Handles login and user information requests to the Granblue Team API.
  */
 
+// ==========================================
+// API URL HELPERS
+// ==========================================
+
+/**
+ * Get the API base URL for the selected site
+ * @param {string} site - 'production' or 'staging'
+ * @returns {string} The API base URL
+ */
+export function getApiBaseUrl(site = 'production') {
+  return site === 'staging'
+    ? 'https://next-api.granblue.team'
+    : 'https://api.granblue.team'
+}
+
+/**
+ * Get the site base URL (for party links, etc.)
+ * @param {string} site - 'production' or 'staging'
+ * @returns {string} The site base URL
+ */
+export function getSiteBaseUrl(site = 'production') {
+  return site === 'staging'
+    ? 'https://next.granblue.team'
+    : 'https://granblue.team'
+}
+
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+
 /**
  * Performs the login request to Granblue Team API.
  * @param {string} username - User's email address.
@@ -11,8 +41,12 @@
  * @throws {Error} If login fails.
  */
 export async function performLogin(username, password) {
+  // Get the selected site from storage
+  const { selectedSite } = await chrome.storage.local.get("selectedSite")
+  const apiUrl = getApiBaseUrl(selectedSite)
+
   try {
-    const response = await fetch("https://api.granblue.team/oauth/token", {
+    const response = await fetch(`${apiUrl}/oauth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -64,9 +98,13 @@ function formatAuthData(data) {
  * @throws {Error} If the request fails.
  */
 export async function fetchUserInfo(username, accessToken) {
+  // Get the selected site from storage
+  const { selectedSite } = await chrome.storage.local.get("selectedSite")
+  const apiUrl = getApiBaseUrl(selectedSite)
+
   try {
     const response = await fetch(
-      `https://api.granblue.team/v1/users/info/${username}`,
+      `${apiUrl}/v1/users/info/${username}`,
       {
         method: "GET",
         headers: {
@@ -79,7 +117,7 @@ export async function fetchUserInfo(username, accessToken) {
     if (!response.ok) {
       throw new Error(`Failed to fetch user info: ${response.status}`)
     }
-    
+
     return await response.json()
   } catch (error) {
     console.error("Error fetching user info:", error)
