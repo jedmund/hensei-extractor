@@ -270,7 +270,10 @@ function renderDetailItems(dataType, data) {
       ${items.map(item => `
         <div class="list-item">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
-          <span class="list-item-name">${item.name || item.master?.name || ''}</span>
+          <div class="list-item-info">
+            <span class="list-item-name">${item.name || item.master?.name || ''}</span>
+            ${dataType.includes('artifact') ? getArtifactLabels(item) : ''}
+          </div>
         </div>
       `).join('')}
     </div>`
@@ -455,6 +458,27 @@ function getItemImageUrl(dataType, item) {
     return getImageUrl(`artifact-square/${artifactId}.jpg`)
   }
   return ''
+}
+
+/**
+ * Get element and proficiency labels for an artifact
+ */
+function getArtifactLabels(item) {
+  const element = item.attribute || item.element
+  const proficiency = item.kind || item.weapon_kind
+
+  let html = '<div class="list-item-labels">'
+
+  if (element) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/element-${element}.png`)}" alt="">`
+  }
+
+  if (proficiency) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency-${proficiency}.png`)}" alt="">`
+  }
+
+  html += '</div>'
+  return html
 }
 
 /**
