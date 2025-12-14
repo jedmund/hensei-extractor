@@ -289,8 +289,9 @@ function renderDetailItems(dataType, data) {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
+        const elementClass = getItemElementClass(item)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox checked ${elementClass}" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
@@ -310,8 +311,9 @@ function renderDetailItems(dataType, data) {
     const gridClass = getGridClass(dataType)
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${items.map((item, index) => {
+        const elementClass = getItemElementClass(item)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox checked ${elementClass}" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
@@ -324,13 +326,15 @@ function renderDetailItems(dataType, data) {
     </div>`
   }
 
-  // Add click handlers for checkboxes
+  // Add click handlers for selectable items (whole item toggles checkbox)
   if (isCollection) {
-    container.querySelectorAll('.item-checkbox').forEach(checkbox => {
-      checkbox.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const index = parseInt(checkbox.dataset.index, 10)
-        toggleItemSelection(index, checkbox)
+    container.querySelectorAll('.selectable').forEach(item => {
+      item.addEventListener('click', () => {
+        const index = parseInt(item.dataset.index, 10)
+        const checkbox = item.querySelector('.item-checkbox')
+        if (checkbox) {
+          toggleItemSelection(index, checkbox)
+        }
       })
     })
   }
@@ -599,6 +603,16 @@ function getArtifactLabels(item) {
 
   html += '</div>'
   return html
+}
+
+/**
+ * Get element class for an item's checkbox
+ */
+function getItemElementClass(item) {
+  const element = item.attribute || item.element
+  if (!element) return ''
+  const elementName = GAME_ELEMENT_NAMES[element]
+  return elementName ? elementName.toLowerCase() : ''
 }
 
 /**
