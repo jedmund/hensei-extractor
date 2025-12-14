@@ -1158,6 +1158,54 @@ body.light #detailImport {
 }
 
 /* ==========================================
+   DATABASE DETAIL VIEW
+   ========================================== */
+.database-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.database-detail-image {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.database-detail-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.database-detail-image.character-main img {
+  width: 280px;
+}
+
+.database-detail-image.weapon-main img,
+.database-detail-image.summon-main img {
+  width: 100%;
+}
+
+.database-detail-info {
+  text-align: center;
+}
+
+.database-detail-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text);
+}
+
+.database-detail-labels {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ==========================================
    UTILITY CLASSES
    ========================================== */
 .hidden {

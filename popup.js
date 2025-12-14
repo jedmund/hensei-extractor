@@ -214,6 +214,11 @@ async function showDetailView(dataType) {
     const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
     document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
+  } else if (isDatabaseDetailType(dataType)) {
+    // Database detail shows item name
+    const name = response.data.name || response.data.master?.name || ''
+    document.getElementById('detailPageCount').textContent = ''
+    document.getElementById('detailItemCount').textContent = name
   } else {
     document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
     document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
@@ -261,6 +266,13 @@ function isCollectionType(dataType) {
 }
 
 /**
+ * Check if a data type is a database detail type
+ */
+function isDatabaseDetailType(dataType) {
+  return dataType.startsWith('detail_')
+}
+
+/**
  * Render items in detail view
  */
 function renderDetailItems(dataType, data) {
@@ -269,6 +281,12 @@ function renderDetailItems(dataType, data) {
   // Party gets special sectioned layout
   if (dataType.startsWith('party_')) {
     renderPartyDetail(container, data)
+    return
+  }
+
+  // Database detail items get their own layout
+  if (isDatabaseDetailType(dataType)) {
+    renderDatabaseDetail(container, dataType, data)
     return
   }
 
@@ -501,6 +519,61 @@ function renderPartyDetail(container, data) {
   }
 
   container.innerHTML = html || '<p class="cache-empty">No party data</p>'
+}
+
+/**
+ * Render database detail view (single character/weapon/summon)
+ */
+function renderDatabaseDetail(container, dataType, data) {
+  const id = data.id || data.master?.id
+  const name = data.name || data.master?.name || 'Unknown'
+  const element = data.attribute || data.element
+  const rarity = data.rarity
+
+  let imageUrl = ''
+  let imageClass = ''
+
+  if (dataType === 'detail_npc') {
+    imageUrl = getImageUrl(`character-main/${id}_01.jpg`)
+    imageClass = 'character-main'
+  } else if (dataType === 'detail_weapon') {
+    imageUrl = getImageUrl(`weapon-main/${id}.jpg`)
+    imageClass = 'weapon-main'
+  } else if (dataType === 'detail_summon') {
+    imageUrl = getImageUrl(`summon-main/${id}.jpg`)
+    imageClass = 'summon-main'
+  }
+
+  let html = `
+    <div class="database-detail">
+      <div class="database-detail-image ${imageClass}">
+        <img src="${imageUrl}" alt="${name}">
+      </div>
+      <div class="database-detail-info">
+        <h2 class="database-detail-name">${name}</h2>
+        <div class="database-detail-labels">
+  `
+
+  // Add element label
+  if (element && GAME_ELEMENT_NAMES[element]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}">`
+  }
+
+  // Add proficiency label for weapons
+  if (dataType === 'detail_weapon') {
+    const proficiency = data.kind || data.weapon_kind
+    if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
+      html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[proficiency]}">`
+    }
+  }
+
+  html += `
+        </div>
+      </div>
+    </div>
+  `
+
+  container.innerHTML = html
 }
 
 /**
