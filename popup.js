@@ -33,6 +33,7 @@ let cachedStatus = null
 // Detail view navigation state
 let detailViewActive = false
 let currentDetailDataType = null
+let selectedItems = new Set() // Track selected item indices for collection views
 
 // ==========================================
 // INITIALIZATION
@@ -249,6 +250,16 @@ function countItems(dataType, data) {
   return items.length
 }
 
+// Checkmark SVG for checkboxes
+const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
+
+/**
+ * Check if a data type is a collection type (supports item selection)
+ */
+function isCollectionType(dataType) {
+  return dataType.startsWith('collection_') || dataType.startsWith('list_')
+}
+
 /**
  * Render items in detail view
  */
@@ -262,22 +273,35 @@ function renderDetailItems(dataType, data) {
   }
 
   const items = extractItems(dataType, data)
+  const isCollection = isCollectionType(dataType)
+
+  // Initialize all items as selected for collection views
+  if (isCollection) {
+    selectedItems = new Set(items.map((_, i) => i))
+  }
+
   const hasNames = items.some(item => item.name || item.master?.name)
 
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${items.map(item => {
+      ${items.map((item, index) => {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
+        const checkboxHtml = isCollection ? `
+          <label class="item-checkbox checked" data-index="${index}">
+            <span class="checkbox-indicator">${CHECK_ICON}</span>
+          </label>
+        ` : ''
         return `
-        <div class="list-item">
+        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${index}">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
             ${dataType.includes('artifact') ? getArtifactLabels(item) : ''}
           </div>
+          ${checkboxHtml}
         </div>
       `}).join('')}
     </div>`
@@ -285,12 +309,56 @@ function renderDetailItems(dataType, data) {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
-      ${items.map(item => `
-        <div class="grid-item">
+      ${items.map((item, index) => {
+        const checkboxHtml = isCollection ? `
+          <label class="item-checkbox checked" data-index="${index}">
+            <span class="checkbox-indicator">${CHECK_ICON}</span>
+          </label>
+        ` : ''
+        return `
+        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${index}">
           <img src="${getItemImageUrl(dataType, item)}" alt="">
+          ${checkboxHtml}
         </div>
-      `).join('')}
+      `}).join('')}
     </div>`
+  }
+
+  // Add click handlers for checkboxes
+  if (isCollection) {
+    container.querySelectorAll('.item-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const index = parseInt(checkbox.dataset.index, 10)
+        toggleItemSelection(index, checkbox)
+      })
+    })
+  }
+}
+
+/**
+ * Toggle item selection
+ */
+function toggleItemSelection(index, checkbox) {
+  if (selectedItems.has(index)) {
+    selectedItems.delete(index)
+    checkbox.classList.remove('checked')
+  } else {
+    selectedItems.add(index)
+    checkbox.classList.add('checked')
+  }
+  updateSelectionCount()
+}
+
+/**
+ * Update the selection count in the header
+ */
+function updateSelectionCount() {
+  const countEl = document.getElementById('detailItemCount')
+  if (countEl && isCollectionType(currentDetailDataType)) {
+    const total = document.querySelectorAll('#detailItems .item-checkbox').length
+    const selected = selectedItems.size
+    countEl.textContent = `${selected}/${total} selected`
   }
 }
 
@@ -545,6 +613,39 @@ function getGridClass(dataType) {
 }
 
 /**
+ * Filter collection data to only include selected items
+ */
+function filterSelectedItems(dataType, data) {
+  if (!isCollectionType(dataType)) return data
+
+  const items = extractItems(dataType, data)
+  const filteredItems = items.filter((_, i) => selectedItems.has(i))
+
+  // Reconstruct the data structure with filtered items
+  // Collection data is an object keyed by page number, each with a 'list' array
+  const result = {}
+  let itemIndex = 0
+
+  for (const [pageNum, pageData] of Object.entries(data)) {
+    const pageItems = pageData.list || []
+    const filteredPageItems = []
+
+    for (const item of pageItems) {
+      if (selectedItems.has(itemIndex)) {
+        filteredPageItems.push(item)
+      }
+      itemIndex++
+    }
+
+    if (filteredPageItems.length > 0) {
+      result[pageNum] = { ...pageData, list: filteredPageItems }
+    }
+  }
+
+  return result
+}
+
+/**
  * Handle copy from detail view
  */
 async function handleDetailCopy() {
@@ -561,9 +662,17 @@ async function handleDetailCopy() {
       return
     }
 
-    const jsonString = JSON.stringify(response.data, null, 2)
+    // Filter to selected items for collections
+    const dataToExport = filterSelectedItems(currentDetailDataType, response.data)
+
+    const jsonString = JSON.stringify(dataToExport, null, 2)
     await navigator.clipboard.writeText(jsonString)
-    showToast('Copied to clipboard')
+
+    if (isCollectionType(currentDetailDataType)) {
+      showToast(`Copied ${selectedItems.size} items`)
+    } else {
+      showToast('Copied to clipboard')
+    }
   } catch (error) {
     showToast('Failed to copy')
   }
@@ -593,23 +702,26 @@ async function handleDetailImport() {
       return
     }
 
+    // Filter to selected items for collections
+    const dataToUpload = filterSelectedItems(currentDetailDataType, response.data)
+
     // Upload based on data type
     let uploadResponse
     if (currentDetailDataType.startsWith('party_')) {
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
-        data: response.data
+        data: dataToUpload
       })
     } else if (currentDetailDataType.startsWith('detail_')) {
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadDetailData',
-        data: response.data,
+        data: dataToUpload,
         dataType: currentDetailDataType
       })
     } else if (currentDetailDataType.startsWith('collection_') || currentDetailDataType.startsWith('list_')) {
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadCollectionData',
-        data: response.data,
+        data: dataToUpload,
         dataType: currentDetailDataType,
         updateExisting: false
       })

@@ -938,6 +938,69 @@ body.light #detailImport {
   display: block;
 }
 
+.grid-item.selectable {
+  position: relative;
+}
+
+/* Item Checkbox */
+.item-checkbox {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.item-checkbox:hover {
+  background: var(--color-bg-hover);
+  transform: scale(1.05);
+}
+
+.item-checkbox.checked {
+  background: var(--color-primary);
+}
+
+.item-checkbox.checked:hover {
+  background: var(--color-primary-hover);
+}
+
+.checkbox-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  color: white;
+}
+
+.checkbox-indicator svg {
+  width: 12px;
+  height: 12px;
+}
+
+.item-checkbox.checked .checkbox-indicator {
+  opacity: 1;
+}
+
+/* List item checkbox positioning */
+.list-item.selectable {
+  position: relative;
+}
+
+.list-item .item-checkbox {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 /* Item List */
 .item-list {
   display: flex;
