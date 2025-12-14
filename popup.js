@@ -530,22 +530,22 @@ const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/
 function renderDatabaseDetail(container, dataType, data) {
   const id = data.id || data.master?.id
   const name = data.name || data.master?.name || 'Unknown'
-  const element = data.attribute || data.element
-  const rarity = data.rarity
+  const element = data.attribute || data.element || data.master?.attribute || data.master?.element
 
   let imageUrl = ''
   let fallbackUrl = ''
   let imageClass = ''
 
   // Use GBF's CDN since these are new items not yet on our S3
-  if (dataType === 'detail_npc') {
+  // Use startsWith to handle per-item data types (detail_npc_123, etc.)
+  if (dataType.startsWith('detail_npc')) {
     imageUrl = `${GBF_CDN}/npc/m/${id}_01.jpg`
     fallbackUrl = `${GBF_CDN}/npc/m/${id}_01_0.jpg`
     imageClass = 'character-main'
-  } else if (dataType === 'detail_weapon') {
+  } else if (dataType.startsWith('detail_weapon')) {
     imageUrl = `${GBF_CDN}/weapon/m/${id}.jpg`
     imageClass = 'weapon-main'
-  } else if (dataType === 'detail_summon') {
+  } else if (dataType.startsWith('detail_summon')) {
     imageUrl = `${GBF_CDN}/summon/m/${id}.jpg`
     imageClass = 'summon-main'
   }
@@ -558,32 +558,18 @@ function renderDatabaseDetail(container, dataType, data) {
         <img src="${imageUrl}" alt="${name}" ${fallbackAttr}>
       </div>
       <div class="database-detail-info">
-        <h2 class="database-detail-name">${name}</h2>
-        <div class="database-detail-labels">
   `
 
-  // Add element label
-  if (element && GAME_ELEMENT_NAMES[element]) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}">`
-  }
+  // Add type-specific stats (includes name, element, proficiency as rows)
+  // Proficiency is in specialty_weapon array for all types
+  const proficiencies = data.master?.specialty_weapon || data.specialty_weapon || []
 
-  // Add proficiency label for weapons
-  if (dataType === 'detail_weapon') {
-    const proficiency = data.kind || data.master?.kind
-    if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
-      html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[proficiency]}">`
-    }
-  }
-
-  html += `</div>`
-
-  // Add type-specific stats
-  if (dataType === 'detail_npc') {
-    html += renderCharacterStats(data)
-  } else if (dataType === 'detail_weapon') {
-    html += renderWeaponStats(data)
-  } else if (dataType === 'detail_summon') {
-    html += renderSummonStats(data)
+  if (dataType.startsWith('detail_npc')) {
+    html += renderCharacterStats(data, name, id, element, proficiencies)
+  } else if (dataType.startsWith('detail_weapon')) {
+    html += renderWeaponStats(data, name, id, element, proficiencies[0])
+  } else if (dataType.startsWith('detail_summon')) {
+    html += renderSummonStats(data, name, id, element)
   }
 
   html += `
@@ -597,23 +583,79 @@ function renderDatabaseDetail(container, dataType, data) {
 /**
  * Render character stats section
  */
-function renderCharacterStats(data) {
+function renderCharacterStats(data, name, id, element, proficiencies = []) {
   const master = data.master || data
   const param = data.param || {}
 
-  const uncap = param.evolution ?? 0
-  const maxUncap = master.max_evolution ?? 5
-  const transcend = param.phase ?? 0
   const ringed = param.has_npcaugment_constant
+
+  // HP/ATK: check param (current stats), then master (base stats), then top-level
+  const minHp = master.default_hp || data.default_hp
+  const maxHp = param.hp || master.max_hp || data.max_hp
+  const minAtk = master.default_attack || data.default_attack
+  const maxAtk = param.attack || master.max_attack || data.max_attack
+  const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
 
-  // Uncap stars
-  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(uncap, maxUncap)}</span></div>`
+  // Name
+  html += `<div class="stat-row"><span class="stat-label">Name</span><span class="stat-value">${name}</span></div>`
 
-  // Transcendence
-  if (transcend > 0 || maxUncap >= 6) {
-    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">${transcend > 0 ? `Stage ${transcend}` : 'None'}</span></div>`
+  // ID
+  if (id) {
+    html += `<div class="stat-row"><span class="stat-label">ID</span><span class="stat-value">${id}</span></div>`
+  }
+
+  // Series
+  const seriesId = data.series_id || master.series_id
+  if (seriesId && GAME_CHARACTER_SERIES_NAMES[seriesId]) {
+    html += `<div class="stat-row"><span class="stat-label">Series</span><span class="stat-value">${GAME_CHARACTER_SERIES_NAMES[seriesId]}</span></div>`
+  }
+
+  // Element
+  if (element && GAME_ELEMENT_NAMES[element]) {
+    html += `<div class="stat-row"><span class="stat-label">Element</span><span class="stat-value"><img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}"></span></div>`
+  }
+
+  // Proficiency (characters can have up to 2)
+  if (proficiencies.length > 0) {
+    const profIcons = proficiencies
+      .filter(p => GAME_PROFICIENCY_NAMES[p])
+      .map(p => `<img class="stat-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[p]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[p]}">`)
+      .join('')
+    if (profIcons) {
+      html += `<div class="stat-row"><span class="stat-label">Proficiency</span><span class="stat-value">${profIcons}</span></div>`
+    }
+  }
+
+  // Uncap stars (based on max level)
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderCharacterStars(level)}</span></div>`
+  }
+
+  // Min HP
+  if (minHp) {
+    html += `<div class="stat-row"><span class="stat-label">Min HP</span><span class="stat-value">${Number(minHp).toLocaleString()}</span></div>`
+  }
+
+  // Max HP
+  if (maxHp) {
+    html += `<div class="stat-row"><span class="stat-label">Max HP</span><span class="stat-value">${Number(maxHp).toLocaleString()}</span></div>`
+  }
+
+  // Min ATK
+  if (minAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Min ATK</span><span class="stat-value">${Number(minAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max ATK
+  if (maxAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Max ATK</span><span class="stat-value">${Number(maxAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max Level
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Max Level</span><span class="stat-value">${level}</span></div>`
   }
 
   // Perpetuity Ring
@@ -621,9 +663,10 @@ function renderCharacterStats(data) {
     html += `<div class="stat-row"><span class="stat-label">Perpetuity Ring</span><span class="stat-value">✓</span></div>`
   }
 
-  // Level
-  if (param.level) {
-    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${param.level}</span></div>`
+  // Comment/description
+  const comment = data.comment || master.comment
+  if (comment) {
+    html += `<div class="stat-row stat-comment"><span class="stat-value">${comment}</span></div>`
   }
 
   html += '</div>'
@@ -633,27 +676,71 @@ function renderCharacterStats(data) {
 /**
  * Render weapon stats section
  */
-function renderWeaponStats(data) {
+function renderWeaponStats(data, name, id, element, proficiency) {
   const master = data.master || data
   const param = data.param || {}
 
-  const level = param.level ?? 0
-  const uncap = calculateWeaponUncap(level)
-  const transcend = uncap > 5 ? calculateWeaponTranscend(level) : 0
+  // HP/ATK: check param (current stats), then master (base stats), then top-level
+  const minHp = master.default_hp || data.default_hp
+  const maxHp = param.hp || master.max_hp || data.max_hp
+  const minAtk = master.default_attack || data.default_attack
+  const maxAtk = param.attack || master.max_attack || data.max_attack
+  const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
 
-  // Uncap stars
-  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(Math.min(uncap, 5), 5)}</span></div>`
+  // Name
+  html += `<div class="stat-row"><span class="stat-label">Name</span><span class="stat-value">${name}</span></div>`
 
-  // Transcendence
-  if (transcend > 0) {
-    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">Stage ${transcend}</span></div>`
+  // ID
+  if (id) {
+    html += `<div class="stat-row"><span class="stat-label">ID</span><span class="stat-value">${id}</span></div>`
   }
 
-  // Level
+  // Series
+  const seriesId = data.series_id || master.series_id
+  if (seriesId && GAME_WEAPON_SERIES_NAMES[seriesId]) {
+    html += `<div class="stat-row"><span class="stat-label">Series</span><span class="stat-value">${GAME_WEAPON_SERIES_NAMES[seriesId]}</span></div>`
+  }
+
+  // Element
+  if (element && GAME_ELEMENT_NAMES[element]) {
+    html += `<div class="stat-row"><span class="stat-label">Element</span><span class="stat-value"><img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}"></span></div>`
+  }
+
+  // Proficiency
+  if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
+    html += `<div class="stat-row"><span class="stat-label">Proficiency</span><span class="stat-value"><img class="stat-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[proficiency]}"></span></div>`
+  }
+
+  // Uncap stars (based on max level)
   if (level) {
-    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${level}</span></div>`
+    html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderWeaponStars(level)}</span></div>`
+  }
+
+  // Min HP
+  if (minHp) {
+    html += `<div class="stat-row"><span class="stat-label">Min HP</span><span class="stat-value">${Number(minHp).toLocaleString()}</span></div>`
+  }
+
+  // Max HP
+  if (maxHp) {
+    html += `<div class="stat-row"><span class="stat-label">Max HP</span><span class="stat-value">${Number(maxHp).toLocaleString()}</span></div>`
+  }
+
+  // Min ATK
+  if (minAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Min ATK</span><span class="stat-value">${Number(minAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max ATK
+  if (maxAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Max ATK</span><span class="stat-value">${Number(maxAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max Level
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Max Level</span><span class="stat-value">${level}</span></div>`
   }
 
   // Awakening
@@ -669,6 +756,12 @@ function renderWeaponStats(data) {
     html += `<div class="stat-row"><span class="stat-label">AX Skills</span><span class="stat-value">${axCount} skill${axCount > 1 ? 's' : ''}</span></div>`
   }
 
+  // Comment/description
+  const comment = data.comment || master.comment
+  if (comment) {
+    html += `<div class="stat-row stat-comment"><span class="stat-value">${comment}</span></div>`
+  }
+
   html += '</div>'
   return html
 }
@@ -676,28 +769,66 @@ function renderWeaponStats(data) {
 /**
  * Render summon stats section
  */
-function renderSummonStats(data) {
+function renderSummonStats(data, name, id, element) {
   const master = data.master || data
   const param = data.param || {}
 
-  const uncap = param.evolution ?? 0
-  const maxUncap = master.max_evolution ?? 5
-  const level = param.level ?? 0
-  const transcend = calculateSummonTranscend(level)
+  // HP/ATK: check param (current stats), then master (base stats), then top-level
+  const minHp = master.default_hp || data.default_hp
+  const maxHp = param.hp || master.max_hp || data.max_hp
+  const minAtk = master.default_attack || data.default_attack
+  const maxAtk = param.attack || master.max_attack || data.max_attack
+  const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
 
-  // Uncap stars
-  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(Math.min(uncap, 5), 5)}</span></div>`
+  // Name
+  html += `<div class="stat-row"><span class="stat-label">Name</span><span class="stat-value">${name}</span></div>`
 
-  // Transcendence
-  if (transcend > 0 || uncap >= 5) {
-    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">${transcend > 0 ? `Stage ${transcend}` : 'None'}</span></div>`
+  // ID
+  if (id) {
+    html += `<div class="stat-row"><span class="stat-label">ID</span><span class="stat-value">${id}</span></div>`
   }
 
-  // Level
+  // Series
+  const seriesId = data.series_id || master.series_id
+  if (seriesId && GAME_SUMMON_SERIES_NAMES[seriesId]) {
+    html += `<div class="stat-row"><span class="stat-label">Series</span><span class="stat-value">${GAME_SUMMON_SERIES_NAMES[seriesId]}</span></div>`
+  }
+
+  // Element
+  if (element && GAME_ELEMENT_NAMES[element]) {
+    html += `<div class="stat-row"><span class="stat-label">Element</span><span class="stat-value"><img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}"></span></div>`
+  }
+
+  // Uncap stars (based on max level)
   if (level) {
-    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${level}</span></div>`
+    html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderSummonStars(level)}</span></div>`
+  }
+
+  // Min HP
+  if (minHp) {
+    html += `<div class="stat-row"><span class="stat-label">Min HP</span><span class="stat-value">${Number(minHp).toLocaleString()}</span></div>`
+  }
+
+  // Max HP
+  if (maxHp) {
+    html += `<div class="stat-row"><span class="stat-label">Max HP</span><span class="stat-value">${Number(maxHp).toLocaleString()}</span></div>`
+  }
+
+  // Min ATK
+  if (minAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Min ATK</span><span class="stat-value">${Number(minAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max ATK
+  if (maxAtk) {
+    html += `<div class="stat-row"><span class="stat-label">Max ATK</span><span class="stat-value">${Number(maxAtk).toLocaleString()}</span></div>`
+  }
+
+  // Max Level
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Max Level</span><span class="stat-value">${level}</span></div>`
   }
 
   // Sub Aura
@@ -706,43 +837,116 @@ function renderSummonStats(data) {
     html += `<div class="stat-row"><span class="stat-label">Sub Aura</span><span class="stat-value">${subAura}</span></div>`
   }
 
+  // Comment/description
+  const comment = data.comment || master.comment
+  if (comment) {
+    html += `<div class="stat-row stat-comment"><span class="stat-value">${comment}</span></div>`
+  }
+
   html += '</div>'
   return html
 }
 
 /**
- * Render uncap stars
+ * Render uncap stars for characters based on max level
+ * - Max level 80: 4 yellow stars
+ * - Max level 100: 4 yellow + 1 blue star
+ * - Max level 150: 4 yellow + 1 blue + 1 purple star
+ * @param {number} maxLevel - The character's max level
+ * @returns {string} HTML string for stars
  */
-function renderStars(current, max) {
-  let stars = ''
-  for (let i = 0; i < max; i++) {
-    stars += i < current ? '★' : '☆'
+function renderCharacterStars(maxLevel) {
+  let html = '<span class="stars">'
+
+  // 4 yellow stars for base (max level 80)
+  for (let i = 0; i < 4; i++) {
+    html += '<span class="star filled"></span>'
   }
-  return stars
+
+  // 1 blue star for FLB (max level 100)
+  if (maxLevel >= 100) {
+    html += '<span class="star flb"></span>'
+  }
+
+  // 1 purple star for ULB (max level 150)
+  if (maxLevel >= 150) {
+    html += '<span class="star ulb"></span>'
+  }
+
+  html += '</span>'
+  return html
 }
 
 /**
- * Calculate weapon uncap level from level
+ * Render uncap stars for weapons based on max level
+ * - Max level 100: 3 yellow stars
+ * - Max level 150: 3 yellow + 1 blue star
+ * - Max level 200: 3 yellow + 2 blue stars
+ * - Max level 250: 3 yellow + 2 blue + 1 purple star
+ * @param {number} maxLevel - The weapon's max level
+ * @returns {string} HTML string for stars
  */
-function calculateWeaponUncap(level) {
-  const thresholds = [40, 60, 80, 100, 150, 200]
-  return thresholds.filter(t => level > t).length
+function renderWeaponStars(maxLevel) {
+  let html = '<span class="stars">'
+
+  // 3 yellow stars for base (max level 100)
+  for (let i = 0; i < 3; i++) {
+    html += '<span class="star filled"></span>'
+  }
+
+  // 1 blue star for FLB (max level 150)
+  if (maxLevel >= 150) {
+    html += '<span class="star flb"></span>'
+  }
+
+  // 2nd blue star for ULB (max level 200)
+  if (maxLevel >= 200) {
+    html += '<span class="star flb"></span>'
+  }
+
+  // 1 purple star for transcendence (max level 250)
+  if (maxLevel >= 250) {
+    html += '<span class="star ulb"></span>'
+  }
+
+  html += '</span>'
+  return html
 }
 
 /**
- * Calculate weapon transcendence level from level
+ * Render uncap stars for summons based on max level
+ * - Max level 100: 3 yellow stars
+ * - Max level 150: 3 yellow + 1 blue star
+ * - Max level 200: 3 yellow + 2 blue stars
+ * - Max level 250: 3 yellow + 2 blue + 1 purple star
+ * @param {number} maxLevel - The summon's max level
+ * @returns {string} HTML string for stars
  */
-function calculateWeaponTranscend(level) {
-  const thresholds = [210, 220, 230, 240]
-  return 1 + thresholds.filter(t => level > t).length
-}
+function renderSummonStars(maxLevel) {
+  let html = '<span class="stars">'
 
-/**
- * Calculate summon transcendence level from level
- */
-function calculateSummonTranscend(level) {
-  const thresholds = [210, 220, 230, 240]
-  return thresholds.filter(t => level > t).length
+  // 3 yellow stars for base (max level 100)
+  for (let i = 0; i < 3; i++) {
+    html += '<span class="star filled"></span>'
+  }
+
+  // 1 blue star for FLB (max level 150)
+  if (maxLevel >= 150) {
+    html += '<span class="star flb"></span>'
+  }
+
+  // 2nd blue star for ULB (max level 200)
+  if (maxLevel >= 200) {
+    html += '<span class="star flb"></span>'
+  }
+
+  // 1 purple star for transcendence (max level 250)
+  if (maxLevel >= 250) {
+    html += '<span class="star ulb"></span>'
+  }
+
+  html += '</span>'
+  return html
 }
 
 /**
@@ -837,6 +1041,94 @@ const GAME_PROFICIENCY_NAMES = {
   8: 'Harp',
   9: 'Gun',
   10: 'Katana'
+}
+
+// Game series_id to name mapping for characters (raw GBF data)
+const GAME_CHARACTER_SERIES_NAMES = {
+  1: 'Summer',
+  2: 'Yukata',
+  3: 'Valentine',
+  4: 'Halloween',
+  5: 'Holiday',
+  6: 'Zodiac',
+  7: 'Grand',
+  8: 'Fantasy',
+  9: 'Collab',
+  10: 'Eternal',
+  11: 'Evoker',
+  12: 'Saint',
+  13: 'Formal'
+}
+
+// Game series_id to name mapping for weapons (raw GBF data)
+const GAME_WEAPON_SERIES_NAMES = {
+  1: 'Seraphic',
+  2: 'Grand',
+  3: 'Dark Opus',
+  4: 'Revenant',
+  5: 'Primal',
+  6: 'Beast',
+  7: 'Regalia',
+  8: 'Omega',
+  9: 'Olden Primal',
+  10: 'Hollowsky',
+  11: 'Xeno',
+  12: 'Rose',
+  13: 'Ultima',
+  14: 'Bahamut',
+  15: 'Epic',
+  16: 'Cosmos',
+  17: 'Superlative',
+  18: 'Vintage',
+  19: 'Class Champion',
+  20: 'Replica',
+  21: 'Relic',
+  22: 'Rusted',
+  23: 'Sephira',
+  24: 'Vyrmament',
+  25: 'Upgrader',
+  26: 'Astral',
+  27: 'Draconic',
+  28: 'Eternal Splendor',
+  29: 'Ancestral',
+  30: 'New World Foundation',
+  31: 'Ennead',
+  32: 'Militis',
+  33: 'Malice',
+  34: 'Menace',
+  35: 'Illustrious',
+  36: 'Proven',
+  37: 'Revans',
+  38: 'World',
+  39: 'Exo',
+  40: 'Draconic Providence',
+  41: 'Celestial',
+  42: 'Omega Rebirth',
+  43: 'Collab',
+  44: 'Destroyer'
+}
+
+// Game series_id to name mapping for summons (raw GBF data)
+const GAME_SUMMON_SERIES_NAMES = {
+  1: 'Providence',
+  2: 'Genesis',
+  3: 'Magna',
+  4: 'Optimus',
+  5: 'Demi Optimus',
+  6: 'Archangel',
+  7: 'Arcarum',
+  8: 'Epic',
+  9: 'Carbuncle',
+  10: 'Dynamis',
+  12: 'Cryptid',
+  13: 'Six Dragons',
+  14: 'Summer',
+  15: 'Yukata',
+  16: 'Holiday',
+  17: 'Collab',
+  18: 'Bellum',
+  19: 'Crest',
+  20: 'Robur'
 }
 
 /**
@@ -1179,12 +1471,21 @@ function updateTabCacheDisplay(tabName, status) {
   const container = document.getElementById(`${tabName}Items`)
   if (!container) return
 
-  // Get types to display - for party tab, discover dynamically from status
+  // Get types to display - party and database tabs discover dynamically from status
   let typesToDisplay = []
   if (tabName === 'party') {
     // Find all party_* types in status
     typesToDisplay = Object.keys(status || {})
       .filter(type => type.startsWith('party_') && status[type]?.available)
+  } else if (tabName === 'database') {
+    // Find all detail_*_* types in status (per-item, like parties)
+    typesToDisplay = Object.keys(status || {})
+      .filter(type =>
+        (type.startsWith('detail_npc_') ||
+         type.startsWith('detail_weapon_') ||
+         type.startsWith('detail_summon_')) &&
+        status[type]?.available
+      )
   } else {
     typesToDisplay = (TAB_DATA_TYPES[tabName] || [])
       .filter(type => status?.[type]?.available)
