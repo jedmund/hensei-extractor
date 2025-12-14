@@ -521,6 +521,9 @@ function renderPartyDetail(container, data) {
   container.innerHTML = html || '<p class="cache-empty">No party data</p>'
 }
 
+// Granblue Fantasy CDN for game assets
+const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
+
 /**
  * Render database detail view (single character/weapon/summon)
  */
@@ -533,14 +536,15 @@ function renderDatabaseDetail(container, dataType, data) {
   let imageUrl = ''
   let imageClass = ''
 
+  // Use GBF's CDN since these are new items not yet on our S3
   if (dataType === 'detail_npc') {
-    imageUrl = getImageUrl(`character-main/${id}_01.jpg`)
+    imageUrl = `${GBF_CDN}/npc/zoom/${id}.png`
     imageClass = 'character-main'
   } else if (dataType === 'detail_weapon') {
-    imageUrl = getImageUrl(`weapon-main/${id}.jpg`)
+    imageUrl = `${GBF_CDN}/weapon/m/${id}.jpg`
     imageClass = 'weapon-main'
   } else if (dataType === 'detail_summon') {
-    imageUrl = getImageUrl(`summon-main/${id}.jpg`)
+    imageUrl = `${GBF_CDN}/summon/m/${id}.jpg`
     imageClass = 'summon-main'
   }
 
