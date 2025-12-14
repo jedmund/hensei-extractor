@@ -3,6 +3,12 @@
  * Handles login and user information requests to the Granblue Team API.
  */
 
+import { getApiUrl, getEnvConfig } from './constants.js'
+
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+
 /**
  * Performs the login request to Granblue Team API.
  * @param {string} username - User's email address.
@@ -11,8 +17,10 @@
  * @throws {Error} If login fails.
  */
 export async function performLogin(username, password) {
+  const config = await getEnvConfig()
+
   try {
-    const response = await fetch("https://api.granblue.team/oauth/token", {
+    const response = await fetch(`${config.apiUrl}/oauth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -57,16 +65,18 @@ function formatAuthData(data) {
 }
 
 /**
- * Fetches additional user information from Granblue Team API.
- * @param {string} username - User's username.
+ * Fetches current user's settings from Granblue Team API.
+ * Uses the /users/me endpoint which gets user from the access token.
  * @param {string} accessToken - OAuth access token.
- * @returns {Promise<Object>} The user info object.
+ * @returns {Promise<Object>} The user settings object.
  * @throws {Error} If the request fails.
  */
-export async function fetchUserInfo(username, accessToken) {
+export async function fetchUserInfo(accessToken) {
+  const apiUrl = await getApiUrl('/users/me')
+
   try {
     const response = await fetch(
-      `https://api.granblue.team/v1/users/info/${username}`,
+      apiUrl,
       {
         method: "GET",
         headers: {
@@ -79,7 +89,7 @@ export async function fetchUserInfo(username, accessToken) {
     if (!response.ok) {
       throw new Error(`Failed to fetch user info: ${response.status}`)
     }
-    
+
     return await response.json()
   } catch (error) {
     console.error("Error fetching user info:", error)

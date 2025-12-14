@@ -15,3 +15,6 @@ cookie-sample.json
 
 # Don't commit the built manifest.json (since it has keys)
 manifest.json
+
+# Don't commit documentation drafts
+docs/
