@@ -451,7 +451,8 @@ function getItemImageUrl(dataType, item) {
     return getImageUrl(`summon-square/${granblueId}.jpg`)
   }
   if (dataType.includes('artifact')) {
-    return getImageUrl(`artifact-square/${granblueId}.jpg`)
+    const artifactId = item.artifact_id || granblueId
+    return getImageUrl(`artifact-square/${artifactId}.jpg`)
   }
   return ''
 }
