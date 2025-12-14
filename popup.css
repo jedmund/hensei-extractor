@@ -994,9 +994,16 @@ body.light #detailImport {
   display: block;
 }
 
-/* Accessories grid (smaller squares) */
+/* Accessories grid (squares) */
 .item-grid.accessories {
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-grid.accessories .grid-item img {
+  height: auto;
+  width: 80px;
 }
 
 /* Cache item chevron */
