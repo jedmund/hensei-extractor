@@ -327,17 +327,17 @@ function renderPartyDetail(container, data) {
     `
   }
 
-  // Characters section - use wide images
+  // Characters section
   if (characters.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Characters</h3>
-        <div class="item-grid wide">
+        <div class="item-grid characters">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`character-wide/${id}_01.jpg`)
+            const imageUrl = getImageUrl(`character-grid/${id}_01.jpg`)
             return `
-              <div class="grid-item wide">
+              <div class="grid-item">
                 <img src="${imageUrl}" alt="">
               </div>
             `
@@ -347,17 +347,17 @@ function renderPartyDetail(container, data) {
     `
   }
 
-  // Weapons section - use wide images
+  // Weapons section
   if (weapons.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Weapons</h3>
-        <div class="item-grid wide">
+        <div class="item-grid weapons">
           ${weapons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`weapon-wide/${id}.jpg`)
+            const imageUrl = getImageUrl(`weapon-grid/${id}.jpg`)
             return `
-              <div class="grid-item wide">
+              <div class="grid-item">
                 <img src="${imageUrl}" alt="">
               </div>
             `
@@ -367,17 +367,17 @@ function renderPartyDetail(container, data) {
     `
   }
 
-  // Summons section - use wide images
+  // Summons section
   if (summons.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Summons</h3>
-        <div class="item-grid wide">
+        <div class="item-grid summons">
           ${summons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`summon-wide/${id}.jpg`)
+            const imageUrl = getImageUrl(`summon-grid/${id}.jpg`)
             return `
-              <div class="grid-item wide">
+              <div class="grid-item">
                 <img src="${imageUrl}" alt="">
               </div>
             `
