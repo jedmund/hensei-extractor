@@ -974,13 +974,18 @@ body.light #detailImport {
   color: var(--color-text);
 }
 
+.list-item-level {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 .list-item-labels {
   display: flex;
   gap: 4px;
 }
 
 .label-icon {
-  height: 16px;
+  height: 21px;
   width: auto;
 }
 

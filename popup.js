@@ -267,15 +267,19 @@ function renderDetailItems(dataType, data) {
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${items.map(item => `
+      ${items.map(item => {
+        const name = item.name || item.master?.name || ''
+        const level = item.level || item.lv
+        const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
+        return `
         <div class="list-item">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
-            <span class="list-item-name">${item.name || item.master?.name || ''}</span>
+            <span class="list-item-name">${name}${levelText}</span>
             ${dataType.includes('artifact') ? getArtifactLabels(item) : ''}
           </div>
         </div>
-      `).join('')}
+      `}).join('')}
     </div>`
   } else {
     // Grid layout
