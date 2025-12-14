@@ -119,15 +119,14 @@ export function getDataTypeName(dataType) {
 
 /** Display order for data types in UI */
 export const DATA_TYPE_ORDER = [
-  'party',
   'detail_npc', 'detail_weapon', 'detail_summon',
   'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
   'list_npc', 'list_weapon', 'list_summon'
 ]
 
-/** Data types grouped by tab */
+/** Data types grouped by tab (party types are discovered dynamically) */
 export const TAB_DATA_TYPES = {
-  party: ['party'],
+  party: [], // Parties are dynamic - populated from cache status
   collection: [
     'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
     'list_npc', 'list_weapon', 'list_summon'

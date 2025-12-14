@@ -70,6 +70,17 @@
   }
 
   /**
+   * Extract party identifier from party deck URL
+   * URL pattern: /party/deck/{group}/{slot} e.g., /party/deck/1/2
+   * @param {string} url - The URL to analyze
+   * @returns {string|null} The party ID like "1_2" or null
+   */
+  function getPartyId(url) {
+    const match = url.match(/\/party\/deck\/(\d+)\/(\d+)/)
+    return match ? `${match[1]}_${match[2]}` : null
+  }
+
+  /**
    * Dispatch intercepted data to the content script
    * @param {string} url - The request URL
    * @param {object} data - The JSON response data
@@ -77,6 +88,7 @@
   function dispatchInterceptedData(url, data) {
     const dataType = getDataType(url)
     const pageNumber = getPageNumber(url)
+    const partyId = getPartyId(url)
 
     window.dispatchEvent(new CustomEvent('gbf-data-intercepted', {
       detail: {
@@ -84,6 +96,7 @@
         data: data,
         dataType: dataType,
         pageNumber: pageNumber,
+        partyId: partyId,
         timestamp: Date.now()
       }
     }))

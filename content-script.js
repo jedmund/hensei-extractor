@@ -10,7 +10,6 @@
 
 // Cache key prefixes for different data types
 const CACHE_KEYS = {
-  party: 'gbf_cache_party',
   detail_npc: 'gbf_cache_detail_npc',
   detail_weapon: 'gbf_cache_detail_weapon',
   detail_summon: 'gbf_cache_detail_summon',
@@ -23,6 +22,9 @@ const CACHE_KEYS = {
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact'
 }
+
+// Party cache key prefix (parties are stored as gbf_cache_party_{group}_{slot})
+const PARTY_CACHE_PREFIX = 'gbf_cache_party_'
 
 // How long cached data is considered fresh (30 minutes)
 const CACHE_TTL_MS = 30 * 60 * 1000
@@ -51,25 +53,31 @@ function init() {
  * @param {CustomEvent} event - The custom event with intercepted data
  */
 async function handleInterceptedData(event) {
-  const { url, data, dataType, pageNumber, timestamp } = event.detail
+  const { url, data, dataType, pageNumber, partyId, timestamp } = event.detail
 
   if (!data || !dataType) {
     return
   }
 
   try {
-    if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
+    let actualDataType = dataType
+
+    if (dataType === 'party' && partyId) {
+      // Store party with its unique ID
+      await cacheParty(partyId, data, timestamp, url)
+      actualDataType = `party_${partyId}`
+    } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
       // For list/collection data, accumulate pages
       await cacheListPage(dataType, pageNumber, data, timestamp)
     } else {
-      // For single items (party, details), replace cache
+      // For single items (details), replace cache
       await cacheSingleItem(dataType, data, timestamp, url)
     }
 
     // Notify popup that new data is available
     chrome.runtime.sendMessage({
       action: 'dataCaptured',
-      dataType: dataType,
+      dataType: actualDataType,
       pageNumber: pageNumber,
       timestamp: timestamp
     }).catch(() => {
@@ -81,7 +89,7 @@ async function handleInterceptedData(event) {
 }
 
 /**
- * Cache a single item (party, character detail, etc.)
+ * Cache a single item (character detail, etc.)
  */
 async function cacheSingleItem(dataType, data, timestamp, url) {
   const cacheKey = CACHE_KEYS[dataType]
@@ -92,6 +100,26 @@ async function cacheSingleItem(dataType, data, timestamp, url) {
       data: data,
       timestamp: timestamp,
       url: url
+    }
+  })
+}
+
+/**
+ * Cache a party with its unique ID
+ */
+async function cacheParty(partyId, data, timestamp, url) {
+  const cacheKey = PARTY_CACHE_PREFIX + partyId
+
+  // Extract party name from data for display
+  const partyName = data.deck?.name || `Party ${partyId.replace('_', '-')}`
+
+  await chrome.storage.local.set({
+    [cacheKey]: {
+      data: data,
+      timestamp: timestamp,
+      url: url,
+      partyId: partyId,
+      partyName: partyName
     }
   })
 }
@@ -165,7 +193,15 @@ function handleMessages(message, sender, sendResponse) {
  * Get cached data for a specific type
  */
 async function handleGetCachedData(dataType) {
-  const cacheKey = CACHE_KEYS[dataType]
+  // Handle party data types (party_1_2 format)
+  let cacheKey
+  if (dataType.startsWith('party_')) {
+    const partyId = dataType.replace('party_', '')
+    cacheKey = PARTY_CACHE_PREFIX + partyId
+  } else {
+    cacheKey = CACHE_KEYS[dataType]
+  }
+
   if (!cacheKey) {
     return { error: `Unknown data type: ${dataType}` }
   }
@@ -209,14 +245,15 @@ async function handleGetCachedData(dataType) {
  * Get status of all cached data
  */
 async function handleGetCacheStatus() {
-  const allKeys = Object.values(CACHE_KEYS)
-  const result = await chrome.storage.local.get(allKeys)
+  // Get all storage to find party keys dynamically
+  const allStorage = await chrome.storage.local.get(null)
 
   const status = {}
   const now = Date.now()
 
+  // Process standard cache keys
   for (const [type, key] of Object.entries(CACHE_KEYS)) {
-    const cached = result[key]
+    const cached = allStorage[key]
     if (cached) {
       const timestamp = cached.timestamp || cached.lastUpdated
       const age = now - timestamp
@@ -244,6 +281,26 @@ async function handleGetCacheStatus() {
     }
   }
 
+  // Process party cache keys (gbf_cache_party_*)
+  for (const [key, cached] of Object.entries(allStorage)) {
+    if (key.startsWith(PARTY_CACHE_PREFIX) && cached) {
+      const partyId = key.replace(PARTY_CACHE_PREFIX, '')
+      const dataType = `party_${partyId}`
+      const timestamp = cached.timestamp
+      const age = now - timestamp
+      const isStale = age > CACHE_TTL_MS
+
+      status[dataType] = {
+        available: !isStale,
+        lastUpdated: timestamp,
+        age: age,
+        isStale: isStale,
+        partyId: partyId,
+        partyName: cached.partyName || `Party ${partyId.replace('_', '-')}`
+      }
+    }
+  }
+
   return status
 }
 
@@ -252,13 +309,24 @@ async function handleGetCacheStatus() {
  */
 async function handleClearCache(dataType) {
   if (dataType) {
-    const cacheKey = CACHE_KEYS[dataType]
-    if (cacheKey) {
-      await chrome.storage.local.remove(cacheKey)
+    // Handle party data types
+    if (dataType.startsWith('party_')) {
+      const partyId = dataType.replace('party_', '')
+      await chrome.storage.local.remove(PARTY_CACHE_PREFIX + partyId)
+    } else {
+      const cacheKey = CACHE_KEYS[dataType]
+      if (cacheKey) {
+        await chrome.storage.local.remove(cacheKey)
+      }
     }
   } else {
-    // Clear all cache
-    await chrome.storage.local.remove(Object.values(CACHE_KEYS))
+    // Clear all cache including all parties
+    const allStorage = await chrome.storage.local.get(null)
+    const keysToRemove = [
+      ...Object.values(CACHE_KEYS),
+      ...Object.keys(allStorage).filter(key => key.startsWith(PARTY_CACHE_PREFIX))
+    ]
+    await chrome.storage.local.remove(keysToRemove)
   }
   return { success: true }
 }

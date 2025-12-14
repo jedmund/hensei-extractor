@@ -203,7 +203,7 @@ async function showDetailView(dataType) {
   const status = cachedStatus[dataType]
   document.getElementById('detailFreshness').textContent = status.ageText
 
-  if (dataType === 'party') {
+  if (dataType.startsWith('party_')) {
     // Party shows section counts
     // Characters are at deck.npc, weapons/summons are at deck.pc
     const deck = response.data.deck || {}
@@ -256,7 +256,7 @@ function renderDetailItems(dataType, data) {
   const container = document.getElementById('detailItems')
 
   // Party gets special sectioned layout
-  if (dataType === 'party') {
+  if (dataType.startsWith('party_')) {
     renderPartyDetail(container, data)
     return
   }
@@ -369,7 +369,7 @@ function extractItems(dataType, data) {
     const pages = Object.values(data)
     return pages.flatMap(page => page.list || [])
   }
-  if (dataType === 'party') {
+  if (dataType.startsWith('party_')) {
     // Characters are at deck.npc, weapons/summons are at deck.pc
     const deck = data.deck || {}
     const pc = deck.pc || {}
@@ -467,7 +467,7 @@ async function handleDetailImport() {
 
     // Upload based on data type
     let uploadResponse
-    if (currentDetailDataType === 'party') {
+    if (currentDetailDataType.startsWith('party_')) {
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
         data: response.data
@@ -680,19 +680,31 @@ function updateTabCacheDisplay(tabName, status) {
   const container = document.getElementById(`${tabName}Items`)
   if (!container) return
 
-  const allowedTypes = TAB_DATA_TYPES[tabName] || []
-  const hasData = status && allowedTypes.some(type => status[type]?.available)
+  // Get types to display - for party tab, discover dynamically from status
+  let typesToDisplay = []
+  if (tabName === 'party') {
+    // Find all party_* types in status
+    typesToDisplay = Object.keys(status || {})
+      .filter(type => type.startsWith('party_') && status[type]?.available)
+      .sort() // Sort by party ID for consistent ordering
+  } else {
+    typesToDisplay = (TAB_DATA_TYPES[tabName] || [])
+      .filter(type => status?.[type]?.available)
+  }
 
-  if (!hasData) {
+  if (typesToDisplay.length === 0) {
     container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`
     return
   }
 
   let html = ''
 
-  for (const type of allowedTypes) {
+  for (const type of typesToDisplay) {
     const info = status[type]
     if (!info?.available) continue
+
+    // Use partyName for parties, displayName for others
+    const displayName = info.partyName || info.displayName
 
     const subtitleHtml = info.subtitle
       ? `<span class="cache-subtitle">${info.subtitle}</span>`
@@ -701,7 +713,7 @@ function updateTabCacheDisplay(tabName, status) {
     html += `
       <div class="cache-item ${info.statusClass}" data-type="${type}" data-tab="${tabName}">
         <div class="cache-info">
-          <span class="cache-name">${info.displayName}</span>
+          <span class="cache-name">${displayName}</span>
           ${subtitleHtml}
         </div>
         <div class="cache-right">
@@ -896,6 +908,10 @@ function handleMessages(message) {
  * Get which tab a data type belongs to
  */
 function getTabForDataType(dataType) {
+  // Party types are dynamic, not in TAB_DATA_TYPES
+  if (dataType.startsWith('party_')) {
+    return 'party'
+  }
   for (const [tab, types] of Object.entries(TAB_DATA_TYPES)) {
     if (types.includes(dataType)) return tab
   }
