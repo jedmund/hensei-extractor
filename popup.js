@@ -538,7 +538,7 @@ function renderDatabaseDetail(container, dataType, data) {
 
   // Use GBF's CDN since these are new items not yet on our S3
   if (dataType === 'detail_npc') {
-    imageUrl = `${GBF_CDN}/npc/zoom/${id}.png`
+    imageUrl = `${GBF_CDN}/npc/m/${id}_01_0.jpg`
     imageClass = 'character-main'
   } else if (dataType === 'detail_weapon') {
     imageUrl = `${GBF_CDN}/weapon/m/${id}.jpg`
