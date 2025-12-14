@@ -46,28 +46,31 @@ export function formatCacheStatus(status) {
       formatted[type] = {
         ...info,
         displayName: getDataTypeName(type),
-        statusText: 'No data',
+        subtitle: null,
+        ageText: 'No data',
         statusClass: 'unavailable'
       }
     } else if (info.isStale) {
       formatted[type] = {
         ...info,
         displayName: getDataTypeName(type),
-        statusText: 'Stale - refresh needed',
+        subtitle: null,
+        ageText: 'Stale',
         statusClass: 'stale'
       }
     } else {
       const ageText = formatAge(info.age)
-      let statusText = ageText
+      let subtitle = null
 
       if (type.startsWith('list_') || type.startsWith('collection_')) {
-        statusText = `${info.totalItems} items (${info.pageCount} pages) - ${ageText}`
+        subtitle = `${info.totalItems} items · ${info.pageCount} pages`
       }
 
       formatted[type] = {
         ...info,
         displayName: getDataTypeName(type),
-        statusText: statusText,
+        subtitle,
+        ageText,
         statusClass: 'available'
       }
     }

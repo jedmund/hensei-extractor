@@ -3,6 +3,8 @@
  * Centralizes all configuration values, URLs, and data type definitions.
  */
 
+import { safeGet } from './storage.js'
+
 // ==========================================
 // API CONFIGURATION
 // ==========================================
@@ -16,11 +18,20 @@ export const ENVIRONMENTS = {
   development: {
     apiUrl: 'https://next-api.granblue.team',
     siteUrl: 'https://next.granblue.team',
-    apiPath: '/api/v1'
+    apiPath: '/v1'
   }
 }
 
 export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
+
+/**
+ * Get full image URL for a path
+ * @param {string} path - Image path (e.g., 'port-breeze.jpg', 'profile/npc@2x.png')
+ * @returns {string} Full image URL
+ */
+export function getImageUrl(path) {
+  return `${IMG_URL}/${path}`
+}
 
 /** Default environment */
 export const DEFAULT_ENV = 'development'
@@ -30,7 +41,7 @@ export const DEFAULT_ENV = 'development'
  * @returns {Promise<Object>} Environment configuration
  */
 export async function getEnvConfig() {
-  const { appEnv } = await chrome.storage.local.get('appEnv')
+  const { appEnv } = await safeGet('appEnv')
   const env = appEnv || DEFAULT_ENV
   return { env, ...ENVIRONMENTS[env] }
 }
@@ -113,6 +124,16 @@ export const DATA_TYPE_ORDER = [
   'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
   'list_npc', 'list_weapon', 'list_summon'
 ]
+
+/** Data types grouped by tab */
+export const TAB_DATA_TYPES = {
+  party: ['party'],
+  collection: [
+    'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
+    'list_npc', 'list_weapon', 'list_summon'
+  ],
+  database: ['detail_npc', 'detail_weapon', 'detail_summon']
+}
 
 // ==========================================
 // TIMING CONSTANTS
