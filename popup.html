@@ -14,7 +14,7 @@
           <img
             id="avatar"
             class="avatar"
-            src="https://granblue.team/profile/npc@2x.png"
+            src="https://siero-img.s3-us-west-2.amazonaws.com/profile/npc@2x.png"
           />
         </div>
 
@@ -63,7 +63,7 @@
           id="signupButton"
           class="button btn-green"
           target="_blank"
-          href="https://granblue.team/auth/register"
+          href="https://next.granblue.team/auth/register"
           >Sign up</a
         >
         <a id="showLogin" class="button btn-white">Log in</a>
@@ -106,17 +106,17 @@
         </div>
       </div>
 
-      <!-- Export Target Section -->
+      <!-- Environment Section -->
       <div class="settings-section">
-        <div class="settings-label">Export to</div>
+        <div class="settings-label">Environment</div>
         <div class="settings-options">
           <label class="settings-option">
-            <input type="radio" name="exportSite" value="production" checked />
-            <span>granblue.team</span>
+            <input type="radio" name="appEnv" value="production" />
+            <span>Production</span>
           </label>
           <label class="settings-option">
-            <input type="radio" name="exportSite" value="staging" />
-            <span>next.granblue.team</span>
+            <input type="radio" name="appEnv" value="development" checked />
+            <span>Development</span>
           </label>
         </div>
       </div>

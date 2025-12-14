@@ -3,7 +3,7 @@
  * Manages UI state updates and display for the popup.
  */
 
-import { DATA_TYPE_ORDER } from './constants.js'
+import { DATA_TYPE_ORDER, IMG_URL } from './constants.js'
 
 /**
  * Updates the avatar image in the popup.
@@ -16,7 +16,7 @@ export function updateAvatarImage(avatarInfo) {
 
   if (avatarInfo) {
     // Update to user's custom avatar
-    avatarImg.src = `https://granblue.team/profile/${avatarInfo.picture}@2x.png`
+    avatarImg.src = `${IMG_URL}/profile/${avatarInfo.picture}@2x.png`
     // Add element-specific class to avatar and main pane
     avatarImg.className = `avatar ${avatarInfo.element}`
     if (mainPane) {
@@ -26,7 +26,7 @@ export function updateAvatarImage(avatarInfo) {
     }
   } else {
     // Reset to default avatar
-    avatarImg.src = "https://granblue.team/profile/npc@2x.png"
+    avatarImg.src = `${IMG_URL}/profile/npc@2x.png`
     avatarImg.className = "avatar"
     if (mainPane) {
       mainPane.classList.remove('fire', 'water', 'earth', 'wind', 'light', 'dark')

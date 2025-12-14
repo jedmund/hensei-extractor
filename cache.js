@@ -60,7 +60,7 @@ export function formatCacheStatus(status) {
       const ageText = formatAge(info.age)
       let statusText = ageText
 
-      if (type.startsWith('list_')) {
+      if (type.startsWith('list_') || type.startsWith('collection_')) {
         statusText = `${info.totalItems} items (${info.pageCount} pages) - ${ageText}`
       }
 
