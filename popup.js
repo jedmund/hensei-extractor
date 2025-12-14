@@ -460,8 +460,32 @@ function getItemImageUrl(dataType, item) {
   return ''
 }
 
-// Element ID to name mapping
+// Hensei element ID to name mapping
 const ELEMENT_NAMES = {
+  1: 'Wind',
+  2: 'Fire',
+  3: 'Water',
+  4: 'Earth',
+  5: 'Dark',
+  6: 'Light'
+}
+
+// Hensei proficiency ID to name mapping
+const PROFICIENCY_NAMES = {
+  1: 'Sabre',
+  2: 'Dagger',
+  3: 'Axe',
+  4: 'Spear',
+  5: 'Bow',
+  6: 'Staff',
+  7: 'Melee',
+  8: 'Harp',
+  9: 'Gun',
+  10: 'Katana'
+}
+
+// Game element ID to name mapping (raw GBF data)
+const GAME_ELEMENT_NAMES = {
   1: 'Fire',
   2: 'Water',
   3: 'Earth',
@@ -470,17 +494,17 @@ const ELEMENT_NAMES = {
   6: 'Dark'
 }
 
-// Weapon proficiency ID to name mapping
-const PROFICIENCY_NAMES = {
+// Game proficiency ID to name mapping (raw GBF data)
+const GAME_PROFICIENCY_NAMES = {
   1: 'Sabre',
   2: 'Dagger',
-  3: 'Spear',
-  4: 'Axe',
-  5: 'Staff',
-  6: 'Gun',
+  3: 'Axe',
+  4: 'Spear',
+  5: 'Bow',
+  6: 'Staff',
   7: 'Melee',
-  8: 'Bow',
-  9: 'Harp',
+  8: 'Harp',
+  9: 'Gun',
   10: 'Katana'
 }
 
@@ -493,12 +517,12 @@ function getArtifactLabels(item) {
 
   let html = '<div class="list-item-labels">'
 
-  if (element && ELEMENT_NAMES[element]) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${ELEMENT_NAMES[element]}.png`)}" alt="">`
+  if (element && GAME_ELEMENT_NAMES[element]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="">`
   }
 
-  if (proficiency && PROFICIENCY_NAMES[proficiency]) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${PROFICIENCY_NAMES[proficiency]}.png`)}" alt="">`
+  if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="">`
   }
 
   html += '</div>'
