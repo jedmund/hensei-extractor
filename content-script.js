@@ -10,9 +10,6 @@
 
 // Cache key prefixes for different data types
 const CACHE_KEYS = {
-  detail_npc: 'gbf_cache_detail_npc',
-  detail_weapon: 'gbf_cache_detail_weapon',
-  detail_summon: 'gbf_cache_detail_summon',
   list_npc: 'gbf_cache_list_npc',
   list_weapon: 'gbf_cache_list_weapon',
   list_summon: 'gbf_cache_list_summon',
@@ -25,6 +22,11 @@ const CACHE_KEYS = {
 
 // Party cache key prefix (parties are stored as gbf_cache_party_{group}_{slot})
 const PARTY_CACHE_PREFIX = 'gbf_cache_party_'
+
+// Database detail cache key prefixes (per-item, like parties)
+const DETAIL_NPC_CACHE_PREFIX = 'gbf_cache_detail_npc_'
+const DETAIL_WEAPON_CACHE_PREFIX = 'gbf_cache_detail_weapon_'
+const DETAIL_SUMMON_CACHE_PREFIX = 'gbf_cache_detail_summon_'
 
 // How long cached data is considered fresh (30 minutes)
 const CACHE_TTL_MS = 30 * 60 * 1000
@@ -69,8 +71,12 @@ async function handleInterceptedData(event) {
     } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
       // For list/collection data, accumulate pages
       await cacheListPage(dataType, pageNumber, data, timestamp)
+    } else if (dataType.startsWith('detail_')) {
+      // For database detail items, store per-item (like parties)
+      const result = await cacheDetailItem(dataType, data, timestamp, url)
+      actualDataType = result.dataType
     } else {
-      // For single items (details), replace cache
+      // Other single items
       await cacheSingleItem(dataType, data, timestamp, url)
     }
 
@@ -89,7 +95,7 @@ async function handleInterceptedData(event) {
 }
 
 /**
- * Cache a single item (character detail, etc.)
+ * Cache a single item (non-detail, non-party)
  */
 async function cacheSingleItem(dataType, data, timestamp, url) {
   const cacheKey = CACHE_KEYS[dataType]
@@ -102,6 +108,41 @@ async function cacheSingleItem(dataType, data, timestamp, url) {
       url: url
     }
   })
+}
+
+/**
+ * Cache a database detail item with a per-item key (like parties)
+ */
+async function cacheDetailItem(dataType, data, timestamp, url) {
+  const granblueId = data.id || data.master?.id
+  const name = data.name || data.master?.name || 'Unknown'
+
+  // Determine cache key prefix based on type
+  let cacheKey
+  if (dataType === 'detail_npc') {
+    cacheKey = `${DETAIL_NPC_CACHE_PREFIX}${granblueId}`
+  } else if (dataType === 'detail_weapon') {
+    cacheKey = `${DETAIL_WEAPON_CACHE_PREFIX}${granblueId}`
+  } else if (dataType === 'detail_summon') {
+    cacheKey = `${DETAIL_SUMMON_CACHE_PREFIX}${granblueId}`
+  } else {
+    // Unknown detail type, fall back to standard caching
+    await cacheSingleItem(dataType, data, timestamp, url)
+    return { dataType }
+  }
+
+  await chrome.storage.local.set({
+    [cacheKey]: {
+      data: data,
+      timestamp: timestamp,
+      url: url,
+      granblueId: granblueId,
+      itemName: name
+    }
+  })
+
+  // Return the item-specific dataType for notification
+  return { dataType: `${dataType}_${granblueId}` }
 }
 
 /**
@@ -198,6 +239,15 @@ async function handleGetCachedData(dataType) {
   if (dataType.startsWith('party_')) {
     const partyId = dataType.replace('party_', '')
     cacheKey = PARTY_CACHE_PREFIX + partyId
+  } else if (dataType.startsWith('detail_npc_')) {
+    const granblueId = dataType.replace('detail_npc_', '')
+    cacheKey = DETAIL_NPC_CACHE_PREFIX + granblueId
+  } else if (dataType.startsWith('detail_weapon_')) {
+    const granblueId = dataType.replace('detail_weapon_', '')
+    cacheKey = DETAIL_WEAPON_CACHE_PREFIX + granblueId
+  } else if (dataType.startsWith('detail_summon_')) {
+    const granblueId = dataType.replace('detail_summon_', '')
+    cacheKey = DETAIL_SUMMON_CACHE_PREFIX + granblueId
   } else {
     cacheKey = CACHE_KEYS[dataType]
   }
@@ -301,6 +351,38 @@ async function handleGetCacheStatus() {
     }
   }
 
+  // Process database detail cache keys (per-item, like parties)
+  for (const [key, cached] of Object.entries(allStorage)) {
+    let dataType = null
+    let granblueId = null
+
+    if (key.startsWith(DETAIL_NPC_CACHE_PREFIX)) {
+      granblueId = key.replace(DETAIL_NPC_CACHE_PREFIX, '')
+      dataType = `detail_npc_${granblueId}`
+    } else if (key.startsWith(DETAIL_WEAPON_CACHE_PREFIX)) {
+      granblueId = key.replace(DETAIL_WEAPON_CACHE_PREFIX, '')
+      dataType = `detail_weapon_${granblueId}`
+    } else if (key.startsWith(DETAIL_SUMMON_CACHE_PREFIX)) {
+      granblueId = key.replace(DETAIL_SUMMON_CACHE_PREFIX, '')
+      dataType = `detail_summon_${granblueId}`
+    }
+
+    if (dataType && cached) {
+      const timestamp = cached.timestamp
+      const age = now - timestamp
+      const isStale = age > CACHE_TTL_MS
+
+      status[dataType] = {
+        available: !isStale,
+        lastUpdated: timestamp,
+        age: age,
+        isStale: isStale,
+        granblueId: granblueId,
+        itemName: cached.itemName || 'Unknown'
+      }
+    }
+  }
+
   return status
 }
 
@@ -313,6 +395,15 @@ async function handleClearCache(dataType) {
     if (dataType.startsWith('party_')) {
       const partyId = dataType.replace('party_', '')
       await chrome.storage.local.remove(PARTY_CACHE_PREFIX + partyId)
+    } else if (dataType.startsWith('detail_npc_')) {
+      const granblueId = dataType.replace('detail_npc_', '')
+      await chrome.storage.local.remove(DETAIL_NPC_CACHE_PREFIX + granblueId)
+    } else if (dataType.startsWith('detail_weapon_')) {
+      const granblueId = dataType.replace('detail_weapon_', '')
+      await chrome.storage.local.remove(DETAIL_WEAPON_CACHE_PREFIX + granblueId)
+    } else if (dataType.startsWith('detail_summon_')) {
+      const granblueId = dataType.replace('detail_summon_', '')
+      await chrome.storage.local.remove(DETAIL_SUMMON_CACHE_PREFIX + granblueId)
     } else {
       const cacheKey = CACHE_KEYS[dataType]
       if (cacheKey) {
@@ -320,11 +411,16 @@ async function handleClearCache(dataType) {
       }
     }
   } else {
-    // Clear all cache including all parties
+    // Clear all cache including parties and per-item details
     const allStorage = await chrome.storage.local.get(null)
     const keysToRemove = [
       ...Object.values(CACHE_KEYS),
-      ...Object.keys(allStorage).filter(key => key.startsWith(PARTY_CACHE_PREFIX))
+      ...Object.keys(allStorage).filter(key =>
+        key.startsWith(PARTY_CACHE_PREFIX) ||
+        key.startsWith(DETAIL_NPC_CACHE_PREFIX) ||
+        key.startsWith(DETAIL_WEAPON_CACHE_PREFIX) ||
+        key.startsWith(DETAIL_SUMMON_CACHE_PREFIX)
+      )
     ]
     await chrome.storage.local.remove(keysToRemove)
   }

@@ -61,14 +61,24 @@ export function formatCacheStatus(status) {
     } else {
       const ageText = formatAge(info.age)
       let subtitle = null
+      let displayName = getDataTypeName(type)
 
       if (type.startsWith('list_') || type.startsWith('collection_')) {
         subtitle = `${info.totalItems} items · ${info.pageCount} pages`
       }
 
+      // Handle per-item detail types (use item name as display name)
+      if (type.startsWith('detail_npc_')) {
+        displayName = info.itemName || 'Character'
+      } else if (type.startsWith('detail_weapon_')) {
+        displayName = info.itemName || 'Weapon'
+      } else if (type.startsWith('detail_summon_')) {
+        displayName = info.itemName || 'Summon'
+      }
+
       formatted[type] = {
         ...info,
-        displayName: getDataTypeName(type),
+        displayName,
         subtitle,
         ageText,
         statusClass: 'available'
