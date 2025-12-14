@@ -375,7 +375,7 @@ function renderPartyDetail(container, data) {
         <div class="item-grid summons">
           ${summons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`summon-grid/${id}.jpg`)
+            const imageUrl = getImageUrl(`summon-wide/${id}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">
