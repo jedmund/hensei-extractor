@@ -917,6 +917,12 @@ body.light #detailImport {
   gap: 8px;
 }
 
+.item-grid.characters .grid-item,
+.item-grid.weapons .grid-item,
+.item-grid.summons .grid-item {
+  width: 80px;
+}
+
 .item-grid.artifacts {
   grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
 }
