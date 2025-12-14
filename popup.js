@@ -206,9 +206,9 @@ async function showDetailView(dataType) {
   if (dataType === 'party') {
     // Party shows section counts
     const pc = response.data.deck?.pc || {}
-    const chars = (pc.npc || []).filter(Boolean).length
-    const wpns = (pc.weapons || []).filter(Boolean).length
-    const sums = (pc.summons || []).filter(Boolean).length
+    const chars = toArray(pc.npc).filter(Boolean).length
+    const wpns = toArray(pc.weapons).filter(Boolean).length
+    const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
     document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
   } else {
@@ -286,13 +286,22 @@ function renderDetailItems(dataType, data) {
 }
 
 /**
+ * Convert object or array to array (handles GBF's inconsistent data formats)
+ */
+function toArray(data) {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  return Object.values(data)
+}
+
+/**
  * Render party detail with sections for characters, weapons, summons
  */
 function renderPartyDetail(container, data) {
   const pc = data.deck?.pc || {}
-  const characters = (pc.npc || []).filter(Boolean)
-  const weapons = (pc.weapons || []).filter(Boolean)
-  const summons = (pc.summons || []).filter(Boolean)
+  const characters = toArray(pc.npc).filter(Boolean)
+  const weapons = toArray(pc.weapons).filter(Boolean)
+  const summons = toArray(pc.summons).filter(Boolean)
 
   let html = ''
 
@@ -358,10 +367,11 @@ function extractItems(dataType, data) {
   }
   if (dataType === 'party') {
     // Party has characters, weapons, summons
+    const pc = data.deck?.pc || {}
     return [
-      ...(data.deck?.pc?.npc || []),
-      ...(data.deck?.pc?.weapons || []),
-      ...(data.deck?.pc?.summons || [])
+      ...toArray(pc.npc),
+      ...toArray(pc.weapons),
+      ...toArray(pc.summons)
     ].filter(Boolean)
   }
   // Single detail item
