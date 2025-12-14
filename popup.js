@@ -205,8 +205,10 @@ async function showDetailView(dataType) {
 
   if (dataType === 'party') {
     // Party shows section counts
-    const pc = response.data.deck?.pc || {}
-    const chars = toArray(pc.npc).filter(Boolean).length
+    // Characters are at deck.npc, weapons/summons are at deck.pc
+    const deck = response.data.deck || {}
+    const pc = deck.pc || {}
+    const chars = toArray(deck.npc).filter(Boolean).length
     const wpns = toArray(pc.weapons).filter(Boolean).length
     const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
@@ -298,8 +300,10 @@ function toArray(data) {
  * Render party detail with sections for characters, weapons, summons
  */
 function renderPartyDetail(container, data) {
-  const pc = data.deck?.pc || {}
-  const characters = toArray(pc.npc).filter(Boolean)
+  // Characters are at deck.npc, weapons/summons are at deck.pc
+  const deck = data.deck || {}
+  const pc = deck.pc || {}
+  const characters = toArray(deck.npc).filter(Boolean)
   const weapons = toArray(pc.weapons).filter(Boolean)
   const summons = toArray(pc.summons).filter(Boolean)
 
@@ -366,10 +370,11 @@ function extractItems(dataType, data) {
     return pages.flatMap(page => page.list || [])
   }
   if (dataType === 'party') {
-    // Party has characters, weapons, summons
-    const pc = data.deck?.pc || {}
+    // Characters are at deck.npc, weapons/summons are at deck.pc
+    const deck = data.deck || {}
+    const pc = deck.pc || {}
     return [
-      ...toArray(pc.npc),
+      ...toArray(deck.npc),
       ...toArray(pc.weapons),
       ...toArray(pc.summons)
     ].filter(Boolean)
