@@ -920,7 +920,6 @@ body.light #detailImport {
 }
 
 .grid-item {
-  aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-bg);
@@ -928,8 +927,8 @@ body.light #detailImport {
 
 .grid-item img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
 }
 
 /* Item List */
