@@ -289,9 +289,8 @@ function renderDetailItems(dataType, data) {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
-        const elementClass = getItemElementClass(item)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked ${elementClass}" data-index="${index}">
+          <label class="item-checkbox checked" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
@@ -311,9 +310,8 @@ function renderDetailItems(dataType, data) {
     const gridClass = getGridClass(dataType)
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${items.map((item, index) => {
-        const elementClass = getItemElementClass(item)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked ${elementClass}" data-index="${index}">
+          <label class="item-checkbox checked" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
@@ -603,16 +601,6 @@ function getArtifactLabels(item) {
 
   html += '</div>'
   return html
-}
-
-/**
- * Get element class for an item's checkbox
- */
-function getItemElementClass(item) {
-  const element = item.attribute || item.element
-  if (!element) return ''
-  const elementName = GAME_ELEMENT_NAMES[element]
-  return elementName ? elementName.toLowerCase() : ''
 }
 
 /**

@@ -954,7 +954,7 @@ body.light #detailImport {
   right: 4px;
   width: 20px;
   height: 20px;
-  background: rgba(180, 180, 180, 0.9);
+  background: #b4b4b4;
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
@@ -964,41 +964,16 @@ body.light #detailImport {
 }
 
 .item-checkbox:hover {
-  background: rgba(160, 160, 160, 0.95);
+  background: #a0a0a0;
   transform: scale(1.05);
 }
 
-/* Element colors when checked */
 .item-checkbox.checked {
-  background: var(--color-primary);
-}
-
-.item-checkbox.checked.fire {
-  background: #de5765;
-}
-
-.item-checkbox.checked.water {
-  background: #5095de;
-}
-
-.item-checkbox.checked.earth {
-  background: #c4964a;
-}
-
-.item-checkbox.checked.wind {
-  background: #55b171;
-}
-
-.item-checkbox.checked.light {
-  background: #d9a93b;
-}
-
-.item-checkbox.checked.dark {
-  background: #9066c8;
+  background: var(--element-button-bg);
 }
 
 .item-checkbox.checked:hover {
-  filter: brightness(1.1);
+  background: var(--element-button-bg-hover);
 }
 
 .checkbox-indicator {
