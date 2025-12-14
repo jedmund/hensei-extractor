@@ -307,7 +307,9 @@ function renderPartyDetail(container, data) {
   const characters = toArray(deck.npc).filter(Boolean)
   const weapons = toArray(pc.weapons).filter(Boolean)
   const summons = toArray(pc.summons).filter(Boolean)
-  const accessories = toArray(pc.accessories).filter(Boolean)
+
+  // Accessories: familiar_id (manabelly/manatura) and shield_id
+  const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean)
 
   let html = ''
 
@@ -388,13 +390,12 @@ function renderPartyDetail(container, data) {
   }
 
   // Accessories section (manabelly, manatura, shields)
-  if (accessories.length > 0) {
+  if (accessoryIds.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Accessories</h3>
         <div class="item-grid accessories">
-          ${accessories.map(item => {
-            const id = item.master?.id || item.param?.id || item.id
+          ${accessoryIds.map(id => {
             const imageUrl = getImageUrl(`accessory-square/${id}.jpg`)
             return `
               <div class="grid-item">
