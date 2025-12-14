@@ -7,32 +7,51 @@
 // API CONFIGURATION
 // ==========================================
 
-export const API_URLS = {
-  production: 'https://api.granblue.team',
-  staging: 'https://next-api.granblue.team'
+export const ENVIRONMENTS = {
+  production: {
+    apiUrl: 'https://api.granblue.team',
+    siteUrl: 'https://granblue.team',
+    apiPath: '/v1'
+  },
+  development: {
+    apiUrl: 'https://next-api.granblue.team',
+    siteUrl: 'https://next.granblue.team',
+    apiPath: '/api/v1'
+  }
 }
 
-export const SITE_URLS = {
-  production: 'https://granblue.team',
-  staging: 'https://next.granblue.team'
+export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
+
+/** Default environment */
+export const DEFAULT_ENV = 'development'
+
+/**
+ * Get environment config from storage
+ * @returns {Promise<Object>} Environment configuration
+ */
+export async function getEnvConfig() {
+  const { appEnv } = await chrome.storage.local.get('appEnv')
+  const env = appEnv || DEFAULT_ENV
+  return { env, ...ENVIRONMENTS[env] }
 }
 
 /**
- * Get the API base URL for the selected site
- * @param {string} site - 'production' or 'staging'
- * @returns {string} The API base URL
+ * Get the full API URL with path prefix
+ * @param {string} endpoint - API endpoint (e.g., '/import', '/collection/artifacts/import')
+ * @returns {Promise<string>} Full API URL
  */
-export function getApiBaseUrl(site = 'production') {
-  return API_URLS[site] || API_URLS.production
+export async function getApiUrl(endpoint) {
+  const config = await getEnvConfig()
+  return `${config.apiUrl}${config.apiPath}${endpoint}`
 }
 
 /**
  * Get the site base URL (for party links, etc.)
- * @param {string} site - 'production' or 'staging'
- * @returns {string} The site base URL
+ * @returns {Promise<string>} The site base URL
  */
-export function getSiteBaseUrl(site = 'production') {
-  return SITE_URLS[site] || SITE_URLS.production
+export async function getSiteBaseUrl() {
+  const config = await getEnvConfig()
+  return config.siteUrl
 }
 
 // ==========================================

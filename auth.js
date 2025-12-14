@@ -3,10 +3,7 @@
  * Handles login and user information requests to the Granblue Team API.
  */
 
-import { getApiBaseUrl } from './constants.js'
-
-// Re-export for backward compatibility
-export { getApiBaseUrl } from './constants.js'
+import { getApiUrl, getEnvConfig } from './constants.js'
 
 // ==========================================
 // AUTHENTICATION
@@ -20,12 +17,10 @@ export { getApiBaseUrl } from './constants.js'
  * @throws {Error} If login fails.
  */
 export async function performLogin(username, password) {
-  // Get the selected site from storage
-  const { selectedSite } = await chrome.storage.local.get("selectedSite")
-  const apiUrl = getApiBaseUrl(selectedSite)
+  const config = await getEnvConfig()
 
   try {
-    const response = await fetch(`${apiUrl}/oauth/token`, {
+    const response = await fetch(`${config.apiUrl}/oauth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -77,13 +72,11 @@ function formatAuthData(data) {
  * @throws {Error} If the request fails.
  */
 export async function fetchUserInfo(username, accessToken) {
-  // Get the selected site from storage
-  const { selectedSite } = await chrome.storage.local.get("selectedSite")
-  const apiUrl = getApiBaseUrl(selectedSite)
+  const apiUrl = await getApiUrl(`/users/info/${username}`)
 
   try {
     const response = await fetch(
-      `${apiUrl}/v1/users/info/${username}`,
+      apiUrl,
       {
         method: "GET",
         headers: {
