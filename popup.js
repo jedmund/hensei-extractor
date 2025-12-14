@@ -201,9 +201,20 @@ async function showDetailView(dataType) {
 
   // Update metadata
   const status = cachedStatus[dataType]
-  document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
-  document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
   document.getElementById('detailFreshness').textContent = status.ageText
+
+  if (dataType === 'party') {
+    // Party shows section counts
+    const pc = response.data.deck?.pc || {}
+    const chars = (pc.npc || []).filter(Boolean).length
+    const wpns = (pc.weapons || []).filter(Boolean).length
+    const sums = (pc.summons || []).filter(Boolean).length
+    document.getElementById('detailPageCount').textContent = ''
+    document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
+  } else {
+    document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
+    document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
+  }
 
   // Reset import button
   const importBtn = document.getElementById('detailImport')
@@ -241,6 +252,13 @@ function countItems(dataType, data) {
  */
 function renderDetailItems(dataType, data) {
   const container = document.getElementById('detailItems')
+
+  // Party gets special sectioned layout
+  if (dataType === 'party') {
+    renderPartyDetail(container, data)
+    return
+  }
+
   const items = extractItems(dataType, data)
   const hasNames = items.some(item => item.name || item.master?.name)
 
@@ -265,6 +283,68 @@ function renderDetailItems(dataType, data) {
       `).join('')}
     </div>`
   }
+}
+
+/**
+ * Render party detail with sections for characters, weapons, summons
+ */
+function renderPartyDetail(container, data) {
+  const pc = data.deck?.pc || {}
+  const characters = (pc.npc || []).filter(Boolean)
+  const weapons = (pc.weapons || []).filter(Boolean)
+  const summons = (pc.summons || []).filter(Boolean)
+
+  let html = ''
+
+  // Characters section
+  if (characters.length > 0) {
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">Characters</h3>
+        <div class="item-grid characters">
+          ${characters.map(item => `
+            <div class="grid-item">
+              <img src="${getItemImageUrl('npc', item)}" alt="">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  // Weapons section
+  if (weapons.length > 0) {
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">Weapons</h3>
+        <div class="item-grid weapons">
+          ${weapons.map(item => `
+            <div class="grid-item">
+              <img src="${getItemImageUrl('weapon', item)}" alt="">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  // Summons section
+  if (summons.length > 0) {
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">Summons</h3>
+        <div class="item-grid summons">
+          ${summons.map(item => `
+            <div class="grid-item">
+              <img src="${getItemImageUrl('summon', item)}" alt="">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  container.innerHTML = html || '<p class="cache-empty">No party data</p>'
 }
 
 /**

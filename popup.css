@@ -961,6 +961,24 @@ body.light #detailImport {
   color: var(--color-text);
 }
 
+/* Party Sections */
+.party-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.party-section:last-child {
+  margin-bottom: 0;
+}
+
+.party-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
 /* Cache item chevron */
 .cache-right {
   display: flex;
