@@ -917,10 +917,8 @@ body.light #detailImport {
   gap: 8px;
 }
 
-/* Fixed width for collection detail grids (not party grids) */
-.detail-content > .item-grid.characters .grid-item,
-.detail-content > .item-grid.weapons .grid-item,
-.detail-content > .item-grid.summons .grid-item {
+/* Fixed width for collection grids (handles missing images) */
+.item-grid.square-cells .grid-item {
   width: 80px;
 }
 

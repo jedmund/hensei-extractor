@@ -282,9 +282,9 @@ function renderDetailItems(dataType, data) {
       `}).join('')}
     </div>`
   } else {
-    // Grid layout
+    // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
-    container.innerHTML = `<div class="item-grid ${gridClass}">
+    container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${items.map(item => `
         <div class="grid-item">
           <img src="${getItemImageUrl(dataType, item)}" alt="">
