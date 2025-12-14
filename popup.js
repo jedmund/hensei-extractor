@@ -335,6 +335,21 @@ function renderDetailItems(dataType, data) {
         }
       })
     })
+
+    // Uncheck items when their image fails to load
+    container.querySelectorAll('.selectable img').forEach(img => {
+      img.addEventListener('error', () => {
+        const item = img.closest('.selectable')
+        if (!item) return
+        const index = parseInt(item.dataset.index, 10)
+        const checkbox = item.querySelector('.item-checkbox')
+        if (checkbox && selectedItems.has(index)) {
+          selectedItems.delete(index)
+          checkbox.classList.remove('checked')
+          updateSelectionCount()
+        }
+      })
+    })
   }
 }
 
