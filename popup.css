@@ -979,6 +979,38 @@ body.light #detailImport {
   margin: 0 0 var(--spacing-sm) 0;
 }
 
+/* Wide item (single item like job) */
+.wide-item {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.wide-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Wide grid for party items */
+.item-grid.wide {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.grid-item.wide {
+  aspect-ratio: auto;
+}
+
+.grid-item.wide img {
+  width: 100%;
+  height: auto;
+}
+
+/* Accessories grid (smaller squares) */
+.item-grid.accessories {
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+}
+
 /* Cache item chevron */
 .cache-right {
   display: flex;

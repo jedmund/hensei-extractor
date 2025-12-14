@@ -297,61 +297,111 @@ function toArray(data) {
 }
 
 /**
- * Render party detail with sections for characters, weapons, summons
+ * Render party detail with sections for job, characters, weapons, summons, accessories
  */
 function renderPartyDetail(container, data) {
   // Characters are at deck.npc, weapons/summons are at deck.pc
   const deck = data.deck || {}
   const pc = deck.pc || {}
+  const job = pc.job
   const characters = toArray(deck.npc).filter(Boolean)
   const weapons = toArray(pc.weapons).filter(Boolean)
   const summons = toArray(pc.summons).filter(Boolean)
+  const accessories = toArray(pc.accessories).filter(Boolean)
 
   let html = ''
 
-  // Characters section
+  // Job section
+  if (job?.master?.id) {
+    const jobId = job.master.id
+    const jobName = job.master.name || 'Job'
+    // Use Gran (a) by default, could detect from data if available
+    const jobImageUrl = getImageUrl(`job-wide/${jobId}_a.jpg`)
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">Job</h3>
+        <div class="wide-item">
+          <img src="${jobImageUrl}" alt="${jobName}">
+        </div>
+      </div>
+    `
+  }
+
+  // Characters section - use wide images
   if (characters.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Characters</h3>
-        <div class="item-grid characters">
-          ${characters.map(item => `
-            <div class="grid-item">
-              <img src="${getItemImageUrl('npc', item)}" alt="">
-            </div>
-          `).join('')}
+        <div class="item-grid wide">
+          ${characters.map(item => {
+            const id = item.master?.id || item.param?.id || item.id
+            const imageUrl = getImageUrl(`character-wide/${id}_01.jpg`)
+            return `
+              <div class="grid-item wide">
+                <img src="${imageUrl}" alt="">
+              </div>
+            `
+          }).join('')}
         </div>
       </div>
     `
   }
 
-  // Weapons section
+  // Weapons section - use wide images
   if (weapons.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Weapons</h3>
-        <div class="item-grid weapons">
-          ${weapons.map(item => `
-            <div class="grid-item">
-              <img src="${getItemImageUrl('weapon', item)}" alt="">
-            </div>
-          `).join('')}
+        <div class="item-grid wide">
+          ${weapons.map(item => {
+            const id = item.master?.id || item.param?.id || item.id
+            const imageUrl = getImageUrl(`weapon-wide/${id}.jpg`)
+            return `
+              <div class="grid-item wide">
+                <img src="${imageUrl}" alt="">
+              </div>
+            `
+          }).join('')}
         </div>
       </div>
     `
   }
 
-  // Summons section
+  // Summons section - use wide images
   if (summons.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Summons</h3>
-        <div class="item-grid summons">
-          ${summons.map(item => `
-            <div class="grid-item">
-              <img src="${getItemImageUrl('summon', item)}" alt="">
-            </div>
-          `).join('')}
+        <div class="item-grid wide">
+          ${summons.map(item => {
+            const id = item.master?.id || item.param?.id || item.id
+            const imageUrl = getImageUrl(`summon-wide/${id}.jpg`)
+            return `
+              <div class="grid-item wide">
+                <img src="${imageUrl}" alt="">
+              </div>
+            `
+          }).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  // Accessories section (manabelly, manatura, shields)
+  if (accessories.length > 0) {
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">Accessories</h3>
+        <div class="item-grid accessories">
+          ${accessories.map(item => {
+            const id = item.master?.id || item.param?.id || item.id
+            const imageUrl = getImageUrl(`accessory-square/${id}.jpg`)
+            return `
+              <div class="grid-item">
+                <img src="${imageUrl}" alt="">
+              </div>
+            `
+          }).join('')}
         </div>
       </div>
     `
