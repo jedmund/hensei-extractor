@@ -534,11 +534,13 @@ function renderDatabaseDetail(container, dataType, data) {
   const rarity = data.rarity
 
   let imageUrl = ''
+  let fallbackUrl = ''
   let imageClass = ''
 
   // Use GBF's CDN since these are new items not yet on our S3
   if (dataType === 'detail_npc') {
-    imageUrl = `${GBF_CDN}/npc/m/${id}_01_0.jpg`
+    imageUrl = `${GBF_CDN}/npc/m/${id}_01.jpg`
+    fallbackUrl = `${GBF_CDN}/npc/m/${id}_01_0.jpg`
     imageClass = 'character-main'
   } else if (dataType === 'detail_weapon') {
     imageUrl = `${GBF_CDN}/weapon/m/${id}.jpg`
@@ -548,10 +550,12 @@ function renderDatabaseDetail(container, dataType, data) {
     imageClass = 'summon-main'
   }
 
+  const fallbackAttr = fallbackUrl ? `onerror="this.onerror=null; this.src='${fallbackUrl}'"` : ''
+
   let html = `
     <div class="database-detail">
       <div class="database-detail-image ${imageClass}">
-        <img src="${imageUrl}" alt="${name}">
+        <img src="${imageUrl}" alt="${name}" ${fallbackAttr}>
       </div>
       <div class="database-detail-info">
         <h2 class="database-detail-name">${name}</h2>
