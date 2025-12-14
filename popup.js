@@ -30,15 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshCacheStatus()
 })
 
-/**
- * Get the currently selected site
- * @returns {Promise<string>} 'production' or 'staging'
- */
-async function getSelectedSite() {
-  const { selectedSite } = await chrome.storage.local.get("selectedSite")
-  return selectedSite || "production"
-}
-
 // ==========================================
 // EVENT LISTENERS
 // ==========================================
@@ -67,7 +58,7 @@ function initializeEventListeners() {
     exportButton: document.getElementById("exportButton"),
     copyButton: document.getElementById("copyButton"),
     clearCacheButton: document.getElementById("clearCacheButton"),
-    exportSiteRadios: document.querySelectorAll('input[name="exportSite"]')
+    envRadios: document.querySelectorAll('input[name="appEnv"]')
   }
 
   // Set up UI navigation handlers
@@ -110,10 +101,10 @@ function setupNavigationHandlers(elements) {
 
   // Avatar click (show settings if logged in, else login)
   elements.avatar?.addEventListener("click", async () => {
-    const { noticeAcknowledged, gbAuth, selectedSite } = await chrome.storage.local.get([
+    const { noticeAcknowledged, gbAuth, appEnv } = await chrome.storage.local.get([
       "noticeAcknowledged",
       "gbAuth",
-      "selectedSite"
+      "appEnv"
     ])
 
     // Only proceed if warning acknowledged
@@ -128,10 +119,10 @@ function setupNavigationHandlers(elements) {
       // Update settings pane with user info
       elements.settingsUsername.textContent = gbAuth.user.username
 
-      // Set the correct radio button for export site
-      const siteValue = selectedSite || 'production'
-      elements.exportSiteRadios.forEach(radio => {
-        radio.checked = radio.value === siteValue
+      // Set the correct radio button for environment
+      const envValue = appEnv || 'development'
+      elements.envRadios.forEach(radio => {
+        radio.checked = radio.value === envValue
       })
 
       elements.settingsPane.classList.add("active")
@@ -140,10 +131,10 @@ function setupNavigationHandlers(elements) {
     }
   })
 
-  // Handle export site radio changes
-  elements.exportSiteRadios.forEach(radio => {
+  // Handle environment radio changes
+  elements.envRadios.forEach(radio => {
     radio.addEventListener("change", async (e) => {
-      await chrome.storage.local.set({ selectedSite: e.target.value })
+      await chrome.storage.local.set({ appEnv: e.target.value })
     })
   })
 }
@@ -205,8 +196,9 @@ function setupAuthHandlers(elements) {
   elements.goToProfile?.addEventListener("click", async () => {
     const { gbAuth } = await chrome.storage.local.get("gbAuth")
     if (gbAuth && gbAuth.user && gbAuth.user.username) {
-      const profileUrl = `https://granblue.team/${gbAuth.user.username}`
-      chrome.tabs.create({ url: profileUrl })
+      const { getSiteBaseUrl } = await import('./constants.js')
+      const siteUrl = await getSiteBaseUrl()
+      chrome.tabs.create({ url: `${siteUrl}/${gbAuth.user.username}` })
     }
   })
 
@@ -254,9 +246,8 @@ function setupDataHandlers(elements) {
     updateStatus("Preparing export...", "info")
 
     try {
-      // Get the selected data type and site
+      // Get the selected data type
       const dataType = getSelectedDataType()
-      const site = await getSelectedSite()
 
       if (!dataType) {
         updateStatus("Please select data to export.", "error")
@@ -281,26 +272,23 @@ function setupDataHandlers(elements) {
       if (dataType === 'party') {
         uploadResponse = await chrome.runtime.sendMessage({
           action: 'uploadPartyData',
-          data: response.data,
-          site: site
+          data: response.data
         })
       } else if (dataType.startsWith('detail_')) {
         uploadResponse = await chrome.runtime.sendMessage({
           action: 'uploadDetailData',
           data: response.data,
-          dataType: dataType,
-          site: site
+          dataType: dataType
         })
-      } else if (dataType.startsWith('collection_')) {
+      } else if (dataType.startsWith('collection_') || dataType.startsWith('list_')) {
         uploadResponse = await chrome.runtime.sendMessage({
           action: 'uploadCollectionData',
           data: response.data,
           dataType: dataType,
-          updateExisting: false,
-          site: site
+          updateExisting: false
         })
       } else {
-        updateStatus("List export not yet supported", "error")
+        updateStatus("Export not supported for this data type", "error")
         elements.exportButton.disabled = false
         return
       }

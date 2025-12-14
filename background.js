@@ -7,7 +7,7 @@
  * requests to GBF servers. All game data comes from intercepted responses.
  */
 
-import { getApiBaseUrl, getSiteBaseUrl, TIMEOUTS } from './constants.js'
+import { getApiUrl, getSiteBaseUrl, TIMEOUTS } from './constants.js'
 
 // ==========================================
 // MESSAGE HANDLING
@@ -32,15 +32,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true
 
     case 'uploadPartyData':
-      uploadPartyData(message.data, message.site).then(sendResponse)
+      uploadPartyData(message.data).then(sendResponse)
       return true
 
     case 'uploadDetailData':
-      uploadDetailData(message.data, message.dataType, message.site).then(sendResponse)
+      uploadDetailData(message.data, message.dataType).then(sendResponse)
       return true
 
     case 'uploadCollectionData':
-      uploadCollectionData(message.data, message.dataType, message.updateExisting, message.site).then(sendResponse)
+      uploadCollectionData(message.data, message.dataType, message.updateExisting).then(sendResponse)
       return true
 
     case 'dataCaptured':
@@ -136,19 +136,18 @@ async function ensureContentScriptLoaded(tabId) {
 /**
  * Upload party data to granblue.team API
  * @param {Object} data - Party data to upload
- * @param {string} site - 'production' or 'staging'
  */
-async function uploadPartyData(data, site = 'production') {
+async function uploadPartyData(data) {
   const auth = await getAuthToken()
   if (!auth) {
     return { error: 'Not logged in. Please log in first.' }
   }
 
-  const apiUrl = getApiBaseUrl(site)
-  const siteUrl = getSiteBaseUrl(site)
+  const apiUrl = await getApiUrl('/import')
+  const siteUrl = await getSiteBaseUrl()
 
   try {
-    const response = await fetch(`${apiUrl}/v1/import`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -177,9 +176,8 @@ async function uploadPartyData(data, site = 'production') {
  * Upload detail data (character, weapon, summon) to granblue.team API
  * @param {Object} data - Detail data to upload
  * @param {string} dataType - Type of data (detail_npc, detail_weapon, detail_summon)
- * @param {string} site - 'production' or 'staging'
  */
-async function uploadDetailData(data, dataType, site = 'production') {
+async function uploadDetailData(data, dataType) {
   const auth = await getAuthToken()
   if (!auth) {
     return { error: 'Not logged in. Please log in first.' }
@@ -204,10 +202,10 @@ async function uploadDetailData(data, dataType, site = 'production') {
     lang = 'jp'
   }
 
-  const apiUrl = getApiBaseUrl(site)
+  const apiUrl = await getApiUrl(`/import/${endpoint}?lang=${lang}`)
 
   try {
-    const response = await fetch(`${apiUrl}/v1/import/${endpoint}?lang=${lang}`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -233,20 +231,22 @@ async function uploadDetailData(data, dataType, site = 'production') {
  * @param {Object} pagesData - Collection data (may contain multiple pages)
  * @param {string} dataType - Type of collection (collection_weapon, collection_npc, etc.)
  * @param {boolean} updateExisting - Whether to update existing items
- * @param {string} site - 'production' or 'staging'
  */
-async function uploadCollectionData(pagesData, dataType, updateExisting = false, site = 'production') {
+async function uploadCollectionData(pagesData, dataType, updateExisting = false) {
   const auth = await getAuthToken()
   if (!auth) {
     return { error: 'Not logged in. Please log in first.' }
   }
 
-  // Map data type to endpoint
+  // Map data type to endpoint (both collection_ and list_ types use same endpoints)
   const endpointMap = {
     'collection_weapon': 'weapons',
     'collection_npc': 'characters',
     'collection_summon': 'summons',
-    'collection_artifact': 'artifacts'
+    'collection_artifact': 'artifacts',
+    'list_weapon': 'weapons',
+    'list_npc': 'characters',
+    'list_summon': 'summons'
   }
   const endpoint = endpointMap[dataType]
   if (!endpoint) {
@@ -265,10 +265,10 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false,
     return { error: 'No items found in collection data' }
   }
 
-  const apiUrl = getApiBaseUrl(site)
+  const apiUrl = await getApiUrl(`/collection/${endpoint}/import`)
 
   try {
-    const response = await fetch(`${apiUrl}/v1/collection/${endpoint}/import`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
