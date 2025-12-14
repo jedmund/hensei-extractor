@@ -470,11 +470,11 @@ function getArtifactLabels(item) {
   let html = '<div class="list-item-labels">'
 
   if (element) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/element-${element}.png`)}" alt="">`
+    html += `<img class="label-icon" src="${getImageUrl(`labels/element/${element}.png`)}" alt="">`
   }
 
   if (proficiency) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency-${proficiency}.png`)}" alt="">`
+    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/${proficiency}.png`)}" alt="">`
   }
 
   html += '</div>'
