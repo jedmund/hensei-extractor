@@ -737,11 +737,17 @@ function updateTabCacheDisplay(tabName, status) {
     // Find all party_* types in status
     typesToDisplay = Object.keys(status || {})
       .filter(type => type.startsWith('party_') && status[type]?.available)
-      .sort() // Sort by party ID for consistent ordering
   } else {
     typesToDisplay = (TAB_DATA_TYPES[tabName] || [])
       .filter(type => status?.[type]?.available)
   }
+
+  // Sort by lastUpdated descending (most recent first)
+  typesToDisplay.sort((a, b) => {
+    const aTime = status[a]?.lastUpdated || 0
+    const bTime = status[b]?.lastUpdated || 0
+    return bTime - aTime
+  })
 
   if (typesToDisplay.length === 0) {
     container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`
