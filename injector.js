@@ -70,14 +70,33 @@
   }
 
   /**
-   * Extract party identifier from party deck URL
-   * URL pattern: /party/deck/{group}/{slot} e.g., /party/deck/1/2
+   * Extract party identifier from URL or response data
+   * Tries URL pattern first: /party/deck/{group}/{slot}
+   * Falls back to data.deck.priority if available
    * @param {string} url - The URL to analyze
-   * @returns {string|null} The party ID like "1_2" or null
+   * @param {object} data - The response data
+   * @returns {string|null} The party ID or null
    */
-  function getPartyId(url) {
-    const match = url.match(/\/party\/deck\/(\d+)\/(\d+)/)
-    return match ? `${match[1]}_${match[2]}` : null
+  function getPartyId(url, data) {
+    // Try URL pattern first
+    const urlMatch = url.match(/\/party\/deck\/(\d+)\/(\d+)/)
+    if (urlMatch) {
+      return `${urlMatch[1]}_${urlMatch[2]}`
+    }
+
+    // Fall back to data - check for priority/index in deck
+    if (data?.deck) {
+      // priority field indicates the deck slot (1-indexed)
+      if (data.deck.priority !== undefined) {
+        return `deck_${data.deck.priority}`
+      }
+      // Use party name as fallback identifier (sanitized)
+      if (data.deck.name) {
+        return data.deck.name.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)
+      }
+    }
+
+    return null
   }
 
   /**
@@ -88,7 +107,7 @@
   function dispatchInterceptedData(url, data) {
     const dataType = getDataType(url)
     const pageNumber = getPageNumber(url)
-    const partyId = getPartyId(url)
+    const partyId = dataType === 'party' ? getPartyId(url, data) : null
 
     window.dispatchEvent(new CustomEvent('gbf-data-intercepted', {
       detail: {
