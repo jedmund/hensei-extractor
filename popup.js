@@ -569,19 +569,180 @@ function renderDatabaseDetail(container, dataType, data) {
 
   // Add proficiency label for weapons
   if (dataType === 'detail_weapon') {
-    const proficiency = data.kind || data.weapon_kind
+    const proficiency = data.kind || data.master?.kind
     if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
       html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[proficiency]}">`
     }
   }
 
+  html += `</div>`
+
+  // Add type-specific stats
+  if (dataType === 'detail_npc') {
+    html += renderCharacterStats(data)
+  } else if (dataType === 'detail_weapon') {
+    html += renderWeaponStats(data)
+  } else if (dataType === 'detail_summon') {
+    html += renderSummonStats(data)
+  }
+
   html += `
-        </div>
       </div>
     </div>
   `
 
   container.innerHTML = html
+}
+
+/**
+ * Render character stats section
+ */
+function renderCharacterStats(data) {
+  const master = data.master || data
+  const param = data.param || {}
+
+  const uncap = param.evolution ?? 0
+  const maxUncap = master.max_evolution ?? 5
+  const transcend = param.phase ?? 0
+  const ringed = param.has_npcaugment_constant
+
+  let html = '<div class="database-stats">'
+
+  // Uncap stars
+  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(uncap, maxUncap)}</span></div>`
+
+  // Transcendence
+  if (transcend > 0 || maxUncap >= 6) {
+    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">${transcend > 0 ? `Stage ${transcend}` : 'None'}</span></div>`
+  }
+
+  // Perpetuity Ring
+  if (ringed) {
+    html += `<div class="stat-row"><span class="stat-label">Perpetuity Ring</span><span class="stat-value">✓</span></div>`
+  }
+
+  // Level
+  if (param.level) {
+    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${param.level}</span></div>`
+  }
+
+  html += '</div>'
+  return html
+}
+
+/**
+ * Render weapon stats section
+ */
+function renderWeaponStats(data) {
+  const master = data.master || data
+  const param = data.param || {}
+
+  const level = param.level ?? 0
+  const uncap = calculateWeaponUncap(level)
+  const transcend = uncap > 5 ? calculateWeaponTranscend(level) : 0
+
+  let html = '<div class="database-stats">'
+
+  // Uncap stars
+  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(Math.min(uncap, 5), 5)}</span></div>`
+
+  // Transcendence
+  if (transcend > 0) {
+    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">Stage ${transcend}</span></div>`
+  }
+
+  // Level
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${level}</span></div>`
+  }
+
+  // Awakening
+  const arousal = param.arousal
+  if (arousal?.is_arousal_weapon) {
+    html += `<div class="stat-row"><span class="stat-label">Awakening</span><span class="stat-value">${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}</span></div>`
+  }
+
+  // AX Skills
+  const axSkills = param.augment_skill_info?.[0]
+  if (axSkills && Object.keys(axSkills).length > 0) {
+    const axCount = Object.keys(axSkills).length
+    html += `<div class="stat-row"><span class="stat-label">AX Skills</span><span class="stat-value">${axCount} skill${axCount > 1 ? 's' : ''}</span></div>`
+  }
+
+  html += '</div>'
+  return html
+}
+
+/**
+ * Render summon stats section
+ */
+function renderSummonStats(data) {
+  const master = data.master || data
+  const param = data.param || {}
+
+  const uncap = param.evolution ?? 0
+  const maxUncap = master.max_evolution ?? 5
+  const level = param.level ?? 0
+  const transcend = calculateSummonTranscend(level)
+
+  let html = '<div class="database-stats">'
+
+  // Uncap stars
+  html += `<div class="stat-row"><span class="stat-label">Uncap</span><span class="stat-value">${renderStars(Math.min(uncap, 5), 5)}</span></div>`
+
+  // Transcendence
+  if (transcend > 0 || uncap >= 5) {
+    html += `<div class="stat-row"><span class="stat-label">Transcendence</span><span class="stat-value">${transcend > 0 ? `Stage ${transcend}` : 'None'}</span></div>`
+  }
+
+  // Level
+  if (level) {
+    html += `<div class="stat-row"><span class="stat-label">Level</span><span class="stat-value">${level}</span></div>`
+  }
+
+  // Sub Aura
+  const subAura = data.sub_skill?.name
+  if (subAura) {
+    html += `<div class="stat-row"><span class="stat-label">Sub Aura</span><span class="stat-value">${subAura}</span></div>`
+  }
+
+  html += '</div>'
+  return html
+}
+
+/**
+ * Render uncap stars
+ */
+function renderStars(current, max) {
+  let stars = ''
+  for (let i = 0; i < max; i++) {
+    stars += i < current ? '★' : '☆'
+  }
+  return stars
+}
+
+/**
+ * Calculate weapon uncap level from level
+ */
+function calculateWeaponUncap(level) {
+  const thresholds = [40, 60, 80, 100, 150, 200]
+  return thresholds.filter(t => level > t).length
+}
+
+/**
+ * Calculate weapon transcendence level from level
+ */
+function calculateWeaponTranscend(level) {
+  const thresholds = [210, 220, 230, 240]
+  return 1 + thresholds.filter(t => level > t).length
+}
+
+/**
+ * Calculate summon transcendence level from level
+ */
+function calculateSummonTranscend(level) {
+  const thresholds = [210, 220, 230, 240]
+  return thresholds.filter(t => level > t).length
 }
 
 /**
