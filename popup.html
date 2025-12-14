@@ -4,139 +4,143 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div id="mainPane" class="main pane">
-      <div class="top">
-        <div class="header">
-          <div class="title">
-            <p>granblue.team</p>
-            <h1>Data Extractor</h1>
+    <!-- Login View (shown when not authenticated) -->
+    <div id="loginView" class="view login-view">
+      <div class="login-background"></div>
+      <div class="login-content">
+        <!-- Warning Card -->
+        <div id="warning" class="auth-card">
+          <h1 class="auth-title">granblue.team</h1>
+          <div class="auth-body">
+            <p>
+              This extension only reads data your browser has already received.
+              It does NOT make additional requests to GBF servers or modify game behavior.
+            </p>
+            <p>
+              While this is the safest approach, third-party tools are technically
+              against Terms of Service. Use at your own risk.
+            </p>
+            <p>
+              granblue.team assumes no responsibility for any account suspensions
+              or bans that may result from its use.
+            </p>
           </div>
+          <button id="acknowledgeButton" class="button btn-primary full">I understand</button>
+        </div>
+
+        <!-- Login Card (shown after acknowledging warning) -->
+        <div id="loginFormContainer" class="auth-card hidden">
+          <h1 class="auth-title">Log in</h1>
+          <div id="loginForm" class="auth-form">
+            <input type="email" id="loginUsername" class="contained" placeholder="Email address" />
+            <input type="password" id="loginPassword" class="contained" placeholder="Password" />
+            <div id="loginStatus" class="hidden"></div>
+            <button id="loginButton" class="button btn-primary full">Log in</button>
+          </div>
+          <div class="auth-footer">
+            <span>Don't have an account?</span>
+            <a target="_blank" href="https://next.granblue.team/auth/register">Create one</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View (shown when authenticated) -->
+    <div id="mainView" class="view hidden">
+      <!-- Tab Navigation -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="party">Party</button>
+        <button class="tab" data-tab="collection">Collection</button>
+        <button class="tab hidden" data-tab="database" id="databaseTab">Database</button>
+        <button class="tab tab-profile" data-tab="profile">
           <img
-            id="avatar"
-            class="avatar"
+            id="tabAvatar"
+            class="tab-avatar"
             src="https://siero-img.s3-us-west-2.amazonaws.com/profile/npc@2x.png"
           />
+        </button>
+      </nav>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Party Tab -->
+        <div id="partyPanel" class="panel active">
+          <div id="partyItems" class="cache-items">
+            <p class="cache-empty">Browse a party in game to capture data</p>
+          </div>
+          <div id="partyNotice" class="notice hidden">
+            <p id="partyStatus"></p>
+          </div>
         </div>
 
-      </div>
-
-      <!-- Cache Items (main content) -->
-      <div id="cache-items" class="cache-items">
-        <p class="cache-empty">Browse the game to capture data</p>
-      </div>
-
-      <!-- Status Notice -->
-      <div class="notice import" id="import-notice" style="display: none;">
-        <p id="import-status"></p>
-      </div>
-
-      <!-- Export/Copy Buttons -->
-      <div id="export-container" class="buttons">
-        <a id="exportButton" class="button btn-green" disabled>Export</a>
-        <a id="copyButton" class="button btn-white" disabled>Copy JSON</a>
-      </div>
-
-      <!-- Warning Notice -->
-      <div id="warning" class="notice">
-        <div class="notice-text">
-          <p>
-            This extension only reads data your browser has already received.
-            It does NOT make additional requests to GBF servers or modify game behavior.
-          </p>
-          <p>
-            While this is the safest approach, third-party tools are technically
-            against Terms of Service. Use at your own risk.
-          </p>
-          <p>
-            granblue.team assumes no responsibility for any account suspensions
-            or bans that may result from its use.
-          </p>
+        <!-- Collection Tab -->
+        <div id="collectionPanel" class="panel">
+          <div id="collectionItems" class="cache-items">
+            <p class="cache-empty">Browse your collection pages to capture data</p>
+          </div>
+          <div id="collectionNotice" class="notice hidden">
+            <p id="collectionStatus"></p>
+          </div>
         </div>
-        <a id="acknowledgeButton" class="button btn-stroke small"
-          >I understand</a
-        >
+
+        <!-- Database Tab (admin only) -->
+        <div id="databasePanel" class="panel">
+          <div id="databaseItems" class="cache-items">
+            <p class="cache-empty">Browse detail pages to capture data</p>
+          </div>
+          <div id="databaseNotice" class="notice hidden">
+            <p id="databaseStatus"></p>
+          </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profilePanel" class="panel">
+          <a id="viewProfile" class="profile-header" href="#" target="_blank">
+            <img
+              id="profileAvatar"
+              class="avatar-large"
+              src="https://siero-img.s3-us-west-2.amazonaws.com/profile/npc@2x.png"
+            />
+            <span id="profileUsername" class="profile-username">Username</span>
+          </a>
+
+          <div class="profile-footer">
+            <button id="clearCacheButton" class="button">Clear captured data</button>
+            <button id="showWarning" class="button">Show extension disclaimer</button>
+            <button id="logoutButton" class="button btn-stroke">Log out</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Auth Buttons (hidden when logged in) -->
-      <div id="main-buttons" class="buttons">
-        <a
-          id="signupButton"
-          class="button btn-green"
-          target="_blank"
-          href="https://next.granblue.team/auth/register"
-          >Sign up</a
-        >
-        <a id="showLogin" class="button btn-white">Log in</a>
+      <!-- Detail View (slides over tab content) -->
+      <div id="detailView" class="detail-view">
+        <header class="detail-header">
+          <button id="detailBack" class="detail-back">
+            <svg class="icon-chevron" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M9.82906 2.04309C9.43862 1.6528 8.8055 1.6529 8.415 2.04309L4.17281 6.28625C4.0002 6.45893 3.9037 6.67885 3.88375 6.90442C3.85638 7.19118 3.95321 7.48755 4.17281 7.70715L8.415 11.9503C8.80545 12.3402 9.43867 12.3403 9.82906 11.9503C10.2192 11.5599 10.219 10.9267 9.82906 10.5363L6.29098 6.99622L9.82906 3.45715C10.2192 3.06673 10.2191 2.43355 9.82906 2.04309Z" fill="currentColor"/>
+            </svg>
+            <span>Back</span>
+          </button>
+          <div class="detail-actions">
+            <button id="detailCopy" class="button small">Copy</button>
+            <button id="detailImport" class="button small">Import</button>
+          </div>
+        </header>
+        <div class="detail-meta">
+          <div class="detail-meta-left">
+            <span id="detailPageCount"></span>
+            <span id="detailItemCount"></span>
+          </div>
+          <span id="detailFreshness"></span>
+        </div>
+        <div id="detailItems" class="detail-items">
+          <!-- Items rendered here -->
+        </div>
       </div>
     </div>
 
-    <!-- Login Pane (slides in from the right) -->
-    <div id="loginPane" class="sliding pane login">
-      <div class="header">
-        <div class="title">
-          <p>granblue.team</p>
-          <h1>Log in</h1>
-        </div>
-        <button id="backToMain" class="close">&times;</button>
-      </div>
-      <div id="loginForm" class="subsection">
-        <input type="text" id="loginUsername" placeholder="Email address" />
-        <input type="password" id="loginPassword" placeholder="Password" />
-        <a id="loginButton" class="button btn-green">Login</a>
-      </div>
-      <div id="loginStatus"></div>
-    </div>
-
-    <!-- Settings Pane (slides in from the right) -->
-    <div id="settingsPane" class="sliding pane settings">
-      <div class="header">
-        <div class="title">
-          <p>granblue.team</p>
-          <h1>Settings</h1>
-        </div>
-        <button id="closeSettingsPane" class="close">&times;</button>
-      </div>
-
-      <!-- Account Section -->
-      <div class="settings-section">
-        <div class="settings-label">Account</div>
-        <div class="settings-account">
-          <span id="settingsUsername" class="settings-username">Not logged in</span>
-          <a id="goToProfileButton" class="btn-link">View profile</a>
-        </div>
-      </div>
-
-      <!-- Environment Section -->
-      <div class="settings-section">
-        <div class="settings-label">Environment</div>
-        <div class="settings-options">
-          <label class="settings-option">
-            <input type="radio" name="appEnv" value="production" />
-            <span>Production</span>
-          </label>
-          <label class="settings-option">
-            <input type="radio" name="appEnv" value="development" checked />
-            <span>Development</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- About Section -->
-      <div class="settings-section">
-        <div class="settings-label">About</div>
-        <p class="settings-description">
-          This extension passively captures your game data as you browse.
-          No additional requests are made to GBF servers.
-        </p>
-      </div>
-
-      <!-- Footer -->
-      <div class="settings-footer">
-        <a id="showWarning" class="btn-link">Show extension disclaimer</a>
-        <a id="clearCacheButton" class="btn-link">Clear captured data</a>
-        <a id="logoutButton" class="button btn-white">Log out</a>
-      </div>
-    </div>
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
 
     <script type="module" src="popup.js"></script>
   </body>
