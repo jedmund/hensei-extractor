@@ -65,14 +65,14 @@ function formatAuthData(data) {
 }
 
 /**
- * Fetches additional user information from Granblue Team API.
- * @param {string} username - User's username.
+ * Fetches current user's settings from Granblue Team API.
+ * Uses the /users/me endpoint which gets user from the access token.
  * @param {string} accessToken - OAuth access token.
- * @returns {Promise<Object>} The user info object.
+ * @returns {Promise<Object>} The user settings object.
  * @throws {Error} If the request fails.
  */
-export async function fetchUserInfo(username, accessToken) {
-  const apiUrl = await getApiUrl(`/users/info/${username}`)
+export async function fetchUserInfo(accessToken) {
+  const apiUrl = await getApiUrl('/users/me')
 
   try {
     const response = await fetch(
