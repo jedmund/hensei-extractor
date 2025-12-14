@@ -460,6 +460,30 @@ function getItemImageUrl(dataType, item) {
   return ''
 }
 
+// Element ID to name mapping
+const ELEMENT_NAMES = {
+  1: 'Fire',
+  2: 'Water',
+  3: 'Earth',
+  4: 'Wind',
+  5: 'Light',
+  6: 'Dark'
+}
+
+// Weapon proficiency ID to name mapping
+const PROFICIENCY_NAMES = {
+  1: 'Sabre',
+  2: 'Dagger',
+  3: 'Spear',
+  4: 'Axe',
+  5: 'Staff',
+  6: 'Gun',
+  7: 'Melee',
+  8: 'Bow',
+  9: 'Harp',
+  10: 'Katana'
+}
+
 /**
  * Get element and proficiency labels for an artifact
  */
@@ -469,12 +493,12 @@ function getArtifactLabels(item) {
 
   let html = '<div class="list-item-labels">'
 
-  if (element) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/element/${element}.png`)}" alt="">`
+  if (element && ELEMENT_NAMES[element]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${ELEMENT_NAMES[element]}.png`)}" alt="">`
   }
 
-  if (proficiency) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/${proficiency}.png`)}" alt="">`
+  if (proficiency && PROFICIENCY_NAMES[proficiency]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${PROFICIENCY_NAMES[proficiency]}.png`)}" alt="">`
   }
 
   html += '</div>'
