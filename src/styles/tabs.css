@@ -1,0 +1,271 @@
+/* ==========================================
+   TAB NAVIGATION
+   ========================================== */
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding: 8px;
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg) var(--spacing-sm);
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Default/null element active state */
+.tab.active {
+  color: #444;
+  background: #efefef;
+}
+
+/* Element-based active tab colors */
+body.fire .tab.active {
+  color: #6e0000;
+  background: #ffcdcd;
+}
+body.water .tab.active {
+  color: #004b77;
+  background: #cdedff;
+}
+body.earth .tab.active {
+  color: #863504;
+  background: #ffe2cd;
+}
+body.wind .tab.active {
+  color: #006a45;
+  background: #cdffed;
+}
+body.light .tab.active {
+  color: #715100;
+  background: #fffacd;
+}
+body.dark .tab.active {
+  color: #560075;
+  background: #f2cdff;
+}
+
+.tab.hidden {
+  display: none;
+}
+
+.tab-profile {
+  flex: 0;
+  padding: var(--spacing-sm);
+}
+
+.tab-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: #efefef;
+  display: block;
+}
+
+/* ==========================================
+   TAB CONTENT / PANELS
+   ========================================== */
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--spacing-sm);
+  gap: var(--spacing-sm);
+  overflow-y: auto;
+}
+
+.panel.active {
+  display: flex;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.actions .button {
+  flex: 1;
+}
+
+/* ==========================================
+   CACHE ITEMS
+   ========================================== */
+.cache-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cache-empty,
+.cache-error {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.cache-error {
+  color: var(--color-error);
+}
+
+.cache-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  background: transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.cache-item:hover {
+  background: var(--element-bg);
+  color: var(--element-text);
+}
+
+.cache-item.stale {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cache-item.stale:hover {
+  background: transparent;
+}
+
+.cache-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.cache-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.cache-item:hover .cache-name {
+  color: inherit;
+}
+
+.cache-subtitle {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.cache-item:hover .cache-subtitle {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.cache-age {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.cache-item:hover .cache-age {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* Cache item chevron */
+.cache-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cache-detail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+  color: inherit;
+}
+
+.cache-detail-btn:hover {
+  opacity: 1;
+}
+
+.icon-chevron {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ==========================================
+   PROFILE PANEL
+   ========================================== */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: #f5f5f5;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.profile-header:hover {
+  background: #ebebeb;
+  text-decoration: none;
+}
+
+.avatar-large {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: #e0e0e0;
+}
+
+.profile-username {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.profile-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}

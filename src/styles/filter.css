@@ -1,0 +1,100 @@
+/* ==========================================
+   RARITY FILTER
+   ========================================== */
+.detail-filter {
+  position: relative;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.filter-button:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.filter-chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--transition-fast);
+}
+
+.filter-dropdown.open + .filter-button .filter-chevron,
+.detail-filter:has(.filter-dropdown.open) .filter-chevron {
+  transform: rotate(180deg);
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: none;
+  z-index: 20;
+  min-width: 100px;
+}
+
+.filter-dropdown.open {
+  display: block;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--color-text);
+  transition: background-color var(--transition-fast);
+}
+
+.filter-option:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.filter-option:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.filter-option:hover {
+  background: var(--color-bg);
+}
+
+.filter-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--element-button-bg);
+}
+
+.filter-option input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.filter-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 4px 0;
+}
