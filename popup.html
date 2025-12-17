@@ -131,10 +131,41 @@
             <span id="detailPageCount"></span>
             <span id="detailItemCount"></span>
           </div>
+          <div class="detail-filter hidden" id="detailFilter">
+            <button class="filter-button" id="filterButton">
+              <span>SSR</span>
+              <svg class="filter-chevron" viewBox="0 0 14 14" fill="currentColor">
+                <path d="M3.45715 4.17094C3.06673 4.56138 3.0669 5.1945 3.45715 5.585L6.99622 9.12309C7.38673 9.51355 8.01985 9.51355 8.41031 9.12309L11.9494 5.585C12.3398 5.19455 12.3398 4.56133 11.9494 4.17094C11.5589 3.78079 10.9258 3.78097 10.5353 4.17094L7.70317 7.00406L4.87094 4.17094C4.48053 3.78082 3.84735 3.78088 3.45715 4.17094Z"/>
+              </svg>
+            </button>
+            <div class="filter-dropdown" id="filterDropdown">
+              <label class="filter-option">
+                <input type="checkbox" value="4" checked disabled>
+                <span>SSR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="3">
+                <span>SR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="2">
+                <span>R</span>
+              </label>
+              <div class="filter-divider hidden" id="lv1FilterDivider"></div>
+              <label class="filter-option hidden" id="lv1FilterOption">
+                <input type="checkbox" id="excludeLv1Checkbox" checked>
+                <span>Exclude Lv1</span>
+              </label>
+            </div>
+          </div>
           <span id="detailFreshness"></span>
         </div>
         <div id="detailItems" class="detail-items">
           <!-- Items rendered here -->
+        </div>
+        <div id="detailSelectionBar" class="selection-bar hidden">
+          <button id="selectAllBtn" class="button small">Select all</button>
+          <button id="unselectAllBtn" class="button small btn-stroke">Unselect all</button>
         </div>
       </div>
     </div>

@@ -34,6 +34,20 @@ let cachedStatus = null
 let detailViewActive = false
 let currentDetailDataType = null
 let selectedItems = new Set() // Track selected item indices for collection views
+let currentItemIndexMap = [] // Maps filtered index to original index for collections
+
+// Rarity filter state: which rarities to show
+// GBF rarity values: 4=SSR, 3=SR, 2=R, 1=N
+let activeRarityFilters = new Set(['4']) // SSR shown by default
+
+// Exclude Lv1 filter state (for weapons/summons only)
+let excludeLv1Items = true // Enabled by default
+
+const RARITY_LABELS = {
+  '4': 'SSR',
+  '3': 'SR',
+  '2': 'R'
+}
 
 // ==========================================
 // INITIALIZATION
@@ -140,6 +154,13 @@ function initializeEventListeners() {
   document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
   document.getElementById('detailCopy')?.addEventListener('click', handleDetailCopy)
   document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
+
+  // Rarity filter
+  initializeFilterListeners()
+
+  // Selection bar buttons
+  document.getElementById('selectAllBtn')?.addEventListener('click', handleSelectAll)
+  document.getElementById('unselectAllBtn')?.addEventListener('click', handleUnselectAll)
 }
 
 // ==========================================
@@ -230,6 +251,20 @@ async function showDetailView(dataType) {
   importBtn.disabled = false
   importBtn.classList.remove('imported')
 
+  // Show/hide rarity filter and selection bar based on data type
+  const filterEl = document.getElementById('detailFilter')
+  const selectionBar = document.getElementById('detailSelectionBar')
+  if (isCollectionType(dataType)) {
+    filterEl?.classList.remove('hidden')
+    selectionBar?.classList.remove('hidden')
+    resetRarityFilter() // Reset to default SSR-only
+    resetLv1Filter(dataType) // Reset and show/hide Lv1 filter based on data type
+    selectedItems = new Set() // Clear selections for fresh render
+  } else {
+    filterEl?.classList.add('hidden')
+    selectionBar?.classList.add('hidden')
+  }
+
   // Render items
   renderDetailItems(dataType, response.data)
 
@@ -245,6 +280,9 @@ function hideDetailView() {
   document.getElementById('detailView').classList.remove('active')
   detailViewActive = false
   currentDetailDataType = null
+
+  // Close filter dropdown if open
+  document.getElementById('filterDropdown')?.classList.remove('open')
 }
 
 /**
@@ -263,6 +301,13 @@ const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="curren
  */
 function isCollectionType(dataType) {
   return dataType.startsWith('collection_') || dataType.startsWith('list_')
+}
+
+/**
+ * Check if a data type is a weapon or summon collection (supports Lv1 filter)
+ */
+function isWeaponOrSummonCollection(dataType) {
+  return dataType.includes('weapon') || dataType.includes('summon')
 }
 
 /**
@@ -290,12 +335,46 @@ function renderDetailItems(dataType, data) {
     return
   }
 
-  const items = extractItems(dataType, data)
+  const allItems = extractItems(dataType, data)
   const isCollection = isCollectionType(dataType)
 
-  // Initialize all items as selected for collection views
+  // Filter items by rarity if collection type
+  let items = allItems
+  currentItemIndexMap = [] // Reset mapping
+
   if (isCollection) {
-    selectedItems = new Set(items.map((_, i) => i))
+    items = []
+    allItems.forEach((item, originalIndex) => {
+      // Rarity can be at item.master.rarity (weapons/summons) or item.param.rarity (characters)
+      const rarity = item.rarity || item.master?.rarity || item.param?.rarity
+      // Show item if no rarity (unknown) or rarity matches active filters
+      if (!rarity || activeRarityFilters.has(String(rarity))) {
+        currentItemIndexMap.push(originalIndex)
+        items.push(item)
+      }
+    })
+
+    // Initialize selection: only SSR items (rarity "4") checked by default
+    // Also exclude Lv1 items for weapons/summons if filter is enabled
+    // Preserve existing selections if re-rendering due to filter change
+    const isFirstRender = selectedItems.size === 0 || !detailViewActive
+    if (isFirstRender) {
+      selectedItems = new Set()
+      const shouldExcludeLv1 = excludeLv1Items && isWeaponOrSummonCollection(dataType)
+      items.forEach((item, filteredIndex) => {
+        // Rarity can be at item.master.rarity (weapons/summons) or item.param.rarity (characters)
+        const rarity = item.rarity || item.master?.rarity || item.param?.rarity
+        // Only pre-select if it's an SSR (rarity 4, can be string or number)
+        // Also skip Lv1 items if excludeLv1 filter is enabled for weapons/summons
+        if (String(rarity) === '4') {
+          if (shouldExcludeLv1 && Number(item.param.level) === 1) {
+            // Don't pre-select Lv1 items
+          } else {
+            selectedItems.add(currentItemIndexMap[filteredIndex])
+          }
+        }
+      })
+    }
   }
 
   const hasNames = items.some(item => item.name || item.master?.name)
@@ -303,17 +382,19 @@ function renderDetailItems(dataType, data) {
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${items.map((item, index) => {
+      ${items.map((item, filteredIndex) => {
+        const originalIndex = isCollection ? currentItemIndexMap[filteredIndex] : filteredIndex
+        const isChecked = isCollection && selectedItems.has(originalIndex)
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
         return `
-        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
@@ -322,34 +403,36 @@ function renderDetailItems(dataType, data) {
           ${checkboxHtml}
         </div>
       `}).join('')}
-    </div>`
+    </div>${isCollection ? '<p class="collection-note">Navigate to the next page in-game to import more items</p>' : ''}`
   } else {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
-      ${items.map((item, index) => {
+      ${items.map((item, filteredIndex) => {
+        const originalIndex = isCollection ? currentItemIndexMap[filteredIndex] : filteredIndex
+        const isChecked = isCollection && selectedItems.has(originalIndex)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
         return `
-        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           <img src="${getItemImageUrl(dataType, item)}" alt="">
           ${checkboxHtml}
         </div>
       `}).join('')}
-    </div>`
+    </div>${isCollection ? '<p class="collection-note">Navigate to the next page in-game to import more items</p>' : ''}`
   }
 
   // Add click handlers for selectable items (whole item toggles checkbox)
   if (isCollection) {
     container.querySelectorAll('.selectable').forEach(item => {
       item.addEventListener('click', () => {
-        const index = parseInt(item.dataset.index, 10)
+        const originalIndex = parseInt(item.dataset.index, 10)
         const checkbox = item.querySelector('.item-checkbox')
         if (checkbox) {
-          toggleItemSelection(index, checkbox)
+          toggleItemSelection(originalIndex, checkbox)
         }
       })
     })
@@ -359,15 +442,20 @@ function renderDetailItems(dataType, data) {
       img.addEventListener('error', () => {
         const item = img.closest('.selectable')
         if (!item) return
-        const index = parseInt(item.dataset.index, 10)
+        const originalIndex = parseInt(item.dataset.index, 10)
         const checkbox = item.querySelector('.item-checkbox')
-        if (checkbox && selectedItems.has(index)) {
-          selectedItems.delete(index)
+        if (checkbox && selectedItems.has(originalIndex)) {
+          selectedItems.delete(originalIndex)
           checkbox.classList.remove('checked')
           updateSelectionCount()
         }
       })
     })
+  }
+
+  // Update selection count display
+  if (isCollection) {
+    updateSelectionCount()
   }
 }
 
@@ -392,8 +480,240 @@ function updateSelectionCount() {
   const countEl = document.getElementById('detailItemCount')
   if (countEl && isCollectionType(currentDetailDataType)) {
     const total = document.querySelectorAll('#detailItems .item-checkbox').length
-    const selected = selectedItems.size
-    countEl.textContent = `${selected}/${total} selected`
+    // Count only visible selected items (using currentItemIndexMap)
+    const visibleSelectedCount = currentItemIndexMap.filter(idx => selectedItems.has(idx)).length
+    countEl.textContent = `${visibleSelectedCount}/${total} selected`
+  }
+}
+
+/**
+ * Handle Select All button click
+ */
+function handleSelectAll() {
+  // Select all visible items (those in currentItemIndexMap)
+  currentItemIndexMap.forEach(originalIndex => {
+    selectedItems.add(originalIndex)
+  })
+  // Update checkbox UI
+  document.querySelectorAll('#detailItems .item-checkbox').forEach(checkbox => {
+    checkbox.classList.add('checked')
+  })
+  updateSelectionCount()
+}
+
+/**
+ * Handle Unselect All button click
+ */
+function handleUnselectAll() {
+  // Unselect all visible items (those in currentItemIndexMap)
+  currentItemIndexMap.forEach(originalIndex => {
+    selectedItems.delete(originalIndex)
+  })
+  // Update checkbox UI
+  document.querySelectorAll('#detailItems .item-checkbox').forEach(checkbox => {
+    checkbox.classList.remove('checked')
+  })
+  updateSelectionCount()
+}
+
+// ==========================================
+// RARITY FILTER
+// ==========================================
+
+/**
+ * Initialize filter dropdown event listeners
+ */
+function initializeFilterListeners() {
+  const filterButton = document.getElementById('filterButton')
+  const filterDropdown = document.getElementById('filterDropdown')
+
+  filterButton?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    filterDropdown.classList.toggle('open')
+  })
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.detail-filter')) {
+      filterDropdown?.classList.remove('open')
+    }
+  })
+
+  // Handle rarity checkbox changes (checkboxes with value attribute)
+  filterDropdown?.querySelectorAll('input[type="checkbox"][value]:not(:disabled)').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      updateRarityFilter()
+    })
+  })
+
+  // Handle Lv1 filter checkbox change
+  const lv1Checkbox = document.getElementById('excludeLv1Checkbox')
+  lv1Checkbox?.addEventListener('change', () => {
+    updateLv1Filter()
+  })
+}
+
+/**
+ * Update rarity filter based on checkbox states
+ */
+async function updateRarityFilter() {
+  const checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]')
+  activeRarityFilters = new Set()
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      activeRarityFilters.add(cb.value)
+    }
+  })
+
+  // Update button label
+  updateFilterButtonLabel()
+
+  // Re-render items (preserve selections)
+  if (currentDetailDataType) {
+    await refreshDetailView()
+  }
+}
+
+/**
+ * Update the filter button label based on active filters
+ */
+function updateFilterButtonLabel() {
+  const button = document.getElementById('filterButton')
+  if (!button) return
+
+  const labels = []
+  if (activeRarityFilters.has('4')) labels.push('SSR')
+  if (activeRarityFilters.has('3')) labels.push('SR')
+  if (activeRarityFilters.has('2')) labels.push('R')
+
+  button.querySelector('span').textContent = labels.join(', ') || 'SSR'
+}
+
+/**
+ * Reset rarity filter to default (SSR only)
+ */
+function resetRarityFilter() {
+  activeRarityFilters = new Set(['4']) // SSR only
+  // Reset checkboxes
+  const dropdown = document.getElementById('filterDropdown')
+  dropdown?.querySelectorAll('input[type="checkbox"][value]').forEach(cb => {
+    cb.checked = cb.value === '4' // Only SSR checked by default
+  })
+  updateFilterButtonLabel()
+}
+
+/**
+ * Reset Lv1 filter and show/hide based on data type
+ */
+function resetLv1Filter(dataType) {
+  const lv1FilterOption = document.getElementById('lv1FilterOption')
+  const lv1FilterDivider = document.getElementById('lv1FilterDivider')
+  const lv1Checkbox = document.getElementById('excludeLv1Checkbox')
+
+  if (isCollectionType(dataType) && isWeaponOrSummonCollection(dataType)) {
+    // Show Lv1 filter for weapons and summons
+    lv1FilterOption?.classList.remove('hidden')
+    lv1FilterDivider?.classList.remove('hidden')
+    excludeLv1Items = true // Default to enabled
+    if (lv1Checkbox) lv1Checkbox.checked = true
+  } else {
+    // Hide Lv1 filter for characters and other types
+    lv1FilterOption?.classList.add('hidden')
+    lv1FilterDivider?.classList.add('hidden')
+    excludeLv1Items = false
+  }
+}
+
+/**
+ * Update Lv1 filter based on checkbox state and re-apply selections
+ */
+async function updateLv1Filter() {
+  const lv1Checkbox = document.getElementById('excludeLv1Checkbox')
+  excludeLv1Items = lv1Checkbox?.checked ?? false
+
+  // Clear selections and re-render to re-apply selection logic
+  if (currentDetailDataType) {
+    selectedItems = new Set() // Clear to trigger fresh selection
+    await refreshDetailView()
+  }
+}
+
+/**
+ * Refresh detail view with current data (re-render after filter change)
+ */
+async function refreshDetailView() {
+  if (!currentDetailDataType) return
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType: currentDetailDataType
+  })
+
+  if (!response.error) {
+    renderDetailItems(currentDetailDataType, response.data)
+  }
+}
+
+/**
+ * Refresh detail view when new data is captured (preserves selections, adds new items)
+ */
+async function refreshDetailViewWithNewData() {
+  if (!currentDetailDataType) return
+
+  const dataType = currentDetailDataType
+
+  // Remember how many items we had before
+  const previousItemCount = currentItemIndexMap.length
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType
+  })
+
+  if (response.error) return
+
+  const data = response.data
+
+  // Update metadata from refreshed cache
+  await refreshAllCaches()
+  const status = cachedStatus[dataType]
+  if (status) {
+    document.getElementById('detailFreshness').textContent = status.ageText
+    document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
+  }
+
+  // Extract all items and filter by current rarity settings
+  const allItems = extractItems(dataType, data)
+  const shouldExcludeLv1 = excludeLv1Items && isWeaponOrSummonCollection(dataType)
+
+  // Pre-select new items (those beyond previous count) before rendering
+  let newSelectedCount = 0
+  allItems.forEach((item, index) => {
+    // Only process items beyond what we had before
+    if (index >= previousItemCount) {
+      const rarity = item.rarity || item.master?.rarity || item.param?.rarity
+      // Check if item passes current rarity filter
+      if (String(rarity) === '4' || activeRarityFilters.has(String(rarity))) {
+        // Auto-select SSR items (unless Lv1 exclusion applies)
+        if (String(rarity) === '4') {
+          if (shouldExcludeLv1 && Number(item.param?.level) === 1) {
+            // Don't pre-select Lv1 items
+          } else {
+            selectedItems.add(index)
+            newSelectedCount++
+          }
+        }
+      }
+    }
+  })
+
+  // Re-render with updated data (preserves existing selections)
+  renderDetailItems(dataType, data)
+
+  // Show toast if new items were added
+  if (newSelectedCount > 0) {
+    showToast(`${newSelectedCount} new items added`)
   }
 }
 
@@ -1700,6 +2020,11 @@ function handleMessages(message) {
   if (message.action === 'dataCaptured') {
     // Refresh cache status
     refreshAllCaches()
+
+    // If detail view is open and showing this data type, refresh it
+    if (detailViewActive && currentDetailDataType === message.dataType) {
+      refreshDetailViewWithNewData()
+    }
 
     // Show notification on the appropriate tab
     const tabName = getTabForDataType(message.dataType)
