@@ -1,0 +1,101 @@
+/* ==========================================
+   DATABASE DETAIL VIEW
+   ========================================== */
+.database-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.database-detail-image {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.database-detail-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.database-detail-image.character-main img {
+  width: 280px;
+}
+
+.database-detail-image.weapon-main img,
+.database-detail-image.summon-main img {
+  width: 100%;
+}
+
+.database-detail-info {
+  width: 100%;
+}
+
+.database-stats {
+  width: 100%;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 15px;
+}
+
+.stat-label {
+  color: var(--color-text-tertiary);
+}
+
+.stat-value {
+  color: var(--color-text);
+}
+
+.stat-icon {
+  height: 24px;
+  vertical-align: middle;
+}
+
+.stat-comment {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.stat-comment .stat-value {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Star rating display */
+.stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.star {
+  width: 18px;
+  height: 18px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.star.empty {
+  background-image: url('../../icons/uncap/empty@2x.png');
+}
+
+.star.filled {
+  background-image: url('../../icons/uncap/yellow@2x.png');
+}
+
+.star.flb {
+  background-image: url('../../icons/uncap/blue@2x.png');
+}
+
+.star.ulb {
+  background-image: url('../../icons/uncap/purple@2x.png');
+}

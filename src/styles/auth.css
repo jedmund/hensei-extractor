@@ -1,0 +1,84 @@
+/* ==========================================
+   LOGIN VIEW
+   ========================================== */
+.login-view {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+}
+
+.login-background {
+  position: fixed;
+  inset: 0;
+  background: #1a1a2e var(--login-bg-image) center / cover no-repeat;
+  z-index: 0;
+}
+
+.login-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Auth Card */
+.auth-card {
+  background: var(--color-bg-white);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+  width: 100%;
+}
+
+.auth-title {
+  color: var(--color-text);
+  font-size: 21px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.auth-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: 16px;
+}
+
+.auth-body p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.auth-footer {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.auth-footer a {
+  color: var(--color-link);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}

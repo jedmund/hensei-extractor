@@ -1,0 +1,9 @@
+/* Main CSS - imports all partials */
+@import 'base.css';
+@import 'auth.css';
+@import 'tabs.css';
+@import 'detail.css';
+@import 'filter.css';
+@import 'selection.css';
+@import 'database.css';
+@import 'toast.css';
