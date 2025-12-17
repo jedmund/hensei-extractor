@@ -16,6 +16,58 @@ import {
 // Checkmark SVG for checkboxes
 export const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
 
+// Awakening form → image slug
+const AWAKENING_FORM_MAPPING = {
+  1: 'weapon-atk',
+  2: 'weapon-def',
+  3: 'weapon-special',
+  4: 'weapon-ca',
+  5: 'weapon-skill',
+  6: 'weapon-heal'
+}
+
+// GBF skill_id → AX image slug
+const AX_SKILL_MAPPING = {
+  '1588': 'hp',
+  '1589': 'atk',
+  '1590': 'def',
+  '1591': 'ca-dmg',
+  '1592': 'ta',
+  '1593': 'debuff',
+  '1594': 'ele-atk',
+  '1595': 'healing',
+  '1596': 'da',
+  '1597': 'ta',
+  '1599': 'ca-cap',
+  '1600': 'stamina',
+  '1601': 'enmity',
+  '1719': 'skill-supp',
+  '1720': 'ca-supp',
+  '1721': 'ele-def',
+  '1722': 'na-cap'
+}
+
+// AX skill_id → display name (for tooltip)
+const AX_SKILL_NAMES = {
+  '1588': 'HP',
+  '1589': 'ATK',
+  '1590': 'DEF',
+  '1591': 'C.A. DMG',
+  '1592': 'Multiattack',
+  '1593': 'Debuff Res',
+  '1594': 'Ele ATK',
+  '1595': 'Healing',
+  '1596': 'DA Rate',
+  '1597': 'TA Rate',
+  '1599': 'C.A. Cap',
+  '1600': 'Stamina',
+  '1601': 'Enmity',
+  '1719': 'Skill Supp',
+  '1720': 'C.A. Supp',
+  '1721': 'Ele DEF',
+  '1722': 'NA Cap'
+}
+
 /**
  * Check if a data type is a collection type (supports item selection)
  */
@@ -118,6 +170,95 @@ export function getArtifactLabels(item) {
 
   html += '</div>'
   return html
+}
+
+/**
+ * Get weapon modifier data (awakening, AX skills, keys)
+ */
+function getWeaponModifiers(item) {
+  const param = item.param || {}
+  const result = {
+    awakening: null,
+    axSkills: [],
+    keys: []
+  }
+
+  // Awakening
+  const arousal = param.arousal
+  if (arousal?.is_arousal_weapon && arousal.form) {
+    const slug = AWAKENING_FORM_MAPPING[arousal.form]
+    if (slug) {
+      result.awakening = {
+        slug,
+        level: arousal.level || 1,
+        name: arousal.form_name || 'Attack'
+      }
+    }
+  }
+
+  // AX skills
+  const axSkillInfo = param.augment_skill_info?.[0]
+  if (Array.isArray(axSkillInfo)) {
+    for (const skill of axSkillInfo) {
+      const skillId = String(skill?.skill_id)
+      const slug = AX_SKILL_MAPPING[skillId]
+      const name = AX_SKILL_NAMES[skillId]
+      if (slug) {
+        result.axSkills.push({ slug, name: name || slug, value: skill.show_value })
+      }
+    }
+  }
+
+  // Weapon keys (party data only - skill1, skill2, skill3)
+  for (const key of ['skill1', 'skill2', 'skill3']) {
+    if (item[key]?.name) {
+      result.keys.push({ name: item[key].name, id: item[key].id })
+    }
+  }
+
+  return result
+}
+
+/**
+ * Render weapon modifier overlays (awakening icon, AX skill icons) with tooltip
+ */
+function renderWeaponModifiers(item) {
+  const mods = getWeaponModifiers(item)
+
+  // Collect all skill icons (AX)
+  const skillIcons = []
+  const tooltipLines = []
+
+  // Awakening tooltip line
+  if (mods.awakening) {
+    tooltipLines.push(`${mods.awakening.name} Lv.${mods.awakening.level}`)
+  }
+
+  for (const ax of mods.axSkills) {
+    skillIcons.push(`<img class="skill" src="${getImageUrl(`ax/${ax.slug}.png`)}" alt="${ax.slug}">`)
+    tooltipLines.push(`${ax.name} ${ax.value}`)
+  }
+
+  if (!mods.awakening && skillIcons.length === 0) return { html: '', tooltip: '', keys: mods.keys }
+
+  let html = '<div class="modifiers">'
+
+  if (mods.awakening) {
+    html += `<img class="awakening" src="${getImageUrl(`awakening/${mods.awakening.slug}.png`)}" alt="${mods.awakening.name}">`
+  }
+
+  if (skillIcons.length > 0) {
+    html += `<div class="skills">${skillIcons.join('')}</div>`
+  }
+
+  html += '</div>'
+
+  // Tooltip HTML (shown on hover)
+  const tooltip = tooltipLines.length > 0
+    ? `<div class="weapon-tooltip">${tooltipLines.join('<br>')}</div>`
+    : ''
+
+  return { html, tooltip, keys: mods.keys }
 }
 
 /**
@@ -241,6 +382,8 @@ function renderListLayout(container, items, dataType, isCollection, itemIndexMap
  */
 function renderGridLayout(container, items, dataType, isCollection, itemIndexMap) {
   const gridClass = getGridClass(dataType)
+  const isWeaponType = dataType.includes('weapon')
+
   container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
     ${items.map((item, filteredIndex) => {
       const originalIndex = isCollection ? itemIndexMap[filteredIndex] : filteredIndex
@@ -250,9 +393,16 @@ function renderGridLayout(container, items, dataType, isCollection, itemIndexMap
           <span class="checkbox-indicator">${CHECK_ICON}</span>
         </label>
       ` : ''
+
+      // Weapon modifiers (awakening, AX skills)
+      const modifiers = isWeaponType ? renderWeaponModifiers(item) : { html: '', tooltip: '' }
+      const hasTooltip = modifiers.tooltip ? ' has-tooltip' : ''
+
       return `
-      <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
-        <img src="${getItemImageUrl(dataType, item)}" alt="">
+      <div class="grid-item${isCollection ? ' selectable' : ''}${hasTooltip}" data-index="${originalIndex}">
+        ${modifiers.html}
+        <img src="${getItemImageUrl(dataType, item)}" alt="" draggable="false">
+        ${modifiers.tooltip}
         ${checkboxHtml}
       </div>
     `}).join('')}
@@ -341,13 +491,21 @@ export function renderPartyDetail(container, data) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Weapons</h3>
-        <div class="item-grid weapons">
+        <div class="item-grid weapons party-weapons">
           ${weapons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
             const imageUrl = getImageUrl(`weapon-grid/${id}.jpg`)
+            const modifiers = renderWeaponModifiers(item)
+            const hasTooltip = modifiers.tooltip ? ' has-tooltip' : ''
+            const keyNames = modifiers.keys.map(k => k.name).join(' · ')
             return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
+              <div class="party-weapon-wrapper">
+                <div class="grid-item${hasTooltip}">
+                  ${modifiers.html}
+                  <img src="${imageUrl}" alt="" draggable="false">
+                  ${modifiers.tooltip}
+                </div>
+                ${keyNames ? `<div class="weapon-keys-label">${keyNames}</div>` : ''}
               </div>
             `
           }).join('')}
