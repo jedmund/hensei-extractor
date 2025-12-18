@@ -24,7 +24,15 @@
     '/rest/weapon/list/',
     '/rest/npc/list/',
     '/rest/summon/list/',
-    '/rest/artifact/list/'
+    '/rest/artifact/list/',
+    // Character detail page (for awakening data)
+    // URL: /npc/npc/{game_id}?...
+    '/npc/npc/',
+    // Zenith/EMP pages (for mastery bonuses)
+    // URL: /npczenith/bonus_list/{master_id}?...
+    // URL: /npczenith/content/index/{master_id}?...
+    '/npczenith/bonus_list/',
+    '/npczenith/content/index/'
   ]
 
   /**
@@ -47,6 +55,13 @@
     if (url.includes('/archive/npc_detail')) return 'detail_npc'
     if (url.includes('/archive/weapon_detail')) return 'detail_weapon'
     if (url.includes('/archive/summon_detail')) return 'detail_summon'
+    // User's character detail page (has awakening data)
+    // URL: /npc/npc/{game_id}?...
+    if (url.includes('/npc/npc/')) return 'character_detail'
+    // Zenith/EMP pages (have mastery bonus data)
+    // URL: /npczenith/bonus_list/{master_id}?... or /npczenith/content/index/{master_id}?...
+    if (url.includes('/npczenith/bonus_list/')) return 'zenith_npc'
+    if (url.includes('/npczenith/content/index/')) return 'zenith_npc'
     // Collection pages (rest API endpoints)
     if (url.includes('/rest/weapon/list/')) return 'collection_weapon'
     if (url.includes('/rest/npc/list/')) return 'collection_npc'
@@ -67,6 +82,26 @@
   function getPageNumber(url) {
     const match = url.match(/\/list\/(\d+)/)
     return match ? parseInt(match[1], 10) : null
+  }
+
+  /**
+   * Extract master ID from zenith URL
+   * URL patterns:
+   *   /npczenith/bonus_list/{master_id}?...
+   *   /npczenith/content/index/{master_id}?...
+   * @param {string} url - The URL to analyze
+   * @returns {string|null} The master ID or null
+   */
+  function getMasterIdFromZenithUrl(url) {
+    // Try bonus_list pattern
+    let match = url.match(/\/npczenith\/bonus_list\/(\d+)/)
+    if (match) return match[1]
+
+    // Try content/index pattern
+    match = url.match(/\/npczenith\/content\/index\/(\d+)/)
+    if (match) return match[1]
+
+    return null
   }
 
   /**
@@ -109,6 +144,15 @@
     const pageNumber = getPageNumber(url)
     const partyId = dataType === 'party' ? getPartyId(url, data) : null
 
+    // Extract master ID for character stats data types
+    let masterId = null
+    if (dataType === 'zenith_npc') {
+      masterId = getMasterIdFromZenithUrl(url)
+    } else if (dataType === 'character_detail') {
+      // Master ID is in the response data for character detail pages
+      masterId = data?.master?.id || null
+    }
+
     window.dispatchEvent(new CustomEvent('gbf-data-intercepted', {
       detail: {
         url: url,
@@ -116,6 +160,7 @@
         dataType: dataType,
         pageNumber: pageNumber,
         partyId: partyId,
+        masterId: masterId,
         timestamp: Date.now()
       }
     }))
