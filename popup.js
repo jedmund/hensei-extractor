@@ -1971,12 +1971,8 @@ function handleMessages(message) {
     }
 
     // Refresh detail view if it's currently showing the same data type
-    // For character_stats, the captured type is 'character_stats' but we track it as such
     if (detailViewActive && currentDetailDataType) {
-      const shouldRefresh =
-        currentDetailDataType === 'character_stats' && message.dataType === 'character_stats'
-
-      if (shouldRefresh) {
+      if (message.dataType === currentDetailDataType) {
         refreshDetailView()
       }
     }
