@@ -131,6 +131,33 @@
             <span id="detailPageCount"></span>
             <span id="detailItemCount"></span>
           </div>
+          <div class="detail-filter hidden" id="detailFilter">
+            <button class="filter-button" id="filterButton">
+              <span>SSR</span>
+              <svg class="filter-chevron" viewBox="0 0 14 14" fill="currentColor">
+                <path d="M3.45715 4.17094C3.06673 4.56138 3.06683 5.19456 3.45715 5.58486L6.99622 9.12196L10.5363 5.58486C10.9262 5.19451 10.9263 4.56133 10.5363 4.17094C10.1459 3.78045 9.51267 3.78055 9.12236 4.17094L6.99622 6.29612L4.87107 4.17094C4.48053 3.78055 3.84745 3.78045 3.45715 4.17094Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="filter-dropdown" id="filterDropdown">
+              <label class="filter-option">
+                <input type="checkbox" value="4" checked disabled>
+                <span>SSR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="3">
+                <span>SR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="2">
+                <span>R</span>
+              </label>
+              <div class="filter-divider hidden" id="lv1FilterDivider"></div>
+              <label class="filter-option hidden" id="lv1FilterOption">
+                <input type="checkbox" id="excludeLv1Checkbox" checked>
+                <span>Exclude Lv1</span>
+              </label>
+            </div>
+          </div>
           <span id="detailFreshness"></span>
         </div>
         <div id="detailItems" class="detail-items">
