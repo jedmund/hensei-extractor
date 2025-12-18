@@ -639,14 +639,24 @@ function formatPerpetuitytBonus(bonus) {
 /**
  * Render character stats detail view
  */
+// Track the last render timestamp for character stats to detect new items
+let lastCharacterStatsRenderTime = 0
+
 function renderCharacterStatsDetail(container, data) {
   // Data is keyed by masterId
-  const characters = Object.values(data)
+  let characters = Object.values(data)
 
   if (characters.length === 0) {
     container.innerHTML = '<p class="cache-empty">No character stats captured</p>'
     return
   }
+
+  // Sort by timestamp descending (most recent first)
+  characters = characters.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+
+  // Determine which items are "new" (added since last render)
+  const renderTime = Date.now()
+  const newThreshold = lastCharacterStatsRenderTime || 0
 
   // Initialize all items as selected
   selectedItems = new Set(characters.map((_, i) => i))
@@ -712,8 +722,12 @@ function renderCharacterStatsDetail(container, data) {
       ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">`
       : ''
 
+    // Check if this item is new (added/updated since last render)
+    const isNew = char.timestamp && char.timestamp > newThreshold
+    const newClass = isNew ? ' new-item' : ''
+
     html += `
-      <div class="char-stats-item selectable" data-index="${index}" data-master-id="${masterId}">
+      <div class="char-stats-item selectable${newClass}" data-index="${index}" data-master-id="${masterId}">
         <div class="char-stats-header">
           <label class="item-checkbox checked" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
@@ -764,6 +778,9 @@ function renderCharacterStatsDetail(container, data) {
       }
     })
   })
+
+  // Update last render time for detecting new items on next render
+  lastCharacterStatsRenderTime = renderTime
 }
 
 // Granblue Fantasy CDN for game assets
