@@ -647,6 +647,18 @@ input::placeholder {
   background: #b82e2e;
 }
 
+/* Destructive text */
+.btn-stroke-destructive {
+  background: transparent;
+  border: none;
+  color: var(--color-error);
+}
+
+.btn-stroke-destructive:hover:not(:disabled) {
+  background: var(--color-error-light);
+  color: var(--color-error);
+}
+
 /* Disabled state */
 button:disabled,
 .button:disabled,
@@ -785,10 +797,103 @@ button:disabled,
   background: #e0e0e0;
 }
 
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-subheader {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
 .profile-username {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text);
+}
+
+.profile-link-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+}
+
+.profile-header:hover .profile-link-icon {
+  opacity: 0.7;
+}
+
+/* Profile Popover */
+.profile-popover {
+  position: absolute;
+  top: 60px;
+  right: 8px;
+  width: 280px;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  overflow: hidden;
+  transform-origin: top right;
+  animation: popover-in 0.15s ease-out;
+}
+
+.profile-popover.hidden {
+  display: none;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.profile-popover .profile-header {
+  padding: 10px 12px;
+  background: transparent;
+  border-radius: var(--radius-lg);
+}
+
+.profile-popover .profile-header:hover {
+  background: var(--element-bg);
+}
+
+.profile-popover .avatar-large {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm);
+}
+
+.profile-actions .button {
+  justify-content: flex-start;
+  background: transparent;
+  height: 40px;
+  padding-left: var(--spacing-sm);
+  padding-right: var(--spacing-sm);
+}
+
+.profile-actions .button:hover {
+  background: var(--color-bg);
+}
+
+.profile-actions .btn-stroke-destructive:hover {
+  background: var(--color-error-light);
 }
 
 .profile-footer {

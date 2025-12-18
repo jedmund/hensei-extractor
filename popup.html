@@ -53,7 +53,7 @@
         <button class="tab active" data-tab="party">Party</button>
         <button class="tab" data-tab="collection">Collection</button>
         <button class="tab hidden" data-tab="database" id="databaseTab">Database</button>
-        <button class="tab tab-profile" data-tab="profile">
+        <button class="tab tab-profile" id="profileButton">
           <img
             id="tabAvatar"
             class="tab-avatar"
@@ -94,22 +94,26 @@
           </div>
         </div>
 
-        <!-- Profile Tab -->
-        <div id="profilePanel" class="panel">
+      </div>
+
+      <!-- Profile Popover -->
+      <div id="profilePopover" class="profile-popover hidden">
+        <div class="profile-actions">
           <a id="viewProfile" class="profile-header" href="#" target="_blank">
             <img
               id="profileAvatar"
               class="avatar-large"
               src="https://siero-img.s3-us-west-2.amazonaws.com/profile/npc@2x.png"
             />
-            <span id="profileUsername" class="profile-username">Username</span>
+            <div class="profile-info">
+              <span class="profile-subheader">Logged in as</span>
+              <span id="profileUsername" class="profile-username">Username</span>
+            </div>
+            <img class="profile-link-icon" src="icons/link.svg" alt="">
           </a>
-
-          <div class="profile-footer">
-            <button id="clearCacheButton" class="button">Clear captured data</button>
-            <button id="showWarning" class="button">Show extension disclaimer</button>
-            <button id="logoutButton" class="button btn-stroke">Log out</button>
-          </div>
+          <button id="clearCacheButton" class="button">Clear captured data</button>
+          <button id="showWarning" class="button">Show extension disclaimer</button>
+          <button id="logoutButton" class="button btn-stroke-destructive">Log out</button>
         </div>
       </div>
 

@@ -142,10 +142,33 @@ function initializeEventListeners() {
     })
   })
 
-  // Profile actions
-  document.getElementById('logoutButton')?.addEventListener('click', handleLogout)
-  document.getElementById('clearCacheButton')?.addEventListener('click', handleClearCache)
-  document.getElementById('showWarning')?.addEventListener('click', handleShowWarning)
+  // Profile popover toggle
+  document.getElementById('profileButton')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    toggleProfilePopover()
+  })
+
+  // Close popover when clicking outside
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('profilePopover')
+    if (!popover?.classList.contains('hidden') && !popover?.contains(e.target)) {
+      hideProfilePopover()
+    }
+  })
+
+  // Profile actions (close popover after action)
+  document.getElementById('logoutButton')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleLogout()
+  })
+  document.getElementById('clearCacheButton')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleClearCache()
+  })
+  document.getElementById('showWarning')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleShowWarning()
+  })
 
   // Detail view buttons
   document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
@@ -164,6 +187,8 @@ function initializeEventListeners() {
  * Switch to a different tab
  */
 function switchTab(tabName) {
+  // Close profile popover when switching tabs
+  hideProfilePopover()
   activeTab = tabName
 
   // Update tab buttons
@@ -192,6 +217,32 @@ function updateTabVisibility(userRole) {
   } else {
     databaseTab?.classList.add('hidden')
   }
+}
+
+// ==========================================
+// PROFILE POPOVER
+// ==========================================
+
+/**
+ * Toggle profile popover visibility
+ */
+function toggleProfilePopover() {
+  const popover = document.getElementById('profilePopover')
+  const button = document.getElementById('profileButton')
+  if (popover?.classList.contains('hidden')) {
+    popover.classList.remove('hidden')
+    button?.classList.add('active')
+  } else {
+    hideProfilePopover()
+  }
+}
+
+/**
+ * Hide profile popover
+ */
+function hideProfilePopover() {
+  document.getElementById('profilePopover')?.classList.add('hidden')
+  document.getElementById('profileButton')?.classList.remove('active')
 }
 
 // ==========================================
