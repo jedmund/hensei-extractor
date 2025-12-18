@@ -4,7 +4,7 @@
  */
 
 import { performLogin, fetchUserInfo } from "./auth.js"
-import { formatCacheStatus } from "./cache.js"
+import { formatCacheStatus, formatAge } from "./cache.js"
 import {
   getDataTypeName,
   TAB_DATA_TYPES,
@@ -41,6 +41,9 @@ let brokenImageIndices = new Set() // Track items with broken images (persists a
 let activeRarityFilters = new Set(['4']) // SSR by default
 let excludeLv1Items = true
 const RARITY_LABELS = { '4': 'SSR', '3': 'SR', '2': 'R' }
+
+// Age ticker state
+let ageTickerInterval = null
 
 // ==========================================
 // INITIALIZATION
@@ -79,6 +82,7 @@ async function initializeApp() {
     updateTabVisibility(gbAuth.role)
     initializeEventListeners()
     refreshAllCaches()
+    startAgeTicker()
   } else {
     // User not logged in - show login view
     show(loginView)
@@ -1869,6 +1873,7 @@ async function handleLogin() {
  * Handle logout
  */
 async function handleLogout() {
+  stopAgeTicker()
   await chrome.storage.local.remove(['gbAuth'])
   clearElementColors(document.body)
   initializeApp()
@@ -1936,6 +1941,53 @@ async function updateProfileUI(gbAuth) {
     const siteUrl = await getSiteBaseUrl()
     profileHeader.href = `${siteUrl}/${gbAuth.user.username}`
   }
+}
+
+// ==========================================
+// AGE TICKER
+// ==========================================
+
+/**
+ * Start the age ticker interval
+ */
+function startAgeTicker() {
+  stopAgeTicker()
+  ageTickerInterval = setInterval(updateAgeDisplays, 1000)
+}
+
+/**
+ * Stop the age ticker interval
+ */
+function stopAgeTicker() {
+  if (ageTickerInterval) {
+    clearInterval(ageTickerInterval)
+    ageTickerInterval = null
+  }
+}
+
+/**
+ * Update all age displays with current time
+ */
+function updateAgeDisplays() {
+  // Update detail view freshness
+  if (detailViewActive && currentDetailDataType && cachedStatus?.[currentDetailDataType]) {
+    const status = cachedStatus[currentDetailDataType]
+    if (status.lastUpdated) {
+      const age = Date.now() - status.lastUpdated
+      document.getElementById('detailFreshness').textContent = formatAge(age)
+    }
+  }
+
+  // Update list view cache ages
+  document.querySelectorAll('.cache-item[data-type]').forEach(item => {
+    const dataType = item.dataset.type
+    const status = cachedStatus?.[dataType]
+    if (status?.lastUpdated) {
+      const age = Date.now() - status.lastUpdated
+      const ageEl = item.querySelector('.cache-age')
+      if (ageEl) ageEl.textContent = formatAge(age)
+    }
+  })
 }
 
 // ==========================================
