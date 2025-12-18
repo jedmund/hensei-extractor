@@ -34,6 +34,13 @@ let cachedStatus = null
 let detailViewActive = false
 let currentDetailDataType = null
 let selectedItems = new Set() // Track selected item indices for collection views
+let manuallyUnchecked = new Set() // Track items user explicitly unchecked (persists across re-renders)
+let brokenImageIndices = new Set() // Track items with broken images (persists across re-renders)
+
+// Filter state
+let activeRarityFilters = new Set(['4']) // SSR by default
+let excludeLv1Items = true
+const RARITY_LABELS = { '4': 'SSR', '3': 'SR', '2': 'R' }
 
 // ==========================================
 // INITIALIZATION
@@ -140,6 +147,9 @@ function initializeEventListeners() {
   document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
   document.getElementById('detailCopy')?.addEventListener('click', handleDetailCopy)
   document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
+
+  // Filter listeners
+  initializeFilterListeners()
 }
 
 // ==========================================
@@ -235,6 +245,22 @@ async function showDetailView(dataType) {
   importBtn.disabled = false
   importBtn.classList.remove('imported')
 
+  // Show/hide filter based on data type (only for weapon/summon collections)
+  const detailFilter = document.getElementById('detailFilter')
+  const lv1FilterDivider = document.getElementById('lv1FilterDivider')
+  const lv1FilterOption = document.getElementById('lv1FilterOption')
+
+  if (isWeaponOrSummonCollection(dataType)) {
+    detailFilter?.classList.remove('hidden')
+    lv1FilterDivider?.classList.remove('hidden')
+    lv1FilterOption?.classList.remove('hidden')
+    updateFilterButtonLabel()
+  } else {
+    detailFilter?.classList.add('hidden')
+    lv1FilterDivider?.classList.add('hidden')
+    lv1FilterOption?.classList.add('hidden')
+  }
+
   // Render items
   renderDetailItems(dataType, response.data)
 
@@ -250,6 +276,10 @@ function hideDetailView() {
   document.getElementById('detailView').classList.remove('active')
   detailViewActive = false
   currentDetailDataType = null
+  // Clear selection state for next view
+  selectedItems.clear()
+  manuallyUnchecked.clear()
+  brokenImageIndices.clear()
 }
 
 /**
@@ -302,6 +332,122 @@ function isDatabaseDetailType(dataType) {
 }
 
 /**
+ * Check if a data type is a weapon or summon collection (supports rarity filtering)
+ */
+function isWeaponOrSummonCollection(dataType) {
+  return dataType === 'collection_weapon' || dataType === 'collection_summon' ||
+         dataType === 'list_weapon' || dataType === 'list_summon'
+}
+
+/**
+ * Initialize filter dropdown and checkbox listeners
+ */
+function initializeFilterListeners() {
+  const filterButton = document.getElementById('filterButton')
+  const filterDropdown = document.getElementById('filterDropdown')
+
+  // Toggle dropdown on button click
+  filterButton?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    filterDropdown?.classList.toggle('open')
+  })
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    filterDropdown?.classList.remove('open')
+  })
+
+  // Prevent dropdown from closing when clicking inside it
+  filterDropdown?.addEventListener('click', (e) => {
+    e.stopPropagation()
+  })
+
+  // Rarity checkbox changes (value="4", "3", "2")
+  filterDropdown?.querySelectorAll('input[type="checkbox"][value]').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      updateRarityFilter(checkbox.value, checkbox.checked)
+    })
+  })
+
+  // Lv1 exclusion checkbox
+  const excludeLv1Checkbox = document.getElementById('excludeLv1Checkbox')
+  excludeLv1Checkbox?.addEventListener('change', () => {
+    excludeLv1Items = excludeLv1Checkbox.checked
+    refreshDetailViewWithFilters()
+  })
+}
+
+/**
+ * Update rarity filter and refresh view
+ */
+function updateRarityFilter(rarity, isChecked) {
+  if (isChecked) {
+    activeRarityFilters.add(rarity)
+  } else {
+    activeRarityFilters.delete(rarity)
+  }
+  updateFilterButtonLabel()
+  refreshDetailViewWithFilters()
+}
+
+/**
+ * Update the filter button label based on active filters
+ */
+function updateFilterButtonLabel() {
+  const filterButton = document.getElementById('filterButton')
+  if (!filterButton) return
+
+  const labelSpan = filterButton.querySelector('span')
+  if (!labelSpan) return
+
+  const activeLabels = Array.from(activeRarityFilters)
+    .sort((a, b) => parseInt(b) - parseInt(a)) // Sort descending (SSR, SR, R)
+    .map(r => RARITY_LABELS[r])
+    .filter(Boolean)
+
+  labelSpan.textContent = activeLabels.length > 0 ? activeLabels.join('/') : 'Filter'
+}
+
+/**
+ * Refresh detail view with current filters applied
+ */
+async function refreshDetailViewWithFilters() {
+  if (!detailViewActive || !currentDetailDataType) return
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType: currentDetailDataType
+  })
+
+  if (response.error) return
+
+  renderDetailItems(currentDetailDataType, response.data)
+}
+
+/**
+ * Check if an item should be filtered out based on rarity
+ */
+function shouldFilterByRarity(item, dataType) {
+  if (!isWeaponOrSummonCollection(dataType)) return false
+
+  const rarity = item.master?.rarity?.toString() || item.rarity?.toString()
+  if (!rarity) return false
+
+  return !activeRarityFilters.has(rarity)
+}
+
+/**
+ * Check if an item should be filtered out due to Lv1 exclusion
+ */
+function shouldFilterByLv1(item, dataType) {
+  if (!isWeaponOrSummonCollection(dataType)) return false
+  if (!excludeLv1Items) return false
+
+  const level = item.param?.level || item.level || item.lv
+  return level === 1 || level === '1'
+}
+
+/**
  * Render items in detail view
  */
 function renderDetailItems(dataType, data) {
@@ -325,38 +471,49 @@ function renderDetailItems(dataType, data) {
     return
   }
 
-  const items = extractItems(dataType, data)
+  const allItems = extractItems(dataType, data)
   const isCollection = isCollectionType(dataType)
 
-  // For collection views, add new items to selection (preserve existing selections)
+  // Apply filters (preserving original indices for selection)
+  // Create array of { item, originalIndex } pairs
+  const itemsWithIndices = allItems.map((item, index) => ({ item, originalIndex: index }))
+    .filter(({ item, originalIndex }) => {
+      // Skip items with known broken images
+      if (brokenImageIndices.has(originalIndex)) return false
+      // Skip items filtered by rarity
+      if (shouldFilterByRarity(item, dataType)) return false
+      // Skip items filtered by Lv1
+      if (shouldFilterByLv1(item, dataType)) return false
+      return true
+    })
+
+  const hasNames = itemsWithIndices.some(({ item }) => item.name || item.master?.name)
+
+  // For collections, all displayed items start selected unless manually unchecked
+  // (error handlers will deselect broken ones)
   if (isCollection) {
-    // Get previous item count from DOM (not selection size)
-    const previousItemCount = container.querySelectorAll('.grid-item, .list-item').length
-    // Add only truly new item indices to selection
-    items.forEach((_, i) => {
-      if (i >= previousItemCount) {
-        selectedItems.add(i)
+    itemsWithIndices.forEach(({ originalIndex }) => {
+      if (!manuallyUnchecked.has(originalIndex)) {
+        selectedItems.add(originalIndex)
       }
     })
   }
 
-  const hasNames = items.some(item => item.name || item.master?.name)
-
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${items.map((item, index) => {
+      ${itemsWithIndices.map(({ item, originalIndex }) => {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
-        const isChecked = !isCollection || selectedItems.has(index)
+        const isChecked = !isCollection || selectedItems.has(originalIndex)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
         return `
-        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
@@ -371,16 +528,16 @@ function renderDetailItems(dataType, data) {
     const gridClass = getGridClass(dataType)
     const isCharacterType = dataType.includes('npc') || dataType.includes('character')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
-      ${items.map((item, index) => {
-        const isChecked = !isCollection || selectedItems.has(index)
+      ${itemsWithIndices.map(({ item, originalIndex }) => {
+        const isChecked = !isCollection || selectedItems.has(originalIndex)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
         const modifiersHtml = isCharacterType ? renderCharacterModifiers(item) : ''
         return `
-        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           ${modifiersHtml}
           <img src="${getItemImageUrl(dataType, item)}" alt="">
           ${checkboxHtml}
@@ -401,20 +558,21 @@ function renderDetailItems(dataType, data) {
       })
     })
 
-    // Uncheck items when their image fails to load
+    // Hide items when their image fails to load
     container.querySelectorAll('.selectable img').forEach(img => {
       img.addEventListener('error', () => {
         const item = img.closest('.selectable')
         if (!item) return
         const index = parseInt(item.dataset.index, 10)
-        const checkbox = item.querySelector('.item-checkbox')
-        if (checkbox && selectedItems.has(index)) {
-          selectedItems.delete(index)
-          checkbox.classList.remove('checked')
-          updateSelectionCount()
-        }
+        // Track broken image and hide the item
+        brokenImageIndices.add(index)
+        selectedItems.delete(index)
+        item.style.display = 'none'
+        updateSelectionCount()
       })
     })
+
+    updateSelectionCount()
   }
 }
 
@@ -424,9 +582,11 @@ function renderDetailItems(dataType, data) {
 function toggleItemSelection(index, checkbox) {
   if (selectedItems.has(index)) {
     selectedItems.delete(index)
+    manuallyUnchecked.add(index) // Track manual unchecking
     checkbox.classList.remove('checked')
   } else {
     selectedItems.add(index)
+    manuallyUnchecked.delete(index) // Clear manual uncheck if re-checked
     checkbox.classList.add('checked')
   }
   updateSelectionCount()
@@ -438,8 +598,15 @@ function toggleItemSelection(index, checkbox) {
 function updateSelectionCount() {
   const countEl = document.getElementById('detailItemCount')
   if (countEl && isCollectionType(currentDetailDataType)) {
-    const total = document.querySelectorAll('#detailItems .item-checkbox').length
-    const selected = selectedItems.size
+    // Count only items currently visible in the DOM (respecting filters)
+    const checkboxes = document.querySelectorAll('#detailItems .item-checkbox')
+    const total = checkboxes.length
+    // Count selected items that are currently visible
+    let selected = 0
+    checkboxes.forEach(checkbox => {
+      const index = parseInt(checkbox.dataset.index, 10)
+      if (selectedItems.has(index)) selected++
+    })
     countEl.textContent = `${selected}/${total} selected`
   }
 }
