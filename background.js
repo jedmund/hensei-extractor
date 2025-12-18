@@ -54,6 +54,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       uploadCollectionData(message.data, message.dataType, message.updateExisting).then(sendResponse)
       return true
 
+    case 'uploadCharacterStats':
+      uploadCharacterStats(message.data).then(sendResponse)
+      return true
+
     case 'dataCaptured':
       // Forward to popup if it's listening
       chrome.runtime.sendMessage(message).catch(() => {
@@ -288,6 +292,95 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false)
       body: JSON.stringify({
         data: { list: allItems },
         update_existing: updateExisting
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      return { error: `Upload failed (${response.status}): ${errorText}` }
+    }
+
+    const result = await response.json()
+    return {
+      success: result.success,
+      created: result.created || 0,
+      updated: result.updated || 0,
+      skipped: result.skipped || 0,
+      errors: result.errors || []
+    }
+  } catch (error) {
+    return { error: `Upload failed: ${error.message}` }
+  }
+}
+
+/**
+ * Upload character stats (awakening, rings, earring) to granblue.team API
+ * Uses the existing character collection import endpoint with update_existing: true
+ * @param {Object} statsData - Character stats keyed by masterId
+ */
+async function uploadCharacterStats(statsData) {
+  const auth = await getAuthToken()
+  if (!auth) {
+    return { error: 'Not logged in. Please log in first.' }
+  }
+
+  // Transform stats data into the format expected by the character import endpoint
+  // The API expects items with: granblue_id, awakening data, ring data, earring data
+  const items = Object.values(statsData).map(char => {
+    const item = {
+      granblue_id: char.masterId
+    }
+
+    // Add awakening if present
+    if (char.awakening) {
+      item.awakening_type = char.awakening.type
+      item.awakening_level = char.awakening.level
+    }
+
+    // Add rings if present (up to 4)
+    if (char.rings && char.rings.length > 0) {
+      char.rings.forEach((ring, i) => {
+        if (ring && ring.modifier) {
+          item[`ring${i + 1}`] = {
+            modifier: ring.modifier,
+            strength: ring.strength
+          }
+        }
+      })
+    }
+
+    // Add earring if present
+    if (char.earring && char.earring.modifier) {
+      item.earring = {
+        modifier: char.earring.modifier,
+        strength: char.earring.strength
+      }
+    }
+
+    // Add perpetuity ring status if present
+    if (char.perpetuity !== undefined) {
+      item.perpetuity = char.perpetuity
+    }
+
+    return item
+  })
+
+  if (items.length === 0) {
+    return { error: 'No character stats to import' }
+  }
+
+  const apiUrl = await getApiUrl('/collection/characters/import')
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.access_token}`
+      },
+      body: JSON.stringify({
+        data: { list: items },
+        update_existing: true  // Always update existing for stats
       })
     })
 
