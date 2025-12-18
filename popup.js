@@ -328,9 +328,15 @@ function renderDetailItems(dataType, data) {
   const items = extractItems(dataType, data)
   const isCollection = isCollectionType(dataType)
 
-  // Initialize all items as selected for collection views
+  // For collection views, add new items to selection (preserve existing selections)
   if (isCollection) {
-    selectedItems = new Set(items.map((_, i) => i))
+    const oldSize = selectedItems.size
+    // Add new item indices to selection
+    items.forEach((_, i) => {
+      if (i >= oldSize) {
+        selectedItems.add(i)
+      }
+    })
   }
 
   const hasNames = items.some(item => item.name || item.master?.name)
@@ -342,8 +348,9 @@ function renderDetailItems(dataType, data) {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
+        const isChecked = !isCollection || selectedItems.has(index)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
@@ -364,8 +371,9 @@ function renderDetailItems(dataType, data) {
     const isCharacterType = dataType.includes('npc') || dataType.includes('character')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${items.map((item, index) => {
+        const isChecked = !isCollection || selectedItems.has(index)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${index}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
