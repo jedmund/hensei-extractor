@@ -1975,10 +1975,10 @@ async function handleCopy(tabName) {
 /**
  * Handle messages from content script / background
  */
-function handleMessages(message) {
+async function handleMessages(message) {
   if (message.action === 'dataCaptured') {
     // Refresh cache status
-    refreshAllCaches()
+    await refreshAllCaches()
 
     // Show notification on the appropriate tab
     const tabName = getTabForDataType(message.dataType)
@@ -2024,8 +2024,7 @@ async function refreshDetailView() {
   }
 
   // Re-render detail items
-  const container = document.getElementById('detailItems')
-  renderDetailItems(container, currentDetailDataType, response.data)
+  renderDetailItems(currentDetailDataType, response.data)
 }
 
 /**
