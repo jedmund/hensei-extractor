@@ -214,6 +214,11 @@ async function showDetailView(dataType) {
     const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
     document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
+  } else if (dataType === 'character_stats') {
+    // Character stats shows character count
+    const characterCount = Object.keys(response.data).length
+    document.getElementById('detailPageCount').textContent = ''
+    document.getElementById('detailItemCount').textContent = `${characterCount} characters`
   } else if (isDatabaseDetailType(dataType)) {
     // Database detail shows item name
     const name = response.data.name || response.data.master?.name || ''
@@ -258,11 +263,35 @@ function countItems(dataType, data) {
 // Checkmark SVG for checkboxes
 const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
 
+
+/**
+ * Get character modifiers (perpetuity ring status)
+ */
+function getCharacterModifiers(item) {
+  const param = item.param || {}
+  return {
+    perpetuity: !!param.has_npcaugment_constant
+  }
+}
+
+/**
+ * Render character modifier overlay (perpetuity ring)
+ */
+function renderCharacterModifiers(item) {
+  const mods = getCharacterModifiers(item)
+
+  if (!mods.perpetuity) return ''
+
+  return `<div class="char-modifiers">
+    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">
+  </div>`
+}
+
 /**
  * Check if a data type is a collection type (supports item selection)
  */
 function isCollectionType(dataType) {
-  return dataType.startsWith('collection_') || dataType.startsWith('list_')
+  return dataType.startsWith('collection_') || dataType.startsWith('list_') || dataType === 'character_stats'
 }
 
 /**
@@ -287,6 +316,12 @@ function renderDetailItems(dataType, data) {
   // Database detail items get their own layout
   if (isDatabaseDetailType(dataType)) {
     renderDatabaseDetail(container, dataType, data)
+    return
+  }
+
+  // Character stats gets its own list layout
+  if (dataType === 'character_stats') {
+    renderCharacterStatsDetail(container, data)
     return
   }
 
@@ -326,6 +361,7 @@ function renderDetailItems(dataType, data) {
   } else {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
+    const isCharacterType = dataType.includes('npc') || dataType.includes('character')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${items.map((item, index) => {
         const checkboxHtml = isCollection ? `
@@ -333,8 +369,10 @@ function renderDetailItems(dataType, data) {
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
+        const modifiersHtml = isCharacterType ? renderCharacterModifiers(item) : ''
         return `
         <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+          ${modifiersHtml}
           <img src="${getItemImageUrl(dataType, item)}" alt="">
           ${checkboxHtml}
         </div>
@@ -519,6 +557,213 @@ function renderPartyDetail(container, data) {
   }
 
   container.innerHTML = html || '<p class="cache-empty">No party data</p>'
+}
+
+// Over Mastery (ring) modifier ID to name mapping
+const OVER_MASTERY_NAMES = {
+  1: 'ATK', 2: 'HP', 3: 'Debuff Success', 4: 'Skill DMG Cap',
+  5: 'C.A. DMG', 6: 'C.A. DMG Cap', 7: 'Stamina', 8: 'Enmity',
+  9: 'Critical Hit', 10: 'Double Attack', 11: 'Triple Attack', 12: 'DEF',
+  13: 'Healing', 14: 'Debuff Resistance', 15: 'Dodge'
+}
+
+// Aetherial (earring) modifier ID to name mapping
+// Note: Element-based stats will use typeName directly (e.g., "Fire ATK Up")
+const AETHERIAL_NAMES = {
+  1: 'Double Attack', 2: 'Triple Attack', 3: 'Element ATK', 4: 'Element Resistance',
+  5: 'Stamina', 6: 'Enmity', 7: 'Supplemental DMG', 8: 'Critical Hit',
+  9: 'Counters on Dodge', 10: 'Counters on DMG'
+}
+
+// Perpetuity Ring bonus ID to name mapping
+const PERPETUITY_NAMES = {
+  1: 'EM Star Cap', 2: 'ATK', 3: 'HP', 4: 'DMG Cap'
+}
+
+/**
+ * Stats that use flat values (not percentages) - by display name
+ */
+const FLAT_VALUE_STATS = new Set(['ATK', 'HP', 'Stamina', 'Enmity', 'Supplemental DMG'])
+
+/**
+ * Format a ring/earring modifier for display
+ */
+function formatModifier(mod, nameMap) {
+  if (!mod || !mod.modifier) return null
+
+  // For element-based stats, prefer the actual typeName (e.g., "Fire ATK Up" instead of "Element ATK")
+  let name = nameMap[mod.modifier] || mod.typeName || `Mod ${mod.modifier}`
+  if ((name === 'Element ATK' || name === 'Element Resistance') && mod.typeName) {
+    name = mod.typeName
+  }
+
+  let value = mod.strength
+
+  // ATK and HP get formatted with commas (for Over Mastery rings)
+  if (name === 'ATK' || name === 'HP') {
+    return `${name} +${Number(value).toLocaleString()}`
+  }
+
+  // Flat value stats (no percentage sign)
+  if (FLAT_VALUE_STATS.has(name)) {
+    return `${name} +${value}`
+  }
+
+  // All other stats are percentages
+  return `${name} +${value}%`
+}
+
+/**
+ * Format a perpetuity ring bonus for display
+ */
+function formatPerpetuitytBonus(bonus) {
+  if (!bonus || !bonus.modifier) return null
+  const name = PERPETUITY_NAMES[bonus.modifier] || bonus.typeName || `Bonus ${bonus.modifier}`
+  const value = bonus.strength
+  // All perpetuity bonuses are flat values or percentages based on type
+  if (bonus.modifier === 1) {
+    // EM Star Cap is a flat value
+    return `${name} +${value}`
+  }
+  if (bonus.modifier === 2 || bonus.modifier === 3) {
+    // ATK and HP are percentages for perpetuity
+    return `${name} +${value}%`
+  }
+  if (bonus.modifier === 4) {
+    // DMG Cap is a percentage
+    return `${name} +${value}%`
+  }
+  return `${name} +${value}`
+}
+
+/**
+ * Render character stats detail view
+ */
+function renderCharacterStatsDetail(container, data) {
+  // Data is keyed by masterId
+  const characters = Object.values(data)
+
+  if (characters.length === 0) {
+    container.innerHTML = '<p class="cache-empty">No character stats captured</p>'
+    return
+  }
+
+  // Initialize all items as selected
+  selectedItems = new Set(characters.map((_, i) => i))
+
+  let html = '<div class="char-stats-list">'
+
+  characters.forEach((char, index) => {
+    const masterId = char.masterId
+    const name = char.masterName || `Character ${masterId}`
+    const imageUrl = getImageUrl(`character-square/${masterId}_01.jpg`)
+
+    // Element label
+    const elementHtml = char.element && GAME_ELEMENT_NAMES[char.element]
+      ? `<img class="char-stats-element" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[char.element]}.png`)}" alt="${GAME_ELEMENT_NAMES[char.element]}">`
+      : ''
+
+    // Awakening line
+    const awakeningHtml = char.awakening
+      ? `<div class="char-stats-awakening">${char.awakening.typeName || 'Awakening'} Lv.${char.awakening.level || 1}${char.perpetuity ? ' · Perpetuity Ring' : ''}</div>`
+      : (char.perpetuity ? '<div class="char-stats-awakening">Perpetuity Ring</div>' : '')
+
+    // Over Mastery (rings) section
+    let overMasteryHtml = ''
+    if (char.rings && char.rings.length > 0) {
+      overMasteryHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Over Mastery</div>'
+      for (const ring of char.rings) {
+        const ringStr = formatModifier(ring, OVER_MASTERY_NAMES)
+        if (ringStr) {
+          overMasteryHtml += `<div class="char-stats-line">${ringStr}</div>`
+        }
+      }
+      overMasteryHtml += '</div>'
+    }
+
+    // Aetherial Mastery (earring) section
+    let aetherialHtml = ''
+    if (char.earring) {
+      const earringStr = formatModifier(char.earring, AETHERIAL_NAMES)
+      if (earringStr) {
+        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">Aetherial Mastery</div><div class="char-stats-line">${earringStr}</div></div>`
+      }
+    }
+
+    // Perpetuity Ring bonuses section
+    let perpetuityHtml = ''
+    if (char.perpetuityBonuses && char.perpetuityBonuses.length > 0) {
+      perpetuityHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Perpetuity Bonuses</div>'
+      for (const bonus of char.perpetuityBonuses) {
+        const bonusStr = formatPerpetuitytBonus(bonus)
+        if (bonusStr) {
+          perpetuityHtml += `<div class="char-stats-line">${bonusStr}</div>`
+        }
+      }
+      perpetuityHtml += '</div>'
+    }
+
+    // Check if we have any stats to show
+    const hasStats = char.awakening || char.perpetuity || (char.rings && char.rings.length > 0) || char.earring || (char.perpetuityBonuses && char.perpetuityBonuses.length > 0)
+    const noStatsHtml = !hasStats ? '<div class="char-stats-empty">No stats captured</div>' : ''
+
+    // Perpetuity icon overlay on character image
+    const perpetuityIconHtml = char.perpetuity
+      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">`
+      : ''
+
+    html += `
+      <div class="char-stats-item selectable" data-index="${index}" data-master-id="${masterId}">
+        <div class="char-stats-header">
+          <label class="item-checkbox checked" data-index="${index}">
+            <span class="checkbox-indicator">${CHECK_ICON}</span>
+          </label>
+          <div class="char-stats-name-row">
+            <span class="char-stats-name">${name}</span>
+            ${elementHtml}
+          </div>
+          <div class="char-stats-image-wrapper">
+            <img class="char-stats-image" src="${imageUrl}" alt="">
+            ${perpetuityIconHtml}
+          </div>
+        </div>
+        <div class="char-stats-body">
+          ${awakeningHtml}
+          ${overMasteryHtml}
+          ${aetherialHtml}
+          ${perpetuityHtml}
+          ${noStatsHtml}
+        </div>
+      </div>
+    `
+  })
+
+  html += '</div>'
+  container.innerHTML = html
+
+  // Add click handlers for checkboxes only (not entire item since it's larger now)
+  container.querySelectorAll('.item-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const index = parseInt(checkbox.dataset.index, 10)
+      toggleItemSelection(index, checkbox)
+    })
+  })
+
+  // Uncheck items when their image fails to load
+  container.querySelectorAll('.char-stats-image').forEach(img => {
+    img.addEventListener('error', () => {
+      const item = img.closest('.char-stats-item')
+      if (!item) return
+      const index = parseInt(item.dataset.index, 10)
+      const checkbox = item.querySelector('.item-checkbox')
+      if (checkbox && selectedItems.has(index)) {
+        selectedItems.delete(index)
+        checkbox.classList.remove('checked')
+        updateSelectionCount()
+      }
+    })
+  })
 }
 
 // Granblue Fantasy CDN for game assets
@@ -1169,6 +1414,18 @@ function getGridClass(dataType) {
 function filterSelectedItems(dataType, data) {
   if (!isCollectionType(dataType)) return data
 
+  // Character stats is keyed by masterId, not paginated
+  if (dataType === 'character_stats') {
+    const characters = Object.values(data)
+    const result = {}
+    characters.forEach((char, index) => {
+      if (selectedItems.has(index)) {
+        result[char.masterId] = char
+      }
+    })
+    return result
+  }
+
   const items = extractItems(dataType, data)
   const filteredItems = items.filter((_, i) => selectedItems.has(i))
 
@@ -1275,6 +1532,11 @@ async function handleDetailImport() {
         data: dataToUpload,
         dataType: currentDetailDataType,
         updateExisting: false
+      })
+    } else if (currentDetailDataType === 'character_stats') {
+      uploadResponse = await chrome.runtime.sendMessage({
+        action: 'uploadCharacterStats',
+        data: dataToUpload
       })
     } else {
       showToast('Import not supported')
@@ -1707,7 +1969,50 @@ function handleMessages(message) {
       showTabStatus(tabName, `${getDataTypeName(message.dataType)} data captured!`, 'success')
       setTimeout(() => hideTabStatus(tabName), 2000)
     }
+
+    // Refresh detail view if it's currently showing the same data type
+    // For character_stats, the captured type is 'character_stats' but we track it as such
+    if (detailViewActive && currentDetailDataType) {
+      const shouldRefresh =
+        currentDetailDataType === 'character_stats' && message.dataType === 'character_stats'
+
+      if (shouldRefresh) {
+        refreshDetailView()
+      }
+    }
   }
+}
+
+/**
+ * Refresh the current detail view with latest data
+ */
+async function refreshDetailView() {
+  if (!currentDetailDataType) return
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType: currentDetailDataType
+  })
+
+  if (response.error) {
+    return
+  }
+
+  // Update freshness text
+  const status = cachedStatus[currentDetailDataType]
+  if (status) {
+    document.getElementById('detailFreshness').textContent = status.ageText
+  }
+
+  // Update item count
+  if (currentDetailDataType === 'character_stats') {
+    const count = Object.keys(response.data).length
+    document.getElementById('detailItemCount').textContent = `${count} characters`
+  }
+
+  // Re-render detail items
+  const container = document.getElementById('detailItems')
+  renderDetailItems(container, currentDetailDataType, response.data)
 }
 
 /**

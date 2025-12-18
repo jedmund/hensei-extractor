@@ -928,7 +928,7 @@ body.light #detailImport {
 
 .grid-item {
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
   background: var(--color-bg);
 }
 
@@ -936,6 +936,7 @@ body.light #detailImport {
   height: 80px;
   width: auto;
   display: block;
+  border-radius: var(--radius-md);
 }
 
 .grid-item.selectable,
@@ -945,6 +946,23 @@ body.light #detailImport {
 
 .grid-item.selectable {
   position: relative;
+}
+
+/* Character Modifiers (perpetuity ring overlay) */
+.char-modifiers {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.char-modifiers .perpetuity-ring {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  top: -4px;
+  right: -2px;
 }
 
 /* Item Checkbox */
@@ -1054,6 +1072,117 @@ body.light #detailImport {
 .label-icon {
   height: 21px;
   width: auto;
+}
+
+/* Character Stats List - Card Layout */
+.char-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.char-stats-item {
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.char-stats-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.char-stats-header .item-checkbox {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  flex-shrink: 0;
+}
+
+.char-stats-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.char-stats-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-stats-element {
+  height: 20px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.char-stats-image-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.char-stats-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #e0e0e0;
+  display: block;
+}
+
+.char-stats-perpetuity {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  top: -6px;
+  right: -6px;
+}
+
+.char-stats-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.char-stats-awakening {
+  font-size: 15px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.char-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.char-stats-subheader {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.char-stats-line {
+  font-size: 15px;
+  color: var(--color-text-tertiary);
+  padding-left: 12px;
+}
+
+.char-stats-empty {
+  font-size: 15px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
 /* Party Sections */
