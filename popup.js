@@ -317,6 +317,50 @@ function renderCharacterModifiers(item) {
   </div>`
 }
 
+// Map awakening form names to icon filenames
+const WEAPON_AWAKENING_ICONS = {
+  'Attack': 'weapon-atk',
+  'Defense': 'weapon-def',
+  'Multiattack': 'weapon-multi',
+  'Charge Attack': 'weapon-ca',
+  'Skill': 'weapon-skill',
+  'Healing': 'weapon-heal',
+  'Special': 'weapon-special'
+}
+
+/**
+ * Get weapon modifiers (awakening, ax skill)
+ */
+function getWeaponModifiers(item) {
+  const param = item.param || {}
+  return {
+    awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
+    axSkill: param.augment_skill_info?.[0] || null
+  }
+}
+
+/**
+ * Render weapon modifier overlay (awakening, ax skill icons)
+ */
+function renderWeaponModifiers(item) {
+  const mods = getWeaponModifiers(item)
+  if (!mods.awakening && !mods.axSkill) return ''
+
+  let html = '<div class="weapon-modifiers">'
+
+  if (mods.awakening) {
+    const iconName = WEAPON_AWAKENING_ICONS[mods.awakening.form_name] || 'weapon-atk'
+    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="Awakening" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
+  }
+
+  if (mods.axSkill) {
+    html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+  }
+
+  html += '</div>'
+  return html
+}
+
 /**
  * Check if a data type is a collection type (supports item selection)
  */
@@ -527,6 +571,7 @@ function renderDetailItems(dataType, data) {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
     const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+    const isWeaponType = dataType.includes('weapon')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${itemsWithIndices.map(({ item, originalIndex }) => {
         const isChecked = !isCollection || selectedItems.has(originalIndex)
@@ -535,7 +580,9 @@ function renderDetailItems(dataType, data) {
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
-        const modifiersHtml = isCharacterType ? renderCharacterModifiers(item) : ''
+        const modifiersHtml = isCharacterType
+          ? renderCharacterModifiers(item)
+          : isWeaponType ? renderWeaponModifiers(item) : ''
         return `
         <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           ${modifiersHtml}
