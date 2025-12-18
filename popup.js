@@ -2023,8 +2023,27 @@ async function refreshDetailView() {
     document.getElementById('detailItemCount').textContent = `${count} characters`
   }
 
+  // Count existing items before re-render (for scroll-to-new behavior)
+  const container = document.getElementById('detailItems')
+  const oldItemCount = container.querySelectorAll('.grid-item, .list-item, .char-stats-item').length
+
   // Re-render detail items
   renderDetailItems(currentDetailDataType, response.data)
+
+  // Scroll to show new items if count increased
+  const newItems = container.querySelectorAll('.grid-item, .list-item, .char-stats-item')
+  if (newItems.length > oldItemCount && oldItemCount > 0) {
+    // For character stats (sorted newest first), scroll to top
+    if (currentDetailDataType === 'character_stats') {
+      container.scrollTop = 0
+    } else {
+      // For list pages (appended at end), scroll to first new item
+      const firstNewItem = newItems[oldItemCount]
+      if (firstNewItem) {
+        firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }
 }
 
 /**
