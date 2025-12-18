@@ -330,10 +330,11 @@ function renderDetailItems(dataType, data) {
 
   // For collection views, add new items to selection (preserve existing selections)
   if (isCollection) {
-    const oldSize = selectedItems.size
-    // Add new item indices to selection
+    // Get previous item count from DOM (not selection size)
+    const previousItemCount = container.querySelectorAll('.grid-item, .list-item').length
+    // Add only truly new item indices to selection
     items.forEach((_, i) => {
-      if (i >= oldSize) {
+      if (i >= previousItemCount) {
         selectedItems.add(i)
       }
     })
