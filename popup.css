@@ -889,11 +889,19 @@ body.light #detailImport {
 .detail-meta-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
 }
 
 .detail-meta span:empty {
   display: none;
+}
+
+.detail-meta span:empty + .detail-meta-separator {
+  display: none;
+}
+
+.detail-meta-separator {
+  color: var(--color-text-secondary);
 }
 
 /* Detail Filter */

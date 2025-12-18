@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -129,7 +130,10 @@
         <div class="detail-meta">
           <div class="detail-meta-left">
             <span id="detailPageCount"></span>
+            <span class="detail-meta-separator">&middot;</span>
             <span id="detailItemCount"></span>
+            <span class="detail-meta-separator">&middot;</span>
+            <span id="detailFreshness"></span>
           </div>
           <div class="detail-filter hidden" id="detailFilter">
             <button class="filter-button" id="filterButton">
@@ -158,7 +162,6 @@
               </label>
             </div>
           </div>
-          <span id="detailFreshness"></span>
         </div>
         <div id="detailItems" class="detail-items">
           <!-- Items rendered here -->
