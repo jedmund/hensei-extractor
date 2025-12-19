@@ -84,7 +84,8 @@ export const CACHE_KEYS = {
   collection_weapon: 'gbf_cache_collection_weapon',
   collection_npc: 'gbf_cache_collection_npc',
   collection_summon: 'gbf_cache_collection_summon',
-  collection_artifact: 'gbf_cache_collection_artifact'
+  collection_artifact: 'gbf_cache_collection_artifact',
+  character_stats: 'gbf_cache_character_stats'
 }
 
 // ==========================================
@@ -105,7 +106,8 @@ export const DATA_TYPES = {
   collection_weapon: { name: 'Weapon Collection' },
   collection_npc: { name: 'Character Collection' },
   collection_summon: { name: 'Summon Collection' },
-  collection_artifact: { name: 'Artifact Collection' }
+  collection_artifact: { name: 'Artifact Collection' },
+  character_stats: { name: 'Character Stats' }
 }
 
 /**
@@ -128,6 +130,7 @@ export const DATA_TYPE_ORDER = [
 export const TAB_DATA_TYPES = {
   party: [], // Parties are dynamic - populated from cache status
   collection: [
+    'character_stats', // Character extended stats (awakening, mastery bonuses)
     'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
     'list_npc', 'list_weapon', 'list_summon'
   ],

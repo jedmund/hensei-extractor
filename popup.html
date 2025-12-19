@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -52,7 +53,7 @@
         <button class="tab active" data-tab="party">Party</button>
         <button class="tab" data-tab="collection">Collection</button>
         <button class="tab hidden" data-tab="database" id="databaseTab">Database</button>
-        <button class="tab tab-profile" data-tab="profile">
+        <button class="tab tab-profile" id="profileButton">
           <img
             id="tabAvatar"
             class="tab-avatar"
@@ -93,22 +94,26 @@
           </div>
         </div>
 
-        <!-- Profile Tab -->
-        <div id="profilePanel" class="panel">
+      </div>
+
+      <!-- Profile Popover -->
+      <div id="profilePopover" class="profile-popover hidden">
+        <div class="profile-actions">
           <a id="viewProfile" class="profile-header" href="#" target="_blank">
             <img
               id="profileAvatar"
               class="avatar-large"
               src="https://siero-img.s3-us-west-2.amazonaws.com/profile/npc@2x.png"
             />
-            <span id="profileUsername" class="profile-username">Username</span>
+            <div class="profile-info">
+              <span class="profile-subheader">Logged in as</span>
+              <span id="profileUsername" class="profile-username">Username</span>
+            </div>
+            <img class="profile-link-icon" src="icons/link.svg" alt="">
           </a>
-
-          <div class="profile-footer">
-            <button id="clearCacheButton" class="button">Clear captured data</button>
-            <button id="showWarning" class="button">Show extension disclaimer</button>
-            <button id="logoutButton" class="button btn-stroke">Log out</button>
-          </div>
+          <button id="clearCacheButton" class="button">Clear captured data</button>
+          <button id="showWarning" class="button">Show extension disclaimer</button>
+          <button id="logoutButton" class="button btn-stroke-destructive">Log out</button>
         </div>
       </div>
 
@@ -129,9 +134,38 @@
         <div class="detail-meta">
           <div class="detail-meta-left">
             <span id="detailPageCount"></span>
+            <span class="detail-meta-separator">&middot;</span>
             <span id="detailItemCount"></span>
+            <span class="detail-meta-separator">&middot;</span>
+            <span id="detailFreshness"></span>
           </div>
-          <span id="detailFreshness"></span>
+          <div class="detail-filter hidden" id="detailFilter">
+            <button class="filter-button" id="filterButton">
+              <span>SSR</span>
+              <svg class="filter-chevron" viewBox="0 0 14 14" fill="currentColor">
+                <path d="M3.45715 4.17094C3.06673 4.56138 3.06683 5.19456 3.45715 5.58486L6.99622 9.12196L10.5363 5.58486C10.9262 5.19451 10.9263 4.56133 10.5363 4.17094C10.1459 3.78045 9.51267 3.78055 9.12236 4.17094L6.99622 6.29612L4.87107 4.17094C4.48053 3.78055 3.84745 3.78045 3.45715 4.17094Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="filter-dropdown" id="filterDropdown">
+              <label class="filter-option">
+                <input type="checkbox" value="4" checked disabled>
+                <span>SSR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="3">
+                <span>SR</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" value="2">
+                <span>R</span>
+              </label>
+              <div class="filter-divider hidden" id="lv1FilterDivider"></div>
+              <label class="filter-option hidden" id="lv1FilterOption">
+                <input type="checkbox" id="excludeLv1Checkbox" checked>
+                <span>Exclude Lv1</span>
+              </label>
+            </div>
+          </div>
         </div>
         <div id="detailItems" class="detail-items">
           <!-- Items rendered here -->

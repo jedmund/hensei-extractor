@@ -4,7 +4,7 @@
  */
 
 import { performLogin, fetchUserInfo } from "./auth.js"
-import { formatCacheStatus } from "./cache.js"
+import { formatCacheStatus, formatAge } from "./cache.js"
 import {
   getDataTypeName,
   TAB_DATA_TYPES,
@@ -34,6 +34,16 @@ let cachedStatus = null
 let detailViewActive = false
 let currentDetailDataType = null
 let selectedItems = new Set() // Track selected item indices for collection views
+let manuallyUnchecked = new Set() // Track items user explicitly unchecked (persists across re-renders)
+let brokenImageIndices = new Set() // Track items with broken images (persists across re-renders)
+
+// Filter state
+let activeRarityFilters = new Set(['4']) // SSR by default
+let excludeLv1Items = true
+const RARITY_LABELS = { '4': 'SSR', '3': 'SR', '2': 'R' }
+
+// Age ticker state
+let ageTickerInterval = null
 
 // ==========================================
 // INITIALIZATION
@@ -72,6 +82,7 @@ async function initializeApp() {
     updateTabVisibility(gbAuth.role)
     initializeEventListeners()
     refreshAllCaches()
+    startAgeTicker()
   } else {
     // User not logged in - show login view
     show(loginView)
@@ -131,15 +142,41 @@ function initializeEventListeners() {
     })
   })
 
-  // Profile actions
-  document.getElementById('logoutButton')?.addEventListener('click', handleLogout)
-  document.getElementById('clearCacheButton')?.addEventListener('click', handleClearCache)
-  document.getElementById('showWarning')?.addEventListener('click', handleShowWarning)
+  // Profile popover toggle
+  document.getElementById('profileButton')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    toggleProfilePopover()
+  })
+
+  // Close popover when clicking outside
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('profilePopover')
+    if (!popover?.classList.contains('hidden') && !popover?.contains(e.target)) {
+      hideProfilePopover()
+    }
+  })
+
+  // Profile actions (close popover after action)
+  document.getElementById('logoutButton')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleLogout()
+  })
+  document.getElementById('clearCacheButton')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleClearCache()
+  })
+  document.getElementById('showWarning')?.addEventListener('click', () => {
+    hideProfilePopover()
+    handleShowWarning()
+  })
 
   // Detail view buttons
   document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
   document.getElementById('detailCopy')?.addEventListener('click', handleDetailCopy)
   document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
+
+  // Filter listeners
+  initializeFilterListeners()
 }
 
 // ==========================================
@@ -150,6 +187,8 @@ function initializeEventListeners() {
  * Switch to a different tab
  */
 function switchTab(tabName) {
+  // Close profile popover when switching tabs
+  hideProfilePopover()
   activeTab = tabName
 
   // Update tab buttons
@@ -178,6 +217,32 @@ function updateTabVisibility(userRole) {
   } else {
     databaseTab?.classList.add('hidden')
   }
+}
+
+// ==========================================
+// PROFILE POPOVER
+// ==========================================
+
+/**
+ * Toggle profile popover visibility
+ */
+function toggleProfilePopover() {
+  const popover = document.getElementById('profilePopover')
+  const button = document.getElementById('profileButton')
+  if (popover?.classList.contains('hidden')) {
+    popover.classList.remove('hidden')
+    button?.classList.add('active')
+  } else {
+    hideProfilePopover()
+  }
+}
+
+/**
+ * Hide profile popover
+ */
+function hideProfilePopover() {
+  document.getElementById('profilePopover')?.classList.add('hidden')
+  document.getElementById('profileButton')?.classList.remove('active')
 }
 
 // ==========================================
@@ -214,6 +279,11 @@ async function showDetailView(dataType) {
     const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
     document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
+  } else if (dataType === 'character_stats') {
+    // Character stats shows character count
+    const characterCount = Object.keys(response.data).length
+    document.getElementById('detailPageCount').textContent = ''
+    document.getElementById('detailItemCount').textContent = `${characterCount} characters`
   } else if (isDatabaseDetailType(dataType)) {
     // Database detail shows item name
     const name = response.data.name || response.data.master?.name || ''
@@ -230,6 +300,22 @@ async function showDetailView(dataType) {
   importBtn.disabled = false
   importBtn.classList.remove('imported')
 
+  // Show/hide filter based on data type (only for weapon/summon collections)
+  const detailFilter = document.getElementById('detailFilter')
+  const lv1FilterDivider = document.getElementById('lv1FilterDivider')
+  const lv1FilterOption = document.getElementById('lv1FilterOption')
+
+  if (isWeaponOrSummonCollection(dataType)) {
+    detailFilter?.classList.remove('hidden')
+    lv1FilterDivider?.classList.remove('hidden')
+    lv1FilterOption?.classList.remove('hidden')
+    updateFilterButtonLabel()
+  } else {
+    detailFilter?.classList.add('hidden')
+    lv1FilterDivider?.classList.add('hidden')
+    lv1FilterOption?.classList.add('hidden')
+  }
+
   // Render items
   renderDetailItems(dataType, response.data)
 
@@ -245,6 +331,10 @@ function hideDetailView() {
   document.getElementById('detailView').classList.remove('active')
   detailViewActive = false
   currentDetailDataType = null
+  // Clear selection state for next view
+  selectedItems.clear()
+  manuallyUnchecked.clear()
+  brokenImageIndices.clear()
 }
 
 /**
@@ -258,11 +348,79 @@ function countItems(dataType, data) {
 // Checkmark SVG for checkboxes
 const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
 
+
+/**
+ * Get character modifiers (perpetuity ring status)
+ */
+function getCharacterModifiers(item) {
+  const param = item.param || {}
+  return {
+    perpetuity: !!param.has_npcaugment_constant
+  }
+}
+
+/**
+ * Render character modifier overlay (perpetuity ring)
+ */
+function renderCharacterModifiers(item) {
+  const mods = getCharacterModifiers(item)
+
+  if (!mods.perpetuity) return ''
+
+  return `<div class="char-modifiers">
+    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">
+  </div>`
+}
+
+// Map awakening form names to icon filenames
+const WEAPON_AWAKENING_ICONS = {
+  'Attack': 'weapon-atk',
+  'Defense': 'weapon-def',
+  'Multiattack': 'weapon-multi',
+  'Charge Attack': 'weapon-ca',
+  'Skill': 'weapon-skill',
+  'Healing': 'weapon-heal',
+  'Special': 'weapon-special'
+}
+
+/**
+ * Get weapon modifiers (awakening, ax skill)
+ */
+function getWeaponModifiers(item) {
+  const param = item.param || {}
+  return {
+    awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
+    axSkill: param.augment_skill_info?.[0] || null
+  }
+}
+
+/**
+ * Render weapon modifier overlay (awakening, ax skill icons)
+ */
+function renderWeaponModifiers(item) {
+  const mods = getWeaponModifiers(item)
+  if (!mods.awakening && !mods.axSkill) return ''
+
+  let html = '<div class="weapon-modifiers">'
+
+  if (mods.awakening) {
+    const iconName = WEAPON_AWAKENING_ICONS[mods.awakening.form_name] || 'weapon-atk'
+    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="Awakening" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
+  }
+
+  if (mods.axSkill) {
+    html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+  }
+
+  html += '</div>'
+  return html
+}
+
 /**
  * Check if a data type is a collection type (supports item selection)
  */
 function isCollectionType(dataType) {
-  return dataType.startsWith('collection_') || dataType.startsWith('list_')
+  return dataType.startsWith('collection_') || dataType.startsWith('list_') || dataType === 'character_stats'
 }
 
 /**
@@ -270,6 +428,122 @@ function isCollectionType(dataType) {
  */
 function isDatabaseDetailType(dataType) {
   return dataType.startsWith('detail_')
+}
+
+/**
+ * Check if a data type is a weapon or summon collection (supports rarity filtering)
+ */
+function isWeaponOrSummonCollection(dataType) {
+  return dataType === 'collection_weapon' || dataType === 'collection_summon' ||
+         dataType === 'list_weapon' || dataType === 'list_summon'
+}
+
+/**
+ * Initialize filter dropdown and checkbox listeners
+ */
+function initializeFilterListeners() {
+  const filterButton = document.getElementById('filterButton')
+  const filterDropdown = document.getElementById('filterDropdown')
+
+  // Toggle dropdown on button click
+  filterButton?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    filterDropdown?.classList.toggle('open')
+  })
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    filterDropdown?.classList.remove('open')
+  })
+
+  // Prevent dropdown from closing when clicking inside it
+  filterDropdown?.addEventListener('click', (e) => {
+    e.stopPropagation()
+  })
+
+  // Rarity checkbox changes (value="4", "3", "2")
+  filterDropdown?.querySelectorAll('input[type="checkbox"][value]').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      updateRarityFilter(checkbox.value, checkbox.checked)
+    })
+  })
+
+  // Lv1 exclusion checkbox
+  const excludeLv1Checkbox = document.getElementById('excludeLv1Checkbox')
+  excludeLv1Checkbox?.addEventListener('change', () => {
+    excludeLv1Items = excludeLv1Checkbox.checked
+    refreshDetailViewWithFilters()
+  })
+}
+
+/**
+ * Update rarity filter and refresh view
+ */
+function updateRarityFilter(rarity, isChecked) {
+  if (isChecked) {
+    activeRarityFilters.add(rarity)
+  } else {
+    activeRarityFilters.delete(rarity)
+  }
+  updateFilterButtonLabel()
+  refreshDetailViewWithFilters()
+}
+
+/**
+ * Update the filter button label based on active filters
+ */
+function updateFilterButtonLabel() {
+  const filterButton = document.getElementById('filterButton')
+  if (!filterButton) return
+
+  const labelSpan = filterButton.querySelector('span')
+  if (!labelSpan) return
+
+  const activeLabels = Array.from(activeRarityFilters)
+    .sort((a, b) => parseInt(b) - parseInt(a)) // Sort descending (SSR, SR, R)
+    .map(r => RARITY_LABELS[r])
+    .filter(Boolean)
+
+  labelSpan.textContent = activeLabels.length > 0 ? activeLabels.join('/') : 'Filter'
+}
+
+/**
+ * Refresh detail view with current filters applied
+ */
+async function refreshDetailViewWithFilters() {
+  if (!detailViewActive || !currentDetailDataType) return
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType: currentDetailDataType
+  })
+
+  if (response.error) return
+
+  renderDetailItems(currentDetailDataType, response.data)
+}
+
+/**
+ * Check if an item should be filtered out based on rarity
+ */
+function shouldFilterByRarity(item, dataType) {
+  if (!isWeaponOrSummonCollection(dataType)) return false
+
+  const rarity = item.master?.rarity?.toString() || item.rarity?.toString()
+  if (!rarity) return false
+
+  return !activeRarityFilters.has(rarity)
+}
+
+/**
+ * Check if an item should be filtered out due to Lv1 exclusion
+ */
+function shouldFilterByLv1(item, dataType) {
+  if (!isWeaponOrSummonCollection(dataType)) return false
+  if (!excludeLv1Items) return false
+
+  const level = item.param?.level || item.level || item.lv
+  return level === 1 || level === '1'
 }
 
 /**
@@ -290,30 +564,55 @@ function renderDetailItems(dataType, data) {
     return
   }
 
-  const items = extractItems(dataType, data)
-  const isCollection = isCollectionType(dataType)
-
-  // Initialize all items as selected for collection views
-  if (isCollection) {
-    selectedItems = new Set(items.map((_, i) => i))
+  // Character stats gets its own list layout
+  if (dataType === 'character_stats') {
+    renderCharacterStatsDetail(container, data)
+    return
   }
 
-  const hasNames = items.some(item => item.name || item.master?.name)
+  const allItems = extractItems(dataType, data)
+  const isCollection = isCollectionType(dataType)
+
+  // Apply filters (preserving original indices for selection)
+  // Create array of { item, originalIndex } pairs
+  const itemsWithIndices = allItems.map((item, index) => ({ item, originalIndex: index }))
+    .filter(({ item, originalIndex }) => {
+      // Skip items with known broken images
+      if (brokenImageIndices.has(originalIndex)) return false
+      // Skip items filtered by rarity
+      if (shouldFilterByRarity(item, dataType)) return false
+      // Skip items filtered by Lv1
+      if (shouldFilterByLv1(item, dataType)) return false
+      return true
+    })
+
+  const hasNames = itemsWithIndices.some(({ item }) => item.name || item.master?.name)
+
+  // For collections, all displayed items start selected unless manually unchecked
+  // (error handlers will deselect broken ones)
+  if (isCollection) {
+    itemsWithIndices.forEach(({ originalIndex }) => {
+      if (!manuallyUnchecked.has(originalIndex)) {
+        selectedItems.add(originalIndex)
+      }
+    })
+  }
 
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${items.map((item, index) => {
+      ${itemsWithIndices.map(({ item, originalIndex }) => {
         const name = item.name || item.master?.name || ''
         const level = item.level || item.lv
         const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
+        const isChecked = !isCollection || selectedItems.has(originalIndex)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
         return `
-        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
@@ -326,15 +625,22 @@ function renderDetailItems(dataType, data) {
   } else {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
+    const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+    const isWeaponType = dataType.includes('weapon')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
-      ${items.map((item, index) => {
+      ${itemsWithIndices.map(({ item, originalIndex }) => {
+        const isChecked = !isCollection || selectedItems.has(originalIndex)
         const checkboxHtml = isCollection ? `
-          <label class="item-checkbox checked" data-index="${index}">
+          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
+        const modifiersHtml = isCharacterType
+          ? renderCharacterModifiers(item)
+          : isWeaponType ? renderWeaponModifiers(item) : ''
         return `
-        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${index}">
+        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
+          ${modifiersHtml}
           <img src="${getItemImageUrl(dataType, item)}" alt="">
           ${checkboxHtml}
         </div>
@@ -354,20 +660,21 @@ function renderDetailItems(dataType, data) {
       })
     })
 
-    // Uncheck items when their image fails to load
+    // Hide items when their image fails to load
     container.querySelectorAll('.selectable img').forEach(img => {
       img.addEventListener('error', () => {
         const item = img.closest('.selectable')
         if (!item) return
         const index = parseInt(item.dataset.index, 10)
-        const checkbox = item.querySelector('.item-checkbox')
-        if (checkbox && selectedItems.has(index)) {
-          selectedItems.delete(index)
-          checkbox.classList.remove('checked')
-          updateSelectionCount()
-        }
+        // Track broken image and hide the item
+        brokenImageIndices.add(index)
+        selectedItems.delete(index)
+        item.style.display = 'none'
+        updateSelectionCount()
       })
     })
+
+    updateSelectionCount()
   }
 }
 
@@ -377,9 +684,11 @@ function renderDetailItems(dataType, data) {
 function toggleItemSelection(index, checkbox) {
   if (selectedItems.has(index)) {
     selectedItems.delete(index)
+    manuallyUnchecked.add(index) // Track manual unchecking
     checkbox.classList.remove('checked')
   } else {
     selectedItems.add(index)
+    manuallyUnchecked.delete(index) // Clear manual uncheck if re-checked
     checkbox.classList.add('checked')
   }
   updateSelectionCount()
@@ -391,8 +700,15 @@ function toggleItemSelection(index, checkbox) {
 function updateSelectionCount() {
   const countEl = document.getElementById('detailItemCount')
   if (countEl && isCollectionType(currentDetailDataType)) {
-    const total = document.querySelectorAll('#detailItems .item-checkbox').length
-    const selected = selectedItems.size
+    // Count only items currently visible in the DOM (respecting filters)
+    const checkboxes = document.querySelectorAll('#detailItems .item-checkbox')
+    const total = checkboxes.length
+    // Count selected items that are currently visible
+    let selected = 0
+    checkboxes.forEach(checkbox => {
+      const index = parseInt(checkbox.dataset.index, 10)
+      if (selectedItems.has(index)) selected++
+    })
     countEl.textContent = `${selected}/${total} selected`
   }
 }
@@ -519,6 +835,230 @@ function renderPartyDetail(container, data) {
   }
 
   container.innerHTML = html || '<p class="cache-empty">No party data</p>'
+}
+
+// Over Mastery (ring) modifier ID to name mapping
+const OVER_MASTERY_NAMES = {
+  1: 'ATK', 2: 'HP', 3: 'Debuff Success', 4: 'Skill DMG Cap',
+  5: 'C.A. DMG', 6: 'C.A. DMG Cap', 7: 'Stamina', 8: 'Enmity',
+  9: 'Critical Hit', 10: 'Double Attack', 11: 'Triple Attack', 12: 'DEF',
+  13: 'Healing', 14: 'Debuff Resistance', 15: 'Dodge'
+}
+
+// Aetherial (earring) modifier ID to name mapping
+// Note: Element-based stats will use typeName directly (e.g., "Fire ATK Up")
+const AETHERIAL_NAMES = {
+  1: 'Double Attack', 2: 'Triple Attack', 3: 'Element ATK', 4: 'Element Resistance',
+  5: 'Stamina', 6: 'Enmity', 7: 'Supplemental DMG', 8: 'Critical Hit',
+  9: 'Counters on Dodge', 10: 'Counters on DMG'
+}
+
+// Perpetuity Ring bonus ID to name mapping
+const PERPETUITY_NAMES = {
+  1: 'EM Star Cap', 2: 'ATK', 3: 'HP', 4: 'DMG Cap'
+}
+
+/**
+ * Stats that use flat values (not percentages) - by display name
+ */
+const FLAT_VALUE_STATS = new Set(['ATK', 'HP', 'Stamina', 'Enmity', 'Supplemental DMG'])
+
+/**
+ * Format a ring/earring modifier for display
+ */
+function formatModifier(mod, nameMap) {
+  if (!mod || !mod.modifier) return null
+
+  // For element-based stats, prefer the actual typeName (e.g., "Fire ATK Up" instead of "Element ATK")
+  let name = nameMap[mod.modifier] || mod.typeName || `Mod ${mod.modifier}`
+  if ((name === 'Element ATK' || name === 'Element Resistance') && mod.typeName) {
+    name = mod.typeName
+  }
+
+  let value = mod.strength
+
+  // ATK and HP get formatted with commas (for Over Mastery rings)
+  if (name === 'ATK' || name === 'HP') {
+    return `${name} +${Number(value).toLocaleString()}`
+  }
+
+  // Flat value stats (no percentage sign)
+  if (FLAT_VALUE_STATS.has(name)) {
+    return `${name} +${value}`
+  }
+
+  // All other stats are percentages
+  return `${name} +${value}%`
+}
+
+/**
+ * Format a perpetuity ring bonus for display
+ */
+function formatPerpetuitytBonus(bonus) {
+  if (!bonus || !bonus.modifier) return null
+  const name = PERPETUITY_NAMES[bonus.modifier] || bonus.typeName || `Bonus ${bonus.modifier}`
+  const value = bonus.strength
+  // All perpetuity bonuses are flat values or percentages based on type
+  if (bonus.modifier === 1) {
+    // EM Star Cap is a flat value
+    return `${name} +${value}`
+  }
+  if (bonus.modifier === 2 || bonus.modifier === 3) {
+    // ATK and HP are percentages for perpetuity
+    return `${name} +${value}%`
+  }
+  if (bonus.modifier === 4) {
+    // DMG Cap is a percentage
+    return `${name} +${value}%`
+  }
+  return `${name} +${value}`
+}
+
+/**
+ * Render character stats detail view
+ */
+// Track the last render timestamp for character stats to detect new items
+let lastCharacterStatsRenderTime = 0
+
+function renderCharacterStatsDetail(container, data) {
+  // Data is keyed by masterId
+  let characters = Object.values(data)
+
+  if (characters.length === 0) {
+    container.innerHTML = '<p class="cache-empty">No character stats captured</p>'
+    return
+  }
+
+  // Sort by timestamp descending (most recent first)
+  characters = characters.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+
+  // Determine which items are "new" (added since last render)
+  const renderTime = Date.now()
+  const newThreshold = lastCharacterStatsRenderTime || 0
+
+  // Initialize all items as selected
+  selectedItems = new Set(characters.map((_, i) => i))
+
+  let html = '<div class="char-stats-list">'
+
+  characters.forEach((char, index) => {
+    const masterId = char.masterId
+    const name = char.masterName || `Character ${masterId}`
+    const imageUrl = getImageUrl(`character-square/${masterId}_01.jpg`)
+
+    // Element label
+    const elementHtml = char.element && GAME_ELEMENT_NAMES[char.element]
+      ? `<img class="char-stats-element" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[char.element]}.png`)}" alt="${GAME_ELEMENT_NAMES[char.element]}">`
+      : ''
+
+    // Awakening line
+    const awakeningHtml = char.awakening
+      ? `<div class="char-stats-awakening">${char.awakening.typeName || 'Awakening'} Lv.${char.awakening.level || 1}${char.perpetuity ? ' · Perpetuity Ring' : ''}</div>`
+      : (char.perpetuity ? '<div class="char-stats-awakening">Perpetuity Ring</div>' : '')
+
+    // Over Mastery (rings) section
+    let overMasteryHtml = ''
+    if (char.rings && char.rings.length > 0) {
+      overMasteryHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Over Mastery</div>'
+      for (const ring of char.rings) {
+        const ringStr = formatModifier(ring, OVER_MASTERY_NAMES)
+        if (ringStr) {
+          overMasteryHtml += `<div class="char-stats-line">${ringStr}</div>`
+        }
+      }
+      overMasteryHtml += '</div>'
+    }
+
+    // Aetherial Mastery (earring) section
+    let aetherialHtml = ''
+    if (char.earring) {
+      const earringStr = formatModifier(char.earring, AETHERIAL_NAMES)
+      if (earringStr) {
+        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">Aetherial Mastery</div><div class="char-stats-line">${earringStr}</div></div>`
+      }
+    }
+
+    // Perpetuity Ring bonuses section
+    let perpetuityHtml = ''
+    if (char.perpetuityBonuses && char.perpetuityBonuses.length > 0) {
+      perpetuityHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Perpetuity Bonuses</div>'
+      for (const bonus of char.perpetuityBonuses) {
+        const bonusStr = formatPerpetuitytBonus(bonus)
+        if (bonusStr) {
+          perpetuityHtml += `<div class="char-stats-line">${bonusStr}</div>`
+        }
+      }
+      perpetuityHtml += '</div>'
+    }
+
+    // Check if we have any stats to show
+    const hasStats = char.awakening || char.perpetuity || (char.rings && char.rings.length > 0) || char.earring || (char.perpetuityBonuses && char.perpetuityBonuses.length > 0)
+    const noStatsHtml = !hasStats ? '<div class="char-stats-empty">No stats captured</div>' : ''
+
+    // Perpetuity icon overlay on character image
+    const perpetuityIconHtml = char.perpetuity
+      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">`
+      : ''
+
+    // Check if this item is new (added/updated since last render)
+    const isNew = char.timestamp && char.timestamp > newThreshold
+    const newClass = isNew ? ' new-item' : ''
+
+    html += `
+      <div class="char-stats-item selectable${newClass}" data-index="${index}" data-master-id="${masterId}">
+        <div class="char-stats-header">
+          <label class="item-checkbox checked" data-index="${index}">
+            <span class="checkbox-indicator">${CHECK_ICON}</span>
+          </label>
+          <div class="char-stats-name-row">
+            <span class="char-stats-name">${name}</span>
+            ${elementHtml}
+          </div>
+          <div class="char-stats-image-wrapper">
+            <img class="char-stats-image" src="${imageUrl}" alt="">
+            ${perpetuityIconHtml}
+          </div>
+        </div>
+        <div class="char-stats-body">
+          ${awakeningHtml}
+          ${overMasteryHtml}
+          ${aetherialHtml}
+          ${perpetuityHtml}
+          ${noStatsHtml}
+        </div>
+      </div>
+    `
+  })
+
+  html += '</div>'
+  container.innerHTML = html
+
+  // Add click handlers for checkboxes only (not entire item since it's larger now)
+  container.querySelectorAll('.item-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const index = parseInt(checkbox.dataset.index, 10)
+      toggleItemSelection(index, checkbox)
+    })
+  })
+
+  // Uncheck items when their image fails to load
+  container.querySelectorAll('.char-stats-image').forEach(img => {
+    img.addEventListener('error', () => {
+      const item = img.closest('.char-stats-item')
+      if (!item) return
+      const index = parseInt(item.dataset.index, 10)
+      const checkbox = item.querySelector('.item-checkbox')
+      if (checkbox && selectedItems.has(index)) {
+        selectedItems.delete(index)
+        checkbox.classList.remove('checked')
+        updateSelectionCount()
+      }
+    })
+  })
+
+  // Update last render time for detecting new items on next render
+  lastCharacterStatsRenderTime = renderTime
 }
 
 // Granblue Fantasy CDN for game assets
@@ -1169,6 +1709,18 @@ function getGridClass(dataType) {
 function filterSelectedItems(dataType, data) {
   if (!isCollectionType(dataType)) return data
 
+  // Character stats is keyed by masterId, not paginated
+  if (dataType === 'character_stats') {
+    const characters = Object.values(data)
+    const result = {}
+    characters.forEach((char, index) => {
+      if (selectedItems.has(index)) {
+        result[char.masterId] = char
+      }
+    })
+    return result
+  }
+
   const items = extractItems(dataType, data)
   const filteredItems = items.filter((_, i) => selectedItems.has(i))
 
@@ -1276,6 +1828,11 @@ async function handleDetailImport() {
         dataType: currentDetailDataType,
         updateExisting: false
       })
+    } else if (currentDetailDataType === 'character_stats') {
+      uploadResponse = await chrome.runtime.sendMessage({
+        action: 'uploadCharacterStats',
+        data: dataToUpload
+      })
     } else {
       showToast('Import not supported')
       return
@@ -1367,6 +1924,7 @@ async function handleLogin() {
  * Handle logout
  */
 async function handleLogout() {
+  stopAgeTicker()
   await chrome.storage.local.remove(['gbAuth'])
   clearElementColors(document.body)
   initializeApp()
@@ -1434,6 +1992,53 @@ async function updateProfileUI(gbAuth) {
     const siteUrl = await getSiteBaseUrl()
     profileHeader.href = `${siteUrl}/${gbAuth.user.username}`
   }
+}
+
+// ==========================================
+// AGE TICKER
+// ==========================================
+
+/**
+ * Start the age ticker interval
+ */
+function startAgeTicker() {
+  stopAgeTicker()
+  ageTickerInterval = setInterval(updateAgeDisplays, 1000)
+}
+
+/**
+ * Stop the age ticker interval
+ */
+function stopAgeTicker() {
+  if (ageTickerInterval) {
+    clearInterval(ageTickerInterval)
+    ageTickerInterval = null
+  }
+}
+
+/**
+ * Update all age displays with current time
+ */
+function updateAgeDisplays() {
+  // Update detail view freshness
+  if (detailViewActive && currentDetailDataType && cachedStatus?.[currentDetailDataType]) {
+    const status = cachedStatus[currentDetailDataType]
+    if (status.lastUpdated) {
+      const age = Date.now() - status.lastUpdated
+      document.getElementById('detailFreshness').textContent = formatAge(age)
+    }
+  }
+
+  // Update list view cache ages
+  document.querySelectorAll('.cache-item[data-type]').forEach(item => {
+    const dataType = item.dataset.type
+    const status = cachedStatus?.[dataType]
+    if (status?.lastUpdated) {
+      const age = Date.now() - status.lastUpdated
+      const ageEl = item.querySelector('.cache-age')
+      if (ageEl) ageEl.textContent = formatAge(age)
+    }
+  })
 }
 
 // ==========================================
@@ -1696,16 +2301,73 @@ async function handleCopy(tabName) {
 /**
  * Handle messages from content script / background
  */
-function handleMessages(message) {
+async function handleMessages(message) {
   if (message.action === 'dataCaptured') {
     // Refresh cache status
-    refreshAllCaches()
+    await refreshAllCaches()
 
     // Show notification on the appropriate tab
     const tabName = getTabForDataType(message.dataType)
     if (tabName) {
       showTabStatus(tabName, `${getDataTypeName(message.dataType)} data captured!`, 'success')
       setTimeout(() => hideTabStatus(tabName), 2000)
+    }
+
+    // Refresh detail view if it's currently showing the same data type
+    if (detailViewActive && currentDetailDataType) {
+      if (message.dataType === currentDetailDataType) {
+        refreshDetailView()
+      }
+    }
+  }
+}
+
+/**
+ * Refresh the current detail view with latest data
+ */
+async function refreshDetailView() {
+  if (!currentDetailDataType) return
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getCachedData',
+    dataType: currentDetailDataType
+  })
+
+  if (response.error) {
+    return
+  }
+
+  // Update freshness text
+  const status = cachedStatus[currentDetailDataType]
+  if (status) {
+    document.getElementById('detailFreshness').textContent = status.ageText
+  }
+
+  // Update item count
+  if (currentDetailDataType === 'character_stats') {
+    const count = Object.keys(response.data).length
+    document.getElementById('detailItemCount').textContent = `${count} characters`
+  }
+
+  // Count existing items before re-render (for scroll-to-new behavior)
+  const container = document.getElementById('detailItems')
+  const oldItemCount = container.querySelectorAll('.grid-item, .list-item, .char-stats-item').length
+
+  // Re-render detail items
+  renderDetailItems(currentDetailDataType, response.data)
+
+  // Scroll to show new items if count increased
+  const newItems = container.querySelectorAll('.grid-item, .list-item, .char-stats-item')
+  if (newItems.length > oldItemCount && oldItemCount > 0) {
+    // For character stats (sorted newest first), scroll to top
+    if (currentDetailDataType === 'character_stats') {
+      container.scrollTop = 0
+    } else {
+      // For list pages (appended at end), scroll to first new item
+      const firstNewItem = newItems[oldItemCount]
+      if (firstNewItem) {
+        firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
     }
   }
 }
