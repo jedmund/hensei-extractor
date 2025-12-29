@@ -187,6 +187,12 @@ async function cacheListPage(dataType, pageNumber, data, timestamp) {
   existing.pages[pageNumber] = data
   existing.lastUpdated = timestamp
 
+  // Extract total pages from game response if available
+  // Game responses include option.total_page for paginated lists
+  if (data.option?.total_page) {
+    existing.totalPages = data.option.total_page
+  }
+
   // Calculate total items
   let totalItems = 0
   for (const page of Object.values(existing.pages)) {
@@ -196,6 +202,11 @@ async function cacheListPage(dataType, pageNumber, data, timestamp) {
   }
   existing.totalItems = totalItems
   existing.pageCount = Object.keys(existing.pages).length
+
+  // Track if we have captured all pages (for full sync functionality)
+  existing.isComplete = existing.totalPages
+    ? existing.pageCount >= existing.totalPages
+    : false
 
   await chrome.storage.local.set({ [cacheKey]: existing })
 }
@@ -397,7 +408,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true
 
     case 'uploadCollectionData':
-      uploadCollectionData(message.data, message.dataType, message.updateExisting).then(sendResponse)
+      uploadCollectionData(message.data, message.dataType, {
+        updateExisting: message.updateExisting,
+        isFullInventory: message.isFullInventory,
+        reconcileDeletions: message.reconcileDeletions
+      }).then(sendResponse)
+      return true
+
+    case 'previewSyncDeletions':
+      previewSyncDeletions(message.data, message.dataType).then(sendResponse)
       return true
 
     case 'uploadCharacterStats':
@@ -518,10 +537,12 @@ async function handleGetCacheStatus() {
         status[type] = {
           available: !isStale && cached.pageCount > 0,
           pageCount: cached.pageCount || 0,
+          totalPages: cached.totalPages || null,
           totalItems: cached.totalItems || 0,
           lastUpdated: timestamp,
           age: age,
-          isStale: isStale
+          isStale: isStale,
+          isComplete: cached.isComplete || false
         }
       } else {
         status[type] = {
@@ -735,7 +756,139 @@ async function uploadDetailData(data, dataType) {
   }
 }
 
-async function uploadCollectionData(pagesData, dataType, updateExisting = false) {
+/**
+ * Parse game filter options to extract active element/proficiency filters
+ * Filter field "6" = element (6 chars: Fire, Water, Earth, Wind, Light, Dark)
+ * Filter field "8" = proficiency (10 chars for weapon types)
+ * A "1" in position means that value is selected, "0" means not selected
+ * If all zeros or value is 0/null, means "all" (no filter)
+ */
+function parseGameFilter(options) {
+  const filter = options?.filter
+  if (!filter) return null
+
+  const result = { elements: null, proficiencies: null }
+
+  // Parse element filter (field "6")
+  // Positions: 0=Fire, 1=Water, 2=Earth, 3=Wind, 4=Light, 5=Dark
+  // Maps to Granblue element IDs: Fire=1, Water=2, Earth=3, Wind=4, Light=5, Dark=6
+  const elementStr = filter['6']
+  if (elementStr && typeof elementStr === 'string' && elementStr !== '000000') {
+    result.elements = []
+    for (let i = 0; i < elementStr.length; i++) {
+      if (elementStr[i] === '1') {
+        // Position maps to element ID (position + 1, but reordered)
+        // GBF filter order: Fire(0), Water(1), Earth(2), Wind(3), Light(4), Dark(5)
+        // GBF element IDs: Fire=2, Water=3, Earth=4, Wind=1, Light=6, Dark=5
+        const elementMap = [2, 3, 4, 1, 6, 5] // filter position -> element ID
+        result.elements.push(elementMap[i])
+      }
+    }
+    if (result.elements.length === 0) result.elements = null
+  }
+
+  // Parse proficiency filter (field "8")
+  // Positions: 0=Saber, 1=Dagger, 2=Spear, 3=Axe, 4=Staff, 5=Gun, 6=Melee, 7=Bow, 8=Harp, 9=Katana
+  // Maps to Granblue proficiency IDs (1-indexed)
+  const profStr = filter['8']
+  if (profStr && typeof profStr === 'string' && profStr !== '0000000000') {
+    result.proficiencies = []
+    for (let i = 0; i < profStr.length; i++) {
+      if (profStr[i] === '1') {
+        result.proficiencies.push(i + 1) // 0-indexed position to 1-indexed ID
+      }
+    }
+    if (result.proficiencies.length === 0) result.proficiencies = null
+  }
+
+  // Return null if no filters active
+  if (!result.elements && !result.proficiencies) return null
+  return result
+}
+
+/**
+ * Check if any meaningful filter is active in the cached pages
+ */
+function extractFilterFromPages(pagesData) {
+  // Check the first page for filter options (all pages should have same filter)
+  for (const pageData of Object.values(pagesData)) {
+    if (pageData?.options?.filter || pageData?.option?.filter) {
+      const options = pageData.options || pageData.option
+      return parseGameFilter(options)
+    }
+  }
+  return null
+}
+
+async function previewSyncDeletions(pagesData, dataType) {
+  const auth = await getAuthToken()
+  if (!auth) {
+    return { error: 'Not logged in. Please log in first.' }
+  }
+
+  const endpointMap = {
+    'collection_weapon': 'weapons',
+    'collection_summon': 'summons',
+    'collection_artifact': 'artifacts',
+    'list_weapon': 'weapons',
+    'list_summon': 'summons'
+  }
+  const endpoint = endpointMap[dataType]
+  if (!endpoint) {
+    return { error: `Unknown collection type: ${dataType}` }
+  }
+
+  const allItems = []
+  for (const pageData of Object.values(pagesData)) {
+    if (pageData && pageData.list && Array.isArray(pageData.list)) {
+      allItems.push(...pageData.list)
+    }
+  }
+
+  if (allItems.length === 0) {
+    return { error: 'No items found in collection data' }
+  }
+
+  // Extract active filter from cached data
+  const activeFilter = extractFilterFromPages(pagesData)
+
+  const apiUrl = await getApiUrl(`/collection/${endpoint}/preview_sync`)
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.access_token}`
+      },
+      body: JSON.stringify({
+        data: { list: allItems },
+        filter: activeFilter
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      return { error: `Preview failed (${response.status}): ${errorText}` }
+    }
+
+    const result = await response.json()
+    return {
+      willDelete: result.will_delete || [],
+      count: result.count || 0
+    }
+  } catch (error) {
+    return { error: `Preview failed: ${error.message}` }
+  }
+}
+
+async function uploadCollectionData(pagesData, dataType, options = {}) {
+  const {
+    updateExisting = false,
+    isFullInventory = false,
+    reconcileDeletions = false
+  } = options
+
   const auth = await getAuthToken()
   if (!auth) {
     return { error: 'Not logged in. Please log in first.' }
@@ -766,6 +919,9 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false)
     return { error: 'No items found in collection data' }
   }
 
+  // Extract active filter from cached data (for scoped sync)
+  const activeFilter = extractFilterFromPages(pagesData)
+
   const apiUrl = await getApiUrl(`/collection/${endpoint}/import`)
 
   try {
@@ -777,7 +933,10 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false)
       },
       body: JSON.stringify({
         data: { list: allItems },
-        update_existing: updateExisting
+        update_existing: updateExisting,
+        is_full_inventory: isFullInventory,
+        reconcile_deletions: reconcileDeletions,
+        filter: activeFilter
       })
     })
 
@@ -792,7 +951,8 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false)
       created: result.created || 0,
       updated: result.updated || 0,
       skipped: result.skipped || 0,
-      errors: result.errors || []
+      errors: result.errors || [],
+      reconciliation: result.reconciliation || null
     }
   } catch (error) {
     return { error: `Upload failed: ${error.message}` }
