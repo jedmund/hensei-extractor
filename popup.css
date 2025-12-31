@@ -1194,6 +1194,15 @@ body.light #detailImport {
   left: -4px;
 }
 
+/* Befoulment icon (same positioning as AX skill icon) */
+.weapon-modifiers .befoulment-icon {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  bottom: -4px;
+  left: -4px;
+}
+
 /* Item Checkbox */
 .item-checkbox {
   position: absolute;

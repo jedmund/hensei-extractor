@@ -457,22 +457,31 @@ const WEAPON_AWAKENING_ICONS = {
 }
 
 /**
- * Get weapon modifiers (awakening, ax skill)
+ * Get weapon modifiers (awakening, ax skill, befoulment)
  */
 function getWeaponModifiers(item) {
   const param = item.param || {}
+  const odiant = param.odiant || {}
+  const isOdiant = odiant.is_odiant_weapon === true
+
   return {
     awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
-    axSkill: param.augment_skill_info?.[0] || null
+    axSkill: !isOdiant ? param.augment_skill_info?.[0] || null : null,
+    befoulment: isOdiant ? {
+      skill: param.augment_skill_info?.[0]?.[0] || null,
+      exorcismLevel: odiant.exorcision_level || 0,
+      maxExorcismLevel: odiant.max_exorcision_level || 5,
+      iconImage: param.augment_skill_icon_image?.[0] || null
+    } : null
   }
 }
 
 /**
- * Render weapon modifier overlay (awakening, ax skill icons)
+ * Render weapon modifier overlay (awakening, ax skill, befoulment icons)
  */
 function renderWeaponModifiers(item) {
   const mods = getWeaponModifiers(item)
-  if (!mods.awakening && !mods.axSkill) return ''
+  if (!mods.awakening && !mods.axSkill && !mods.befoulment) return ''
 
   let html = '<div class="weapon-modifiers">'
 
@@ -483,6 +492,15 @@ function renderWeaponModifiers(item) {
 
   if (mods.axSkill) {
     html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+  }
+
+  if (mods.befoulment) {
+    const skill = mods.befoulment.skill
+    const exLevel = mods.befoulment.exorcismLevel
+    const maxLevel = mods.befoulment.maxExorcismLevel
+    const showValue = skill?.show_value || 'Befouled'
+    const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
+    html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
   }
 
   html += '</div>'
@@ -1377,11 +1395,20 @@ function renderWeaponStats(data, name, id, element, proficiency) {
     html += `<div class="stat-row"><span class="stat-label">Awakening</span><span class="stat-value">${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}</span></div>`
   }
 
-  // AX Skills
-  const axSkills = param.augment_skill_info?.[0]
-  if (axSkills && Object.keys(axSkills).length > 0) {
-    const axCount = Object.keys(axSkills).length
-    html += `<div class="stat-row"><span class="stat-label">AX Skills</span><span class="stat-value">${axCount} skill${axCount > 1 ? 's' : ''}</span></div>`
+  // Odiant / Befoulment
+  const odiant = param.odiant
+  if (odiant?.is_odiant_weapon) {
+    const befoulSkill = param.augment_skill_info?.[0]?.[0]
+    const showValue = befoulSkill?.show_value || 'Active'
+    html += `<div class="stat-row"><span class="stat-label">Befoulment</span><span class="stat-value">${showValue}</span></div>`
+    html += `<div class="stat-row"><span class="stat-label">Exorcism</span><span class="stat-value">${odiant.exorcision_level || 0}/${odiant.max_exorcision_level || 5}</span></div>`
+  } else {
+    // AX Skills (non-Odiant only)
+    const axSkills = param.augment_skill_info?.[0]
+    if (axSkills && Object.keys(axSkills).length > 0) {
+      const axCount = Object.keys(axSkills).length
+      html += `<div class="stat-row"><span class="stat-label">AX Skills</span><span class="stat-value">${axCount} skill${axCount > 1 ? 's' : ''}</span></div>`
+    }
   }
 
   // Comment/description
