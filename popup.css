@@ -1194,6 +1194,15 @@ body.light #detailImport {
   left: -4px;
 }
 
+/* Befoulment icon (same positioning as AX skill icon) */
+.weapon-modifiers .befoulment-icon {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  bottom: -4px;
+  left: -4px;
+}
+
 /* Item Checkbox */
 .item-checkbox {
   position: absolute;
@@ -1628,6 +1637,159 @@ body.light #detailImport {
 
 .star.ulb {
   background-image: url('icons/uncap/purple@2x.png');
+}
+
+/* ==========================================
+   MODAL
+   ========================================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  width: calc(100% - 32px);
+  max-width: 340px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: modal-in 0.2s ease-out;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-body p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.sync-delete-list {
+  margin-top: 12px;
+}
+
+.sync-delete-list .delete-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-error);
+  margin-bottom: 8px;
+}
+
+.sync-delete-list .delete-list {
+  display: none; /* Legacy - now using grid */
+  margin: 0;
+  padding: 0 0 0 20px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+.sync-delete-list .delete-list li {
+  margin-bottom: 4px;
+}
+
+.sync-delete-list .no-deletions {
+  font-size: 14px;
+  color: var(--color-success);
+}
+
+.sync-delete-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sync-delete-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-background);
+}
+
+.sync-delete-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sync-delete-list .more-items {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+}
+
+.sync-warning {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+}
+
+.sync-warning p {
+  color: #6b4e00;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.modal-actions .button {
+  min-width: 80px;
+}
+
+/* Sync button styling */
+#detailSync {
+  background-color: var(--color-success);
+  color: white;
+}
+
+#detailSync:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+#detailSync.synced {
+  background-color: #81c784;
+  cursor: default;
 }
 
 /* ==========================================

@@ -128,6 +128,7 @@
           </button>
           <div class="detail-actions">
             <button id="detailCopy" class="button small">Copy</button>
+            <button id="detailSync" class="button small hidden">Full Sync</button>
             <button id="detailImport" class="button small">Import</button>
           </div>
         </header>
@@ -147,22 +148,29 @@
               </svg>
             </button>
             <div class="filter-dropdown" id="filterDropdown">
-              <label class="filter-option">
-                <input type="checkbox" value="4" checked disabled>
-                <span>SSR</span>
-              </label>
-              <label class="filter-option">
-                <input type="checkbox" value="3">
-                <span>SR</span>
-              </label>
-              <label class="filter-option">
-                <input type="checkbox" value="2">
-                <span>R</span>
-              </label>
+              <div id="rarityFilters">
+                <label class="filter-option">
+                  <input type="checkbox" value="4" checked disabled>
+                  <span>SSR</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" value="3">
+                  <span>SR</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" value="2">
+                  <span>R</span>
+                </label>
+              </div>
               <div class="filter-divider hidden" id="lv1FilterDivider"></div>
               <label class="filter-option hidden" id="lv1FilterOption">
                 <input type="checkbox" id="excludeLv1Checkbox" checked>
                 <span>Exclude Lv1</span>
+              </label>
+              <div class="filter-divider hidden" id="syncFilterDivider"></div>
+              <label class="filter-option hidden" id="syncFilterOption">
+                <input type="checkbox" id="enableFullSyncCheckbox">
+                <span>Enable Full Sync</span>
               </label>
             </div>
           </div>
@@ -175,6 +183,25 @@
 
     <!-- Toast -->
     <div id="toast" class="toast"></div>
+
+    <!-- Sync Confirmation Modal -->
+    <div id="syncModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h3 class="modal-title">Full Sync</h3>
+        <div class="modal-body">
+          <p>This will sync your entire collection with granblue.team.</p>
+          <div id="syncDeleteList" class="sync-delete-list hidden"></div>
+          <div id="syncWarning" class="sync-warning hidden">
+            <p>Items removed from your collection will cause any teams using them to show as "orphaned".</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="cancelSync" class="button">Cancel</button>
+          <button id="confirmSync" class="button btn-primary">Sync</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="popup.js"></script>
   </body>
