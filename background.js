@@ -7,34 +7,15 @@
  * requests to GBF servers. All game data comes from intercepted responses.
  */
 
-import { getApiUrl, getSiteBaseUrl, TIMEOUTS } from './constants.js'
+import {
+  getApiUrl, getSiteBaseUrl, TIMEOUTS,
+  CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS, resolveCacheKey
+} from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
-
-// ==========================================
-// CACHE CONFIGURATION
-// ==========================================
-
-// Cache key prefixes for different data types
-const CACHE_KEYS = {
-  list_npc: 'gbf_cache_list_npc',
-  list_weapon: 'gbf_cache_list_weapon',
-  list_summon: 'gbf_cache_list_summon',
-  collection_weapon: 'gbf_cache_collection_weapon',
-  collection_npc: 'gbf_cache_collection_npc',
-  collection_summon: 'gbf_cache_collection_summon',
-  collection_artifact: 'gbf_cache_collection_artifact'
-}
-
-const STASH_WEAPON_CACHE_PREFIX = 'gbf_cache_stash_weapon_'
-const STASH_SUMMON_CACHE_PREFIX = 'gbf_cache_stash_summon_'
-const PARTY_CACHE_PREFIX = 'gbf_cache_party_'
-const DETAIL_NPC_CACHE_PREFIX = 'gbf_cache_detail_npc_'
-const DETAIL_WEAPON_CACHE_PREFIX = 'gbf_cache_detail_weapon_'
-const DETAIL_SUMMON_CACHE_PREFIX = 'gbf_cache_detail_summon_'
-const CHARACTER_STATS_CACHE_KEY = 'gbf_cache_character_stats'
-
-// How long cached data is considered fresh (30 minutes)
-const CACHE_TTL_MS = 30 * 60 * 1000
+import {
+  OVER_MASTERY_NAME_TO_ID, PERPETUITY_BONUS_NAME_TO_ID,
+  AETHERIAL_MASTERY_NAME_TO_ID, parseDisplayValue
+} from './mastery.js'
 
 // ==========================================
 // INITIALIZATION
@@ -80,7 +61,7 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
       actualDataType = 'character_stats'
     } else if (dataType.startsWith('stash_')) {
       const stashNum = metadata.stashNumber || '1'
-      const prefix = dataType === 'stash_weapon' ? STASH_WEAPON_CACHE_PREFIX : STASH_SUMMON_CACHE_PREFIX
+      const prefix = CACHE_PREFIXES[dataType]
       await cacheListPage(dataType, pageNumber, data, timestamp, prefix + stashNum)
       actualDataType = `${dataType}_${stashNum}`
     } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
@@ -133,17 +114,12 @@ async function cacheDetailItem(dataType, data, timestamp, url) {
   const granblueId = data.id || data.master?.id
   const name = data.name || data.master?.name || 'Unknown'
 
-  let cacheKey
-  if (dataType === 'detail_npc') {
-    cacheKey = `${DETAIL_NPC_CACHE_PREFIX}${granblueId}`
-  } else if (dataType === 'detail_weapon') {
-    cacheKey = `${DETAIL_WEAPON_CACHE_PREFIX}${granblueId}`
-  } else if (dataType === 'detail_summon') {
-    cacheKey = `${DETAIL_SUMMON_CACHE_PREFIX}${granblueId}`
-  } else {
+  const prefix = CACHE_PREFIXES[dataType]
+  if (!prefix) {
     await cacheSingleItem(dataType, data, timestamp, url)
     return { dataType }
   }
+  const cacheKey = `${prefix}${granblueId}`
 
   await chrome.storage.local.set({
     [cacheKey]: {
@@ -162,7 +138,7 @@ async function cacheDetailItem(dataType, data, timestamp, url) {
  * Cache a party with its unique ID
  */
 async function cacheParty(partyId, data, timestamp, url) {
-  const cacheKey = PARTY_CACHE_PREFIX + partyId
+  const cacheKey = CACHE_PREFIXES.party + partyId
   const partyName = data.deck?.name || `Party ${partyId.replace('_', '-')}`
 
   await chrome.storage.local.set({
@@ -222,8 +198,8 @@ async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOver
  * Cache character stats data (awakening + mastery bonuses)
  */
 async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
-  const result = await chrome.storage.local.get(CHARACTER_STATS_CACHE_KEY)
-  const existing = result[CHARACTER_STATS_CACHE_KEY] || { lastUpdated: null, updates: {} }
+  const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
+  const existing = result[CACHE_KEYS.character_stats] || { lastUpdated: null, updates: {} }
 
   // Clear stale data
   if (existing.lastUpdated && (timestamp - existing.lastUpdated > CACHE_TTL_MS)) {
@@ -282,7 +258,7 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
   existing.lastUpdated = timestamp
   existing.characterCount = Object.keys(existing.updates).length
 
-  await chrome.storage.local.set({ [CHARACTER_STATS_CACHE_KEY]: existing })
+  await chrome.storage.local.set({ [CACHE_KEYS.character_stats]: existing })
 }
 
 // ==========================================
@@ -292,36 +268,6 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 function getAwakeningTypeName(typeId) {
   const names = { 1: 'Attack', 2: 'Defense', 3: 'Multiattack', 4: 'Balanced' }
   return names[typeId] || 'Balanced'
-}
-
-const OVER_MASTERY_NAME_TO_ID = {
-  'ATK': 1, 'HP': 2, 'Debuff Success': 3, 'Skill DMG Cap': 4,
-  'C.A. DMG': 5, 'C.A. DMG Cap': 6, 'Stamina': 7, 'Enmity': 8,
-  'Critical Hit': 9, 'Double Attack': 10, 'Double Attack Rate': 10,
-  'Triple Attack': 11, 'Triple Attack Rate': 11, 'DEF': 12,
-  'Healing': 13, 'Debuff Resistance': 14, 'Dodge': 15
-}
-
-const PERPETUITY_BONUS_NAME_TO_ID = {
-  'EM Star Cap': 1, 'ATK': 2, 'HP': 3, 'DMG Cap': 4
-}
-
-const AETHERIAL_MASTERY_NAME_TO_ID = {
-  'Double Attack': 1, 'Double Attack Rate': 1,
-  'Triple Attack': 2, 'Triple Attack Rate': 2,
-  'Fire ATK Up': 3, 'Water ATK Up': 3, 'Earth ATK Up': 3,
-  'Wind ATK Up': 3, 'Light ATK Up': 3, 'Dark ATK Up': 3,
-  'Fire Resistance': 4, 'Water Resistance': 4, 'Earth Resistance': 4,
-  'Wind Resistance': 4, 'Light Resistance': 4, 'Dark Resistance': 4,
-  'Stamina': 5, 'Enmity': 6, 'Supplemental DMG': 7,
-  'Critical Hit': 8, 'Critical Hit Rate': 8,
-  'Counters on Dodge': 9, 'Counters on DMG': 10
-}
-
-function parseDisplayValue(dispParam) {
-  if (!dispParam) return 0
-  const str = String(dispParam).replace(/^\+/, '')
-  return parseInt(str, 10) || 0
 }
 
 function parseZenithMasteryData(data) {
@@ -446,8 +392,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleGetCachedData(dataType) {
   if (dataType === 'character_stats') {
-    const result = await chrome.storage.local.get(CHARACTER_STATS_CACHE_KEY)
-    const cached = result[CHARACTER_STATS_CACHE_KEY]
+    const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
+    const cached = result[CACHE_KEYS.character_stats]
 
     if (!cached || Object.keys(cached.updates || {}).length === 0) {
       return { error: 'No character stats captured. Browse character detail or zenith pages in-game.' }
@@ -467,29 +413,7 @@ async function handleGetCachedData(dataType) {
     }
   }
 
-  let cacheKey
-  if (dataType.startsWith('party_')) {
-    const partyId = dataType.replace('party_', '')
-    cacheKey = PARTY_CACHE_PREFIX + partyId
-  } else if (dataType.startsWith('detail_npc_')) {
-    const granblueId = dataType.replace('detail_npc_', '')
-    cacheKey = DETAIL_NPC_CACHE_PREFIX + granblueId
-  } else if (dataType.startsWith('detail_weapon_')) {
-    const granblueId = dataType.replace('detail_weapon_', '')
-    cacheKey = DETAIL_WEAPON_CACHE_PREFIX + granblueId
-  } else if (dataType.startsWith('detail_summon_')) {
-    const granblueId = dataType.replace('detail_summon_', '')
-    cacheKey = DETAIL_SUMMON_CACHE_PREFIX + granblueId
-  } else if (dataType.startsWith('stash_weapon_')) {
-    const stashNum = dataType.replace('stash_weapon_', '')
-    cacheKey = STASH_WEAPON_CACHE_PREFIX + stashNum
-  } else if (dataType.startsWith('stash_summon_')) {
-    const stashNum = dataType.replace('stash_summon_', '')
-    cacheKey = STASH_SUMMON_CACHE_PREFIX + stashNum
-  } else {
-    cacheKey = CACHE_KEYS[dataType]
-  }
-
+  const cacheKey = resolveCacheKey(dataType)
   if (!cacheKey) {
     return { error: `Unknown data type: ${dataType}` }
   }
@@ -538,133 +462,76 @@ async function handleGetCacheStatus() {
     tabs: getAttachedTabs()
   }
 
-  // Process standard cache keys
+  // Process standard (static) cache keys
   for (const [type, key] of Object.entries(CACHE_KEYS)) {
     const cached = allStorage[key]
-    if (cached) {
-      const timestamp = cached.timestamp || cached.lastUpdated
-      const age = now - timestamp
-      const isStale = age > CACHE_TTL_MS
+    if (!cached) {
+      status[type] = { available: false }
+      continue
+    }
 
-      if (type.startsWith('list_') || type.startsWith('collection_')) {
-        status[type] = {
-          available: !isStale && cached.pageCount > 0,
-          pageCount: cached.pageCount || 0,
-          totalPages: cached.totalPages || null,
-          totalItems: cached.totalItems || 0,
-          lastUpdated: timestamp,
-          age: age,
-          isStale: isStale,
-          isComplete: cached.isComplete || false
-        }
-      } else {
-        status[type] = {
-          available: !isStale,
-          lastUpdated: timestamp,
-          age: age,
-          isStale: isStale
-        }
+    const timestamp = cached.timestamp || cached.lastUpdated
+    const age = now - timestamp
+    const stale = age > CACHE_TTL_MS
+
+    if (type === 'character_stats') {
+      const characterCount = Object.keys(cached.updates || {}).length
+      if (characterCount > 0) {
+        status[type] = { available: !stale, lastUpdated: timestamp, age, isStale: stale, characterCount }
+      }
+    } else if (type.startsWith('list_') || type.startsWith('collection_')) {
+      status[type] = {
+        available: !stale && cached.pageCount > 0,
+        pageCount: cached.pageCount || 0,
+        totalPages: cached.totalPages || null,
+        totalItems: cached.totalItems || 0,
+        lastUpdated: timestamp, age, isStale: stale,
+        isComplete: cached.isComplete || false
       }
     } else {
-      status[type] = { available: false }
+      status[type] = { available: !stale, lastUpdated: timestamp, age, isStale: stale }
     }
   }
 
-  // Process party cache keys
+  // Process dynamic cache keys (parties, stashes, detail items)
   for (const [key, cached] of Object.entries(allStorage)) {
-    if (key.startsWith(PARTY_CACHE_PREFIX) && cached) {
-      const partyId = key.replace(PARTY_CACHE_PREFIX, '')
-      const dataType = `party_${partyId}`
-      const timestamp = cached.timestamp
-      const age = now - timestamp
-      const isStale = age > CACHE_TTL_MS
+    if (!cached) continue
 
-      status[dataType] = {
-        available: !isStale,
-        lastUpdated: timestamp,
-        age: age,
-        isStale: isStale,
-        partyId: partyId,
-        partyName: cached.partyName || `Party ${partyId.replace('_', '-')}`
+    // Find which prefix this key belongs to
+    let matchedPrefix = null
+    let suffix = null
+    for (const [prefixName, cachePrefix] of Object.entries(CACHE_PREFIXES)) {
+      if (key.startsWith(cachePrefix)) {
+        matchedPrefix = prefixName
+        suffix = key.slice(cachePrefix.length)
+        break
       }
     }
-  }
+    if (!matchedPrefix) continue
 
-  // Process stash cache keys (dynamic, like parties)
-  for (const [key, cached] of Object.entries(allStorage)) {
-    let stashDataType = null
+    const dataType = `${matchedPrefix}_${suffix}`
+    const timestamp = cached.timestamp || cached.lastUpdated
+    const age = now - timestamp
+    const stale = age > CACHE_TTL_MS
 
-    if (key.startsWith(STASH_WEAPON_CACHE_PREFIX)) {
-      const stashNum = key.replace(STASH_WEAPON_CACHE_PREFIX, '')
-      stashDataType = `stash_weapon_${stashNum}`
-    } else if (key.startsWith(STASH_SUMMON_CACHE_PREFIX)) {
-      const stashNum = key.replace(STASH_SUMMON_CACHE_PREFIX, '')
-      stashDataType = `stash_summon_${stashNum}`
-    }
-
-    if (stashDataType && cached) {
-      const timestamp = cached.lastUpdated
-      const age = now - timestamp
-      const isStale = age > CACHE_TTL_MS
-
-      status[stashDataType] = {
-        available: !isStale && cached.pageCount > 0,
+    if (matchedPrefix === 'party') {
+      status[dataType] = {
+        available: !stale, lastUpdated: timestamp, age, isStale: stale,
+        partyId: suffix,
+        partyName: cached.partyName || `Party ${suffix.replace('_', '-')}`
+      }
+    } else if (matchedPrefix.startsWith('stash_')) {
+      status[dataType] = {
+        available: !stale && cached.pageCount > 0,
         pageCount: cached.pageCount || 0,
         totalItems: cached.totalItems || 0,
-        lastUpdated: timestamp,
-        age: age,
-        isStale: isStale
+        lastUpdated: timestamp, age, isStale: stale
       }
-    }
-  }
-
-  // Process database detail cache keys
-  for (const [key, cached] of Object.entries(allStorage)) {
-    let dataType = null
-    let granblueId = null
-
-    if (key.startsWith(DETAIL_NPC_CACHE_PREFIX)) {
-      granblueId = key.replace(DETAIL_NPC_CACHE_PREFIX, '')
-      dataType = `detail_npc_${granblueId}`
-    } else if (key.startsWith(DETAIL_WEAPON_CACHE_PREFIX)) {
-      granblueId = key.replace(DETAIL_WEAPON_CACHE_PREFIX, '')
-      dataType = `detail_weapon_${granblueId}`
-    } else if (key.startsWith(DETAIL_SUMMON_CACHE_PREFIX)) {
-      granblueId = key.replace(DETAIL_SUMMON_CACHE_PREFIX, '')
-      dataType = `detail_summon_${granblueId}`
-    }
-
-    if (dataType && cached) {
-      const timestamp = cached.timestamp
-      const age = now - timestamp
-      const isStale = age > CACHE_TTL_MS
-
+    } else if (matchedPrefix.startsWith('detail_')) {
       status[dataType] = {
-        available: !isStale,
-        lastUpdated: timestamp,
-        age: age,
-        isStale: isStale,
-        granblueId: granblueId,
+        available: !stale, lastUpdated: timestamp, age, isStale: stale,
+        granblueId: suffix,
         itemName: cached.itemName || 'Unknown'
-      }
-    }
-  }
-
-  // Process character stats cache
-  const charStatsCache = allStorage[CHARACTER_STATS_CACHE_KEY]
-  if (charStatsCache && charStatsCache.updates) {
-    const characterCount = Object.keys(charStatsCache.updates).length
-    if (characterCount > 0) {
-      const timestamp = charStatsCache.lastUpdated
-      const age = now - timestamp
-      const isStale = age > CACHE_TTL_MS
-
-      status['character_stats'] = {
-        available: !isStale,
-        lastUpdated: timestamp,
-        age: age,
-        isStale: isStale,
-        characterCount: characterCount
       }
     }
   }
@@ -674,44 +541,18 @@ async function handleGetCacheStatus() {
 
 async function handleClearCache(dataType) {
   if (dataType) {
-    if (dataType.startsWith('party_')) {
-      const partyId = dataType.replace('party_', '')
-      await chrome.storage.local.remove(PARTY_CACHE_PREFIX + partyId)
-    } else if (dataType.startsWith('detail_npc_')) {
-      const granblueId = dataType.replace('detail_npc_', '')
-      await chrome.storage.local.remove(DETAIL_NPC_CACHE_PREFIX + granblueId)
-    } else if (dataType.startsWith('detail_weapon_')) {
-      const granblueId = dataType.replace('detail_weapon_', '')
-      await chrome.storage.local.remove(DETAIL_WEAPON_CACHE_PREFIX + granblueId)
-    } else if (dataType.startsWith('detail_summon_')) {
-      const granblueId = dataType.replace('detail_summon_', '')
-      await chrome.storage.local.remove(DETAIL_SUMMON_CACHE_PREFIX + granblueId)
-    } else if (dataType.startsWith('stash_weapon_')) {
-      const stashNum = dataType.replace('stash_weapon_', '')
-      await chrome.storage.local.remove(STASH_WEAPON_CACHE_PREFIX + stashNum)
-    } else if (dataType.startsWith('stash_summon_')) {
-      const stashNum = dataType.replace('stash_summon_', '')
-      await chrome.storage.local.remove(STASH_SUMMON_CACHE_PREFIX + stashNum)
-    } else if (dataType === 'character_stats') {
-      await chrome.storage.local.remove(CHARACTER_STATS_CACHE_KEY)
-    } else {
-      const cacheKey = CACHE_KEYS[dataType]
-      if (cacheKey) {
-        await chrome.storage.local.remove(cacheKey)
-      }
+    const cacheKey = resolveCacheKey(dataType)
+    if (cacheKey) {
+      await chrome.storage.local.remove(cacheKey)
     }
   } else {
+    // Clear all cache keys (static + dynamic)
     const allStorage = await chrome.storage.local.get(null)
+    const prefixValues = Object.values(CACHE_PREFIXES)
     const keysToRemove = [
       ...Object.values(CACHE_KEYS),
-      CHARACTER_STATS_CACHE_KEY,
       ...Object.keys(allStorage).filter(key =>
-        key.startsWith(PARTY_CACHE_PREFIX) ||
-        key.startsWith(DETAIL_NPC_CACHE_PREFIX) ||
-        key.startsWith(DETAIL_WEAPON_CACHE_PREFIX) ||
-        key.startsWith(DETAIL_SUMMON_CACHE_PREFIX) ||
-        key.startsWith(STASH_WEAPON_CACHE_PREFIX) ||
-        key.startsWith(STASH_SUMMON_CACHE_PREFIX)
+        prefixValues.some(prefix => key.startsWith(prefix))
       )
     ]
     await chrome.storage.local.remove(keysToRemove)
@@ -723,15 +564,49 @@ async function handleClearCache(dataType) {
 // DATA UPLOAD (to granblue.team only)
 // ==========================================
 
-async function uploadPartyData(data) {
-  const auth = await getAuthToken()
-  if (!auth) {
-    return { error: 'Not logged in. Please log in first.' }
+/**
+ * Collect all items from paginated data into a flat array
+ */
+function collectPageItems(pagesData) {
+  const items = []
+  for (const pageData of Object.values(pagesData)) {
+    if (pageData?.list && Array.isArray(pageData.list)) {
+      items.push(...pageData.list)
+    }
   }
+  return items
+}
 
-  const apiUrl = await getApiUrl('/import')
-  const siteUrl = await getSiteBaseUrl()
+/** Data type to API endpoint mapping */
+const ENDPOINT_MAP = {
+  detail_npc: 'characters',
+  detail_weapon: 'weapons',
+  detail_summon: 'summons',
+  collection_weapon: 'weapons',
+  collection_npc: 'characters',
+  collection_summon: 'summons',
+  collection_artifact: 'artifacts',
+  list_weapon: 'weapons',
+  list_npc: 'characters',
+  list_summon: 'summons'
+}
 
+function resolveEndpoint(dataType) {
+  if (ENDPOINT_MAP[dataType]) return ENDPOINT_MAP[dataType]
+  if (dataType.startsWith('stash_weapon')) return 'weapons'
+  if (dataType.startsWith('stash_summon')) return 'summons'
+  return null
+}
+
+/**
+ * Make an authenticated POST request to the API.
+ * @returns {{ error?: string, data?: any, auth?: Object }}
+ */
+async function authenticatedPost(endpoint, body) {
+  const auth = await getAuthToken()
+  if (!auth) return { error: 'Not logged in. Please log in first.' }
+
+  const apiUrl = await getApiUrl(endpoint)
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -739,70 +614,47 @@ async function uploadPartyData(data) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.access_token}`
       },
-      body: JSON.stringify({ import: data })
+      body: JSON.stringify(body)
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      return { error: `Upload failed (${response.status}): ${errorText}` }
+      return { error: `Request failed (${response.status}): ${errorText}` }
     }
 
-    const result = await response.json()
-    return {
-      success: true,
-      shortcode: result.shortcode,
-      url: `${siteUrl}/p/${result.shortcode}`
-    }
+    return { data: await response.json(), auth }
   } catch (error) {
-    return { error: `Upload failed: ${error.message}` }
+    return { error: `Request failed: ${error.message}` }
+  }
+}
+
+async function uploadPartyData(data) {
+  const result = await authenticatedPost('/import', { import: data })
+  if (result.error) return result
+
+  const siteUrl = await getSiteBaseUrl()
+  return {
+    success: true,
+    shortcode: result.data.shortcode,
+    url: `${siteUrl}/p/${result.data.shortcode}`
   }
 }
 
 async function uploadDetailData(data, dataType) {
+  const endpoint = resolveEndpoint(dataType)
+  if (!endpoint) return { error: `Unknown data type: ${dataType}` }
+
   const auth = await getAuthToken()
-  if (!auth) {
-    return { error: 'Not logged in. Please log in first.' }
-  }
-
-  const endpointMap = {
-    'detail_npc': 'characters',
-    'detail_weapon': 'weapons',
-    'detail_summon': 'summons'
-  }
-  const endpoint = endpointMap[dataType]
-  if (!endpoint) {
-    return { error: `Unknown data type: ${dataType}` }
-  }
-
   let lang = 'en'
   if (data.cjs && data.cjs.includes('_jp/')) {
     lang = 'jp'
-  } else if (auth.language === 'ja') {
+  } else if (auth?.language === 'ja') {
     lang = 'jp'
   }
 
-  const apiUrl = await getApiUrl(`/import/${endpoint}?lang=${lang}`)
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.access_token}`
-      },
-      body: JSON.stringify(data)
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Upload failed (${response.status}): ${errorText}` }
-    }
-
-    const result = await response.json()
-    return { success: true, ...result }
-  } catch (error) {
-    return { error: `Upload failed: ${error.message}` }
-  }
+  const result = await authenticatedPost(`/import/${endpoint}?lang=${lang}`, data)
+  if (result.error) return result
+  return { success: true, ...result.data }
 }
 
 /**
@@ -870,154 +722,50 @@ function extractFilterFromPages(pagesData) {
 }
 
 async function previewSyncDeletions(pagesData, dataType) {
-  const auth = await getAuthToken()
-  if (!auth) {
-    return { error: 'Not logged in. Please log in first.' }
-  }
+  const endpoint = resolveEndpoint(dataType)
+  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
 
-  const endpointMap = {
-    'collection_weapon': 'weapons',
-    'collection_summon': 'summons',
-    'collection_artifact': 'artifacts',
-    'list_weapon': 'weapons',
-    'list_summon': 'summons'
-  }
-  const endpoint = endpointMap[dataType]
-  if (!endpoint) {
-    return { error: `Unknown collection type: ${dataType}` }
-  }
+  const allItems = collectPageItems(pagesData)
+  if (allItems.length === 0) return { error: 'No items found in collection data' }
 
-  const allItems = []
-  for (const pageData of Object.values(pagesData)) {
-    if (pageData && pageData.list && Array.isArray(pageData.list)) {
-      allItems.push(...pageData.list)
-    }
-  }
-
-  if (allItems.length === 0) {
-    return { error: 'No items found in collection data' }
-  }
-
-  // Extract active filter from cached data
   const activeFilter = extractFilterFromPages(pagesData)
-
-  const apiUrl = await getApiUrl(`/collection/${endpoint}/preview_sync`)
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.access_token}`
-      },
-      body: JSON.stringify({
-        data: { list: allItems },
-        filter: activeFilter
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Preview failed (${response.status}): ${errorText}` }
-    }
-
-    const result = await response.json()
-    return {
-      willDelete: result.will_delete || [],
-      count: result.count || 0
-    }
-  } catch (error) {
-    return { error: `Preview failed: ${error.message}` }
-  }
+  const result = await authenticatedPost(`/collection/${endpoint}/preview_sync`, {
+    data: { list: allItems },
+    filter: activeFilter
+  })
+  if (result.error) return result
+  return { willDelete: result.data.will_delete || [], count: result.data.count || 0 }
 }
 
 async function uploadCollectionData(pagesData, dataType, options = {}) {
-  const {
-    updateExisting = false,
-    isFullInventory = false,
-    reconcileDeletions = false
-  } = options
+  const { updateExisting = false, isFullInventory = false, reconcileDeletions = false } = options
 
-  const auth = await getAuthToken()
-  if (!auth) {
-    return { error: 'Not logged in. Please log in first.' }
-  }
+  const endpoint = resolveEndpoint(dataType)
+  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
 
-  const endpointMap = {
-    'collection_weapon': 'weapons',
-    'collection_npc': 'characters',
-    'collection_summon': 'summons',
-    'collection_artifact': 'artifacts',
-    'list_weapon': 'weapons',
-    'list_npc': 'characters',
-    'list_summon': 'summons'
-  }
-  let endpoint = endpointMap[dataType]
-  if (!endpoint) {
-    if (dataType.startsWith('stash_weapon')) endpoint = 'weapons'
-    else if (dataType.startsWith('stash_summon')) endpoint = 'summons'
-  }
-  if (!endpoint) {
-    return { error: `Unknown collection type: ${dataType}` }
-  }
+  const allItems = collectPageItems(pagesData)
+  if (allItems.length === 0) return { error: 'No items found in collection data' }
 
-  const allItems = []
-  for (const pageData of Object.values(pagesData)) {
-    if (pageData && pageData.list && Array.isArray(pageData.list)) {
-      allItems.push(...pageData.list)
-    }
-  }
-
-  if (allItems.length === 0) {
-    return { error: 'No items found in collection data' }
-  }
-
-  // Extract active filter from cached data (for scoped sync)
   const activeFilter = extractFilterFromPages(pagesData)
-
-  const apiUrl = await getApiUrl(`/collection/${endpoint}/import`)
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.access_token}`
-      },
-      body: JSON.stringify({
-        data: { list: allItems },
-        update_existing: updateExisting,
-        is_full_inventory: isFullInventory,
-        reconcile_deletions: reconcileDeletions,
-        filter: activeFilter
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Upload failed (${response.status}): ${errorText}` }
-    }
-
-    const result = await response.json()
-    return {
-      success: result.success,
-      created: result.created || 0,
-      updated: result.updated || 0,
-      skipped: result.skipped || 0,
-      errors: result.errors || [],
-      reconciliation: result.reconciliation || null
-    }
-  } catch (error) {
-    return { error: `Upload failed: ${error.message}` }
+  const result = await authenticatedPost(`/collection/${endpoint}/import`, {
+    data: { list: allItems },
+    update_existing: updateExisting,
+    is_full_inventory: isFullInventory,
+    reconcile_deletions: reconcileDeletions,
+    filter: activeFilter
+  })
+  if (result.error) return result
+  return {
+    success: result.data.success,
+    created: result.data.created || 0,
+    updated: result.data.updated || 0,
+    skipped: result.data.skipped || 0,
+    errors: result.data.errors || [],
+    reconciliation: result.data.reconciliation || null
   }
 }
 
 async function uploadCharacterStats(statsData) {
-  const auth = await getAuthToken()
-  if (!auth) {
-    return { error: 'Not logged in. Please log in first.' }
-  }
-
   const items = Object.values(statsData).map(char => {
     const item = { granblue_id: char.masterId }
 
@@ -1055,36 +803,17 @@ async function uploadCharacterStats(statsData) {
     return { error: 'No character stats to import' }
   }
 
-  const apiUrl = await getApiUrl('/collection/characters/import')
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.access_token}`
-      },
-      body: JSON.stringify({
-        data: { list: items },
-        update_existing: true
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Upload failed (${response.status}): ${errorText}` }
-    }
-
-    const result = await response.json()
-    return {
-      success: result.success,
-      created: result.created || 0,
-      updated: result.updated || 0,
-      skipped: result.skipped || 0,
-      errors: result.errors || []
-    }
-  } catch (error) {
-    return { error: `Upload failed: ${error.message}` }
+  const result = await authenticatedPost('/collection/characters/import', {
+    data: { list: items },
+    update_existing: true
+  })
+  if (result.error) return result
+  return {
+    success: result.data.success,
+    created: result.data.created || 0,
+    updated: result.data.updated || 0,
+    skipped: result.data.skipped || 0,
+    errors: result.data.errors || []
   }
 }
 
