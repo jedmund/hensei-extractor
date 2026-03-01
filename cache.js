@@ -63,7 +63,7 @@ export function formatCacheStatus(status) {
       let subtitle = null
       let displayName = getDataTypeName(type)
 
-      if (type.startsWith('list_') || type.startsWith('collection_')) {
+      if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
         subtitle = `${info.totalItems} items · ${info.pageCount} pages`
       }
 

@@ -25,6 +25,8 @@ const CACHE_KEYS = {
   collection_artifact: 'gbf_cache_collection_artifact'
 }
 
+const STASH_WEAPON_CACHE_PREFIX = 'gbf_cache_stash_weapon_'
+const STASH_SUMMON_CACHE_PREFIX = 'gbf_cache_stash_summon_'
 const PARTY_CACHE_PREFIX = 'gbf_cache_party_'
 const DETAIL_NPC_CACHE_PREFIX = 'gbf_cache_detail_npc_'
 const DETAIL_WEAPON_CACHE_PREFIX = 'gbf_cache_detail_weapon_'
@@ -76,6 +78,11 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     } else if (dataType === 'character_detail' || dataType === 'zenith_npc') {
       await cacheCharacterStats(dataType, data, masterId, timestamp, url)
       actualDataType = 'character_stats'
+    } else if (dataType.startsWith('stash_')) {
+      const stashNum = metadata.stashNumber || '1'
+      const prefix = dataType === 'stash_weapon' ? STASH_WEAPON_CACHE_PREFIX : STASH_SUMMON_CACHE_PREFIX
+      await cacheListPage(dataType, pageNumber, data, timestamp, prefix + stashNum)
+      actualDataType = `${dataType}_${stashNum}`
     } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
       await cacheListPage(dataType, pageNumber, data, timestamp)
     } else if (dataType.startsWith('detail_')) {
@@ -172,8 +179,8 @@ async function cacheParty(partyId, data, timestamp, url) {
 /**
  * Cache a page of list data, accumulating with existing pages
  */
-async function cacheListPage(dataType, pageNumber, data, timestamp) {
-  const cacheKey = CACHE_KEYS[dataType]
+async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOverride) {
+  const cacheKey = cacheKeyOverride || CACHE_KEYS[dataType]
   if (!cacheKey) return
 
   const result = await chrome.storage.local.get(cacheKey)
@@ -473,6 +480,12 @@ async function handleGetCachedData(dataType) {
   } else if (dataType.startsWith('detail_summon_')) {
     const granblueId = dataType.replace('detail_summon_', '')
     cacheKey = DETAIL_SUMMON_CACHE_PREFIX + granblueId
+  } else if (dataType.startsWith('stash_weapon_')) {
+    const stashNum = dataType.replace('stash_weapon_', '')
+    cacheKey = STASH_WEAPON_CACHE_PREFIX + stashNum
+  } else if (dataType.startsWith('stash_summon_')) {
+    const stashNum = dataType.replace('stash_summon_', '')
+    cacheKey = STASH_SUMMON_CACHE_PREFIX + stashNum
   } else {
     cacheKey = CACHE_KEYS[dataType]
   }
@@ -495,7 +508,7 @@ async function handleGetCachedData(dataType) {
     return { error: 'Cached data is stale. Please refresh the page in-game.' }
   }
 
-  if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
+  if (dataType.startsWith('list_') || dataType.startsWith('collection_') || dataType.startsWith('stash_')) {
     return {
       data: cached.pages,
       timestamp: cached.lastUpdated,
@@ -577,6 +590,34 @@ async function handleGetCacheStatus() {
     }
   }
 
+  // Process stash cache keys (dynamic, like parties)
+  for (const [key, cached] of Object.entries(allStorage)) {
+    let stashDataType = null
+
+    if (key.startsWith(STASH_WEAPON_CACHE_PREFIX)) {
+      const stashNum = key.replace(STASH_WEAPON_CACHE_PREFIX, '')
+      stashDataType = `stash_weapon_${stashNum}`
+    } else if (key.startsWith(STASH_SUMMON_CACHE_PREFIX)) {
+      const stashNum = key.replace(STASH_SUMMON_CACHE_PREFIX, '')
+      stashDataType = `stash_summon_${stashNum}`
+    }
+
+    if (stashDataType && cached) {
+      const timestamp = cached.lastUpdated
+      const age = now - timestamp
+      const isStale = age > CACHE_TTL_MS
+
+      status[stashDataType] = {
+        available: !isStale && cached.pageCount > 0,
+        pageCount: cached.pageCount || 0,
+        totalItems: cached.totalItems || 0,
+        lastUpdated: timestamp,
+        age: age,
+        isStale: isStale
+      }
+    }
+  }
+
   // Process database detail cache keys
   for (const [key, cached] of Object.entries(allStorage)) {
     let dataType = null
@@ -645,6 +686,12 @@ async function handleClearCache(dataType) {
     } else if (dataType.startsWith('detail_summon_')) {
       const granblueId = dataType.replace('detail_summon_', '')
       await chrome.storage.local.remove(DETAIL_SUMMON_CACHE_PREFIX + granblueId)
+    } else if (dataType.startsWith('stash_weapon_')) {
+      const stashNum = dataType.replace('stash_weapon_', '')
+      await chrome.storage.local.remove(STASH_WEAPON_CACHE_PREFIX + stashNum)
+    } else if (dataType.startsWith('stash_summon_')) {
+      const stashNum = dataType.replace('stash_summon_', '')
+      await chrome.storage.local.remove(STASH_SUMMON_CACHE_PREFIX + stashNum)
     } else if (dataType === 'character_stats') {
       await chrome.storage.local.remove(CHARACTER_STATS_CACHE_KEY)
     } else {
@@ -662,7 +709,9 @@ async function handleClearCache(dataType) {
         key.startsWith(PARTY_CACHE_PREFIX) ||
         key.startsWith(DETAIL_NPC_CACHE_PREFIX) ||
         key.startsWith(DETAIL_WEAPON_CACHE_PREFIX) ||
-        key.startsWith(DETAIL_SUMMON_CACHE_PREFIX)
+        key.startsWith(DETAIL_SUMMON_CACHE_PREFIX) ||
+        key.startsWith(STASH_WEAPON_CACHE_PREFIX) ||
+        key.startsWith(STASH_SUMMON_CACHE_PREFIX)
       )
     ]
     await chrome.storage.local.remove(keysToRemove)
@@ -903,7 +952,11 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
     'list_npc': 'characters',
     'list_summon': 'summons'
   }
-  const endpoint = endpointMap[dataType]
+  let endpoint = endpointMap[dataType]
+  if (!endpoint) {
+    if (dataType.startsWith('stash_weapon')) endpoint = 'weapons'
+    else if (dataType.startsWith('stash_summon')) endpoint = 'summons'
+  }
   if (!endpoint) {
     return { error: `Unknown collection type: ${dataType}` }
   }

@@ -116,7 +116,14 @@ export const DATA_TYPES = {
  * @returns {string} Human-readable name
  */
 export function getDataTypeName(dataType) {
-  return DATA_TYPES[dataType]?.name || dataType
+  if (DATA_TYPES[dataType]) return DATA_TYPES[dataType].name
+  if (dataType.startsWith('stash_weapon_')) {
+    return `Weapon Stash ${dataType.replace('stash_weapon_', '')}`
+  }
+  if (dataType.startsWith('stash_summon_')) {
+    return `Summon Stash ${dataType.replace('stash_summon_', '')}`
+  }
+  return dataType
 }
 
 /** Display order for data types in UI */
