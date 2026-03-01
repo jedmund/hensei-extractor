@@ -18,42 +18,6 @@ export async function safeGet(keys) {
 }
 
 /**
- * Safely set values in chrome.storage.local
- * @param {object} data - Key-value pairs to store
- * @returns {Promise<boolean>} True if successful, false on error
- */
-export async function safeSet(data) {
-  try {
-    await chrome.storage.local.set(data)
-    return true
-  } catch (error) {
-    // Check for quota exceeded
-    if (error.message?.includes('QUOTA_BYTES')) {
-      console.error('Storage quota exceeded:', error)
-      // Could implement cache eviction here in the future
-    } else {
-      console.error('Storage set failed:', error)
-    }
-    return false
-  }
-}
-
-/**
- * Safely remove values from chrome.storage.local
- * @param {string|string[]} keys - Key(s) to remove
- * @returns {Promise<boolean>} True if successful, false on error
- */
-export async function safeRemove(keys) {
-  try {
-    await chrome.storage.local.remove(keys)
-    return true
-  } catch (error) {
-    console.error('Storage remove failed:', error)
-    return false
-  }
-}
-
-/**
  * Get the current storage usage
  * @returns {Promise<{bytesInUse: number, quota: number}|null>}
  */

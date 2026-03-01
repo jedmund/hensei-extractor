@@ -5,9 +5,6 @@
 
 import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
 
-// Re-export for backward compatibility
-export { CACHE_TTL_MS } from './constants.js'
-
 /**
  * Format a timestamp age into a human-readable string
  * @param {number} ageMs - Age in milliseconds

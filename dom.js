@@ -1,35 +1,10 @@
 /**
  * @fileoverview DOM utility functions for the Granblue Fantasy Chrome extension.
- * Provides reusable helpers for pane transitions, visibility, and class management.
+ * Provides reusable helpers for visibility and class management.
  */
 
 // Element color classes used for theming
 const ELEMENT_CLASSES = ['fire', 'water', 'earth', 'wind', 'light', 'dark']
-
-/**
- * Shows a sliding pane by adding the 'active' class
- * @param {HTMLElement} pane - The pane element to show
- */
-export function showPane(pane) {
-  pane?.classList.add('active')
-}
-
-/**
- * Hides a sliding pane by removing the 'active' class
- * @param {HTMLElement} pane - The pane element to hide
- */
-export function hidePane(pane) {
-  pane?.classList.remove('active')
-}
-
-/**
- * Sets the main pane to active or inactive state
- * @param {HTMLElement} mainPane - The main pane element
- * @param {boolean} active - Whether the main pane should be active (true) or inactive (false)
- */
-export function setMainPaneActive(mainPane, active) {
-  mainPane?.classList.toggle('inactive', !active)
-}
 
 /**
  * Shows an element by removing the 'hidden' class
@@ -45,23 +20,6 @@ export function show(element) {
  */
 export function hide(element) {
   if (element) element.classList.add('hidden')
-}
-
-/**
- * Sets element classes, optionally removing specified classes first
- * @param {HTMLElement} element - The element to modify
- * @param {string|string[]|null} classesToAdd - Class(es) to add, or null to only remove
- * @param {...string} classesToRemove - Classes to remove before adding
- */
-export function setElementClasses(element, classesToAdd, ...classesToRemove) {
-  if (!element) return
-  if (classesToRemove.length) {
-    element.classList.remove(...classesToRemove)
-  }
-  if (classesToAdd) {
-    const classes = Array.isArray(classesToAdd) ? classesToAdd : [classesToAdd]
-    element.classList.add(...classes)
-  }
 }
 
 /**
