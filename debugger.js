@@ -28,7 +28,10 @@ const INTERCEPT_PATTERNS = [
   '/npc/npc/',
   // Zenith/EMP pages (for mastery bonuses)
   '/npczenith/bonus_list/',
-  '/npczenith/content/index/'
+  '/npczenith/content/index/',
+  // Stash (container) pages
+  '/weapon/container_list/',
+  '/summon/container_list/'
 ]
 
 // ==========================================
@@ -198,13 +201,13 @@ function handleDebuggerDetach(source, reason) {
 /**
  * Handle debugger protocol events
  */
-async function handleDebuggerEvent(source, method, params) {
+function handleDebuggerEvent(source, method, params) {
   const { tabId } = source
 
   if (method === 'Network.responseReceived') {
     handleResponseReceived(tabId, params)
   } else if (method === 'Network.loadingFinished') {
-    await handleLoadingFinished(tabId, params)
+    handleLoadingFinished(tabId, params).catch(() => {})
   }
 }
 
@@ -257,7 +260,6 @@ async function handleLoadingFinished(tabId, params) {
     processInterceptedData(pending.url, data, pending.timestamp)
   } catch (e) {
     // Response might not be JSON, or request might have failed
-    // This is normal for non-JSON responses, don't log unless debugging
   }
 }
 
@@ -280,8 +282,16 @@ function processInterceptedData(url, data, timestamp) {
   if (!onDataIntercepted) return
 
   const dataType = getDataType(url)
+
+  let pageNumber = getPageNumber(url)
+  if (dataType.startsWith('stash_')) {
+    const stashNum = getStashNumber(url)
+    const pageNum = data?.current || 1
+    pageNumber = `${stashNum}_${pageNum}`
+  }
+
   const metadata = {
-    pageNumber: getPageNumber(url),
+    pageNumber,
     partyId: dataType === 'party' ? getPartyId(url, data) : null,
     masterId: getMasterId(url, data, dataType)
   }
@@ -300,6 +310,8 @@ function getDataType(url) {
   if (url.includes('/npc/npc/')) return 'character_detail'
   if (url.includes('/npczenith/bonus_list/')) return 'zenith_npc'
   if (url.includes('/npczenith/content/index/')) return 'zenith_npc'
+  if (url.includes('/weapon/container_list/')) return 'stash_weapon'
+  if (url.includes('/summon/container_list/')) return 'stash_summon'
   if (url.includes('/rest/weapon/list/')) return 'collection_weapon'
   if (url.includes('/rest/npc/list/')) return 'collection_npc'
   if (url.includes('/rest/summon/list/')) return 'collection_summon'
@@ -316,6 +328,16 @@ function getDataType(url) {
 function getPageNumber(url) {
   const match = url.match(/\/list\/(\d+)/)
   return match ? parseInt(match[1], 10) : null
+}
+
+/**
+ * Extract stash number from URL for composite page keys.
+ * URL pattern: /{type}/container_list/{stashNumber}/{containerId}
+ * Page number comes from the response data's `current` field.
+ */
+function getStashNumber(url) {
+  const match = url.match(/\/(?:weapon|summon)\/container_list\/(\d+)\//)
+  return match ? match[1] : '1'
 }
 
 /**
