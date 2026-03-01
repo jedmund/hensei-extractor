@@ -285,15 +285,14 @@ function processInterceptedData(url, data, timestamp) {
 
   let pageNumber = getPageNumber(url)
   if (dataType.startsWith('stash_')) {
-    const stashNum = getStashNumber(url)
-    const pageNum = data?.current || 1
-    pageNumber = `${stashNum}_${pageNum}`
+    pageNumber = data?.current || 1
   }
 
   const metadata = {
     pageNumber,
     partyId: dataType === 'party' ? getPartyId(url, data) : null,
-    masterId: getMasterId(url, data, dataType)
+    masterId: getMasterId(url, data, dataType),
+    stashNumber: dataType.startsWith('stash_') ? getStashNumber(url) : null
   }
 
   onDataIntercepted(url, data, dataType, metadata, timestamp)

@@ -85,8 +85,6 @@ export const CACHE_KEYS = {
   collection_npc: 'gbf_cache_collection_npc',
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact',
-  stash_weapon: 'gbf_cache_stash_weapon',
-  stash_summon: 'gbf_cache_stash_summon',
   character_stats: 'gbf_cache_character_stats'
 }
 
@@ -109,8 +107,6 @@ export const DATA_TYPES = {
   collection_npc: { name: 'Character Collection' },
   collection_summon: { name: 'Summon Collection' },
   collection_artifact: { name: 'Artifact Collection' },
-  stash_weapon: { name: 'Weapon Stash' },
-  stash_summon: { name: 'Summon Stash' },
   character_stats: { name: 'Character Stats' }
 }
 
@@ -120,7 +116,14 @@ export const DATA_TYPES = {
  * @returns {string} Human-readable name
  */
 export function getDataTypeName(dataType) {
-  return DATA_TYPES[dataType]?.name || dataType
+  if (DATA_TYPES[dataType]) return DATA_TYPES[dataType].name
+  if (dataType.startsWith('stash_weapon_')) {
+    return `Weapon Stash ${dataType.replace('stash_weapon_', '')}`
+  }
+  if (dataType.startsWith('stash_summon_')) {
+    return `Summon Stash ${dataType.replace('stash_summon_', '')}`
+  }
+  return dataType
 }
 
 /** Display order for data types in UI */
@@ -136,7 +139,6 @@ export const TAB_DATA_TYPES = {
   collection: [
     'character_stats', // Character extended stats (awakening, mastery bonuses)
     'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
-    'stash_weapon', 'stash_summon',
     'list_npc', 'list_weapon', 'list_summon'
   ],
   database: [] // Database items are dynamic - populated from cache status (like parties)

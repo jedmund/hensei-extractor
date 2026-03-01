@@ -436,7 +436,7 @@ function isDatabaseDetailType(dataType) {
 function isWeaponOrSummonCollection(dataType) {
   return dataType === 'collection_weapon' || dataType === 'collection_summon' ||
          dataType === 'list_weapon' || dataType === 'list_summon' ||
-         dataType === 'stash_weapon' || dataType === 'stash_summon'
+         dataType.startsWith('stash_weapon') || dataType.startsWith('stash_summon')
 }
 
 /**
@@ -2095,6 +2095,15 @@ function updateTabCacheDisplay(tabName, status) {
   } else {
     typesToDisplay = (TAB_DATA_TYPES[tabName] || [])
       .filter(type => status?.[type]?.available)
+    // Discover dynamic stash types for the collection tab
+    if (tabName === 'collection') {
+      const stashTypes = Object.keys(status || {})
+        .filter(type =>
+          (type.startsWith('stash_weapon_') || type.startsWith('stash_summon_')) &&
+          status[type]?.available
+        )
+      typesToDisplay.push(...stashTypes)
+    }
   }
 
   // Sort by lastUpdated descending (most recent first)
@@ -2380,6 +2389,10 @@ function getTabForDataType(dataType) {
   // Party types are dynamic, not in TAB_DATA_TYPES
   if (dataType.startsWith('party_')) {
     return 'party'
+  }
+  // Stash types are dynamic (per-stash entries)
+  if (dataType.startsWith('stash_')) {
+    return 'collection'
   }
   for (const [tab, types] of Object.entries(TAB_DATA_TYPES)) {
     if (types.includes(dataType)) return tab
