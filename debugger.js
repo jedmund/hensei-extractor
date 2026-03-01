@@ -330,12 +330,13 @@ function getPageNumber(url) {
 }
 
 /**
- * Extract stash number from URL for composite page keys.
- * URL pattern: /{type}/container_list/{stashNumber}/{containerId}
+ * Extract stash number from URL.
+ * URL pattern: /{type}/container_list/{containerId}/{stashNumber}
+ * Page N adds: /{pageNumber}/list
  * Page number comes from the response data's `current` field.
  */
 function getStashNumber(url) {
-  const match = url.match(/\/(?:weapon|summon)\/container_list\/(\d+)\//)
+  const match = url.match(/\/(?:weapon|summon)\/container_list\/\d+\/(\d+)/)
   return match ? match[1] : '1'
 }
 
