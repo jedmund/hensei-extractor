@@ -85,6 +85,8 @@ export const CACHE_KEYS = {
   collection_npc: 'gbf_cache_collection_npc',
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact',
+  stash_weapon: 'gbf_cache_stash_weapon',
+  stash_summon: 'gbf_cache_stash_summon',
   character_stats: 'gbf_cache_character_stats'
 }
 
@@ -107,6 +109,8 @@ export const DATA_TYPES = {
   collection_npc: { name: 'Character Collection' },
   collection_summon: { name: 'Summon Collection' },
   collection_artifact: { name: 'Artifact Collection' },
+  stash_weapon: { name: 'Weapon Stash' },
+  stash_summon: { name: 'Summon Stash' },
   character_stats: { name: 'Character Stats' }
 }
 
@@ -132,6 +136,7 @@ export const TAB_DATA_TYPES = {
   collection: [
     'character_stats', // Character extended stats (awakening, mastery bonuses)
     'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
+    'stash_weapon', 'stash_summon',
     'list_npc', 'list_weapon', 'list_summon'
   ],
   database: [] // Database items are dynamic - populated from cache status (like parties)

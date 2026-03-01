@@ -22,7 +22,9 @@ const CACHE_KEYS = {
   collection_weapon: 'gbf_cache_collection_weapon',
   collection_npc: 'gbf_cache_collection_npc',
   collection_summon: 'gbf_cache_collection_summon',
-  collection_artifact: 'gbf_cache_collection_artifact'
+  collection_artifact: 'gbf_cache_collection_artifact',
+  stash_weapon: 'gbf_cache_stash_weapon',
+  stash_summon: 'gbf_cache_stash_summon'
 }
 
 const PARTY_CACHE_PREFIX = 'gbf_cache_party_'
@@ -76,7 +78,7 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     } else if (dataType === 'character_detail' || dataType === 'zenith_npc') {
       await cacheCharacterStats(dataType, data, masterId, timestamp, url)
       actualDataType = 'character_stats'
-    } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
+    } else if (dataType.startsWith('list_') || dataType.startsWith('collection_') || dataType.startsWith('stash_')) {
       await cacheListPage(dataType, pageNumber, data, timestamp)
     } else if (dataType.startsWith('detail_')) {
       const result = await cacheDetailItem(dataType, data, timestamp, url)
@@ -476,7 +478,7 @@ async function handleGetCachedData(dataType) {
     return { error: 'Cached data is stale. Please refresh the page in-game.' }
   }
 
-  if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
+  if (dataType.startsWith('list_') || dataType.startsWith('collection_') || dataType.startsWith('stash_')) {
     return {
       data: cached.pages,
       timestamp: cached.lastUpdated,
@@ -514,7 +516,7 @@ async function handleGetCacheStatus() {
       const age = now - timestamp
       const isStale = age > CACHE_TTL_MS
 
-      if (type.startsWith('list_') || type.startsWith('collection_')) {
+      if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
         status[type] = {
           available: !isStale && cached.pageCount > 0,
           pageCount: cached.pageCount || 0,
@@ -748,7 +750,9 @@ async function uploadCollectionData(pagesData, dataType, updateExisting = false)
     'collection_artifact': 'artifacts',
     'list_weapon': 'weapons',
     'list_npc': 'characters',
-    'list_summon': 'summons'
+    'list_summon': 'summons',
+    'stash_weapon': 'weapons',
+    'stash_summon': 'summons'
   }
   const endpoint = endpointMap[dataType]
   if (!endpoint) {
