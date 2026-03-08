@@ -72,12 +72,11 @@ export async function getSiteBaseUrl() {
 /** How long cached data is considered fresh (30 minutes) */
 export const CACHE_TTL_MS = 30 * 60 * 1000
 
-/** Cache key prefixes for different data types */
+/** Granblue Fantasy CDN for game assets (new items not yet on S3) */
+export const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
+
+/** Cache storage keys for static (non-dynamic) data types */
 export const CACHE_KEYS = {
-  party: 'gbf_cache_party',
-  detail_npc: 'gbf_cache_detail_npc',
-  detail_weapon: 'gbf_cache_detail_weapon',
-  detail_summon: 'gbf_cache_detail_summon',
   list_npc: 'gbf_cache_list_npc',
   list_weapon: 'gbf_cache_list_weapon',
   list_summon: 'gbf_cache_list_summon',
@@ -86,6 +85,37 @@ export const CACHE_KEYS = {
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact',
   character_stats: 'gbf_cache_character_stats'
+}
+
+/** Cache key prefixes for dynamic data types (appended with ID/number) */
+export const CACHE_PREFIXES = {
+  party: 'gbf_cache_party_',
+  stash_weapon: 'gbf_cache_stash_weapon_',
+  stash_summon: 'gbf_cache_stash_summon_',
+  detail_npc: 'gbf_cache_detail_npc_',
+  detail_weapon: 'gbf_cache_detail_weapon_',
+  detail_summon: 'gbf_cache_detail_summon_'
+}
+
+/**
+ * Resolve a dataType string to its chrome.storage cache key.
+ * Handles both static types (e.g., 'list_npc') and dynamic types (e.g., 'party_1_2', 'detail_npc_123').
+ * @param {string} dataType - The data type identifier
+ * @returns {string|null} The cache storage key, or null if unknown
+ */
+export function resolveCacheKey(dataType) {
+  // Exact match for static keys
+  if (CACHE_KEYS[dataType]) return CACHE_KEYS[dataType]
+
+  // Dynamic prefix match: find the longest matching prefix
+  for (const [prefix, cachePrefix] of Object.entries(CACHE_PREFIXES)) {
+    if (dataType.startsWith(prefix + '_')) {
+      const suffix = dataType.slice(prefix.length + 1)
+      return cachePrefix + suffix
+    }
+  }
+
+  return null
 }
 
 // ==========================================
