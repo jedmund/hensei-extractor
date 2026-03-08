@@ -129,6 +129,7 @@
           <div class="detail-actions">
             <button id="detailCopy" class="button small">Copy</button>
             <button id="detailSync" class="button small hidden">Full Sync</button>
+            <button id="detailReview" class="button small hidden">Review</button>
             <button id="detailImport" class="button small">Import</button>
           </div>
         </header>
@@ -199,6 +200,34 @@
         <div class="modal-actions">
           <button id="cancelSync" class="button">Cancel</button>
           <button id="confirmSync" class="button btn-primary">Sync</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conflict Resolution Modal -->
+    <div id="conflictModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h3 class="modal-title">Review Items</h3>
+        <div class="modal-body">
+          <div id="conflictItemDisplay"></div>
+          <p class="conflict-message">This item has no tracking ID in your collection. Importing will update the existing entry.</p>
+          <div class="conflict-nav">
+            <button id="conflictPrev" class="conflict-nav-btn">&lsaquo;</button>
+            <span id="conflictCounter">1 / 1</span>
+            <button id="conflictNext" class="conflict-nav-btn">&rsaquo;</button>
+          </div>
+        </div>
+        <div class="modal-actions conflict-actions">
+          <div class="conflict-bulk">
+            <button id="conflictSkipAll" class="button small">Skip All</button>
+            <button id="conflictImportAll" class="button small">Import All</button>
+          </div>
+          <div class="conflict-item-actions">
+            <button id="conflictSkip" class="button small">Skip</button>
+            <button id="conflictImport" class="button small">Import</button>
+          </div>
+          <button id="conflictFinish" class="button btn-primary small" disabled>Done</button>
         </div>
       </div>
     </div>

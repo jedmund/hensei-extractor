@@ -360,11 +360,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       uploadDetailData(message.data, message.dataType).then(sendResponse)
       return true
 
+    case 'checkConflicts':
+      checkConflicts(message.data, message.dataType).then(sendResponse)
+      return true
+
     case 'uploadCollectionData':
       uploadCollectionData(message.data, message.dataType, {
         updateExisting: message.updateExisting,
         isFullInventory: message.isFullInventory,
-        reconcileDeletions: message.reconcileDeletions
+        reconcileDeletions: message.reconcileDeletions,
+        conflictResolutions: message.conflictResolutions
       }).then(sendResponse)
       return true
 
@@ -737,8 +742,22 @@ async function previewSyncDeletions(pagesData, dataType) {
   return { willDelete: result.data.will_delete || [], count: result.data.count || 0 }
 }
 
+async function checkConflicts(pagesData, dataType) {
+  const endpoint = resolveEndpoint(dataType)
+  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
+
+  const allItems = collectPageItems(pagesData)
+  if (allItems.length === 0) return { error: 'No items found in collection data' }
+
+  const result = await authenticatedPost(`/collection/${endpoint}/check_conflicts`, {
+    data: { list: allItems }
+  })
+  if (result.error) return result
+  return { conflicts: result.data.conflicts || [] }
+}
+
 async function uploadCollectionData(pagesData, dataType, options = {}) {
-  const { updateExisting = false, isFullInventory = false, reconcileDeletions = false } = options
+  const { updateExisting = false, isFullInventory = false, reconcileDeletions = false, conflictResolutions = null } = options
 
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
@@ -747,13 +766,19 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
   if (allItems.length === 0) return { error: 'No items found in collection data' }
 
   const activeFilter = extractFilterFromPages(pagesData)
-  const result = await authenticatedPost(`/collection/${endpoint}/import`, {
+  const body = {
     data: { list: allItems },
     update_existing: updateExisting,
     is_full_inventory: isFullInventory,
     reconcile_deletions: reconcileDeletions,
     filter: activeFilter
-  })
+  }
+
+  if (conflictResolutions) {
+    body.conflict_resolutions = conflictResolutions
+  }
+
+  const result = await authenticatedPost(`/collection/${endpoint}/import`, body)
   if (result.error) return result
   return {
     success: result.data.success,
