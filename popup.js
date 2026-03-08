@@ -1491,9 +1491,12 @@ async function handleMessages(message) {
     // Refresh cache status
     await refreshAllCaches()
 
-    // Show notification on the appropriate tab
+    // Switch to the appropriate tab and show notification
     const tabName = getTabForDataType(message.dataType)
     if (tabName) {
+      if (activeTab !== tabName) {
+        switchTab(tabName)
+      }
       showTabStatus(tabName, `${getDataTypeName(message.dataType)} data captured!`, 'success')
       setTimeout(() => hideTabStatus(tabName), 2000)
     }
