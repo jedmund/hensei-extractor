@@ -1158,6 +1158,8 @@ body.light #detailImport {
 }
 
 .grid-item.owned > img,
+.grid-item.owned > .weapon-modifiers,
+.grid-item.owned > .char-modifiers,
 .list-item.owned > img,
 .list-item.owned > .list-item-image {
   opacity: 0.35;
