@@ -621,8 +621,10 @@ function renderDetailItems(dataType, data) {
 
   // Determine ownership ID for each item (game_id for weapons/summons/artifacts, granblue_id for characters)
   const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+  const isArtifactType = dataType.includes('artifact')
   const getOwnershipId = (item) => {
     if (isCharacterType) return item.master?.id?.toString() || ''
+    if (isArtifactType) return item.id?.toString() || ''
     return item.param?.id?.toString() || ''
   }
 
