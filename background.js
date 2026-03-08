@@ -636,7 +636,7 @@ async function uploadPartyData(data) {
   return {
     success: true,
     shortcode: result.data.shortcode,
-    url: `${siteUrl}/p/${result.data.shortcode}`
+    url: `${siteUrl}/teams/${result.data.shortcode}`
   }
 }
 
