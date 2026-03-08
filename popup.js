@@ -23,6 +23,7 @@ import {
 } from "./mastery.js"
 import { RARITY_LABELS, GAME_ELEMENT_NAMES } from "./game-data.js"
 import { handleDetailSync, hideSyncModal, confirmSync } from "./sync.js"
+import { showConflictModal, hideConflictModal, initConflictListeners } from "./conflict-resolution.js"
 import {
   isCollectionType, isDatabaseDetailType, isWeaponOrSummonCollection,
   toArray, extractItems, countItems,
@@ -53,6 +54,10 @@ let brokenImageIndices = new Set() // Track items with broken images (persists a
 // Filter state
 let activeRarityFilters = new Set(['4']) // SSR by default
 let excludeLv1Items = true
+
+// Conflict resolution state
+let pendingConflicts = null // Array of conflict objects from API
+let conflictResolutions = null // Map of game_id → 'import' | 'skip' (after user review)
 
 // Age ticker state
 let ageTickerInterval = null
@@ -187,11 +192,15 @@ function initializeEventListeners() {
   document.getElementById('detailCopy')?.addEventListener('click', handleDetailCopy)
   document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
   document.getElementById('detailSync')?.addEventListener('click', () => handleDetailSync(currentDetailDataType, showToast))
+  document.getElementById('detailReview')?.addEventListener('click', handleDetailReview)
 
   // Sync modal buttons
   document.getElementById('cancelSync')?.addEventListener('click', hideSyncModal)
   document.getElementById('confirmSync')?.addEventListener('click', () => confirmSync(currentDetailDataType, showToast))
-  document.querySelector('.modal-backdrop')?.addEventListener('click', hideSyncModal)
+  document.querySelector('#syncModal .modal-backdrop')?.addEventListener('click', hideSyncModal)
+
+  // Conflict modal listeners
+  initConflictListeners()
 
   // Filter listeners
   initializeFilterListeners()
@@ -419,6 +428,16 @@ function hideDetailView() {
   const enableSyncCheckbox = document.getElementById('enableFullSyncCheckbox')
   if (enableSyncCheckbox) {
     enableSyncCheckbox.checked = false
+  }
+
+  // Reset conflict state
+  pendingConflicts = null
+  conflictResolutions = null
+  const reviewBtn = document.getElementById('detailReview')
+  if (reviewBtn) {
+    reviewBtn.classList.add('hidden')
+    reviewBtn.classList.remove('imported')
+    reviewBtn.textContent = 'Review'
   }
 }
 
@@ -944,6 +963,37 @@ async function handleDetailCopy() {
 }
 
 /**
+ * Handle Review button click — open the conflict resolution modal
+ */
+function handleDetailReview() {
+  if (!pendingConflicts || pendingConflicts.length === 0) return
+
+  showConflictModal(pendingConflicts, currentDetailDataType, (decisions) => {
+    // Convert Map to plain object for serialization
+    conflictResolutions = {}
+    for (const [gameId, decision] of decisions) {
+      conflictResolutions[gameId] = decision
+    }
+
+    // Hide the review button since user has resolved
+    const reviewBtn = document.getElementById('detailReview')
+    if (reviewBtn) {
+      reviewBtn.textContent = 'Reviewed'
+      reviewBtn.classList.add('imported')
+    }
+  })
+}
+
+/**
+ * Check if this is a weapon/summon collection type that supports conflict checking
+ */
+function supportsConflictCheck(dataType) {
+  return dataType === 'collection_weapon' || dataType === 'collection_summon' ||
+         dataType === 'list_weapon' || dataType === 'list_summon' ||
+         dataType?.startsWith('stash_weapon') || dataType?.startsWith('stash_summon')
+}
+
+/**
  * Handle import from detail view
  */
 async function handleDetailImport() {
@@ -970,6 +1020,36 @@ async function handleDetailImport() {
     // Filter to selected items for collections
     const dataToUpload = filterSelectedItems(currentDetailDataType, response.data)
 
+    // For weapon/summon collections, check for conflicts on first import attempt
+    if (supportsConflictCheck(currentDetailDataType) && !conflictResolutions && !pendingConflicts) {
+      importBtn.textContent = 'Checking...'
+
+      const conflictResponse = await chrome.runtime.sendMessage({
+        action: 'checkConflicts',
+        data: dataToUpload,
+        dataType: currentDetailDataType
+      })
+
+      if (!conflictResponse.error && conflictResponse.conflicts?.length > 0) {
+        // Conflicts found — show Review button and pause import
+        pendingConflicts = conflictResponse.conflicts
+        const reviewBtn = document.getElementById('detailReview')
+        if (reviewBtn) {
+          reviewBtn.textContent = `Review (${pendingConflicts.length})`
+          reviewBtn.classList.remove('hidden')
+        }
+        showToast(`${pendingConflicts.length} item${pendingConflicts.length > 1 ? 's' : ''} need review`)
+        return
+      }
+      // No conflicts — proceed normally
+    }
+
+    // If there are unresolved conflicts, prompt user to review first
+    if (pendingConflicts && !conflictResolutions) {
+      showToast('Review conflicts before importing')
+      return
+    }
+
     // Upload based on data type
     let uploadResponse
     if (currentDetailDataType.startsWith('party_')) {
@@ -988,7 +1068,8 @@ async function handleDetailImport() {
         action: 'uploadCollectionData',
         data: dataToUpload,
         dataType: currentDetailDataType,
-        updateExisting: false
+        updateExisting: false,
+        conflictResolutions: conflictResolutions || undefined
       })
     } else if (currentDetailDataType === 'character_stats') {
       uploadResponse = await chrome.runtime.sendMessage({
