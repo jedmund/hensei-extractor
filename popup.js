@@ -621,8 +621,10 @@ function renderDetailItems(dataType, data) {
 
   // Determine ownership ID for each item (game_id for weapons/summons/artifacts, granblue_id for characters)
   const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+  const isArtifactType = dataType.includes('artifact')
   const getOwnershipId = (item) => {
     if (isCharacterType) return item.master?.id?.toString() || ''
+    if (isArtifactType) return item.id?.toString() || ''
     return item.param?.id?.toString() || ''
   }
 
@@ -1491,9 +1493,12 @@ async function handleMessages(message) {
     // Refresh cache status
     await refreshAllCaches()
 
-    // Show notification on the appropriate tab
+    // Switch to the appropriate tab and show notification
     const tabName = getTabForDataType(message.dataType)
     if (tabName) {
+      if (activeTab !== tabName) {
+        switchTab(tabName)
+      }
       showTabStatus(tabName, `${getDataTypeName(message.dataType)} data captured!`, 'success')
       setTimeout(() => hideTabStatus(tabName), 2000)
     }
