@@ -24,6 +24,11 @@ import {
 // Initialize debugger interception
 initDebugger(handleInterceptedData)
 
+// In-memory cache for collection ownership IDs
+let collectionIdsCache = null
+let collectionIdsCacheTime = 0
+const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000
+
 /**
  * Open side panel when extension icon is clicked
  */
@@ -358,6 +363,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'uploadDetailData':
       uploadDetailData(message.data, message.dataType).then(sendResponse)
+      return true
+
+    case 'getCollectionIds':
+      getCollectionIds().then(sendResponse)
       return true
 
     case 'checkConflicts':
@@ -780,6 +789,10 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
 
   const result = await authenticatedPost(`/collection/${endpoint}/import`, body)
   if (result.error) return result
+
+  // Invalidate collection IDs cache so dimming updates
+  collectionIdsCache = null
+
   return {
     success: result.data.success,
     created: result.data.created || 0,
@@ -833,12 +846,47 @@ async function uploadCharacterStats(statsData) {
     update_existing: true
   })
   if (result.error) return result
+
+  collectionIdsCache = null
+
   return {
     success: result.data.success,
     created: result.data.created || 0,
     updated: result.data.updated || 0,
     skipped: result.data.skipped || 0,
     errors: result.data.errors || []
+  }
+}
+
+async function getCollectionIds() {
+  const now = Date.now()
+  if (collectionIdsCache && (now - collectionIdsCacheTime) < COLLECTION_IDS_TTL_MS) {
+    return collectionIdsCache
+  }
+
+  const auth = await getAuthToken()
+  if (!auth) return { error: 'Not logged in' }
+
+  const userId = auth.user?.id
+  if (!userId) return { error: 'No user ID' }
+
+  const apiUrl = await getApiUrl(`/users/${userId}/collection/game_ids`)
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${auth.access_token}`
+      }
+    })
+
+    if (!response.ok) return { error: `Request failed (${response.status})` }
+
+    const data = await response.json()
+    collectionIdsCache = data
+    collectionIdsCacheTime = now
+    return data
+  } catch (error) {
+    return { error: error.message }
   }
 }
 
