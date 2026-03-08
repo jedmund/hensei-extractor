@@ -619,6 +619,13 @@ function renderDetailItems(dataType, data) {
     })
   }
 
+  // Determine ownership ID for each item (game_id for weapons/summons/artifacts, granblue_id for characters)
+  const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+  const getOwnershipId = (item) => {
+    if (isCharacterType) return item.master?.id?.toString() || ''
+    return item.param?.id?.toString() || ''
+  }
+
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
@@ -633,7 +640,7 @@ function renderDetailItems(dataType, data) {
           </label>
         ` : ''
         return `
-        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
+        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
           <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
@@ -646,7 +653,6 @@ function renderDetailItems(dataType, data) {
   } else {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType)
-    const isCharacterType = dataType.includes('npc') || dataType.includes('character')
     const isWeaponType = dataType.includes('weapon')
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${itemsWithIndices.map(({ item, originalIndex }) => {
@@ -660,7 +666,7 @@ function renderDetailItems(dataType, data) {
           ? renderCharacterModifiers(item)
           : isWeaponType ? renderWeaponModifiers(item) : ''
         return `
-        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}">
+        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
           ${modifiersHtml}
           <img src="${getItemImageUrl(dataType, item)}" alt="">
           ${checkboxHtml}
@@ -696,6 +702,45 @@ function renderDetailItems(dataType, data) {
     })
 
     updateSelectionCount()
+  }
+
+  // Async: dim items already in the user's collection
+  if (isCollection) {
+    applyOwnershipDimming(container, dataType)
+  }
+}
+
+/**
+ * Fetch collection IDs and dim items already owned
+ */
+async function applyOwnershipDimming(container, dataType) {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getCollectionIds' })
+    if (response?.error) return
+
+    // Determine which ID set to check against
+    const isCharacterType = dataType.includes('npc') || dataType.includes('character')
+    let ownedIds
+    if (dataType.includes('weapon') || dataType.startsWith('stash_weapon')) {
+      ownedIds = new Set(response.weapons || [])
+    } else if (dataType.includes('summon') || dataType.startsWith('stash_summon')) {
+      ownedIds = new Set(response.summons || [])
+    } else if (dataType.includes('artifact')) {
+      ownedIds = new Set(response.artifacts || [])
+    } else if (isCharacterType) {
+      ownedIds = new Set(response.characters || [])
+    } else {
+      return
+    }
+
+    container.querySelectorAll('[data-ownership-id]').forEach(el => {
+      const id = el.dataset.ownershipId
+      if (id && ownedIds.has(id)) {
+        el.classList.add('owned')
+      }
+    })
+  } catch {
+    // Not logged in or API error — skip silently
   }
 }
 

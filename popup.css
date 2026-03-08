@@ -1152,6 +1152,11 @@ body.light #detailImport {
   position: relative;
 }
 
+.grid-item.owned,
+.list-item.owned {
+  opacity: 0.35;
+}
+
 /* Character Modifiers (perpetuity ring overlay) */
 .char-modifiers {
   position: absolute;
