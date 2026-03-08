@@ -1154,6 +1154,16 @@ body.light #detailImport {
 
 .grid-item.owned,
 .list-item.owned {
+  position: relative;
+}
+
+.grid-item.owned > img,
+.list-item.owned > img,
+.list-item.owned > .list-item-image {
+  opacity: 0.35;
+}
+
+.list-item.owned > .list-item-info {
   opacity: 0.35;
 }
 
@@ -1168,7 +1178,8 @@ body.light #detailImport {
   padding: 6px 8px;
   background: #000;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   line-height: 1.3;
   border-radius: 4px;
   text-align: center;
