@@ -176,9 +176,49 @@
             </div>
           </div>
         </div>
+        <!-- Raid selector (party only) -->
+        <div id="raidSelector" class="raid-selector hidden">
+          <button id="raidSelectorButton" class="raid-selector-button">
+            <img id="raidSelectorImage" class="raid-selector-image hidden" src="" alt="">
+            <span id="raidSelectorLabel" class="raid-selector-label">Select Raid</span>
+            <svg class="icon-chevron-right" viewBox="0 0 14 14" fill="currentColor" width="12" height="12">
+              <path d="M4.17094 2.04309C4.56138 1.6528 5.19456 1.6529 5.58486 2.04309L9.82702 6.28625C9.99963 6.45893 10.0961 6.67885 10.1161 6.90442C10.1435 7.19118 10.0466 7.48755 9.82702 7.70715L5.58486 11.9503C5.19441 12.3402 4.56118 12.3403 4.17094 11.9503C3.78059 11.5599 3.78069 10.9267 4.17094 10.5363L7.70901 6.99622L4.17094 3.45715C3.78059 3.06673 3.78069 2.43355 4.17094 2.04309Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
         <div id="detailItems" class="detail-items">
           <!-- Items rendered here -->
         </div>
+      </div>
+    </div>
+
+    <!-- Raid Picker View (slides over detail view) -->
+    <div id="raidPickerView" class="raid-picker-view">
+      <header class="raid-picker-header">
+        <button id="raidPickerBack" class="detail-back">
+          <svg class="icon-chevron" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M9.82906 2.04309C9.43862 1.6528 8.8055 1.6529 8.415 2.04309L4.17281 6.28625C4.0002 6.45893 3.9037 6.67885 3.88375 6.90442C3.85638 7.19118 3.95321 7.48755 4.17281 7.70715L8.415 11.9503C8.80545 12.3402 9.43867 12.3403 9.82906 11.9503C10.2192 11.5599 10.219 10.9267 9.82906 10.5363L6.29098 6.99622L9.82906 3.45715C10.2192 3.06673 10.2191 2.43355 9.82906 2.04309Z" fill="currentColor"/>
+          </svg>
+          <span>Back</span>
+        </button>
+        <span class="raid-picker-title">Select Raid</span>
+      </header>
+      <div class="raid-picker-search">
+        <input type="text" id="raidSearchInput" class="contained" placeholder="Search raids...">
+      </div>
+      <div class="raid-picker-controls">
+        <div class="segmented-control">
+          <button class="raid-section-tab active" data-section="0">Farming</button>
+          <button class="raid-section-tab" data-section="1">Raids</button>
+          <button class="raid-section-tab" data-section="2">Events</button>
+          <button class="raid-section-tab" data-section="3">Solo</button>
+        </div>
+        <button id="raidSortBtn" class="raid-sort-btn">
+          <svg viewBox="0 0 14 14" fill="currentColor" width="14" height="14"><path d="M11.9546 7.04822C12.3449 7.43871 12.3449 8.07179 11.9546 8.46228L7.7114 12.7045C7.53873 12.877 7.31878 12.9736 7.09323 12.9935C6.80654 13.0208 6.51004 12.924 6.2905 12.7045L2.04734 8.46228C1.65747 8.07186 1.65742 7.43861 2.04734 7.04822C2.4377 6.65794 3.07086 6.65823 3.4614 7.04822L5.99753 9.58337L5.99753 1.99548C5.99753 1.44339 6.44551 0.995793 6.99753 0.995483C7.54982 0.995483 7.99753 1.4432 7.99753 1.99548L7.99753 9.59021L10.5405 7.04822C10.9309 6.65797 11.5641 6.65814 11.9546 7.04822Z"/></svg>
+        </button>
+      </div>
+      <div id="raidPickerContent" class="raid-picker-content">
+        <!-- Raid groups rendered here -->
       </div>
     </div>
 

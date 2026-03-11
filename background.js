@@ -9,7 +9,7 @@
 
 import {
   getApiUrl, getSiteBaseUrl, TIMEOUTS,
-  CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS, resolveCacheKey
+  CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS, RAID_GROUPS_CACHE_TTL_MS, resolveCacheKey
 } from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
 import {
@@ -357,8 +357,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
       return false
 
+    case 'fetchRaidGroups':
+      fetchRaidGroups().then(sendResponse)
+      return true
+
     case 'uploadPartyData':
-      uploadPartyData(message.data).then(sendResponse)
+      uploadPartyData(message.data, message.raidId).then(sendResponse)
       return true
 
     case 'uploadDetailData':
@@ -642,8 +646,11 @@ async function authenticatedPost(endpoint, body) {
   }
 }
 
-async function uploadPartyData(data) {
-  const result = await authenticatedPost('/import', { import: data })
+async function uploadPartyData(data, raidId) {
+  const body = { import: data }
+  if (raidId) body.raid_id = raidId
+
+  const result = await authenticatedPost('/import', body)
   if (result.error) return result
 
   const siteUrl = await getSiteBaseUrl()
@@ -855,6 +862,47 @@ async function uploadCharacterStats(statsData) {
     updated: result.data.updated || 0,
     skipped: result.data.skipped || 0,
     errors: result.data.errors || []
+  }
+}
+
+async function fetchRaidGroups() {
+  const cacheKey = CACHE_KEYS.raid_groups
+  const result = await chrome.storage.local.get(cacheKey)
+  const cached = result[cacheKey]
+
+  if (cached && cached.timestamp && (Date.now() - cached.timestamp) < RAID_GROUPS_CACHE_TTL_MS) {
+    return { data: cached.data }
+  }
+
+  const auth = await getAuthToken()
+  if (!auth) return { error: 'Not logged in. Please log in first.' }
+
+  const apiUrl = await getApiUrl('/raid_groups')
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${auth.access_token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      return { error: `Request failed (${response.status}): ${errorText}` }
+    }
+
+    const data = await response.json()
+
+    await chrome.storage.local.set({
+      [cacheKey]: {
+        data: data,
+        timestamp: Date.now()
+      }
+    })
+
+    return { data }
+  } catch (error) {
+    return { error: `Request failed: ${error.message}` }
   }
 }
 

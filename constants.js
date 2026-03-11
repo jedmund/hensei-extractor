@@ -72,6 +72,9 @@ export async function getSiteBaseUrl() {
 /** How long cached data is considered fresh (30 minutes) */
 export const CACHE_TTL_MS = 30 * 60 * 1000
 
+/** How long raid groups cache is considered fresh (7 days) */
+export const RAID_GROUPS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 /** Granblue Fantasy CDN for game assets (new items not yet on S3) */
 export const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
 
@@ -84,7 +87,8 @@ export const CACHE_KEYS = {
   collection_npc: 'gbf_cache_collection_npc',
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact',
-  character_stats: 'gbf_cache_character_stats'
+  character_stats: 'gbf_cache_character_stats',
+  raid_groups: 'gbf_cache_raid_groups'
 }
 
 /** Cache key prefixes for dynamic data types (appended with ID/number) */
@@ -116,6 +120,17 @@ export function resolveCacheKey(dataType) {
   }
 
   return null
+}
+
+// ==========================================
+// RAID SECTIONS
+// ==========================================
+
+export const RAID_SECTIONS = {
+  FARMING: 0,
+  RAID: 1,
+  EVENT: 2,
+  SOLO: 3
 }
 
 // ==========================================
