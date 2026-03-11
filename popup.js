@@ -31,6 +31,9 @@ import {
   getCharacterModifiers, renderCharacterModifiers, getWeaponModifiers, renderWeaponModifiers,
   renderPartyDetail, renderDatabaseDetail
 } from "./render-detail.js"
+import {
+  showRaidPicker, hideRaidPicker, getSelectedRaid, setSelectedRaid, clearSelectedRaid
+} from "./raid-picker.js"
 
 // ==========================================
 // STATE
@@ -194,6 +197,14 @@ function initializeEventListeners() {
   document.getElementById('detailSync')?.addEventListener('click', () => handleDetailSync(currentDetailDataType, showToast))
   document.getElementById('detailReview')?.addEventListener('click', handleDetailReview)
 
+  // Raid selector button
+  document.getElementById('raidSelectorButton')?.addEventListener('click', () => {
+    showRaidPicker({
+      currentRaid: getSelectedRaid(),
+      onSelect: (raid) => updateRaidSelectorUI(raid)
+    })
+  })
+
   // Sync modal buttons
   document.getElementById('cancelSync')?.addEventListener('click', hideSyncModal)
   document.getElementById('confirmSync')?.addEventListener('click', () => confirmSync(currentDetailDataType, showToast))
@@ -297,15 +308,18 @@ async function showDetailView(dataType) {
   document.getElementById('detailFreshness').textContent = status.ageText
 
   if (dataType.startsWith('party_')) {
-    // Party shows section counts
-    // Characters are at deck.npc, weapons/summons are at deck.pc
+    // Party counts are shown inline in section labels — hide the meta row
     const deck = response.data.deck || {}
     const pc = deck.pc || {}
     const chars = toArray(deck.npc).filter(Boolean).length
     const wpns = toArray(pc.weapons).filter(Boolean).length
-    const sums = toArray(pc.summons).filter(Boolean).length
     document.getElementById('detailPageCount').textContent = ''
-    document.getElementById('detailItemCount').textContent = `${chars} characters · ${wpns} weapons · ${sums} summons`
+    document.getElementById('detailItemCount').textContent = ''
+    document.querySelector('.detail-meta')?.classList.add('hidden')
+
+    // Show raid selector and auto-suggest based on grid shape
+    document.getElementById('raidSelector')?.classList.remove('hidden')
+    autoSuggestRaid(wpns, chars)
   } else if (dataType === 'character_stats') {
     // Character stats shows character count
     const characterCount = Object.keys(response.data).length
@@ -319,6 +333,13 @@ async function showDetailView(dataType) {
   } else {
     document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
     document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
+  }
+
+  // Hide raid selector and show meta row for non-party types
+  if (!dataType.startsWith('party_')) {
+    document.getElementById('raidSelector')?.classList.add('hidden')
+    document.querySelector('.detail-meta')?.classList.remove('hidden')
+    clearSelectedRaid()
   }
 
   // Reset import button
@@ -430,6 +451,11 @@ function hideDetailView() {
     enableSyncCheckbox.checked = false
   }
 
+  // Reset raid selector state
+  clearSelectedRaid()
+  document.getElementById('raidSelector')?.classList.add('hidden')
+  updateRaidSelectorUI(null)
+
   // Reset conflict state
   pendingConflicts = null
   conflictResolutions = null
@@ -439,6 +465,106 @@ function hideDetailView() {
     reviewBtn.classList.remove('imported')
     reviewBtn.textContent = 'Review'
   }
+}
+
+// ==========================================
+// RAID SELECTOR
+// ==========================================
+
+/**
+ * Update the raid selector button UI to reflect the selected raid
+ * @param {Object|null} raid
+ */
+const RAID_ELEMENT_CLASSES = {
+  0: 'raid-null',
+  1: 'raid-wind',
+  2: 'raid-fire',
+  3: 'raid-water',
+  4: 'raid-earth',
+  5: 'raid-dark',
+  6: 'raid-light'
+}
+
+function updateRaidSelectorUI(raid) {
+  const label = document.getElementById('raidSelectorLabel')
+  const btn = document.getElementById('raidSelectorButton')
+  const img = document.getElementById('raidSelectorImage')
+  if (!label || !btn) return
+
+  // Remove any previous element class
+  Object.values(RAID_ELEMENT_CLASSES).forEach(cls => btn.classList.remove(cls))
+
+  if (raid) {
+    const name = typeof raid.name === 'string' ? raid.name : (raid.name?.en || raid.name_en || 'Unknown')
+    const level = raid.level ? ` Lv. ${raid.level}` : ''
+    label.textContent = `${name}${level}`
+    btn.classList.add('has-raid')
+    const elementClass = RAID_ELEMENT_CLASSES[raid.element] || 'raid-null'
+    btn.classList.add(elementClass)
+
+    // Show raid thumbnail
+    if (img && raid.slug) {
+      img.src = getImageUrl(`raid-thumbnail/${raid.slug}.png`)
+      img.classList.remove('hidden')
+      img.onerror = () => img.classList.add('hidden')
+    }
+
+    setSelectedRaid(raid)
+  } else {
+    label.textContent = 'Select Raid'
+    btn.classList.remove('has-raid')
+    if (img) {
+      img.src = ''
+      img.classList.add('hidden')
+    }
+    clearSelectedRaid()
+  }
+}
+
+/**
+ * Auto-suggest a raid based on weapon and character counts
+ * @param {number} weaponCount
+ * @param {number} characterCount
+ */
+async function autoSuggestRaid(weaponCount, characterCount) {
+  // Fetch raid groups to find matching raids
+  const response = await chrome.runtime.sendMessage({ action: 'fetchRaidGroups' })
+  if (response.error || !response.data) return
+
+  const groups = response.data
+  let suggestedRaid = null
+
+  if (weaponCount === 10 && characterCount === 5) {
+    suggestedRaid = findRaidBySlug(groups, 'farming')
+  } else if (weaponCount === 13 && characterCount === 5) {
+    suggestedRaid = findRaidBySlug(groups, 'farming-v2')
+  } else if (weaponCount === 13 && characterCount === 7) {
+    // Find the unlimited raid (Versusia)
+    for (const group of groups) {
+      if (group.unlimited) {
+        const raid = (group.raids || [])[0]
+        if (raid) {
+          suggestedRaid = { ...raid, group }
+          break
+        }
+      }
+    }
+  }
+
+  if (suggestedRaid) {
+    updateRaidSelectorUI(suggestedRaid)
+  }
+}
+
+/**
+ * Find a raid by slug across all groups
+ */
+function findRaidBySlug(groups, slug) {
+  for (const group of groups) {
+    const raid = (group.raids || []).find(r => r.slug === slug)
+    if (raid) return { ...raid, group }
+  }
+  return null
 }
 
 // Checkmark SVG for checkboxes
@@ -1100,9 +1226,11 @@ async function handleDetailImport() {
     // Upload based on data type
     let uploadResponse
     if (currentDetailDataType.startsWith('party_')) {
+      const raid = getSelectedRaid()
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
-        data: dataToUpload
+        data: dataToUpload,
+        raidId: raid?.id || null
       })
     } else if (currentDetailDataType.startsWith('detail_')) {
       uploadResponse = await chrome.runtime.sendMessage({

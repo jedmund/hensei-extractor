@@ -340,7 +340,7 @@ export function renderPartyDetail(container, data) {
   if (characters.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Characters</h3>
+        <h3 class="party-section-title">${characters.length} Characters</h3>
         <div class="item-grid characters">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
@@ -359,7 +359,7 @@ export function renderPartyDetail(container, data) {
   if (weapons.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Weapons</h3>
+        <h3 class="party-section-title">${weapons.length} Weapons</h3>
         <div class="item-grid weapons">
           ${weapons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
@@ -378,7 +378,7 @@ export function renderPartyDetail(container, data) {
   if (summons.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Summons</h3>
+        <h3 class="party-section-title">${summons.length} Summons</h3>
         <div class="item-grid summons">
           ${summons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
