@@ -1,0 +1,55 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v2.1)'
+        required: true
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build manifest
+        run: node build-manifest.js
+        env:
+          UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package extension
+        run: |
+          mkdir -p granblue-team-extension
+          cp manifest.json granblue-team-extension/
+          cp background.js granblue-team-extension/
+          cp popup.html popup.js popup.css granblue-team-extension/
+          cp auth.js cache.js conflict-resolution.js constants.js granblue-team-extension/
+          cp debugger.js dom.js game-data.js mastery.js granblue-team-extension/
+          cp raid-picker.js render-detail.js storage.js sync.js granblue-team-extension/
+          cp icon16.png icon48.png icon128.png granblue-team-extension/
+          cp -r icons granblue-team-extension/
+          cd granblue-team-extension && zip -r ../granblue-team-extension.zip . && cd ..
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          files: granblue-team-extension.zip
+          generate_release_notes: true
