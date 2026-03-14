@@ -1243,7 +1243,7 @@ async function handleDetailImport() {
         action: 'uploadCollectionData',
         data: dataToUpload,
         dataType: currentDetailDataType,
-        updateExisting: false,
+        updateExisting: currentDetailDataType === 'collection_artifact',
         conflictResolutions: conflictResolutions || undefined
       })
     } else if (currentDetailDataType === 'character_stats') {
