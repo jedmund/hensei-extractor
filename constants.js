@@ -16,8 +16,8 @@ export const ENVIRONMENTS = {
     apiPath: '/v1'
   },
   development: {
-    apiUrl: 'https://next-api.granblue.team',
-    siteUrl: 'https://next.granblue.team',
+    apiUrl: 'https://api.granblue.team',
+    siteUrl: 'https://granblue.team',
     apiPath: '/v1'
   }
 }
