@@ -12,8 +12,7 @@
   "key": "{{UNIQUE_KEY}}",
   "host_permissions": [
     "https://game.granbluefantasy.jp/*",
-    "https://api.granblue.team/*",
-    "https://next-api.granblue.team/*"
+    "https://api.granblue.team/*"
   ],
   "action": {
     "default_icon": {
