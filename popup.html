@@ -186,6 +186,14 @@
             </svg>
           </button>
         </div>
+        <div id="playlistSelector" class="playlist-selector hidden">
+          <button id="playlistSelectorButton" class="playlist-selector-button">
+            <span id="playlistSelectorLabel" class="playlist-selector-label">Add to Playlists</span>
+            <svg class="icon-chevron-right" viewBox="0 0 14 14" fill="currentColor" width="12" height="12">
+              <path d="M4.17094 2.04309C4.56138 1.6528 5.19456 1.6529 5.58486 2.04309L9.82702 6.28625C9.99963 6.45893 10.0961 6.67885 10.1161 6.90442C10.1435 7.19118 10.0466 7.48755 9.82702 7.70715L5.58486 11.9503C5.19441 12.3402 4.56118 12.3403 4.17094 11.9503C3.78059 11.5599 3.78069 10.9267 4.17094 10.5363L7.70901 6.99622L4.17094 3.45715C3.78059 3.06673 3.78069 2.43355 4.17094 2.04309Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
         <div id="detailItems" class="detail-items">
           <!-- Items rendered here -->
         </div>
@@ -219,6 +227,44 @@
       </div>
       <div id="raidPickerContent" class="raid-picker-content">
         <!-- Raid groups rendered here -->
+      </div>
+    </div>
+
+    <!-- Playlist Picker View (slides over detail view) -->
+    <div id="playlistPickerView" class="playlist-picker-view">
+      <header class="playlist-picker-header">
+        <button id="playlistPickerBack" class="detail-back">
+          <svg class="icon-chevron" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M9.82906 2.04309C9.43862 1.6528 8.8055 1.6529 8.415 2.04309L4.17281 6.28625C4.0002 6.45893 3.9037 6.67885 3.88375 6.90442C3.85638 7.19118 3.95321 7.48755 4.17281 7.70715L8.415 11.9503C8.80545 12.3402 9.43867 12.3403 9.82906 11.9503C10.2192 11.5599 10.219 10.9267 9.82906 10.5363L6.29098 6.99622L9.82906 3.45715C10.2192 3.06673 10.2191 2.43355 9.82906 2.04309Z" fill="currentColor"/>
+          </svg>
+          <span>Back</span>
+        </button>
+        <span class="playlist-picker-title">Select Playlists</span>
+        <button id="playlistCreateBtn" class="playlist-create-btn">
+          <svg viewBox="0 0 14 14" fill="currentColor" width="14" height="14">
+            <path d="M7 1a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H8v4a1 1 0 1 1-2 0V8H2a1 1 0 0 1 0-2h4V2a1 1 0 0 1 1-1z"/>
+          </svg>
+        </button>
+      </header>
+      <div id="playlistCreateForm" class="playlist-create-form hidden">
+        <input type="text" id="playlistCreateTitle" class="contained" placeholder="Playlist title">
+        <textarea id="playlistCreateDescription" class="contained" placeholder="Description (optional)" rows="2"></textarea>
+        <select id="playlistCreateVisibility" class="contained">
+          <option value="3" selected>Private</option>
+          <option value="2">Unlisted</option>
+          <option value="1">Public</option>
+        </select>
+        <button id="playlistCreateSubmit" class="button btn-primary small">Create</button>
+        <div class="playlist-create-error"></div>
+      </div>
+      <div class="playlist-picker-search">
+        <input type="text" id="playlistSearchInput" class="contained" placeholder="Search playlists...">
+      </div>
+      <div id="playlistPickerContent" class="playlist-picker-content">
+        <!-- Playlists rendered here -->
+      </div>
+      <div class="playlist-picker-footer">
+        <button id="playlistPickerDone" class="button btn-primary full">Done</button>
       </div>
     </div>
 
