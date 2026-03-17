@@ -361,8 +361,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       fetchRaidGroups().then(sendResponse)
       return true
 
+    case 'fetchUserPlaylists':
+      fetchUserPlaylists().then(sendResponse)
+      return true
+
+    case 'createPlaylist':
+      createPlaylist(message.data).then(sendResponse)
+      return true
+
     case 'uploadPartyData':
-      uploadPartyData(message.data, message.raidId).then(sendResponse)
+      uploadPartyData(message.data, message.raidId, message.playlistIds).then(sendResponse)
       return true
 
     case 'uploadDetailData':
@@ -646,9 +654,10 @@ async function authenticatedPost(endpoint, body) {
   }
 }
 
-async function uploadPartyData(data, raidId) {
+async function uploadPartyData(data, raidId, playlistIds) {
   const body = { import: data }
   if (raidId) body.raid_id = raidId
+  if (playlistIds?.length > 0) body.playlist_ids = playlistIds
 
   const result = await authenticatedPost('/import', body)
   if (result.error) return result
@@ -862,6 +871,33 @@ async function uploadCharacterStats(statsData) {
     updated: result.data.updated || 0,
     skipped: result.data.skipped || 0,
     errors: result.data.errors || []
+  }
+}
+
+async function fetchUserPlaylists() {
+  try {
+    const auth = await getAuthToken()
+    const response = await fetch(`${await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`)}`, {
+      headers: { 'Authorization': `Bearer ${auth.access_token}` }
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const data = await response.json()
+    return { data }
+  } catch (error) {
+    console.error('Failed to fetch playlists:', error)
+    return { error: error.message }
+  }
+}
+
+async function createPlaylist({ title, description, visibility }) {
+  try {
+    const result = await authenticatedPost('/playlists', {
+      playlist: { title, description, visibility: visibility || 3 }
+    })
+    return result
+  } catch (error) {
+    console.error('Failed to create playlist:', error)
+    return { error: error.message }
   }
 }
 

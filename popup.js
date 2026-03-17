@@ -34,6 +34,9 @@ import {
 import {
   showRaidPicker, hideRaidPicker, getSelectedRaid, setSelectedRaid, clearSelectedRaid
 } from "./raid-picker.js"
+import {
+  showPlaylistPicker, hidePlaylistPicker, getSelectedPlaylists, clearSelectedPlaylists
+} from "./playlist-picker.js"
 
 // ==========================================
 // STATE
@@ -205,6 +208,14 @@ function initializeEventListeners() {
     })
   })
 
+  // Playlist selector button
+  document.getElementById('playlistSelectorButton')?.addEventListener('click', () => {
+    showPlaylistPicker({
+      currentPlaylists: getSelectedPlaylists(),
+      onSelect: (playlists) => updatePlaylistSelectorUI(playlists)
+    })
+  })
+
   // Sync modal buttons
   document.getElementById('cancelSync')?.addEventListener('click', hideSyncModal)
   document.getElementById('confirmSync')?.addEventListener('click', () => confirmSync(currentDetailDataType, showToast))
@@ -319,6 +330,7 @@ async function showDetailView(dataType) {
 
     // Show raid selector and auto-suggest based on grid shape
     document.getElementById('raidSelector')?.classList.remove('hidden')
+    document.getElementById('playlistSelector')?.classList.remove('hidden')
     autoSuggestRaid(wpns, chars)
   } else if (dataType === 'character_stats') {
     // Character stats shows character count
@@ -335,11 +347,14 @@ async function showDetailView(dataType) {
     document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
   }
 
-  // Hide raid selector and show meta row for non-party types
+  // Hide raid selector, playlist selector, and show meta row for non-party types
   if (!dataType.startsWith('party_')) {
     document.getElementById('raidSelector')?.classList.add('hidden')
+    document.getElementById('playlistSelector')?.classList.add('hidden')
     document.querySelector('.detail-meta')?.classList.remove('hidden')
     clearSelectedRaid()
+    clearSelectedPlaylists()
+    updatePlaylistSelectorUI([])
   }
 
   // Reset import button
@@ -456,6 +471,11 @@ function hideDetailView() {
   document.getElementById('raidSelector')?.classList.add('hidden')
   updateRaidSelectorUI(null)
 
+  // Reset playlist selector state
+  clearSelectedPlaylists()
+  updatePlaylistSelectorUI([])
+  document.getElementById('playlistSelector')?.classList.add('hidden')
+
   // Reset conflict state
   pendingConflicts = null
   conflictResolutions = null
@@ -518,6 +538,26 @@ function updateRaidSelectorUI(raid) {
       img.classList.add('hidden')
     }
     clearSelectedRaid()
+  }
+}
+
+// ==========================================
+// PLAYLIST SELECTOR
+// ==========================================
+
+/**
+ * Update the playlist selector button UI to reflect the selected playlists
+ * @param {Array} playlists
+ */
+function updatePlaylistSelectorUI(playlists) {
+  const label = document.getElementById('playlistSelectorLabel')
+  if (!label) return
+  if (!playlists || playlists.length === 0) {
+    label.textContent = 'Add to Playlists'
+  } else if (playlists.length === 1) {
+    label.textContent = playlists[0].title
+  } else {
+    label.textContent = `${playlists.length} playlists selected`
   }
 }
 
@@ -1227,10 +1267,12 @@ async function handleDetailImport() {
     let uploadResponse
     if (currentDetailDataType.startsWith('party_')) {
       const raid = getSelectedRaid()
+      const playlists = getSelectedPlaylists()
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
         data: dataToUpload,
-        raidId: raid?.id || null
+        raidId: raid?.id || null,
+        playlistIds: playlists.map(p => p.id)
       })
     } else if (currentDetailDataType.startsWith('detail_')) {
       uploadResponse = await chrome.runtime.sendMessage({
