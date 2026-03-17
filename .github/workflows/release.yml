@@ -2,6 +2,8 @@ name: Release Extension
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -29,8 +31,12 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(node -p "require('./manifest.template.json').version")
+            SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
+            echo "tag=v${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Package extension
@@ -41,7 +47,7 @@ jobs:
           cp popup.html popup.js popup.css granblue-team-extension/
           cp auth.js cache.js conflict-resolution.js constants.js granblue-team-extension/
           cp debugger.js dom.js game-data.js mastery.js granblue-team-extension/
-          cp raid-picker.js render-detail.js storage.js sync.js granblue-team-extension/
+          cp playlist-picker.js raid-picker.js render-detail.js storage.js sync.js granblue-team-extension/
           cp icon16.png icon48.png icon128.png granblue-team-extension/
           cp -r icons granblue-team-extension/
           cd granblue-team-extension && zip -r ../granblue-team-extension.zip . && cd ..
