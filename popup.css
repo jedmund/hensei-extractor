@@ -1562,30 +1562,6 @@ body.light #detailImport {
   flex-shrink: 0;
 }
 
-.party-name-input {
-  width: 100%;
-  padding: 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color var(--transition-fast);
-  box-sizing: border-box;
-}
-
-.party-name-input:focus {
-  border-color: var(--color-primary);
-}
-
-.party-name-input::placeholder {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-}
-
 /* ==========================================
    RAID SELECTOR (in party detail view)
    ========================================== */
@@ -1886,9 +1862,10 @@ body.light #detailImport {
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: 50px;
   padding: 8px;
   background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-md);
   font-family: inherit;
   font-size: 14px;
