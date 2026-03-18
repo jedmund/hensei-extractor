@@ -63,11 +63,29 @@ export function countItems(dataType, data) {
 // IMAGE & LABEL HELPERS
 // ==========================================
 
+/**
+ * Get the character image suffix from game data.
+ * Game uses _st2 for style change; S3 stores as _style.
+ * Falls back to _01 if no image_id_3 is available.
+ */
+function getCharacterImageSuffix(item) {
+  const imageId3 = item.param?.image_id_3
+  if (!imageId3) return '_01'
+
+  const id = item.master?.id || item.param?.id || item.id
+  if (!id || !imageId3.startsWith(id)) return '_01'
+
+  let suffix = imageId3.slice(id.length)
+  suffix = suffix.replace(/_st2$/, '_style')
+  return suffix
+}
+
 export function getItemImageUrl(dataType, item) {
   const granblueId = item.master?.id || item.param?.id || item.id
 
   if (dataType.includes('npc') || dataType.includes('character')) {
-    return getImageUrl(`character-square/${granblueId}_01.jpg`)
+    const suffix = getCharacterImageSuffix(item)
+    return getImageUrl(`character-square/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('weapon')) {
     return getImageUrl(`weapon-square/${granblueId}.jpg`)
@@ -344,7 +362,8 @@ export function renderPartyDetail(container, data) {
         <div class="item-grid characters">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`character-grid/${id}_01.jpg`)
+            const suffix = getCharacterImageSuffix(item)
+            const imageUrl = getImageUrl(`character-grid/${id}${suffix}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">
