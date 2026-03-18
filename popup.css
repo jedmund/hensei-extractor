@@ -1557,7 +1557,10 @@ body.light #detailImport {
 /* ==========================================
    PARTY NAME INPUT (in party detail view)
    ========================================== */
-.party-name-container {
+.party-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 8px 16px;
   flex-shrink: 0;
 }
@@ -1568,8 +1571,6 @@ body.light #detailImport {
 .raid-selector {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  flex-shrink: 0;
 }
 
 .raid-selector-button {
@@ -1853,8 +1854,6 @@ body.light #detailImport {
 .playlist-selector {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  flex-shrink: 0;
 }
 
 .playlist-selector-button {
