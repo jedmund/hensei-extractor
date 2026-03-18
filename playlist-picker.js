@@ -35,7 +35,7 @@ export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
     return
   }
 
-  playlists = response.data || []
+  playlists = response.data?.results || response.data || []
 
   renderPicker()
   bindEvents()
