@@ -328,6 +328,12 @@ async function showDetailView(dataType) {
     document.getElementById('detailItemCount').textContent = ''
     document.querySelector('.detail-meta')?.classList.add('hidden')
 
+    // Show party name input and pre-fill from deck data
+    const partyNameContainer = document.getElementById('partyNameContainer')
+    const partyNameInput = document.getElementById('partyNameInput')
+    partyNameContainer?.classList.remove('hidden')
+    if (partyNameInput) partyNameInput.value = deck.name || ''
+
     // Show raid selector and auto-suggest based on grid shape
     document.getElementById('raidSelector')?.classList.remove('hidden')
     document.getElementById('playlistSelector')?.classList.remove('hidden')
@@ -347,8 +353,9 @@ async function showDetailView(dataType) {
     document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
   }
 
-  // Hide raid selector, playlist selector, and show meta row for non-party types
+  // Hide party name, raid selector, playlist selector, and show meta row for non-party types
   if (!dataType.startsWith('party_')) {
+    document.getElementById('partyNameContainer')?.classList.add('hidden')
     document.getElementById('raidSelector')?.classList.add('hidden')
     document.getElementById('playlistSelector')?.classList.add('hidden')
     document.querySelector('.detail-meta')?.classList.remove('hidden')
@@ -465,6 +472,11 @@ function hideDetailView() {
   if (enableSyncCheckbox) {
     enableSyncCheckbox.checked = false
   }
+
+  // Reset party name input
+  const partyNameInput = document.getElementById('partyNameInput')
+  if (partyNameInput) partyNameInput.value = ''
+  document.getElementById('partyNameContainer')?.classList.add('hidden')
 
   // Reset raid selector state
   clearSelectedRaid()
@@ -1268,11 +1280,13 @@ async function handleDetailImport() {
     if (currentDetailDataType.startsWith('party_')) {
       const raid = getSelectedRaid()
       const playlists = getSelectedPlaylists()
+      const partyName = document.getElementById('partyNameInput')?.value?.trim() || null
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
         data: dataToUpload,
         raidId: raid?.id || null,
-        playlistIds: playlists.map(p => p.id)
+        playlistIds: playlists.map(p => p.id),
+        name: partyName
       })
     } else if (currentDetailDataType.startsWith('detail_')) {
       uploadResponse = await chrome.runtime.sendMessage({
