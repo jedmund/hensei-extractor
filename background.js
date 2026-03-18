@@ -625,6 +625,18 @@ function resolveEndpoint(dataType) {
 }
 
 /**
+ * Parse an error response into a user-friendly message.
+ */
+async function parseErrorResponse(response) {
+  const text = await response.text()
+  try {
+    const json = JSON.parse(text)
+    if (json.error) return json.error
+  } catch { /* not JSON */ }
+  return text || `Request failed (${response.status})`
+}
+
+/**
  * Make an authenticated POST request to the API.
  * @returns {{ error?: string, data?: any, auth?: Object }}
  */
@@ -644,8 +656,7 @@ async function authenticatedPost(endpoint, body) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Request failed (${response.status}): ${errorText}` }
+      return { error: await parseErrorResponse(response) }
     }
 
     return { data: await response.json(), auth }
@@ -923,8 +934,7 @@ async function fetchRaidGroups() {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      return { error: `Request failed (${response.status}): ${errorText}` }
+      return { error: await parseErrorResponse(response) }
     }
 
     const data = await response.json()
