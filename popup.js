@@ -328,15 +328,10 @@ async function showDetailView(dataType) {
     document.getElementById('detailItemCount').textContent = ''
     document.querySelector('.detail-meta')?.classList.add('hidden')
 
-    // Show party name input and pre-fill from deck data
-    const partyNameContainer = document.getElementById('partyNameContainer')
+    // Show party meta and pre-fill name from deck data
+    document.getElementById('partyMeta')?.classList.remove('hidden')
     const partyNameInput = document.getElementById('partyNameInput')
-    partyNameContainer?.classList.remove('hidden')
     if (partyNameInput) partyNameInput.value = deck.name || ''
-
-    // Show raid selector and auto-suggest based on grid shape
-    document.getElementById('raidSelector')?.classList.remove('hidden')
-    document.getElementById('playlistSelector')?.classList.remove('hidden')
     autoSuggestRaid(wpns, chars)
   } else if (dataType === 'character_stats') {
     // Character stats shows character count
@@ -353,11 +348,9 @@ async function showDetailView(dataType) {
     document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
   }
 
-  // Hide party name, raid selector, playlist selector, and show meta row for non-party types
+  // Hide party meta and show detail meta row for non-party types
   if (!dataType.startsWith('party_')) {
-    document.getElementById('partyNameContainer')?.classList.add('hidden')
-    document.getElementById('raidSelector')?.classList.add('hidden')
-    document.getElementById('playlistSelector')?.classList.add('hidden')
+    document.getElementById('partyMeta')?.classList.add('hidden')
     document.querySelector('.detail-meta')?.classList.remove('hidden')
     clearSelectedRaid()
     clearSelectedPlaylists()
@@ -473,20 +466,14 @@ function hideDetailView() {
     enableSyncCheckbox.checked = false
   }
 
-  // Reset party name input
+  // Reset party meta
   const partyNameInput = document.getElementById('partyNameInput')
   if (partyNameInput) partyNameInput.value = ''
-  document.getElementById('partyNameContainer')?.classList.add('hidden')
-
-  // Reset raid selector state
+  document.getElementById('partyMeta')?.classList.add('hidden')
   clearSelectedRaid()
-  document.getElementById('raidSelector')?.classList.add('hidden')
   updateRaidSelectorUI(null)
-
-  // Reset playlist selector state
   clearSelectedPlaylists()
   updatePlaylistSelectorUI([])
-  document.getElementById('playlistSelector')?.classList.add('hidden')
 
   // Reset conflict state
   pendingConflicts = null
