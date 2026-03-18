@@ -1105,6 +1105,7 @@ body.light #detailImport {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-lg);
+  background: #f5f5f5;
 }
 
 /* Item Grid */
