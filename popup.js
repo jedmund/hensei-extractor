@@ -565,7 +565,7 @@ function updatePlaylistSelectorUI(playlists) {
   const label = document.getElementById('playlistSelectorLabel')
   if (!label) return
   if (!playlists || playlists.length === 0) {
-    label.textContent = 'Add to Playlists'
+    label.textContent = 'Playlists'
   } else if (playlists.length === 1) {
     label.textContent = playlists[0].title
   } else {
