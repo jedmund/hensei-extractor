@@ -1105,6 +1105,7 @@ body.light #detailImport {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-lg);
+  background: #f5f5f5;
 }
 
 /* Item Grid */
@@ -1557,33 +1558,12 @@ body.light #detailImport {
 /* ==========================================
    PARTY NAME INPUT (in party detail view)
    ========================================== */
-.party-name-container {
+.party-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 8px 16px;
   flex-shrink: 0;
-}
-
-.party-name-input {
-  width: 100%;
-  padding: 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color var(--transition-fast);
-  box-sizing: border-box;
-}
-
-.party-name-input:focus {
-  border-color: var(--color-primary);
-}
-
-.party-name-input::placeholder {
-  color: var(--color-text-tertiary);
-  font-weight: 400;
 }
 
 /* ==========================================
@@ -1592,8 +1572,6 @@ body.light #detailImport {
 .raid-selector {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  flex-shrink: 0;
 }
 
 .raid-selector-button {
@@ -1877,8 +1855,6 @@ body.light #detailImport {
 .playlist-selector {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  flex-shrink: 0;
 }
 
 .playlist-selector-button {
@@ -1886,9 +1862,10 @@ body.light #detailImport {
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: 50px;
   padding: 8px;
   background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-md);
   font-family: inherit;
   font-size: 14px;
