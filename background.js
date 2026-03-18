@@ -370,7 +370,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true
 
     case 'uploadPartyData':
-      uploadPartyData(message.data, message.raidId, message.playlistIds).then(sendResponse)
+      uploadPartyData(message.data, message.raidId, message.playlistIds, message.name).then(sendResponse)
       return true
 
     case 'uploadDetailData':
@@ -665,10 +665,11 @@ async function authenticatedPost(endpoint, body) {
   }
 }
 
-async function uploadPartyData(data, raidId, playlistIds) {
+async function uploadPartyData(data, raidId, playlistIds, name) {
   const body = { import: data }
   if (raidId) body.raid_id = raidId
   if (playlistIds?.length > 0) body.playlist_ids = playlistIds
+  if (name) body.name = name
 
   const result = await authenticatedPost('/import', body)
   if (result.error) return result
