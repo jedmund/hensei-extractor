@@ -1566,6 +1566,18 @@ body.light #detailImport {
   width: 80px;
 }
 
+/* Bullets grid (squares) */
+.item-grid.bullets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-grid.bullets .grid-item img {
+  height: auto;
+  width: 80px;
+}
+
 /* Cache item chevron */
 .cache-right {
   display: flex;
