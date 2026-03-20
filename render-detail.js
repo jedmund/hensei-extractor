@@ -431,6 +431,32 @@ export function renderPartyDetail(container, data) {
     `
   }
 
+  const bulletInfo = data.bullet_info?.set_bullets
+  if (bulletInfo) {
+    const bullets = Object.entries(bulletInfo)
+      .filter(([key]) => key.startsWith('bullet_'))
+      .map(([, bullet]) => bullet)
+      .filter(b => b && b.bullet_id)
+
+    if (bullets.length > 0) {
+      html += `
+        <div class="party-section">
+          <h3 class="party-section-title">${bullets.length} Bullets</h3>
+          <div class="item-grid bullets">
+            ${bullets.map(bullet => {
+              const imageUrl = getImageUrl(`bullet-square/${bullet.bullet_id}.jpg`)
+              return `
+                <div class="grid-item" title="${bullet.name || ''}">
+                  <img src="${imageUrl}" alt="${bullet.name || ''}">
+                </div>
+              `
+            }).join('')}
+          </div>
+        </div>
+      `
+    }
+  }
+
   container.innerHTML = html || '<p class="cache-empty">No party data</p>'
 }
 

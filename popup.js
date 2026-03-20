@@ -195,7 +195,26 @@ function initializeEventListeners() {
 
   // Detail view buttons
   document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
-  document.getElementById('detailCopy')?.addEventListener('click', handleDetailCopy)
+  // Copy dropdown toggle
+  const copyDropdownToggle = document.getElementById('copyDropdownToggle')
+  const copyDropdownMenu = document.getElementById('copyDropdownMenu')
+
+  copyDropdownToggle?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    copyDropdownMenu.classList.toggle('open')
+  })
+
+  copyDropdownMenu?.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-action]')
+    if (!item) return
+    copyDropdownMenu.classList.remove('open')
+    if (item.dataset.action === 'copy') handleDetailCopy()
+    else if (item.dataset.action === 'save') handleDetailSave()
+  })
+
+  document.addEventListener('click', () => {
+    copyDropdownMenu?.classList.remove('open')
+  })
   document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
   document.getElementById('detailSync')?.addEventListener('click', () => handleDetailSync(currentDetailDataType, showToast))
   document.getElementById('detailReview')?.addEventListener('click', handleDetailReview)
@@ -1171,6 +1190,39 @@ async function handleDetailCopy() {
     }
   } catch (error) {
     showToast('Failed to copy')
+  }
+}
+
+/**
+ * Handle save/download from detail view
+ */
+async function handleDetailSave() {
+  if (!currentDetailDataType) return
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'getCachedData',
+      dataType: currentDetailDataType
+    })
+
+    if (response.error) {
+      showToast('Failed to save')
+      return
+    }
+
+    const dataToExport = filterSelectedItems(currentDetailDataType, response.data)
+    const jsonString = JSON.stringify(dataToExport, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${currentDetailDataType}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+
+    showToast(`Saved ${currentDetailDataType}.json`)
+  } catch (error) {
+    showToast('Failed to save')
   }
 }
 

@@ -127,7 +127,18 @@
             <span>Back</span>
           </button>
           <div class="detail-actions">
-            <button id="detailCopy" class="button small">Copy</button>
+            <div class="copy-dropdown" id="copyDropdown">
+              <button id="copyDropdownToggle" class="button small">
+                Copy
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="copy-dropdown-menu" id="copyDropdownMenu">
+                <button class="copy-dropdown-item" data-action="copy">Copy</button>
+                <button class="copy-dropdown-item" data-action="save">Save</button>
+              </div>
+            </div>
             <button id="detailSync" class="button small hidden">Full Sync</button>
             <button id="detailReview" class="button small hidden">Review</button>
             <button id="detailImport" class="button small">Import</button>
