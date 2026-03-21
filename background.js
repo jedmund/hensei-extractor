@@ -358,7 +358,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false
 
     case 'fetchRaidGroups':
-      fetchRaidGroups().then(sendResponse)
+      fetchRaidGroups(request.forceRefresh).then(sendResponse)
       return true
 
     case 'fetchUserPlaylists':
@@ -913,12 +913,12 @@ async function createPlaylist({ title, description, visibility }) {
   }
 }
 
-async function fetchRaidGroups() {
+async function fetchRaidGroups(forceRefresh = false) {
   const cacheKey = CACHE_KEYS.raid_groups
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey]
 
-  if (cached && cached.timestamp && (Date.now() - cached.timestamp) < RAID_GROUPS_CACHE_TTL_MS) {
+  if (!forceRefresh && cached && cached.timestamp && (Date.now() - cached.timestamp) < RAID_GROUPS_CACHE_TTL_MS) {
     return { data: cached.data }
   }
 
