@@ -276,6 +276,22 @@ function bindEvents() {
     renderRaidList()
   })
 
+  // Refresh button
+  document.getElementById('raidRefreshBtn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('raidRefreshBtn')
+    btn.classList.add('loading')
+
+    const response = await chrome.runtime.sendMessage({ action: 'fetchRaidGroups', forceRefresh: true })
+    if (response.error) {
+      console.error('Failed to refresh raid groups:', response.error)
+    } else {
+      raidGroups = response.data || []
+      renderRaidList()
+    }
+
+    btn.classList.remove('loading')
+  })
+
   // Raid item clicks (delegated)
   document.getElementById('raidPickerContent')?.addEventListener('click', (e) => {
     const raidItem = e.target.closest('.raid-item')

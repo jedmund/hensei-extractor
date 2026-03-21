@@ -1703,11 +1703,45 @@ body.light #detailImport {
 .raid-picker-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   padding: 8px 12px 8px 16px;
   background: white;
   border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
+}
+
+.raid-picker-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.raid-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.raid-refresh-btn:hover {
+  color: var(--color-text);
+}
+
+.raid-refresh-btn.loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .raid-picker-title {
