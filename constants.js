@@ -72,8 +72,8 @@ export async function getSiteBaseUrl() {
 /** How long cached data is considered fresh (30 minutes) */
 export const CACHE_TTL_MS = 30 * 60 * 1000
 
-/** How long raid groups cache is considered fresh (7 days) */
-export const RAID_GROUPS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+/** How long raid groups cache is considered fresh (1 day) */
+export const RAID_GROUPS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 /** Granblue Fantasy CDN for game assets (new items not yet on S3) */
 export const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
