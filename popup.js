@@ -873,9 +873,17 @@ function renderDetailItems(dataType, data) {
       })
     })
 
-    // Hide items when their image fails to load
+    // Hide items when their image fails to load, trying fallback first
     container.querySelectorAll('.selectable img').forEach(img => {
       img.addEventListener('error', () => {
+        // Try fallback: remove element suffix (e.g., _0.jpg -> .jpg) before hiding
+        const fallbackSrc = img.src.replace(/_\d+\.jpg$/, '.jpg')
+        if (img.src !== fallbackSrc && !img.dataset.fallbackAttempted) {
+          img.dataset.fallbackAttempted = 'true'
+          img.src = fallbackSrc
+          return
+        }
+
         const item = img.closest('.selectable')
         if (!item) return
         const index = parseInt(item.dataset.index, 10)
