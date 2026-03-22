@@ -27,7 +27,7 @@ import { showConflictModal, hideConflictModal, initConflictListeners } from "./c
 import {
   isCollectionType, isDatabaseDetailType, isWeaponOrSummonCollection,
   toArray, extractItems, countItems,
-  getItemImageUrl, getArtifactLabels, getGridClass,
+  getItemImageUrl, getCdnFallbackUrl, getArtifactLabels, getGridClass,
   getCharacterModifiers, renderCharacterModifiers, getWeaponModifiers, renderWeaponModifiers,
   renderPartyDetail, renderDatabaseDetail
 } from "./render-detail.js"
@@ -825,9 +825,11 @@ function renderDetailItems(dataType, data) {
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
         ` : ''
+        const fallbackUrl = getCdnFallbackUrl(dataType, item)
+        const fallbackAttr = fallbackUrl ? ` data-fallback="${fallbackUrl}"` : ''
         return `
         <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
-          <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
+          <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt=""${fallbackAttr}>
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
             ${dataType.includes('artifact') ? getArtifactLabels(item) : ''}
@@ -851,10 +853,12 @@ function renderDetailItems(dataType, data) {
         const modifiersHtml = isCharacterType
           ? renderCharacterModifiers(item)
           : isWeaponType ? renderWeaponModifiers(item) : ''
+        const fallbackUrl = getCdnFallbackUrl(dataType, item)
+        const fallbackAttr = fallbackUrl ? ` data-fallback="${fallbackUrl}"` : ''
         return `
         <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
           ${modifiersHtml}
-          <img src="${getItemImageUrl(dataType, item)}" alt="">
+          <img src="${getItemImageUrl(dataType, item)}" alt=""${fallbackAttr}>
           ${checkboxHtml}
         </div>
       `}).join('')}
@@ -873,13 +877,18 @@ function renderDetailItems(dataType, data) {
       })
     })
 
-    // Hide items when their image fails to load
+    // Try CDN fallback when S3 image fails, hide only if both fail
     container.querySelectorAll('.selectable img').forEach(img => {
       img.addEventListener('error', () => {
+        const fallback = img.dataset.fallback
+        if (fallback && img.src !== fallback) {
+          img.src = fallback
+          delete img.dataset.fallback
+          return
+        }
         const item = img.closest('.selectable')
         if (!item) return
         const index = parseInt(item.dataset.index, 10)
-        // Track broken image and hide the item
         brokenImageIndices.add(index)
         selectedItems.delete(index)
         item.style.display = 'none'

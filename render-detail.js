@@ -100,6 +100,21 @@ export function getItemImageUrl(dataType, item) {
   return ''
 }
 
+/**
+ * Get a fallback CDN URL for items whose S3 image is missing.
+ * Returns the GBF CDN URL for weapons/summons, or null if no fallback exists.
+ */
+export function getCdnFallbackUrl(dataType, item) {
+  const granblueId = item.master?.id || item.param?.id || item.id
+  if (dataType.includes('weapon')) {
+    return `${GBF_CDN}/weapon/s/${granblueId}.jpg`
+  }
+  if (dataType.includes('summon')) {
+    return `${GBF_CDN}/summon/s/${granblueId}.jpg`
+  }
+  return null
+}
+
 export function getArtifactLabels(item) {
   const element = item.attribute || item.element
   const proficiency = item.kind || item.weapon_kind
