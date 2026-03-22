@@ -333,11 +333,51 @@ function parseZenithMasteryData(data) {
 }
 
 // ==========================================
+// VERSION CHECK
+// ==========================================
+
+async function checkExtensionVersion() {
+  try {
+    const apiUrl = await getApiUrl('/version')
+    const response = await fetch(apiUrl)
+    if (!response.ok) return null
+
+    const data = await response.json()
+    if (!data.extension?.version) return null
+
+    const current = chrome.runtime.getManifest().version
+    const latest = data.extension.version
+
+    const isOutdated = compareVersions(current, latest) < 0
+    return { isOutdated, current, latest }
+  } catch {
+    return null
+  }
+}
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  const len = Math.max(pa.length, pb.length)
+  for (let i = 0; i < len; i++) {
+    const na = pa[i] || 0
+    const nb = pb[i] || 0
+    if (na < nb) return -1
+    if (na > nb) return 1
+  }
+  return 0
+}
+
+// ==========================================
 // MESSAGE HANDLING
 // ==========================================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
+    case 'checkExtensionVersion':
+      checkExtensionVersion().then(sendResponse)
+      return true
+
     case 'getCacheStatus':
       handleGetCacheStatus().then(sendResponse)
       return true
