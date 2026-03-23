@@ -752,6 +752,30 @@ function shouldFilterByLv1(item, dataType) {
 }
 
 /**
+ * Summon IDs with alternate art, mapped to the uncap level of their first art upgrade.
+ * Matches hensei-svelte's SUMMON_ALT_ART_THRESHOLD.
+ */
+const SUMMON_ALT_ART_THRESHOLD = new Map([
+  ['2040094000', 5], ['2040100000', 5], ['2040080000', 5], ['2040098000', 5],
+  ['2040090000', 5], ['2040084000', 5], ['2040003000', 5], ['2040056000', 5], ['2040065000', 5],
+  ['2040020000', 4], ['2040034000', 4], ['2040028000', 4], ['2040027000', 4],
+  ['2040046000', 4], ['2040047000', 4], ['2040430000', 4]
+])
+
+/**
+ * Get the max uncap art suffix for a summon based on its uncap flags.
+ */
+function getMaxSummonSuffix(granblueId, uncap) {
+  if (!uncap) return ''
+  const threshold = SUMMON_ALT_ART_THRESHOLD.get(String(granblueId))
+  if (!threshold) return ''
+  if (uncap.transcendence) return '_04'
+  if (uncap.ulb) return '_03'
+  if (uncap.flb || threshold <= 4) return '_02'
+  return ''
+}
+
+/**
  * Search for a summon by name using the API
  */
 async function searchSummonByName(name) {
@@ -765,7 +789,11 @@ async function searchSummonByName(name) {
     })
     if (!response.ok) return null
     const json = await response.json()
-    return json.results?.[0] || null
+    const results = json.results || []
+    const match = results.find(s => s.name?.en === name || s.name?.ja === name)
+    if (!match) return null
+    match.imageSuffix = getMaxSummonSuffix(match.granblue_id, match.uncap)
+    return match
   } catch {
     return null
   }

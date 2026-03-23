@@ -458,7 +458,7 @@ export function renderPartyDetail(container, data, options = {}) {
           </div>
           ${friendSummon ? `
             <div class="summon-friend">
-              <img src="${getImageUrl(`summon-tall/${friendSummon.granblue_id}.jpg`)}" alt="">
+              <img src="${getImageUrl(`summon-tall/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)}" alt="">
             </div>
           ` : ''}
         </div>
