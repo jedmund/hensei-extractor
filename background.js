@@ -13,9 +13,8 @@ import {
 } from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
 import {
-  OVER_MASTERY_TYPE_ID, AETHERIAL_TYPE_ID,
-  OVER_MASTERY_NAME_TO_ID, PERPETUITY_BONUS_NAME_TO_ID,
-  AETHERIAL_MASTERY_NAME_TO_ID, parseDisplayValue
+  OVER_MASTERY_TYPE_ID, lookupAetherialTypeId, PERPETUITY_TYPE_ID,
+  parseDisplayValue
 } from './mastery.js'
 
 // ==========================================
@@ -249,7 +248,7 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     if (data?.npc_arousal_form) {
       current.awakening = {
         type: data.npc_arousal_form,
-        typeName: data.npc_arousal_form_text || getAwakeningTypeName(data.npc_arousal_form),
+        typeName: data.npc_arousal_form_text,
         level: data.npc_arousal_level || 1
       }
     }
@@ -288,11 +287,6 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 // MASTERY DATA PARSING
 // ==========================================
 
-function getAwakeningTypeName(typeId) {
-  const names = { 1: 'Balanced', 2: 'Attack', 3: 'Defense', 4: 'Multiattack' }
-  return names[typeId] || 'Balanced'
-}
-
 function parseZenithMasteryData(data) {
   const result = { rings: [], earring: null, masterName: null, perpetuityBonuses: [] }
 
@@ -325,20 +319,11 @@ function parseZenithMasteryData(data) {
       }
 
       if (slotNum === 5) {
-        // Perpetuity — no type ID map yet, use name fallback
-        const perpetuityId = PERPETUITY_BONUS_NAME_TO_ID[typeName]
-        if (perpetuityId) {
-          result.perpetuityBonuses.push({
-            modifier: perpetuityId,
-            strength: strength,
-            typeName: typeName
-          })
-        }
-        continue
+        continue // Perpetuity bonuses come from constant_data_list, not param_data
       }
 
       if (slotNum === 4) {
-        const modifierId = AETHERIAL_TYPE_ID[typeId] || AETHERIAL_MASTERY_NAME_TO_ID[typeName]
+        const modifierId = lookupAetherialTypeId(typeId)
         if (modifierId) {
           result.earring = {
             modifier: modifierId,
@@ -350,7 +335,7 @@ function parseZenithMasteryData(data) {
       }
 
       // Slots 2-3: Secondary/Tertiary rings
-      const modifierId = OVER_MASTERY_TYPE_ID[typeId] || OVER_MASTERY_NAME_TO_ID[typeName]
+      const modifierId = OVER_MASTERY_TYPE_ID[typeId]
       if (modifierId) {
         result.rings.push({
           modifier: modifierId,
@@ -358,6 +343,26 @@ function parseZenithMasteryData(data) {
           typeName: typeName,
           slot: slotNum
         })
+      }
+    }
+  }
+
+  // Parse perpetuity bonuses from constant_data_list
+  const constantData = data?.option?.npcaugment?.constant_data_list
+  if (constantData) {
+    // constant_data_list is keyed by constant_id (e.g., "10")
+    for (const bonuses of Object.values(constantData)) {
+      if (!Array.isArray(bonuses)) continue
+      for (const bonus of bonuses) {
+        if (!bonus?.type?.id || !bonus?.param) continue
+        const perpetuityId = PERPETUITY_TYPE_ID[bonus.type.id]
+        if (perpetuityId) {
+          result.perpetuityBonuses.push({
+            modifier: perpetuityId,
+            strength: parseDisplayValue(bonus.param.disp_total_param),
+            typeName: bonus.type.name
+          })
+        }
       }
     }
   }
