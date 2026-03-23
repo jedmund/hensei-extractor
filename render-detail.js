@@ -49,7 +49,8 @@ export function extractItems(dataType, data) {
     return [
       ...toArray(deck.npc),
       ...toArray(pc.weapons),
-      ...toArray(pc.summons)
+      ...toArray(pc.summons),
+      ...toArray(pc.sub_summons)
     ].filter(Boolean)
   }
   return [data]
@@ -68,16 +69,37 @@ export function countItems(dataType, data) {
  * Game uses _st2 for style change; S3 stores as _style.
  * Falls back to _01 if no image_id_3 is available.
  */
+/**
+ * Get character pose suffix based on uncap level and transcendence.
+ * _01: base (0-2 stars), _02: MLB (3 stars), _03: FLB (4+ stars), _04: transcendence
+ */
+function getCharacterPose(uncapLevel, transcendenceStep) {
+  if (transcendenceStep && transcendenceStep > 0) return '_04'
+  if (uncapLevel && uncapLevel >= 5) return '_03'
+  if (uncapLevel && uncapLevel > 2) return '_02'
+  return '_01'
+}
+
 function getCharacterImageSuffix(item) {
-  const imageId3 = item.param?.image_id_3
-  if (!imageId3) return '_01'
+  if (item.param?.style === '2') return '_01_style'
+  const evolution = item.param?.evolution
+  const phase = item.param?.phase
+  return getCharacterPose(evolution, phase)
+}
+
+/**
+ * Get image suffix from param.image_id for weapons/summons.
+ * The game API includes the art variant in image_id (e.g. '1040301005_03').
+ * Returns the suffix (e.g. '_03') or empty string for base art.
+ */
+function getImageSuffix(item) {
+  const imageId = item.param?.image_id
+  if (!imageId) return ''
 
   const id = item.master?.id || item.param?.id || item.id
-  if (!id || !imageId3.startsWith(id)) return '_01'
+  if (!id || !imageId.startsWith(String(id))) return ''
 
-  let suffix = imageId3.slice(id.length)
-  suffix = suffix.replace(/_st2$/, '_style')
-  return suffix
+  return imageId.slice(String(id).length)
 }
 
 export function getItemImageUrl(dataType, item) {
@@ -88,10 +110,12 @@ export function getItemImageUrl(dataType, item) {
     return getImageUrl(`character-square/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('weapon')) {
-    return getImageUrl(`weapon-square/${granblueId}.jpg`)
+    const suffix = getImageSuffix(item)
+    return getImageUrl(`weapon-square/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('summon')) {
-    return getImageUrl(`summon-square/${granblueId}.jpg`)
+    const suffix = getImageSuffix(item)
+    return getImageUrl(`summon-square/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('artifact')) {
     const artifactId = item.artifact_id || granblueId
@@ -337,6 +361,7 @@ export function renderPartyDetail(container, data) {
   const characters = toArray(deck.npc).filter(Boolean)
   const weapons = toArray(pc.weapons).filter(Boolean)
   const summons = toArray(pc.summons).filter(Boolean)
+  const subSummons = toArray(pc.sub_summons).filter(Boolean)
   const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean)
 
   let html = ''
@@ -382,7 +407,8 @@ export function renderPartyDetail(container, data) {
         <div class="item-grid weapons">
           ${weapons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`weapon-grid/${id}.jpg`)
+            const suffix = getImageSuffix(item)
+            const imageUrl = getImageUrl(`weapon-grid/${id}${suffix}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">
@@ -401,7 +427,28 @@ export function renderPartyDetail(container, data) {
         <div class="item-grid summons">
           ${summons.map(item => {
             const id = item.master?.id || item.param?.id || item.id
-            const imageUrl = getImageUrl(`summon-wide/${id}.jpg`)
+            const suffix = getImageSuffix(item)
+            const imageUrl = getImageUrl(`summon-wide/${id}${suffix}.jpg`)
+            return `
+              <div class="grid-item">
+                <img src="${imageUrl}" alt="">
+              </div>
+            `
+          }).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  if (subSummons.length > 0) {
+    html += `
+      <div class="party-section">
+        <h3 class="party-section-title">${subSummons.length} Sub Summons</h3>
+        <div class="item-grid summons">
+          ${subSummons.map(item => {
+            const id = item.master?.id || item.param?.id || item.id
+            const suffix = getImageSuffix(item)
+            const imageUrl = getImageUrl(`summon-wide/${id}${suffix}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">
