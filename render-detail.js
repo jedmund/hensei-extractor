@@ -401,20 +401,27 @@ export function renderPartyDetail(container, data) {
   }
 
   if (weapons.length > 0) {
+    const [mainhand, ...gridWeapons] = weapons
+    const mainhandId = mainhand.master?.id || mainhand.param?.id || mainhand.id
+    const mainhandSuffix = getImageSuffix(mainhand)
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">${weapons.length} Weapons</h3>
-        <div class="item-grid weapons">
-          ${weapons.map(item => {
-            const id = item.master?.id || item.param?.id || item.id
-            const suffix = getImageSuffix(item)
-            const imageUrl = getImageUrl(`weapon-grid/${id}${suffix}.jpg`)
-            return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
-              </div>
-            `
-          }).join('')}
+        <h3 class="party-section-title">Weapons</h3>
+        <div class="weapon-layout">
+          <div class="weapon-mainhand">
+            <img src="${getImageUrl(`weapon-main/${mainhandId}${mainhandSuffix}.jpg`)}" alt="">
+          </div>
+          <div class="weapon-grid">
+            ${gridWeapons.map(item => {
+              const id = item.master?.id || item.param?.id || item.id
+              const suffix = getImageSuffix(item)
+              return `
+                <div class="grid-item">
+                  <img src="${getImageUrl(`weapon-grid/${id}${suffix}.jpg`)}" alt="">
+                </div>
+              `
+            }).join('')}
+          </div>
         </div>
       </div>
     `
