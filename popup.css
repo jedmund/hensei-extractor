@@ -928,6 +928,14 @@ button:disabled,
   background: var(--color-error-light);
 }
 
+.version-label {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding-top: 4px;
+}
+
 .language-row {
   display: flex;
   align-items: center;

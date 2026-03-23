@@ -104,6 +104,10 @@ async function initializeApp() {
   setLocale(getPreferredLocale(gbAuth))
   translatePage()
 
+  // Show version
+  const version = chrome.runtime.getManifest().version
+  document.getElementById('versionLabel').textContent = `v${version}`
+
   if (gbAuth?.access_token) {
     // User is logged in - show main view
     hide(loginView)
