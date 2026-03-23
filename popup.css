@@ -1301,15 +1301,15 @@ body.light #detailImport {
 
 .weapon-modifiers .weapon-skills {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
+  bottom: 18px;
+  right: 4px;
   display: flex;
   flex-direction: row;
   gap: 4px;
 }
 
 .weapon-modifiers .weapon-skills img {
-  width: 36px;
+  width: 28px;
   height: auto;
 }
 
