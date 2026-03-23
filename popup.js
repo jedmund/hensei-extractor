@@ -106,6 +106,7 @@ async function initializeApp() {
     initializeEventListeners()
     refreshAllCaches()
     startAgeTicker()
+    checkForUpdate()
   } else {
     // User not logged in - show login view
     show(loginView)
@@ -1875,4 +1876,18 @@ function showToast(message) {
   toastTimeout = setTimeout(() => {
     toast.classList.remove('visible')
   }, 2500)
+}
+
+/**
+ * Check if the extension is outdated and show a banner if so
+ */
+async function checkForUpdate() {
+  const response = await chrome.runtime.sendMessage({ action: 'checkExtensionVersion' })
+  if (response?.isOutdated) {
+    const banner = document.getElementById('updateBanner')
+    const versionSpan = document.getElementById('updateVersion')
+    if (!banner || !versionSpan) return
+    versionSpan.textContent = response.latest
+    banner.classList.remove('hidden')
+  }
 }
