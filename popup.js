@@ -792,6 +792,24 @@ async function searchSummonByName(name) {
 }
 
 /**
+ * Fetch weapon key skill_id → slug mapping from the API.
+ * Cached in memory for the session.
+ */
+let _weaponKeyMapCache = null
+async function fetchWeaponKeyMap() {
+  if (_weaponKeyMapCache) return _weaponKeyMapCache
+  try {
+    const apiUrl = await getApiUrl('/weapon_keys/skill_map')
+    const response = await fetch(apiUrl)
+    if (!response.ok) return null
+    _weaponKeyMapCache = await response.json()
+    return _weaponKeyMapCache
+  } catch {
+    return null
+  }
+}
+
+/**
  * Render items in detail view
  */
 async function renderDetailItems(dataType, data) {
@@ -800,8 +818,11 @@ async function renderDetailItems(dataType, data) {
   // Party gets special sectioned layout
   if (dataType.startsWith('party_')) {
     const friendSummonName = data?.deck?.pc?.damage_info?.summon_name
-    const friendSummon = await searchSummonByName(friendSummonName)
-    renderPartyDetail(container, data, { friendSummon })
+    const [friendSummon, weaponKeyMap] = await Promise.all([
+      searchSummonByName(friendSummonName),
+      fetchWeaponKeyMap()
+    ])
+    renderPartyDetail(container, data, { friendSummon, weaponKeyMap })
     return
   }
 
