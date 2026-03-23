@@ -399,15 +399,21 @@ export function renderPartyDetail(container, data, options = {}) {
 
   let html = ''
 
-  if (job?.master?.id) {
-    const jobId = job.master.id
-    const jobName = job.master.name || 'Job'
-    const jobImageUrl = getImageUrl(`job-wide/${jobId}_a.jpg`)
+  if (job?.master?.id || accessoryIds.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Job</h3>
-        <div class="wide-item">
-          <img src="${jobImageUrl}" alt="${jobName}">
+        <div class="job-row">
+          ${job?.master?.id ? `
+            <div class="wide-item">
+              <img src="${getImageUrl(`job-wide/${job.master.id}_a.jpg`)}" alt="${job.master.name || 'Job'}">
+            </div>
+          ` : ''}
+          ${accessoryIds.map(id => `
+            <div class="grid-item">
+              <img src="${getImageUrl(`accessory-square/${id}.jpg`)}" alt="">
+            </div>
+          `).join('')}
         </div>
       </div>
     `
@@ -508,23 +514,6 @@ export function renderPartyDetail(container, data, options = {}) {
     `
   }
 
-  if (accessoryIds.length > 0) {
-    html += `
-      <div class="party-section">
-        <h3 class="party-section-title">Accessories</h3>
-        <div class="item-grid accessories">
-          ${accessoryIds.map(id => {
-            const imageUrl = getImageUrl(`accessory-square/${id}.jpg`)
-            return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
-              </div>
-            `
-          }).join('')}
-        </div>
-      </div>
-    `
-  }
 
   const bulletInfo = data.bullet_info?.set_bullets
   if (bulletInfo) {

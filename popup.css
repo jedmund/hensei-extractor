@@ -1600,9 +1600,19 @@ body.light #detailImport {
   margin: 0 0 var(--spacing-sm) 0;
 }
 
+.job-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.job-row .grid-item > img {
+  height: auto;
+  width: 80px;
+}
+
 /* Job item (same height as grid items, natural width) */
 .wide-item {
-  display: inline-block;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-bg);
