@@ -271,7 +271,7 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 // ==========================================
 
 function getAwakeningTypeName(typeId) {
-  const names = { 1: 'Attack', 2: 'Defense', 3: 'Multiattack', 4: 'Balanced' }
+  const names = { 1: 'Balanced', 2: 'Attack', 3: 'Defense', 4: 'Multiattack' }
   return names[typeId] || 'Balanced'
 }
 
