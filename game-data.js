@@ -50,6 +50,23 @@ export const WEAPON_AWAKENING_ICONS = {
 }
 
 // ==========================================
+// SPECIAL WEAPON SERIES (series with weapon keys)
+// ==========================================
+
+export const WEAPON_KEY_SERIES = new Set([3, 13, 17, 19, 27, 40, 44])
+
+// ==========================================
+// CHARACTER AWAKENING ICONS
+// ==========================================
+
+export const CHARACTER_AWAKENING_MAPPING = {
+  1: 'character-balanced',
+  2: 'character-atk',
+  3: 'character-def',
+  4: 'character-multi'
+}
+
+// ==========================================
 // SERIES NAMES
 // ==========================================
 

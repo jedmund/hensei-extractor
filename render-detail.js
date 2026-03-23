@@ -7,7 +7,7 @@ import { getImageUrl, GBF_CDN } from './constants.js'
 import {
   GAME_ELEMENT_NAMES, GAME_PROFICIENCY_NAMES,
   GAME_CHARACTER_SERIES_NAMES, GAME_WEAPON_SERIES_NAMES, GAME_SUMMON_SERIES_NAMES,
-  WEAPON_AWAKENING_ICONS
+  WEAPON_AWAKENING_ICONS, WEAPON_KEY_SERIES, CHARACTER_AWAKENING_MAPPING
 } from './game-data.js'
 
 // ==========================================
@@ -170,10 +170,29 @@ export function renderCharacterModifiers(item) {
   </div>`
 }
 
-export function getWeaponModifiers(item) {
+export function getWeaponModifiers(item, weaponKeyMap = null) {
   const param = item.param || {}
   const odiant = param.odiant || {}
   const isOdiant = odiant.is_odiant_weapon === true
+
+  // Extract weapon key slugs if this is a special series weapon
+  const weaponKeys = []
+  if (weaponKeyMap) {
+    const seriesId = parseInt(item.master?.series_id)
+    if (WEAPON_KEY_SERIES.has(seriesId)) {
+      const weaponProficiency = parseInt(item.master?.kind) || null
+      for (const skillKey of ['skill1', 'skill2', 'skill3']) {
+        const skillId = item[skillKey]?.id
+        if (skillId && weaponKeyMap[skillId]) {
+          const slug = weaponKeyMap[skillId]
+          // Only slot 0 Gauph keys have proficiency-specific image variants
+          const GAUPH_SLOT0 = ['gauph-courage', 'gauph-strength', 'gauph-strife', 'gauph-vitality', 'gauph-will', 'gauph-zeal']
+          const needsSuffix = GAUPH_SLOT0.includes(slug) && weaponProficiency
+          weaponKeys.push(needsSuffix ? `${slug}-${weaponProficiency}` : slug)
+        }
+      }
+    }
+  }
 
   return {
     awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
@@ -183,13 +202,14 @@ export function getWeaponModifiers(item) {
       exorcismLevel: odiant.exorcision_level || 0,
       maxExorcismLevel: odiant.max_exorcision_level || 5,
       iconImage: param.augment_skill_icon_image?.[0] || null
-    } : null
+    } : null,
+    weaponKeys
   }
 }
 
-export function renderWeaponModifiers(item) {
-  const mods = getWeaponModifiers(item)
-  if (!mods.awakening && !mods.axSkill && !mods.befoulment) return ''
+export function renderWeaponModifiers(item, weaponKeyMap = null) {
+  const mods = getWeaponModifiers(item, weaponKeyMap)
+  if (!mods.awakening && !mods.axSkill && !mods.befoulment && mods.weaponKeys.length === 0) return ''
 
   let html = '<div class="weapon-modifiers">'
 
@@ -198,17 +218,28 @@ export function renderWeaponModifiers(item) {
     html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="Awakening" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
   }
 
-  if (mods.axSkill) {
-    html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
-  }
+  const hasSkills = mods.axSkill || mods.befoulment || mods.weaponKeys.length > 0
+  if (hasSkills) {
+    html += '<div class="weapon-skills">'
 
-  if (mods.befoulment) {
-    const skill = mods.befoulment.skill
-    const exLevel = mods.befoulment.exorcismLevel
-    const maxLevel = mods.befoulment.maxExorcismLevel
-    const showValue = skill?.show_value || 'Befouled'
-    const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
-    html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
+    if (mods.axSkill) {
+      html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+    }
+
+    if (mods.befoulment) {
+      const skill = mods.befoulment.skill
+      const exLevel = mods.befoulment.exorcismLevel
+      const maxLevel = mods.befoulment.maxExorcismLevel
+      const showValue = skill?.show_value || 'Befouled'
+      const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
+      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
+    }
+
+    for (const slug of mods.weaponKeys) {
+      html += `<img class="weapon-key-icon" src="${getImageUrl(`weapon-keys/${slug}.png`)}" alt="${slug}" title="${slug}">`
+    }
+
+    html += '</div>'
   }
 
   html += '</div>'
@@ -364,18 +395,26 @@ export function renderPartyDetail(container, data, options = {}) {
   const subSummons = toArray(pc.sub_summons).filter(Boolean)
   const friendSummon = options.friendSummon || null
   const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean)
+  const weaponKeyMap = options.weaponKeyMap || null
+  const quickSummonId = pc.quick_user_summon_id
 
   let html = ''
 
-  if (job?.master?.id) {
-    const jobId = job.master.id
-    const jobName = job.master.name || 'Job'
-    const jobImageUrl = getImageUrl(`job-wide/${jobId}_a.jpg`)
+  if (job?.master?.id || accessoryIds.length > 0) {
     html += `
       <div class="party-section">
         <h3 class="party-section-title">Job</h3>
-        <div class="wide-item">
-          <img src="${jobImageUrl}" alt="${jobName}">
+        <div class="job-row">
+          ${job?.master?.id ? `
+            <div class="wide-item">
+              <img src="${getImageUrl(`job-wide/${job.master.id}_a.jpg`)}" alt="${job.master.name || 'Job'}">
+            </div>
+          ` : ''}
+          ${accessoryIds.map(id => `
+            <div class="grid-item">
+              <img src="${getImageUrl(`accessory-square/${id}.jpg`)}" alt="">
+            </div>
+          `).join('')}
         </div>
       </div>
     `
@@ -390,8 +429,19 @@ export function renderPartyDetail(container, data, options = {}) {
             const id = item.master?.id || item.param?.id || item.id
             const suffix = getCharacterImageSuffix(item)
             const imageUrl = getImageUrl(`character-main/${id}${suffix}.jpg`)
+            const arousalForm = item.param?.npc_arousal_form
+            const awakeningSlug = arousalForm ? CHARACTER_AWAKENING_MAPPING[arousalForm] : null
+            const hasPerpetuit = !!item.param?.has_npcaugment_constant
+            const hasModifiers = (awakeningSlug && awakeningSlug !== 'character-balanced') || hasPerpetuit
+            const modifiersHtml = hasModifiers ? `
+              <div class="char-modifiers">
+                ${hasPerpetuit ? '<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">' : ''}
+                ${awakeningSlug && awakeningSlug !== 'character-balanced' ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${awakeningSlug}" title="${awakeningSlug}">` : ''}
+              </div>
+            ` : ''
             return `
               <div class="grid-item">
+                ${modifiersHtml}
                 <img src="${imageUrl}" alt="">
               </div>
             `
@@ -410,6 +460,7 @@ export function renderPartyDetail(container, data, options = {}) {
         <h3 class="party-section-title">Weapons</h3>
         <div class="weapon-layout">
           <div class="weapon-mainhand">
+            ${renderWeaponModifiers(mainhand, weaponKeyMap)}
             <img src="${getImageUrl(`weapon-main/${mainhandId}${mainhandSuffix}.jpg`)}" alt="">
           </div>
           <div class="weapon-grid">
@@ -418,6 +469,7 @@ export function renderPartyDetail(container, data, options = {}) {
               const suffix = getImageSuffix(item)
               return `
                 <div class="grid-item">
+                  ${renderWeaponModifiers(item, weaponKeyMap)}
                   <img src="${getImageUrl(`weapon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `
@@ -449,8 +501,10 @@ export function renderPartyDetail(container, data, options = {}) {
             ${allSubSummons.map(item => {
               const id = item.master?.id || item.param?.id || item.id
               const suffix = getImageSuffix(item)
+              const isQuickSummon = quickSummonId && String(item.param?.id) === String(quickSummonId)
               return `
                 <div class="grid-item">
+                  ${isQuickSummon ? '<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="Quick Summon" title="Quick Summon"></div>' : ''}
                   <img src="${getImageUrl(`summon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `
@@ -466,23 +520,6 @@ export function renderPartyDetail(container, data, options = {}) {
     `
   }
 
-  if (accessoryIds.length > 0) {
-    html += `
-      <div class="party-section">
-        <h3 class="party-section-title">Accessories</h3>
-        <div class="item-grid accessories">
-          ${accessoryIds.map(id => {
-            const imageUrl = getImageUrl(`accessory-square/${id}.jpg`)
-            return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
-              </div>
-            `
-          }).join('')}
-        </div>
-      </div>
-    `
-  }
 
   const bulletInfo = data.bullet_info?.set_bullets
   if (bulletInfo) {
