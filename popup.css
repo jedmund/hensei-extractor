@@ -1345,10 +1345,10 @@ body.light #detailImport {
 
 .summon-modifiers .quick-summon-badge {
   position: absolute;
-  width: 24px;
+  width: 36px;
   height: auto;
   top: -4px;
-  right: -4px;
+  right: 20px;
 }
 
 /* Character Awakening Icon */
