@@ -1278,8 +1278,8 @@ body.light #detailImport {
   position: absolute;
   width: 28px;
   height: auto;
-  top: -4px;
-  right: -2px;
+  top: -8px;
+  right: 28px;
 }
 
 /* Weapon Modifiers (awakening, ax skill overlays) */
