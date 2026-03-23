@@ -593,21 +593,12 @@ async function autoSuggestRaid(weaponCount, characterCount) {
   const groups = response.data
   let suggestedRaid = null
 
-  if (weaponCount === 10 && characterCount === 5) {
-    suggestedRaid = findRaidBySlug(groups, 'farming')
+  if (weaponCount === 13 && characterCount === 8) {
+    suggestedRaid = findRaidBySlug(groups, 'versusia')
   } else if (weaponCount === 13 && characterCount === 5) {
-    suggestedRaid = findRaidBySlug(groups, 'farming-v2')
-  } else if (weaponCount === 13 && characterCount === 7) {
-    // Find the unlimited raid (Versusia)
-    for (const group of groups) {
-      if (group.unlimited) {
-        const raid = (group.raids || [])[0]
-        if (raid) {
-          suggestedRaid = { ...raid, group }
-          break
-        }
-      }
-    }
+    suggestedRaid = findRaidBySlug(groups, 'farming-ex')
+  } else if (characterCount === 5) {
+    suggestedRaid = findRaidBySlug(groups, 'farming')
   }
 
   if (suggestedRaid) {
