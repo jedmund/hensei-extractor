@@ -536,7 +536,6 @@ function updateRaidSelectorUI(raid) {
     const name = typeof raid.name === 'string' ? raid.name : (raid.name?.en || raid.name_en || 'Unknown')
     const level = raid.level ? ` Lv. ${raid.level}` : ''
     label.textContent = `${name}${level}`
-    btn.classList.add('has-raid')
     const elementClass = RAID_ELEMENT_CLASSES[raid.element] || 'raid-null'
     btn.classList.add(elementClass)
 
@@ -550,7 +549,7 @@ function updateRaidSelectorUI(raid) {
     setSelectedRaid(raid)
   } else {
     label.textContent = 'Select Raid'
-    btn.classList.remove('has-raid')
+
     if (img) {
       img.src = ''
       img.classList.add('hidden')
