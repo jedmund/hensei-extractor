@@ -358,7 +358,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false
 
     case 'fetchRaidGroups':
-      fetchRaidGroups(request.forceRefresh).then(sendResponse)
+      fetchRaidGroups(message.forceRefresh).then(sendResponse)
       return true
 
     case 'fetchUserPlaylists':
