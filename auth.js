@@ -96,3 +96,28 @@ export async function fetchUserInfo(accessToken) {
     throw error
   }
 }
+
+/**
+ * Update the user's language preference on the server.
+ * @param {string} accessToken - OAuth access token.
+ * @param {string} language - Language code ('en' or 'ja').
+ * @returns {Promise<Object>} The updated user object.
+ */
+export async function updateUserLanguage(accessToken, language) {
+  const apiUrl = await getApiUrl('/users/me')
+
+  const response = await fetch(apiUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ user: { language } }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to update language: ${response.status}`)
+  }
+
+  return await response.json()
+}
