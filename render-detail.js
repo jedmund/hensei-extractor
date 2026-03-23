@@ -217,21 +217,28 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
     html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="Awakening" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
   }
 
-  if (mods.axSkill) {
-    html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
-  }
+  const hasSkills = mods.axSkill || mods.befoulment || mods.weaponKeys.length > 0
+  if (hasSkills) {
+    html += '<div class="weapon-skills">'
 
-  if (mods.befoulment) {
-    const skill = mods.befoulment.skill
-    const exLevel = mods.befoulment.exorcismLevel
-    const maxLevel = mods.befoulment.maxExorcismLevel
-    const showValue = skill?.show_value || 'Befouled'
-    const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
-    html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
-  }
+    if (mods.axSkill) {
+      html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+    }
 
-  for (const slug of mods.weaponKeys) {
-    html += `<img class="weapon-key-icon" src="${getImageUrl(`weapon-keys/${slug}.png`)}" alt="${slug}" title="${slug}">`
+    if (mods.befoulment) {
+      const skill = mods.befoulment.skill
+      const exLevel = mods.befoulment.exorcismLevel
+      const maxLevel = mods.befoulment.maxExorcismLevel
+      const showValue = skill?.show_value || 'Befouled'
+      const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
+      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
+    }
+
+    for (const slug of mods.weaponKeys) {
+      html += `<img class="weapon-key-icon" src="${getImageUrl(`weapon-keys/${slug}.png`)}" alt="${slug}" title="${slug}">`
+    }
+
+    html += '</div>'
   }
 
   html += '</div>'

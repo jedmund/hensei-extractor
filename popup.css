@@ -1299,25 +1299,18 @@ body.light #detailImport {
   left: -4px;
 }
 
-.weapon-modifiers .ax-skill-icon,
-.weapon-modifiers .befoulment-icon {
+.weapon-modifiers .weapon-skills {
   position: absolute;
-  width: 24px;
-  height: auto;
-  bottom: -4px;
-  left: -4px;
-}
-
-.weapon-modifiers .weapon-key-icon {
-  position: absolute;
-  width: 24px;
-  height: auto;
   bottom: -4px;
   right: -4px;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
 }
 
-.weapon-modifiers .weapon-key-icon:nth-of-type(2) {
-  right: 22px;
+.weapon-modifiers .weapon-skills img {
+  width: 24px;
+  height: auto;
 }
 
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
@@ -1328,9 +1321,7 @@ body.light #detailImport {
   left: -6px;
 }
 
-.weapon-mainhand .weapon-modifiers .ax-skill-icon,
-.weapon-mainhand .weapon-modifiers .befoulment-icon,
-.weapon-mainhand .weapon-modifiers .weapon-key-icon {
+.weapon-mainhand .weapon-modifiers .weapon-skills img {
   width: 28px;
 }
 
