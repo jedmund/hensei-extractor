@@ -58,7 +58,46 @@ function getDisplayName(englishName) {
 }
 
 // ==========================================
-// INVERSE NAME → ID MAPPINGS (for parsing game data)
+// GAME TYPE ID → INTERNAL MODIFIER ID MAPPINGS
+// These use the game's type.id field, which is language-independent.
+// ==========================================
+
+/** Over Mastery (ring) game type.id → internal modifier ID */
+export const OVER_MASTERY_TYPE_ID = {
+  // Primary (slot 1) — ATK/HP share id 10001, distinguished by split_key
+  // Secondary (slot 2)
+  '20001': 9,   // Critical Hit Rate
+  '20002': 5,   // C.A. DMG
+  '20003': 7,   // Stamina
+  '20004': 8,   // Enmity
+  '20005': 6,   // C.A. DMG Cap
+  '20006': 4,   // Skill DMG Cap
+  '20008': 3,   // Debuff Success Rate
+  // Tertiary (slot 3)
+  '30001': 10,  // Double Attack Rate
+  '30002': 11,  // Triple Attack Rate
+  '30003': 12,  // DEF
+  '30004': 13,  // Healing
+  '30005': 15,  // Dodge Rate
+  '30006': 14,  // Debuff Resistance
+}
+
+/** Aetherial Mastery (earring) game type.id → internal modifier ID */
+export const AETHERIAL_TYPE_ID = {
+  '110001': 1,  // Double Attack
+  '110002': 2,  // Triple Attack
+  '110003': 3,  // Element ATK
+  '110004': 4,  // Element Resistance
+  '110005': 5,  // Stamina
+  '110006': 6,  // Enmity
+  '110007': 8,  // Critical Hit
+  '110008': 7,  // Supplemental DMG
+  '110009': 9,  // Counters on Dodge
+  '110010': 10, // Counters on DMG
+}
+
+// ==========================================
+// INVERSE NAME → ID MAPPINGS (fallback for unmapped type IDs)
 // ==========================================
 
 function invertMap(map) {
@@ -80,7 +119,6 @@ export const PERPETUITY_BONUS_NAME_TO_ID = invertMap(PERPETUITY_NAMES)
 
 export const AETHERIAL_MASTERY_NAME_TO_ID = {
   ...invertMap(AETHERIAL_NAMES),
-  // Aliases for game data variations
   'Double Attack Rate': 1,
   'Triple Attack Rate': 2,
   'Fire ATK Up': 3, 'Water ATK Up': 3, 'Earth ATK Up': 3,
