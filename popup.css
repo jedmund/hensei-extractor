@@ -1345,10 +1345,10 @@ body.light #detailImport {
 /* Character Awakening Icon */
 .char-modifiers .awakening-icon {
   position: absolute;
-  width: 28px;
+  width: 32px;
   height: auto;
-  top: -4px;
-  right: -4px;
+  bottom: 4px;
+  right: 4px;
 }
 
 /* Item Checkbox */
