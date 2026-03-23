@@ -185,8 +185,9 @@ export function getWeaponModifiers(item, weaponKeyMap = null) {
         const skillId = item[skillKey]?.id
         if (skillId && weaponKeyMap[skillId]) {
           const slug = weaponKeyMap[skillId]
-          // Gauph keys (Ultima slot 0) need proficiency suffix for correct image variant
-          const needsSuffix = slug.startsWith('gauph-') && weaponProficiency
+          // Only slot 0 Gauph keys have proficiency-specific image variants
+          const GAUPH_SLOT0 = ['gauph-courage', 'gauph-strength', 'gauph-strife', 'gauph-vitality', 'gauph-will', 'gauph-zeal']
+          const needsSuffix = GAUPH_SLOT0.includes(slug) && weaponProficiency
           weaponKeys.push(needsSuffix ? `${slug}-${weaponProficiency}` : slug)
         }
       }
