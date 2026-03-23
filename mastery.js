@@ -40,7 +40,10 @@ function invertMap(map) {
 export const OVER_MASTERY_NAME_TO_ID = {
   ...invertMap(OVER_MASTERY_NAMES),
   'Double Attack Rate': 10,
-  'Triple Attack Rate': 11
+  'Triple Attack Rate': 11,
+  'Debuff Success Rate': 3,
+  'Dodge Rate': 15,
+  'Critical Hit Rate': 9
 }
 
 export const PERPETUITY_BONUS_NAME_TO_ID = invertMap(PERPETUITY_NAMES)
