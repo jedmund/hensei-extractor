@@ -732,13 +732,14 @@ function parseGameFilter(options) {
 
   // Parse proficiency filter (field "8")
   // Positions: 0=Saber, 1=Dagger, 2=Spear, 3=Axe, 4=Staff, 5=Gun, 6=Melee, 7=Bow, 8=Harp, 9=Katana
-  // Maps to Granblue proficiency IDs (1-indexed)
+  // Maps to our API proficiency IDs: 1=Sabre, 2=Dagger, 3=Axe, 4=Spear, 5=Bow, 6=Staff, 7=Melee, 8=Harp, 9=Gun, 10=Katana
+  const profMap = [1, 2, 4, 3, 6, 9, 7, 5, 8, 10] // filter position -> API proficiency ID
   const profStr = filter['8']
   if (profStr && typeof profStr === 'string' && profStr !== '0000000000') {
     result.proficiencies = []
     for (let i = 0; i < profStr.length; i++) {
       if (profStr[i] === '1') {
-        result.proficiencies.push(i + 1) // 0-indexed position to 1-indexed ID
+        result.proficiencies.push(profMap[i])
       }
     }
     if (result.proficiencies.length === 0) result.proficiencies = null
