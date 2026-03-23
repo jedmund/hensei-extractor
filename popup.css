@@ -1293,9 +1293,9 @@ body.light #detailImport {
 
 .weapon-modifiers .awakening-icon {
   position: absolute;
-  width: 28px;
+  width: 36px;
   height: auto;
-  top: -4px;
+  top: 10px;
   left: -4px;
 }
 
