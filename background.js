@@ -74,6 +74,10 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     } else if (dataType.startsWith('detail_')) {
       const result = await cacheDetailItem(dataType, data, timestamp, url)
       actualDataType = result.dataType
+      // Also update character stats cache with uncap data from character detail pages
+      if (dataType === 'detail_npc') {
+        await cacheCharacterStats('character_detail', data, data?.master?.id, timestamp, url)
+      }
     } else {
       await cacheSingleItem(dataType, data, timestamp, url)
     }
@@ -226,6 +230,19 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     const element = data?.attribute || data?.element || data?.master?.attribute || data?.master?.element
     if (element) {
       current.element = element
+    }
+
+    // Uncap level (evolution) and transcendence (phase)
+    const evolution = data?.param?.evolution
+    if (evolution !== undefined && evolution !== null) {
+      current.uncapLevel = parseInt(evolution, 10)
+    }
+    const phase = data?.param?.phase
+    if (phase !== undefined && phase !== null) {
+      const transcendence = parseInt(phase, 10)
+      if (transcendence > 0) {
+        current.transcendenceStep = transcendence
+      }
     }
 
     if (data?.npc_arousal_form) {
@@ -875,6 +892,13 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
 async function uploadCharacterStats(statsData) {
   const items = Object.values(statsData).map(char => {
     const item = { granblue_id: char.masterId }
+
+    if (char.uncapLevel !== undefined) {
+      item.uncap_level = char.uncapLevel
+    }
+    if (char.transcendenceStep !== undefined) {
+      item.transcendence_step = char.transcendenceStep
+    }
 
     if (char.awakening) {
       item.awakening_type = char.awakening.type
