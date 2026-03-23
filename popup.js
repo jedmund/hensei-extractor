@@ -9,6 +9,7 @@ import {
   getDataTypeName,
   TAB_DATA_TYPES,
   getImageUrl,
+  getApiUrl,
   getSiteBaseUrl
 } from "./constants.js"
 import {
@@ -751,14 +752,36 @@ function shouldFilterByLv1(item, dataType) {
 }
 
 /**
+ * Search for a summon by name using the API
+ */
+async function searchSummonByName(name) {
+  if (!name) return null
+  try {
+    const apiUrl = await getApiUrl('/search/summons')
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ search: { query: name } })
+    })
+    if (!response.ok) return null
+    const json = await response.json()
+    return json.results?.[0] || null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Render items in detail view
  */
-function renderDetailItems(dataType, data) {
+async function renderDetailItems(dataType, data) {
   const container = document.getElementById('detailItems')
 
   // Party gets special sectioned layout
   if (dataType.startsWith('party_')) {
-    renderPartyDetail(container, data)
+    const friendSummonName = data?.deck?.pc?.damage_info?.summon_name
+    const friendSummon = await searchSummonByName(friendSummonName)
+    renderPartyDetail(container, data, { friendSummon })
     return
   }
 

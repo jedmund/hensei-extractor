@@ -1596,6 +1596,44 @@ body.light #detailImport {
   height: auto;
 }
 
+/* Summon layout: main + sub grid + friend */
+.summon-layout {
+  display: grid;
+  grid-template-columns: 1.17fr 2fr 1.17fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.summon-main,
+.summon-friend {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.summon-main img,
+.summon-friend img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: top;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+.summon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  align-content: space-between;
+  height: 100%;
+}
+
+.summon-grid .grid-item img {
+  width: 100%;
+  height: auto;
+}
+
 /* Accessories grid (squares) */
 .item-grid.accessories {
   display: flex;
