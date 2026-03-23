@@ -431,12 +431,17 @@ export function renderPartyDetail(container, data, options = {}) {
             const imageUrl = getImageUrl(`character-main/${id}${suffix}.jpg`)
             const arousalForm = item.param?.npc_arousal_form
             const awakeningSlug = arousalForm ? CHARACTER_AWAKENING_MAPPING[arousalForm] : null
-            const awakeningHtml = awakeningSlug && awakeningSlug !== 'character-balanced'
-              ? `<div class="char-modifiers"><img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${awakeningSlug}" title="${awakeningSlug}"></div>`
-              : ''
+            const hasPerpetuit = !!item.param?.has_npcaugment_constant
+            const hasModifiers = (awakeningSlug && awakeningSlug !== 'character-balanced') || hasPerpetuit
+            const modifiersHtml = hasModifiers ? `
+              <div class="char-modifiers">
+                ${hasPerpetuit ? '<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">' : ''}
+                ${awakeningSlug && awakeningSlug !== 'character-balanced' ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${awakeningSlug}" title="${awakeningSlug}">` : ''}
+              </div>
+            ` : ''
             return `
               <div class="grid-item">
-                ${awakeningHtml}
+                ${modifiersHtml}
                 <img src="${imageUrl}" alt="">
               </div>
             `
