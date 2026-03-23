@@ -71,7 +71,7 @@ export function countItems(dataType, data) {
  */
 /**
  * Get character pose suffix based on uncap level and transcendence.
- * _01: base (0-2 stars), _02: MLB (3 stars), _03: FLB (4+ stars), _04: transcendence
+ * _01: base (0-2 stars), _02: MLB (3+ stars), _03: FLB (5+ stars), _04: transcendence
  */
 function getCharacterPose(uncapLevel, transcendenceStep) {
   if (transcendenceStep && transcendenceStep > 0) return '_04'
@@ -354,7 +354,7 @@ export function renderSummonStats(data, name, id, element) {
 // DETAIL VIEW RENDERERS
 // ==========================================
 
-export function renderPartyDetail(container, data) {
+export function renderPartyDetail(container, data, options = {}) {
   const deck = data.deck || {}
   const pc = deck.pc || {}
   const job = pc.job
@@ -362,6 +362,7 @@ export function renderPartyDetail(container, data) {
   const weapons = toArray(pc.weapons).filter(Boolean)
   const summons = toArray(pc.summons).filter(Boolean)
   const subSummons = toArray(pc.sub_summons).filter(Boolean)
+  const friendSummon = options.friendSummon || null
   const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean)
 
   let html = ''
@@ -383,12 +384,12 @@ export function renderPartyDetail(container, data) {
   if (characters.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">${characters.length} Characters</h3>
-        <div class="item-grid characters">
+        <h3 class="party-section-title">Characters</h3>
+        <div class="character-grid">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
             const suffix = getCharacterImageSuffix(item)
-            const imageUrl = getImageUrl(`character-grid/${id}${suffix}.jpg`)
+            const imageUrl = getImageUrl(`character-main/${id}${suffix}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">
@@ -401,60 +402,65 @@ export function renderPartyDetail(container, data) {
   }
 
   if (weapons.length > 0) {
+    const [mainhand, ...gridWeapons] = weapons
+    const mainhandId = mainhand.master?.id || mainhand.param?.id || mainhand.id
+    const mainhandSuffix = getImageSuffix(mainhand)
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">${weapons.length} Weapons</h3>
-        <div class="item-grid weapons">
-          ${weapons.map(item => {
-            const id = item.master?.id || item.param?.id || item.id
-            const suffix = getImageSuffix(item)
-            const imageUrl = getImageUrl(`weapon-grid/${id}${suffix}.jpg`)
-            return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
-              </div>
-            `
-          }).join('')}
+        <h3 class="party-section-title">Weapons</h3>
+        <div class="weapon-layout">
+          <div class="weapon-mainhand">
+            <img src="${getImageUrl(`weapon-main/${mainhandId}${mainhandSuffix}.jpg`)}" alt="">
+          </div>
+          <div class="weapon-grid">
+            ${gridWeapons.map(item => {
+              const id = item.master?.id || item.param?.id || item.id
+              const suffix = getImageSuffix(item)
+              return `
+                <div class="grid-item">
+                  <img src="${getImageUrl(`weapon-grid/${id}${suffix}.jpg`)}" alt="">
+                </div>
+              `
+            }).join('')}
+          </div>
         </div>
       </div>
     `
   }
 
-  if (summons.length > 0) {
-    html += `
-      <div class="party-section">
-        <h3 class="party-section-title">${summons.length} Summons</h3>
-        <div class="item-grid summons">
-          ${summons.map(item => {
-            const id = item.master?.id || item.param?.id || item.id
-            const suffix = getImageSuffix(item)
-            const imageUrl = getImageUrl(`summon-wide/${id}${suffix}.jpg`)
-            return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
-              </div>
-            `
-          }).join('')}
-        </div>
-      </div>
-    `
-  }
+  if (summons.length > 0 || subSummons.length > 0 || friendSummon) {
+    const [mainSummon, ...otherSummons] = summons
+    const allSubSummons = [...otherSummons, ...subSummons]
 
-  if (subSummons.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">${subSummons.length} Sub Summons</h3>
-        <div class="item-grid summons">
-          ${subSummons.map(item => {
-            const id = item.master?.id || item.param?.id || item.id
-            const suffix = getImageSuffix(item)
-            const imageUrl = getImageUrl(`summon-wide/${id}${suffix}.jpg`)
+        <h3 class="party-section-title">Summons</h3>
+        <div class="summon-layout">
+          ${mainSummon ? (() => {
+            const id = mainSummon.master?.id || mainSummon.param?.id || mainSummon.id
+            const suffix = getImageSuffix(mainSummon)
             return `
-              <div class="grid-item">
-                <img src="${imageUrl}" alt="">
+              <div class="summon-main">
+                <img src="${getImageUrl(`summon-tall/${id}${suffix}.jpg`)}" alt="">
               </div>
             `
-          }).join('')}
+          })() : ''}
+          <div class="summon-grid">
+            ${allSubSummons.map(item => {
+              const id = item.master?.id || item.param?.id || item.id
+              const suffix = getImageSuffix(item)
+              return `
+                <div class="grid-item">
+                  <img src="${getImageUrl(`summon-grid/${id}${suffix}.jpg`)}" alt="">
+                </div>
+              `
+            }).join('')}
+          </div>
+          ${friendSummon ? `
+            <div class="summon-friend">
+              <img src="${getImageUrl(`summon-tall/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)}" alt="">
+            </div>
+          ` : ''}
         </div>
       </div>
     `

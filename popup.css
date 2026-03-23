@@ -1578,6 +1578,86 @@ body.light #detailImport {
   display: block;
 }
 
+/* Character grid: 5 columns */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.character-grid .grid-item img {
+  width: 100%;
+  height: auto;
+}
+
+/* Weapon layout: mainhand + grid */
+.weapon-layout {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 8px;
+}
+
+.weapon-mainhand {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.weapon-mainhand img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+.weapon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.weapon-grid .grid-item img {
+  width: 100%;
+  height: auto;
+}
+
+/* Summon layout: main + sub grid + friend */
+.summon-layout {
+  display: grid;
+  grid-template-columns: 1.17fr 2fr 1.17fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.summon-main,
+.summon-friend {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.summon-main img,
+.summon-friend img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: top;
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+.summon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  align-content: space-between;
+  height: 100%;
+}
+
+.summon-grid .grid-item img {
+  width: 100%;
+  height: auto;
+}
+
 /* Accessories grid (squares) */
 .item-grid.accessories {
   display: flex;
