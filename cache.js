@@ -4,6 +4,7 @@
  */
 
 import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
+import { t } from './i18n.js'
 
 /**
  * Format a timestamp age into a human-readable string
@@ -12,13 +13,13 @@ import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
  */
 export function formatAge(ageMs) {
   const seconds = Math.floor(ageMs / 1000)
-  if (seconds < 60) return `${seconds}s ago`
+  if (seconds < 60) return t('time_seconds_ago', { count: seconds })
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) return t('time_minutes_ago', { count: minutes })
 
   const hours = Math.floor(minutes / 60)
-  return `${hours}h ago`
+  return t('time_hours_ago', { count: hours })
 }
 
 /**
@@ -44,7 +45,7 @@ export function formatCacheStatus(status) {
         ...info,
         displayName: getDataTypeName(type),
         subtitle: null,
-        ageText: 'No data',
+        ageText: t('cache_no_data'),
         statusClass: 'unavailable'
       }
     } else if (info.isStale) {
@@ -52,7 +53,7 @@ export function formatCacheStatus(status) {
         ...info,
         displayName: getDataTypeName(type),
         subtitle: null,
-        ageText: 'Stale',
+        ageText: t('cache_stale'),
         statusClass: 'stale'
       }
     } else {
@@ -61,16 +62,16 @@ export function formatCacheStatus(status) {
       let displayName = getDataTypeName(type)
 
       if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
-        subtitle = `${info.totalItems} items · ${info.pageCount} pages`
+        subtitle = t('count_items_pages', { items: info.totalItems, pages: info.pageCount })
       }
 
       // Handle per-item detail types (use item name as display name)
       if (type.startsWith('detail_npc_')) {
-        displayName = info.itemName || 'Character'
+        displayName = info.itemName || t('type_character')
       } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName || 'Weapon'
+        displayName = info.itemName || t('type_weapon')
       } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName || 'Summon'
+        displayName = info.itemName || t('type_summon')
       }
 
       formatted[type] = {
