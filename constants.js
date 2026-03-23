@@ -4,6 +4,7 @@
  */
 
 import { safeGet } from './storage.js'
+import { t } from './i18n.js'
 
 // ==========================================
 // API CONFIGURATION
@@ -137,22 +138,20 @@ export const RAID_SECTIONS = {
 // DATA TYPE DEFINITIONS
 // ==========================================
 
-/**
- * Data type metadata including display names
- */
-export const DATA_TYPES = {
-  party: { name: 'Party' },
-  detail_npc: { name: 'Character' },
-  detail_weapon: { name: 'Weapon' },
-  detail_summon: { name: 'Summon' },
-  list_npc: { name: 'Character List' },
-  list_weapon: { name: 'Weapon List' },
-  list_summon: { name: 'Summon List' },
-  collection_weapon: { name: 'Weapon Collection' },
-  collection_npc: { name: 'Character Collection' },
-  collection_summon: { name: 'Summon Collection' },
-  collection_artifact: { name: 'Artifact Collection' },
-  character_stats: { name: 'Character Stats' }
+/** i18n keys for data type names */
+const DATA_TYPE_I18N_KEYS = {
+  party: 'type_party',
+  detail_npc: 'type_character',
+  detail_weapon: 'type_weapon',
+  detail_summon: 'type_summon',
+  list_npc: 'type_character_list',
+  list_weapon: 'type_weapon_list',
+  list_summon: 'type_summon_list',
+  collection_weapon: 'type_weapon_collection',
+  collection_npc: 'type_character_collection',
+  collection_summon: 'type_summon_collection',
+  collection_artifact: 'type_artifact_collection',
+  character_stats: 'type_character_stats'
 }
 
 /**
@@ -161,12 +160,13 @@ export const DATA_TYPES = {
  * @returns {string} Human-readable name
  */
 export function getDataTypeName(dataType) {
-  if (DATA_TYPES[dataType]) return DATA_TYPES[dataType].name
+  const key = DATA_TYPE_I18N_KEYS[dataType]
+  if (key) return t(key)
   if (dataType.startsWith('stash_weapon_')) {
-    return `Weapon Stash ${dataType.replace('stash_weapon_', '')}`
+    return `${t('type_weapon_stash')} ${dataType.replace('stash_weapon_', '')}`
   }
   if (dataType.startsWith('stash_summon_')) {
-    return `Summon Stash ${dataType.replace('stash_summon_', '')}`
+    return `${t('type_summon_stash')} ${dataType.replace('stash_summon_', '')}`
   }
   return dataType
 }
