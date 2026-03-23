@@ -1317,13 +1317,13 @@ function renderCharacterStatsDetail(container, data) {
 function filterSelectedItems(dataType, data) {
   if (!isCollectionType(dataType)) return data
 
-  // Character stats is keyed by masterId, not paginated
+  // Character stats: copy raw game data for debugging, not processed data
   if (dataType === 'character_stats') {
     const characters = Object.values(data)
     const result = {}
     characters.forEach((char, index) => {
       if (selectedItems.has(index)) {
-        result[char.masterId] = char
+        result[char.masterId] = char.rawData || char
       }
     })
     return result

@@ -223,6 +223,30 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 
   const current = existing.updates[resolvedMasterId] || { masterId: resolvedMasterId }
 
+  // Store relevant raw game fields for debugging (copy button uses this)
+  if (!current.rawData) current.rawData = {}
+  if (dataType === 'character_detail') {
+    current.rawData.character_detail = {
+      master: { id: data?.master?.id, name: data?.master?.name, attribute: data?.master?.attribute },
+      param: data?.param,
+      npc_arousal_form: data?.npc_arousal_form,
+      npc_arousal_form_text: data?.npc_arousal_form_text,
+      npc_arousal_level: data?.npc_arousal_level,
+      has_npcaugment_constant: data?.has_npcaugment_constant,
+      attribute: data?.attribute,
+      element: data?.element
+    }
+  } else if (dataType === 'zenith_npc') {
+    // Only store/overwrite if npcaugment is present (avoid second request wiping data)
+    const npcaugment = data?.option?.npcaugment
+    if (npcaugment) {
+      current.rawData.zenith_npc = {
+        param_data: npcaugment.param_data || null,
+        constant_data_list: npcaugment.constant_data_list || null
+      }
+    }
+  }
+
   if (dataType === 'character_detail') {
     current.masterName = data?.master?.name || current.masterName
     current.timestamp = timestamp
