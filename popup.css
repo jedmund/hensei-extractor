@@ -1199,6 +1199,7 @@ body.light #detailImport {
 }
 
 .grid-item {
+  position: relative;
   border-radius: var(--radius-md);
   overflow: visible;
   background: var(--color-bg);
@@ -1630,6 +1631,7 @@ body.light #detailImport {
 }
 
 .weapon-mainhand {
+  position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
 }
