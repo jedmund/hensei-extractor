@@ -85,6 +85,8 @@ export const AETHERIAL_MASTERY_NAME_TO_ID = {
   'Triple Attack Rate': 2,
   'Fire ATK Up': 3, 'Water ATK Up': 3, 'Earth ATK Up': 3,
   'Wind ATK Up': 3, 'Light ATK Up': 3, 'Dark ATK Up': 3,
+  'Fire ATK': 3, 'Water ATK': 3, 'Earth ATK': 3,
+  'Wind ATK': 3, 'Light ATK': 3, 'Dark ATK': 3,
   'Fire Resistance': 4, 'Water Resistance': 4, 'Earth Resistance': 4,
   'Wind Resistance': 4, 'Light Resistance': 4, 'Dark Resistance': 4,
   'Critical Hit Rate': 8
