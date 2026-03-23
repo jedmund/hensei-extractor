@@ -1205,7 +1205,7 @@ body.light #detailImport {
   background: var(--color-bg);
 }
 
-.grid-item img {
+.grid-item > img {
   height: 80px;
   width: auto;
   display: block;
@@ -1276,9 +1276,9 @@ body.light #detailImport {
 
 .char-modifiers .perpetuity-ring {
   position: absolute;
-  width: 18px;
+  width: 28px;
   height: auto;
-  top: -2px;
+  top: -4px;
   right: -2px;
 }
 
@@ -1293,54 +1293,54 @@ body.light #detailImport {
 
 .weapon-modifiers .awakening-icon {
   position: absolute;
-  width: 18px;
+  width: 28px;
   height: auto;
-  top: -2px;
-  left: -2px;
+  top: -4px;
+  left: -4px;
 }
 
 .weapon-modifiers .ax-skill-icon,
 .weapon-modifiers .befoulment-icon {
   position: absolute;
-  width: 16px;
+  width: 24px;
   height: auto;
-  bottom: -2px;
-  left: -2px;
+  bottom: -4px;
+  left: -4px;
 }
 
 .weapon-modifiers .weapon-key-icon {
   position: absolute;
-  width: 16px;
+  width: 24px;
   height: auto;
-  bottom: -2px;
-  right: -2px;
+  bottom: -4px;
+  right: -4px;
 }
 
 .weapon-modifiers .weapon-key-icon:nth-of-type(2) {
-  right: 16px;
+  right: 22px;
 }
 
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
 .weapon-mainhand .weapon-modifiers .awakening-icon {
-  width: 24px;
+  width: 36px;
   top: auto;
-  bottom: 24px;
-  left: -4px;
+  bottom: 28px;
+  left: -6px;
 }
 
 .weapon-mainhand .weapon-modifiers .ax-skill-icon,
 .weapon-mainhand .weapon-modifiers .befoulment-icon,
 .weapon-mainhand .weapon-modifiers .weapon-key-icon {
-  width: 20px;
+  width: 28px;
 }
 
 /* Quick Summon Badge */
 .quick-summon-badge {
   position: absolute;
-  width: 18px;
+  width: 24px;
   height: auto;
-  top: -2px;
-  right: -2px;
+  top: -4px;
+  right: -4px;
   z-index: 3;
   pointer-events: none;
 }
@@ -1348,10 +1348,10 @@ body.light #detailImport {
 /* Character Awakening Icon */
 .char-modifiers .awakening-icon {
   position: absolute;
-  width: 18px;
+  width: 28px;
   height: auto;
-  top: -2px;
-  right: -2px;
+  top: -4px;
+  right: -4px;
 }
 
 /* Item Checkbox */
@@ -1624,7 +1624,7 @@ body.light #detailImport {
   gap: 8px;
 }
 
-.character-grid .grid-item img {
+.character-grid .grid-item > img {
   width: 100%;
   height: auto;
 }
@@ -1655,7 +1655,7 @@ body.light #detailImport {
   gap: 8px;
 }
 
-.weapon-grid .grid-item img {
+.weapon-grid .grid-item > img {
   width: 100%;
   height: auto;
 }
@@ -1693,7 +1693,7 @@ body.light #detailImport {
   height: 100%;
 }
 
-.summon-grid .grid-item img {
+.summon-grid .grid-item > img {
   width: 100%;
   height: auto;
 }
@@ -1705,7 +1705,7 @@ body.light #detailImport {
   gap: 8px;
 }
 
-.item-grid.accessories .grid-item img {
+.item-grid.accessories .grid-item > img {
   height: auto;
   width: 80px;
 }
@@ -1717,7 +1717,7 @@ body.light #detailImport {
   gap: 8px;
 }
 
-.item-grid.bullets .grid-item img {
+.item-grid.bullets .grid-item > img {
   height: auto;
   width: 80px;
 }
