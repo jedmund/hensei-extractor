@@ -5,6 +5,7 @@
 
 import { RAID_SECTIONS } from './constants.js'
 import { getImageUrl } from './constants.js'
+import { t, getLocale } from './i18n.js'
 
 // ==========================================
 // STATE
@@ -16,17 +17,6 @@ let searchQuery = ''
 let sortAscending = false
 let selectedRaid = null
 let onSelectCallback = null
-
-// ==========================================
-// SECTION LABELS
-// ==========================================
-
-const SECTION_LABELS = {
-  [RAID_SECTIONS.FARMING]: 'Farming',
-  [RAID_SECTIONS.RAID]: 'Raids',
-  [RAID_SECTIONS.EVENT]: 'Events',
-  [RAID_SECTIONS.SOLO]: 'Solo'
-}
 
 // ==========================================
 // PUBLIC API
@@ -133,7 +123,7 @@ function renderRaidList() {
   const filtered = getFilteredGroups()
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="raid-empty-state">No raids found</div>'
+    container.innerHTML = `<div class="raid-empty-state">${t('raid_no_results')}</div>`
     return
   }
 
@@ -221,11 +211,17 @@ function renderRaidItem(raid) {
 
 function getGroupName(group) {
   if (typeof group.name === 'string') return group.name
+  if (getLocale() === 'ja') {
+    return group.name?.ja || group.name_jp || group.name?.en || group.name_en || 'Unknown'
+  }
   return group.name?.en || group.name_en || group.name?.ja || group.name_jp || 'Unknown'
 }
 
 function getRaidName(raid) {
   if (typeof raid.name === 'string') return raid.name
+  if (getLocale() === 'ja') {
+    return raid.name?.ja || raid.name_jp || raid.name?.en || raid.name_en || 'Unknown'
+  }
   return raid.name?.en || raid.name_en || raid.name?.ja || raid.name_jp || 'Unknown'
 }
 

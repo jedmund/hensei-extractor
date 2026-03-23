@@ -5,6 +5,7 @@
   "description": "Passively captures Granblue Fantasy data for export to granblue.team",
   "permissions": [
     "storage",
+    "cookies",
     "debugger",
     "tabs",
     "sidePanel"
@@ -12,6 +13,7 @@
   "key": "{{UNIQUE_KEY}}",
   "host_permissions": [
     "https://game.granbluefantasy.jp/*",
+    "https://granblue.team/*",
     "https://api.granblue.team/*"
   ],
   "icons": {

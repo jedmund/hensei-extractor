@@ -3,6 +3,8 @@
  * Mirrors the raid-picker pattern with multi-select, search, and inline creation.
  */
 
+import { t } from './i18n.js'
+
 // ==========================================
 // STATE
 // ==========================================
@@ -103,12 +105,12 @@ function renderPlaylistList() {
   const filtered = getFilteredPlaylists()
 
   if (playlists.length === 0) {
-    container.innerHTML = '<div class="playlist-empty">No playlists yet. Create one!</div>'
+    container.innerHTML = `<div class="playlist-empty">${t('playlist_no_playlists')}</div>`
     return
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="playlist-empty">No playlists found</div>'
+    container.innerHTML = `<div class="playlist-empty">${t('playlist_no_results')}</div>`
     return
   }
 
@@ -129,14 +131,17 @@ function getFilteredPlaylists() {
 
 function renderPlaylistItem(playlist) {
   const isSelected = selectedPlaylists.some(p => p.id === playlist.id)
-  const title = playlist.title || 'Untitled'
+  const title = playlist.title || t('playlist_untitled')
   const partyCount = playlist.party_count || playlist.parties_count || 0
+  const countText = partyCount === 1
+    ? t('count_party', { count: partyCount })
+    : t('count_parties', { count: partyCount })
 
   return `
     <button type="button" class="playlist-item ${isSelected ? 'selected' : ''}" data-playlist-id="${playlist.id}">
       <div class="playlist-item-info">
         <span class="playlist-item-title">${title}</span>
-        <span class="playlist-item-count">${partyCount} ${partyCount === 1 ? 'party' : 'parties'}</span>
+        <span class="playlist-item-count">${countText}</span>
       </div>
       ${isSelected ? '<svg class="playlist-item-check" viewBox="0 0 14 14" fill="currentColor" width="14" height="14"><path d="M11.53 3.47a.75.75 0 0 1 .073.976l-.073.084-5.5 5.5a.75.75 0 0 1-.976.073l-.084-.073-2.5-2.5a.75.75 0 0 1 .976-1.133l.084.073L5.5 8.44l4.97-4.97a.75.75 0 0 1 1.06 0z"/></svg>' : ''}
     </button>
@@ -227,13 +232,13 @@ async function handleCreatePlaylist() {
 
   const title = titleInput?.value?.trim()
   if (!title) {
-    if (errorEl) errorEl.textContent = 'Title is required'
+    if (errorEl) errorEl.textContent = t('playlist_title_required')
     return
   }
 
   if (submitBtn) {
     submitBtn.disabled = true
-    submitBtn.textContent = 'Creating...'
+    submitBtn.textContent = t('action_creating')
   }
   if (errorEl) errorEl.textContent = ''
 
@@ -248,7 +253,7 @@ async function handleCreatePlaylist() {
 
   if (submitBtn) {
     submitBtn.disabled = false
-    submitBtn.textContent = 'Create'
+    submitBtn.textContent = t('action_create')
   }
 
   if (response.error) {

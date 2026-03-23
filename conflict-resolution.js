@@ -4,6 +4,7 @@
  */
 
 import { getImageUrl } from './constants.js'
+import { t } from './i18n.js'
 
 // Internal state
 let conflictItems = []
@@ -81,9 +82,9 @@ function renderCurrentItem() {
 
   let decisionBadge = ''
   if (decision === 'import') {
-    decisionBadge = '<span class="conflict-badge conflict-badge-import">Import</span>'
+    decisionBadge = `<span class="conflict-badge conflict-badge-import">${t('action_import')}</span>`
   } else if (decision === 'skip') {
-    decisionBadge = '<span class="conflict-badge conflict-badge-skip">Skip</span>'
+    decisionBadge = `<span class="conflict-badge conflict-badge-skip">${t('conflict_skip')}</span>`
   }
 
   display.innerHTML = `
@@ -181,8 +182,8 @@ function updateFinishButton() {
 
   const decidedCount = decisions.size
   finishBtn.textContent = allDecided
-    ? 'Done'
-    : `${decidedCount} / ${conflictItems.length} decided`
+    ? t('action_done')
+    : t('conflict_decided', { count: decidedCount, total: conflictItems.length })
 }
 
 function finishReview() {

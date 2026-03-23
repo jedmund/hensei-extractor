@@ -4,6 +4,7 @@
  */
 
 import { getImageUrl } from './constants.js'
+import { t } from './i18n.js'
 
 // Internal state for pending sync operations
 let pendingSyncData = null
@@ -20,7 +21,7 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
   const syncBtn = document.getElementById('detailSync')
   if (syncBtn) {
     syncBtn.disabled = true
-    syncBtn.textContent = 'Checking...'
+    syncBtn.textContent = t('action_checking')
   }
 
   try {
@@ -31,7 +32,7 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     })
 
     if (response.error) {
-      showToast('Sync failed: ' + response.error)
+      showToast(t('toast_sync_failed', { error: response.error }))
       return
     }
 
@@ -45,7 +46,7 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     })
 
     if (previewResponse.error) {
-      showToast('Preview failed: ' + previewResponse.error)
+      showToast(t('toast_preview_failed', { error: previewResponse.error }))
       return
     }
 
@@ -55,11 +56,11 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     updateSyncModalContent(previewResponse, currentDetailDataType)
     showSyncModal()
   } catch (error) {
-    showToast('Sync failed: ' + error.message)
+    showToast(t('toast_sync_failed', { error: error.message }))
   } finally {
     if (syncBtn) {
       syncBtn.disabled = false
-      syncBtn.textContent = 'Full Sync'
+      syncBtn.textContent = t('action_full_sync')
     }
   }
 }
@@ -87,12 +88,16 @@ function updateSyncModalContent(preview, currentDetailDataType) {
     }).join('')
 
     const moreCount = preview.count > 12
-      ? `<p class="more-items">...and ${preview.count - 12} more</p>`
+      ? `<p class="more-items">${t('sync_more_items', { count: preview.count - 12 })}</p>`
       : ''
+
+    const deleteCountText = preview.count > 1
+      ? t('sync_delete_count_plural', { count: preview.count })
+      : t('sync_delete_count', { count: preview.count })
 
     if (deleteListDiv) {
       deleteListDiv.innerHTML = `
-        <p class="delete-count">${preview.count} item${preview.count > 1 ? 's' : ''} will be removed:</p>
+        <p class="delete-count">${deleteCountText}</p>
         <div class="sync-delete-grid">${itemsHtml}</div>
         ${moreCount}
       `
@@ -102,7 +107,7 @@ function updateSyncModalContent(preview, currentDetailDataType) {
     // No deletions, hide warning
     warningDiv.classList.add('hidden')
     if (deleteListDiv) {
-      deleteListDiv.innerHTML = '<p class="no-deletions">No items will be removed.</p>'
+      deleteListDiv.innerHTML = `<p class="no-deletions">${t('sync_no_deletions')}</p>`
       deleteListDiv.classList.remove('hidden')
     }
   }
@@ -163,7 +168,7 @@ export async function confirmSync(currentDetailDataType, showToast) {
   const syncBtn = document.getElementById('detailSync')
   if (syncBtn) {
     syncBtn.disabled = true
-    syncBtn.textContent = 'Syncing...'
+    syncBtn.textContent = t('action_syncing')
   }
 
   try {
@@ -182,31 +187,31 @@ export async function confirmSync(currentDetailDataType, showToast) {
     } else {
       // Show sync results
       const total = uploadResponse.created + uploadResponse.updated
-      let msg = `Synced ${total} items`
+      let msg = t('sync_result', { total })
 
       if (uploadResponse.reconciliation) {
         const { deleted, orphaned_grid_items } = uploadResponse.reconciliation
         if (deleted > 0) {
-          msg += `, removed ${deleted}`
+          msg += t('sync_removed', { count: deleted })
         }
         if (orphaned_grid_items?.length > 0) {
-          msg += `, ${orphaned_grid_items.length} orphaned`
+          msg += t('sync_orphaned', { count: orphaned_grid_items.length })
         }
       }
 
       showToast(msg)
 
       if (syncBtn) {
-        syncBtn.textContent = 'Synced'
+        syncBtn.textContent = t('action_synced')
         syncBtn.classList.add('synced')
       }
     }
   } catch (error) {
-    showToast('Sync failed: ' + error.message)
+    showToast(t('toast_sync_failed', { error: error.message }))
   } finally {
     if (syncBtn && !syncBtn.classList.contains('synced')) {
       syncBtn.disabled = false
-      syncBtn.textContent = 'Full Sync'
+      syncBtn.textContent = t('action_full_sync')
     }
   }
 }
