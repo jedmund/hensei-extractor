@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "granblue.team",
-  "version": "2.1",
+  "version": "{{VERSION}}",
   "description": "Passively captures Granblue Fantasy data for export to granblue.team",
   "permissions": [
     "storage",
