@@ -71,7 +71,7 @@ export function countItems(dataType, data) {
  */
 /**
  * Get character pose suffix based on uncap level and transcendence.
- * _01: base (0-2 stars), _02: MLB (3 stars), _03: FLB (4+ stars), _04: transcendence
+ * _01: base (0-2 stars), _02: MLB (3+ stars), _03: FLB (5+ stars), _04: transcendence
  */
 function getCharacterPose(uncapLevel, transcendenceStep) {
   if (transcendenceStep && transcendenceStep > 0) return '_04'
@@ -383,12 +383,12 @@ export function renderPartyDetail(container, data) {
   if (characters.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">${characters.length} Characters</h3>
-        <div class="item-grid characters">
+        <h3 class="party-section-title">Characters</h3>
+        <div class="character-grid">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
             const suffix = getCharacterImageSuffix(item)
-            const imageUrl = getImageUrl(`character-grid/${id}${suffix}.jpg`)
+            const imageUrl = getImageUrl(`character-main/${id}${suffix}.jpg`)
             return `
               <div class="grid-item">
                 <img src="${imageUrl}" alt="">

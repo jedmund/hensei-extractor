@@ -1554,6 +1554,18 @@ body.light #detailImport {
   display: block;
 }
 
+/* Character grid: 5 columns */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.character-grid .grid-item img {
+  width: 100%;
+  height: auto;
+}
+
 /* Accessories grid (squares) */
 .item-grid.accessories {
   display: flex;
