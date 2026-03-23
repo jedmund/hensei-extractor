@@ -392,6 +392,20 @@ async function handleLanguageToggle(lang) {
       // Silently fail — local preference is saved anyway
     }
   }
+
+  // Sync website locale cookie so granblue.team renders the correct language
+  if (lang === 'en') {
+    chrome.cookies.remove({ url: 'https://granblue.team', name: 'PARAGLIDE_LOCALE' })
+  } else {
+    chrome.cookies.set({
+      url: 'https://granblue.team',
+      name: 'PARAGLIDE_LOCALE',
+      value: lang,
+      path: '/',
+      sameSite: 'lax',
+      expirationDate: Math.floor(Date.now() / 1000) + 34560000
+    })
+  }
 }
 
 // ==========================================
