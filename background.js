@@ -13,6 +13,7 @@ import {
 } from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
 import {
+  OVER_MASTERY_TYPE_ID, AETHERIAL_TYPE_ID,
   OVER_MASTERY_NAME_TO_ID, PERPETUITY_BONUS_NAME_TO_ID,
   AETHERIAL_MASTERY_NAME_TO_ID, parseDisplayValue
 } from './mastery.js'
@@ -304,13 +305,27 @@ function parseZenithMasteryData(data) {
     for (const bonus of paramData) {
       if (!bonus || !bonus.type || !bonus.param) continue
 
+      const typeId = bonus.type.id
       const typeName = bonus.type.name
       const slotNum = bonus.slot_number
       const strength = parseDisplayValue(bonus.param.disp_total_param)
 
       if (strength === 0) continue
 
+      // Slot 1: Primary (ATK/HP) — share type id 10001, split by split_key
+      if (slotNum === 1) {
+        const modifierId = bonus.type.split_key === 0 ? 1 : 2 // ATK=1, HP=2
+        result.rings.push({
+          modifier: modifierId,
+          strength: strength,
+          typeName: typeName,
+          slot: slotNum
+        })
+        continue
+      }
+
       if (slotNum === 5) {
+        // Perpetuity — no type ID map yet, use name fallback
         const perpetuityId = PERPETUITY_BONUS_NAME_TO_ID[typeName]
         if (perpetuityId) {
           result.perpetuityBonuses.push({
@@ -323,7 +338,7 @@ function parseZenithMasteryData(data) {
       }
 
       if (slotNum === 4) {
-        const modifierId = AETHERIAL_MASTERY_NAME_TO_ID[typeName]
+        const modifierId = AETHERIAL_TYPE_ID[typeId] || AETHERIAL_MASTERY_NAME_TO_ID[typeName]
         if (modifierId) {
           result.earring = {
             modifier: modifierId,
@@ -334,7 +349,8 @@ function parseZenithMasteryData(data) {
         continue
       }
 
-      const modifierId = OVER_MASTERY_NAME_TO_ID[typeName]
+      // Slots 2-3: Secondary/Tertiary rings
+      const modifierId = OVER_MASTERY_TYPE_ID[typeId] || OVER_MASTERY_NAME_TO_ID[typeName]
       if (modifierId) {
         result.rings.push({
           modifier: modifierId,
