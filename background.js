@@ -13,8 +13,8 @@ import {
 } from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
 import {
-  OVER_MASTERY_NAME_TO_ID, PERPETUITY_BONUS_NAME_TO_ID,
-  AETHERIAL_MASTERY_NAME_TO_ID, parseDisplayValue
+  OVER_MASTERY_TYPE_ID, lookupAetherialTypeId, PERPETUITY_TYPE_ID,
+  parseDisplayValue
 } from './mastery.js'
 
 // ==========================================
@@ -223,6 +223,30 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 
   const current = existing.updates[resolvedMasterId] || { masterId: resolvedMasterId }
 
+  // Store relevant raw game fields for debugging (copy button uses this)
+  if (!current.rawData) current.rawData = {}
+  if (dataType === 'character_detail') {
+    current.rawData.character_detail = {
+      master: { id: data?.master?.id, name: data?.master?.name, attribute: data?.master?.attribute },
+      param: data?.param,
+      npc_arousal_form: data?.npc_arousal_form,
+      npc_arousal_form_text: data?.npc_arousal_form_text,
+      npc_arousal_level: data?.npc_arousal_level,
+      has_npcaugment_constant: data?.has_npcaugment_constant,
+      attribute: data?.attribute,
+      element: data?.element
+    }
+  } else if (dataType === 'zenith_npc') {
+    // Only store/overwrite if npcaugment is present (avoid second request wiping data)
+    const npcaugment = data?.option?.npcaugment
+    if (npcaugment) {
+      current.rawData.zenith_npc = {
+        param_data: npcaugment.param_data || null,
+        constant_data_list: npcaugment.constant_data_list || null
+      }
+    }
+  }
+
   if (dataType === 'character_detail') {
     current.masterName = data?.master?.name || current.masterName
     current.timestamp = timestamp
@@ -248,7 +272,7 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     if (data?.npc_arousal_form) {
       current.awakening = {
         type: data.npc_arousal_form,
-        typeName: data.npc_arousal_form_text || getAwakeningTypeName(data.npc_arousal_form),
+        typeName: data.npc_arousal_form_text,
         level: data.npc_arousal_level || 1
       }
     }
@@ -287,11 +311,6 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 // MASTERY DATA PARSING
 // ==========================================
 
-function getAwakeningTypeName(typeId) {
-  const names = { 1: 'Balanced', 2: 'Attack', 3: 'Defense', 4: 'Multiattack' }
-  return names[typeId] || 'Balanced'
-}
-
 function parseZenithMasteryData(data) {
   const result = { rings: [], earring: null, masterName: null, perpetuityBonuses: [] }
 
@@ -304,26 +323,31 @@ function parseZenithMasteryData(data) {
     for (const bonus of paramData) {
       if (!bonus || !bonus.type || !bonus.param) continue
 
+      const typeId = bonus.type.id
       const typeName = bonus.type.name
       const slotNum = bonus.slot_number
       const strength = parseDisplayValue(bonus.param.disp_total_param)
 
       if (strength === 0) continue
 
-      if (slotNum === 5) {
-        const perpetuityId = PERPETUITY_BONUS_NAME_TO_ID[typeName]
-        if (perpetuityId) {
-          result.perpetuityBonuses.push({
-            modifier: perpetuityId,
-            strength: strength,
-            typeName: typeName
-          })
-        }
+      // Slot 1: Primary (ATK/HP) — share type id 10001, split by split_key
+      if (slotNum === 1) {
+        const modifierId = bonus.type.split_key === 0 ? 1 : 2 // ATK=1, HP=2
+        result.rings.push({
+          modifier: modifierId,
+          strength: strength,
+          typeName: typeName,
+          slot: slotNum
+        })
         continue
       }
 
+      if (slotNum === 5) {
+        continue // Perpetuity bonuses come from constant_data_list, not param_data
+      }
+
       if (slotNum === 4) {
-        const modifierId = AETHERIAL_MASTERY_NAME_TO_ID[typeName]
+        const modifierId = lookupAetherialTypeId(typeId)
         if (modifierId) {
           result.earring = {
             modifier: modifierId,
@@ -334,7 +358,8 @@ function parseZenithMasteryData(data) {
         continue
       }
 
-      const modifierId = OVER_MASTERY_NAME_TO_ID[typeName]
+      // Slots 2-3: Secondary/Tertiary rings
+      const modifierId = OVER_MASTERY_TYPE_ID[typeId]
       if (modifierId) {
         result.rings.push({
           modifier: modifierId,
@@ -342,6 +367,26 @@ function parseZenithMasteryData(data) {
           typeName: typeName,
           slot: slotNum
         })
+      }
+    }
+  }
+
+  // Parse perpetuity bonuses from constant_data_list
+  const constantData = data?.option?.npcaugment?.constant_data_list
+  if (constantData) {
+    // constant_data_list is keyed by constant_id (e.g., "10")
+    for (const bonuses of Object.values(constantData)) {
+      if (!Array.isArray(bonuses)) continue
+      for (const bonus of bonuses) {
+        if (!bonus?.type?.id || !bonus?.param) continue
+        const perpetuityId = PERPETUITY_TYPE_ID[bonus.type.id]
+        if (perpetuityId) {
+          result.perpetuityBonuses.push({
+            modifier: perpetuityId,
+            strength: parseDisplayValue(bonus.param.disp_total_param),
+            typeName: bonus.type.name
+          })
+        }
       }
     }
   }
