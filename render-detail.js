@@ -397,6 +397,8 @@ export function renderPartyDetail(container, data, options = {}) {
   const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean)
   const weaponKeyMap = options.weaponKeyMap || null
   const quickSummonId = pc.quick_user_summon_id
+  const setAction = pc.set_action || []
+  const jobSkillSlugs = options.jobSkillSlugs || {}
 
   let html = ''
 
@@ -416,6 +418,20 @@ export function renderPartyDetail(container, data, options = {}) {
             </div>
           `).join('')}
         </div>
+        ${setAction.length > 0 ? `
+          <div class="job-skills-list">
+            ${setAction.map(skill => {
+              const slug = jobSkillSlugs[skill.name]
+              const iconUrl = slug ? getImageUrl(`job-skills/${slug}.png`) : null
+              return `
+                <div class="job-skill-item">
+                  ${iconUrl ? `<img src="${iconUrl}" alt="${skill.name}">` : '<div class="job-skill-placeholder"></div>'}
+                  <span>${skill.name}</span>
+                </div>
+              `
+            }).join('')}
+          </div>
+        ` : ''}
       </div>
     `
   }

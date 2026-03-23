@@ -1624,6 +1624,42 @@ body.light #detailImport {
   display: block;
 }
 
+/* Job Skills List */
+.job-skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.job-skill-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.job-skill-item img {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.job-skill-item span {
+  font-size: 13px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-skill-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--color-bg-darker, #333);
+}
+
 /* Character grid: 5 columns */
 .character-grid {
   display: grid;

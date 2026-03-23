@@ -810,6 +810,31 @@ async function fetchWeaponKeyMap() {
 }
 
 /**
+ * Fetch job skill slugs by name from the API.
+ * Cached in memory for the session.
+ */
+let _jobSkillCache = {}
+async function fetchJobSkillSlugs(names) {
+  const uncached = names.filter(n => !(n in _jobSkillCache))
+  if (uncached.length === 0) {
+    return Object.fromEntries(names.map(n => [n, _jobSkillCache[n] || null]))
+  }
+  try {
+    const apiUrl = await getApiUrl('/job_skills/resolve')
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names: uncached })
+    })
+    if (response.ok) {
+      const results = await response.json()
+      for (const r of results) _jobSkillCache[r.name] = r.slug
+    }
+  } catch { /* fall through */ }
+  return Object.fromEntries(names.map(n => [n, _jobSkillCache[n] || null]))
+}
+
+/**
  * Render items in detail view
  */
 async function renderDetailItems(dataType, data) {
@@ -818,11 +843,14 @@ async function renderDetailItems(dataType, data) {
   // Party gets special sectioned layout
   if (dataType.startsWith('party_')) {
     const friendSummonName = data?.deck?.pc?.damage_info?.summon_name
-    const [friendSummon, weaponKeyMap] = await Promise.all([
+    const setAction = data?.deck?.pc?.set_action || []
+    const skillNames = setAction.map(s => s.name).filter(Boolean)
+    const [friendSummon, weaponKeyMap, jobSkillSlugs] = await Promise.all([
       searchSummonByName(friendSummonName),
-      fetchWeaponKeyMap()
+      fetchWeaponKeyMap(),
+      skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({})
     ])
-    renderPartyDetail(container, data, { friendSummon, weaponKeyMap })
+    renderPartyDetail(container, data, { friendSummon, weaponKeyMap, jobSkillSlugs })
     return
   }
 
