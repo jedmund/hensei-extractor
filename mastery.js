@@ -67,67 +67,51 @@ export const OVER_MASTERY_TYPE_ID = {
   // Primary (slot 1) — ATK/HP share id 10001, distinguished by split_key
   // Secondary (slot 2)
   '20001': 9,   // Critical Hit Rate
-  '20002': 5,   // C.A. DMG
+  '20002': 8,   // Enmity
   '20003': 7,   // Stamina
-  '20004': 8,   // Enmity
-  '20005': 6,   // C.A. DMG Cap
-  '20006': 4,   // Skill DMG Cap
+  '20004': 5,   // C.A. DMG
+  '20005': 4,   // Skill DMG Cap
+  '20006': 6,   // C.A. DMG Cap
   '20008': 3,   // Debuff Success Rate
   // Tertiary (slot 3)
   '30001': 10,  // Double Attack Rate
   '30002': 11,  // Triple Attack Rate
   '30003': 12,  // DEF
-  '30004': 13,  // Healing
+  '30004': 14,  // Debuff Resistance
   '30005': 15,  // Dodge Rate
-  '30006': 14,  // Debuff Resistance
+  '30006': 13,  // Healing
 }
 
-/** Aetherial Mastery (earring) game type.id → internal modifier ID */
-export const AETHERIAL_TYPE_ID = {
-  '110001': 1,  // Double Attack
-  '110002': 2,  // Triple Attack
-  '110003': 3,  // Element ATK
-  '110004': 4,  // Element Resistance
-  '110005': 5,  // Stamina
-  '110006': 6,  // Enmity
-  '110007': 8,  // Critical Hit
-  '110008': 7,  // Supplemental DMG
-  '110009': 9,  // Counters on Dodge
-  '110010': 10, // Counters on DMG
+/**
+ * Aetherial Mastery (earring) game type.id → internal modifier ID.
+ * The game uses varying prefixes (11, 12, 13, 14) by character rarity,
+ * but the last 4 digits (suffix) are the modifier key.
+ */
+const AETHERIAL_SUFFIX_TO_ID = {
+  '0001': 6,   // Enmity
+  '0002': 5,   // Stamina
+  '0003': 8,   // Critical Hit Rate
+  '0004': 1,   // Double Attack Rate
+  '0005': 2,   // Triple Attack Rate
+  '0006': 3,   // Element ATK
+  '0007': 4,   // Element Resistance
+  '0008': 7,   // Supplemental DMG
+  '0009': 10,  // Counters on DMG
+  '0010': 9,   // Counters on Dodge
 }
 
-// ==========================================
-// INVERSE NAME → ID MAPPINGS (fallback for unmapped type IDs)
-// ==========================================
-
-function invertMap(map) {
-  const result = {}
-  for (const [k, v] of Object.entries(map)) result[v] = Number(k)
-  return result
+/** Look up earring modifier by suffix of game type.id */
+export function lookupAetherialTypeId(typeId) {
+  const suffix = String(typeId).slice(-4)
+  return AETHERIAL_SUFFIX_TO_ID[suffix] || null
 }
 
-export const OVER_MASTERY_NAME_TO_ID = {
-  ...invertMap(OVER_MASTERY_NAMES),
-  'Double Attack Rate': 10,
-  'Triple Attack Rate': 11,
-  'Debuff Success Rate': 3,
-  'Dodge Rate': 15,
-  'Critical Hit Rate': 9
-}
-
-export const PERPETUITY_BONUS_NAME_TO_ID = invertMap(PERPETUITY_NAMES)
-
-export const AETHERIAL_MASTERY_NAME_TO_ID = {
-  ...invertMap(AETHERIAL_NAMES),
-  'Double Attack Rate': 1,
-  'Triple Attack Rate': 2,
-  'Fire ATK Up': 3, 'Water ATK Up': 3, 'Earth ATK Up': 3,
-  'Wind ATK Up': 3, 'Light ATK Up': 3, 'Dark ATK Up': 3,
-  'Fire ATK': 3, 'Water ATK': 3, 'Earth ATK': 3,
-  'Wind ATK': 3, 'Light ATK': 3, 'Dark ATK': 3,
-  'Fire Resistance': 4, 'Water Resistance': 4, 'Earth Resistance': 4,
-  'Wind Resistance': 4, 'Light Resistance': 4, 'Dark Resistance': 4,
-  'Critical Hit Rate': 8
+/** Perpetuity game type.id → internal modifier ID */
+export const PERPETUITY_TYPE_ID = {
+  '100001': 1,  // EM Star Cap
+  '100002': 2,  // ATK
+  '100003': 3,  // HP
+  '100004': 4,  // DMG Cap
 }
 
 // ==========================================
