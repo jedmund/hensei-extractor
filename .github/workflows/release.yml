@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g. v2.1)'
-        required: true
 
 jobs:
   build-and-release:
@@ -25,19 +18,7 @@ jobs:
         run: node build-manifest.js
         env:
           UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
-
-      - name: Determine version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
-          elif [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          else
-            VERSION=$(node -p "require('./manifest.template.json').version")
-            SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
-            echo "tag=v${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          fi
+          BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Package extension
         run: |
@@ -55,7 +36,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: ${{ steps.version.outputs.tag }}
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
           files: granblue-team-extension.zip
           generate_release_notes: true

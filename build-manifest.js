@@ -8,6 +8,9 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const manifestContent = template.replace('{{UNIQUE_KEY}}', apiKey);
+const buildNumber = process.env.BUILD_NUMBER || '0';
+const manifestContent = template
+  .replace('{{UNIQUE_KEY}}', apiKey)
+  .replace('{{VERSION}}', buildNumber);
 fs.writeFileSync('manifest.json', manifestContent);
 console.log('manifest.json generated successfully.');
