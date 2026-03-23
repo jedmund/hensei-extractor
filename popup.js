@@ -3,7 +3,7 @@
  * Handles tab navigation, authentication, and data operations.
  */
 
-import { performLogin, fetchUserInfo } from "./auth.js"
+import { performLogin, fetchUserInfo, updateUserLanguage } from "./auth.js"
 import { formatCacheStatus, formatAge } from "./cache.js"
 import {
   getDataTypeName,
@@ -38,6 +38,9 @@ import {
 import {
   showPlaylistPicker, hidePlaylistPicker, getSelectedPlaylists, clearSelectedPlaylists
 } from "./playlist-picker.js"
+import {
+  setLocale, getLocale, t, translatePage, getPreferredLocale
+} from "./i18n.js"
 
 // ==========================================
 // STATE
@@ -97,12 +100,17 @@ async function initializeApp() {
   const warning = document.getElementById('warning')
   const loginFormContainer = document.getElementById('loginFormContainer')
 
+  // Set locale from auth or browser
+  setLocale(getPreferredLocale(gbAuth))
+  translatePage()
+
   if (gbAuth?.access_token) {
     // User is logged in - show main view
     hide(loginView)
     show(mainView)
 
     updateProfileUI(gbAuth)
+    updateLanguageToggleUI()
     updateTabVisibility(gbAuth.role)
     initializeEventListeners()
     refreshAllCaches()
@@ -123,6 +131,7 @@ async function initializeApp() {
     }
 
     initializeLoginListeners()
+    updateLoginLanguageSwitch()
   }
 
   // Set up message listener for data capture events
@@ -153,6 +162,16 @@ function initializeLoginListeners() {
   // Handle enter key in login form
   document.getElementById('loginPassword')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleLogin()
+  })
+
+  // Language switch on login screen
+  const loginLangSwitch = document.getElementById('loginLanguageSwitch')
+  loginLangSwitch?.addEventListener('click', (e) => {
+    e.preventDefault()
+    const newLang = getLocale() === 'en' ? 'ja' : 'en'
+    setLocale(newLang)
+    translatePage()
+    updateLoginLanguageSwitch()
   })
 }
 
@@ -193,6 +212,12 @@ function initializeEventListeners() {
   document.getElementById('showWarning')?.addEventListener('click', () => {
     hideProfilePopover()
     handleShowWarning()
+  })
+
+  // Language toggle switch
+  document.querySelector('#languageToggle .language-switch')?.addEventListener('click', () => {
+    const isJapanese = getLocale() === 'ja'
+    handleLanguageToggle(isJapanese ? 'en' : 'ja')
   })
 
   // Detail view buttons
@@ -316,6 +341,60 @@ function hideProfilePopover() {
 }
 
 // ==========================================
+// LANGUAGE
+// ==========================================
+
+/**
+ * Update login screen language switch text
+ */
+function updateLoginLanguageSwitch() {
+  const link = document.getElementById('loginLanguageSwitch')
+  if (link) {
+    link.textContent = getLocale() === 'en' ? '日本語で表示' : 'Switch to English'
+  }
+}
+
+/**
+ * Update language toggle button UI to reflect current locale
+ */
+function updateLanguageToggleUI() {
+  const isJapanese = getLocale() === 'ja'
+  const switchEl = document.querySelector('#languageToggle .language-switch')
+  if (switchEl) {
+    switchEl.setAttribute('aria-checked', String(isJapanese))
+  }
+}
+
+/**
+ * Handle language toggle button click
+ */
+async function handleLanguageToggle(lang) {
+  setLocale(lang)
+  translatePage()
+  updateLanguageToggleUI()
+
+  // Refresh cache display with translated names
+  if (cachedStatus) {
+    cachedStatus = formatCacheStatus(await chrome.runtime.sendMessage({ action: 'getCacheStatus' }) || {})
+    updateTabCacheDisplay('party', cachedStatus)
+    updateTabCacheDisplay('collection', cachedStatus)
+    updateTabCacheDisplay('database', cachedStatus)
+  }
+
+  // Persist to server
+  const { gbAuth } = await chrome.storage.local.get('gbAuth')
+  if (gbAuth?.access_token) {
+    gbAuth.language = lang
+    await chrome.storage.local.set({ gbAuth })
+    try {
+      await updateUserLanguage(gbAuth.access_token, lang)
+    } catch {
+      // Silently fail — local preference is saved anyway
+    }
+  }
+}
+
+// ==========================================
 // DETAIL VIEW NAVIGATION
 // ==========================================
 
@@ -358,15 +437,15 @@ async function showDetailView(dataType) {
     // Character stats shows character count
     const characterCount = Object.keys(response.data).length
     document.getElementById('detailPageCount').textContent = ''
-    document.getElementById('detailItemCount').textContent = `${characterCount} characters`
+    document.getElementById('detailItemCount').textContent = t('count_characters', { count: characterCount })
   } else if (isDatabaseDetailType(dataType)) {
     // Database detail shows item name
     const name = response.data.name || response.data.master?.name || ''
     document.getElementById('detailPageCount').textContent = ''
     document.getElementById('detailItemCount').textContent = name
   } else {
-    document.getElementById('detailPageCount').textContent = status.pageCount ? `${status.pageCount} pages` : ''
-    document.getElementById('detailItemCount').textContent = `${status.totalItems || countItems(dataType, response.data)} items`
+    document.getElementById('detailPageCount').textContent = status.pageCount ? t('count_pages', { count: status.pageCount }) : ''
+    document.getElementById('detailItemCount').textContent = t('count_items', { count: status.totalItems || countItems(dataType, response.data) })
   }
 
   // Hide party meta and show detail meta row for non-party types
@@ -380,7 +459,7 @@ async function showDetailView(dataType) {
 
   // Reset import button
   const importBtn = document.getElementById('detailImport')
-  importBtn.textContent = 'Import'
+  importBtn.textContent = t('action_import')
   importBtn.disabled = false
   importBtn.classList.remove('imported')
 
@@ -392,7 +471,7 @@ async function showDetailView(dataType) {
     // Sync button visibility is controlled by checkbox, not isComplete
     if (isCollectionSync && enableSyncCheckbox?.checked) {
       syncBtn.classList.remove('hidden')
-      syncBtn.textContent = 'Full Sync'
+      syncBtn.textContent = t('action_full_sync')
       syncBtn.disabled = false
     } else {
       syncBtn.classList.add('hidden')
@@ -427,7 +506,7 @@ async function showDetailView(dataType) {
       lv1FilterOption?.classList.add('hidden')
       // For artifacts, just show "Filter" as the button label
       if (filterButton) {
-        filterButton.querySelector('span').textContent = 'Options'
+        filterButton.querySelector('span').textContent = t('filter_options')
       }
     }
 
@@ -478,7 +557,7 @@ function hideDetailView() {
     syncBtn.classList.add('hidden')
     syncBtn.classList.remove('synced')
     syncBtn.disabled = false
-    syncBtn.textContent = 'Full Sync'
+    syncBtn.textContent = t('action_full_sync')
   }
 
   // Reset sync checkbox
@@ -503,7 +582,7 @@ function hideDetailView() {
   if (reviewBtn) {
     reviewBtn.classList.add('hidden')
     reviewBtn.classList.remove('imported')
-    reviewBtn.textContent = 'Review'
+    reviewBtn.textContent = t('action_review')
   }
 }
 
@@ -550,7 +629,7 @@ function updateRaidSelectorUI(raid) {
 
     setSelectedRaid(raid)
   } else {
-    label.textContent = 'Select Raid'
+    label.textContent = t('raid_select')
 
     if (img) {
       img.src = ''
@@ -572,11 +651,11 @@ function updatePlaylistSelectorUI(playlists) {
   const label = document.getElementById('playlistSelectorLabel')
   if (!label) return
   if (!playlists || playlists.length === 0) {
-    label.textContent = 'Playlists'
+    label.textContent = t('playlist_label')
   } else if (playlists.length === 1) {
     label.textContent = playlists[0].title
   } else {
-    label.textContent = `${playlists.length} playlists selected`
+    label.textContent = t('count_playlists', { count: playlists.length })
   }
 }
 
@@ -664,7 +743,7 @@ function initializeFilterListeners() {
     if (syncBtn) {
       if (e.target.checked) {
         syncBtn.classList.remove('hidden')
-        syncBtn.textContent = 'Full Sync'
+        syncBtn.textContent = t('action_full_sync')
         syncBtn.disabled = false
       } else {
         syncBtn.classList.add('hidden')
@@ -701,7 +780,7 @@ function updateFilterButtonLabel() {
     .map(r => RARITY_LABELS[r])
     .filter(Boolean)
 
-  labelSpan.textContent = activeLabels.length > 0 ? activeLabels.join('/') : 'Filter'
+  labelSpan.textContent = activeLabels.length > 0 ? activeLabels.join('/') : t('filter_default')
 }
 
 /**
@@ -1060,7 +1139,7 @@ function updateSelectionCount() {
       const index = parseInt(checkbox.dataset.index, 10)
       if (selectedItems.has(index)) selected++
     })
-    countEl.textContent = `${selected}/${total} selected`
+    countEl.textContent = t('count_selected', { selected, total })
   }
 }
 
@@ -1078,7 +1157,7 @@ function renderCharacterStatsDetail(container, data) {
   let characters = Object.values(data)
 
   if (characters.length === 0) {
-    container.innerHTML = '<p class="cache-empty">No character stats captured</p>'
+    container.innerHTML = `<p class="cache-empty">${t('char_stats_no_captured')}</p>`
     return
   }
 
@@ -1106,13 +1185,13 @@ function renderCharacterStatsDetail(container, data) {
 
     // Awakening line
     const awakeningHtml = char.awakening
-      ? `<div class="char-stats-awakening">${char.awakening.typeName || 'Awakening'} Lv.${char.awakening.level || 1}${char.perpetuity ? ' · Perpetuity Ring' : ''}</div>`
-      : (char.perpetuity ? '<div class="char-stats-awakening">Perpetuity Ring</div>' : '')
+      ? `<div class="char-stats-awakening">${char.awakening.typeName || t('stat_awakening')} Lv.${char.awakening.level || 1}${char.perpetuity ? ` · ${t('stat_perpetuity_ring')}` : ''}</div>`
+      : (char.perpetuity ? `<div class="char-stats-awakening">${t('stat_perpetuity_ring')}</div>` : '')
 
     // Over Mastery (rings) section
     let overMasteryHtml = ''
     if (char.rings && char.rings.length > 0) {
-      overMasteryHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Over Mastery</div>'
+      overMasteryHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_over_mastery')}</div>`
       for (const ring of char.rings) {
         const ringStr = formatModifier(ring, OVER_MASTERY_NAMES)
         if (ringStr) {
@@ -1127,14 +1206,14 @@ function renderCharacterStatsDetail(container, data) {
     if (char.earring) {
       const earringStr = formatModifier(char.earring, AETHERIAL_NAMES)
       if (earringStr) {
-        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">Aetherial Mastery</div><div class="char-stats-line">${earringStr}</div></div>`
+        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_aetherial_mastery')}</div><div class="char-stats-line">${earringStr}</div></div>`
       }
     }
 
     // Perpetuity Ring bonuses section
     let perpetuityHtml = ''
     if (char.perpetuityBonuses && char.perpetuityBonuses.length > 0) {
-      perpetuityHtml = '<div class="char-stats-section"><div class="char-stats-subheader">Perpetuity Bonuses</div>'
+      perpetuityHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_perpetuity_bonuses')}</div>`
       for (const bonus of char.perpetuityBonuses) {
         const bonusStr = formatPerpetuityBonus(bonus)
         if (bonusStr) {
@@ -1146,11 +1225,11 @@ function renderCharacterStatsDetail(container, data) {
 
     // Check if we have any stats to show
     const hasStats = char.awakening || char.perpetuity || (char.rings && char.rings.length > 0) || char.earring || (char.perpetuityBonuses && char.perpetuityBonuses.length > 0)
-    const noStatsHtml = !hasStats ? '<div class="char-stats-empty">No stats captured</div>' : ''
+    const noStatsHtml = !hasStats ? `<div class="char-stats-empty">${t('char_stats_no_stats')}</div>` : ''
 
     // Perpetuity icon overlay on character image
     const perpetuityIconHtml = char.perpetuity
-      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">`
+      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="${t('stat_perpetuity_ring')}" title="${t('stat_perpetuity_ring')}">`
       : ''
 
     // Check if this item is new (added/updated since last render)
@@ -1272,7 +1351,7 @@ async function handleDetailCopy() {
     })
 
     if (response.error) {
-      showToast('Failed to copy')
+      showToast(t('toast_copy_failed'))
       return
     }
 
@@ -1283,12 +1362,12 @@ async function handleDetailCopy() {
     await navigator.clipboard.writeText(jsonString)
 
     if (isCollectionType(currentDetailDataType)) {
-      showToast(`Copied ${selectedItems.size} items`)
+      showToast(t('toast_copied_items', { count: selectedItems.size }))
     } else {
-      showToast('Copied to clipboard')
+      showToast(t('toast_copied'))
     }
   } catch (error) {
-    showToast('Failed to copy')
+    showToast(t('toast_copy_failed'))
   }
 }
 
@@ -1305,7 +1384,7 @@ async function handleDetailSave() {
     })
 
     if (response.error) {
-      showToast('Failed to save')
+      showToast(t('toast_save_failed'))
       return
     }
 
@@ -1319,9 +1398,9 @@ async function handleDetailSave() {
     a.click()
     URL.revokeObjectURL(url)
 
-    showToast(`Saved ${currentDetailDataType}.json`)
+    showToast(t('toast_saved_file', { filename: `${currentDetailDataType}.json` }))
   } catch (error) {
-    showToast('Failed to save')
+    showToast(t('toast_save_failed'))
   }
 }
 
@@ -1341,7 +1420,7 @@ function handleDetailReview() {
     // Hide the review button since user has resolved
     const reviewBtn = document.getElementById('detailReview')
     if (reviewBtn) {
-      reviewBtn.textContent = 'Reviewed'
+      reviewBtn.textContent = t('action_reviewed')
       reviewBtn.classList.add('imported')
     }
   })
@@ -1365,7 +1444,7 @@ async function handleDetailImport() {
   const importBtn = document.getElementById('detailImport')
   if (importBtn) {
     importBtn.disabled = true
-    importBtn.textContent = 'Importing...'
+    importBtn.textContent = t('action_importing')
   }
 
   try {
@@ -1376,7 +1455,7 @@ async function handleDetailImport() {
     })
 
     if (response.error) {
-      showToast('Import failed')
+      showToast(t('toast_import_failed'))
       return
     }
 
@@ -1385,7 +1464,7 @@ async function handleDetailImport() {
 
     // For weapon/summon collections, check for conflicts on first import attempt
     if (supportsConflictCheck(currentDetailDataType) && !conflictResolutions && !pendingConflicts) {
-      importBtn.textContent = 'Checking...'
+      importBtn.textContent = t('action_checking')
 
       const conflictResponse = await chrome.runtime.sendMessage({
         action: 'checkConflicts',
@@ -1398,10 +1477,12 @@ async function handleDetailImport() {
         pendingConflicts = conflictResponse.conflicts
         const reviewBtn = document.getElementById('detailReview')
         if (reviewBtn) {
-          reviewBtn.textContent = `Review (${pendingConflicts.length})`
+          reviewBtn.textContent = `${t('action_review')} (${pendingConflicts.length})`
           reviewBtn.classList.remove('hidden')
         }
-        showToast(`${pendingConflicts.length} item${pendingConflicts.length > 1 ? 's' : ''} need review`)
+        showToast(pendingConflicts.length > 1
+          ? t('toast_items_need_review', { count: pendingConflicts.length })
+          : t('toast_item_needs_review', { count: pendingConflicts.length }))
         return
       }
       // No conflicts — proceed normally
@@ -1409,7 +1490,7 @@ async function handleDetailImport() {
 
     // If there are unresolved conflicts, prompt user to review first
     if (pendingConflicts && !conflictResolutions) {
-      showToast('Review conflicts before importing')
+      showToast(t('toast_review_conflicts'))
       return
     }
 
@@ -1446,7 +1527,7 @@ async function handleDetailImport() {
         data: dataToUpload
       })
     } else {
-      showToast('Import not supported')
+      showToast(t('toast_import_not_supported'))
       return
     }
 
@@ -1455,28 +1536,28 @@ async function handleDetailImport() {
     } else if (uploadResponse.url) {
       // Party import - opens in new tab
       chrome.tabs.create({ url: uploadResponse.url })
-      showToast('Opening party...')
+      showToast(t('toast_opening_party'))
     } else if (uploadResponse.created !== undefined) {
       // Collection import
       const total = uploadResponse.created + uploadResponse.updated
-      showToast(`Imported ${total} items`)
+      showToast(t('toast_imported_items', { total }))
       if (importBtn) {
-        importBtn.textContent = 'Imported'
+        importBtn.textContent = t('action_imported')
         importBtn.classList.add('imported')
       }
     } else {
-      showToast('Import successful')
+      showToast(t('toast_import_success'))
       if (importBtn) {
-        importBtn.textContent = 'Imported'
+        importBtn.textContent = t('action_imported')
         importBtn.classList.add('imported')
       }
     }
   } catch (error) {
-    showToast('Import failed')
+    showToast(t('toast_import_failed'))
   } finally {
     if (importBtn && !importBtn.classList.contains('imported')) {
       importBtn.disabled = false
-      importBtn.textContent = 'Import'
+      importBtn.textContent = t('action_import')
     }
   }
 }
@@ -1495,12 +1576,12 @@ async function handleLogin() {
   const loginStatus = document.getElementById('loginStatus')
 
   if (!username || !password) {
-    showStatus(loginStatus, 'Please enter username and password', 'error')
+    showStatus(loginStatus, t('auth_enter_credentials'), 'error')
     return
   }
 
   loginButton.disabled = true
-  showStatus(loginStatus, 'Logging in...', 'info')
+  showStatus(loginStatus, t('auth_logging_in'), 'info')
 
   try {
     // Perform login
@@ -1508,17 +1589,28 @@ async function handleLogin() {
 
     // Fetch additional user info (including role for permissions)
     const userInfo = await fetchUserInfo(gbAuth.access_token)
+
+    // If the user switched language on the login screen, persist that choice
+    const loginLocale = getLocale()
+    const serverLanguage = userInfo.language || 'en'
+    const language = loginLocale !== 'en' ? loginLocale : serverLanguage
+
     gbAuth = {
       ...gbAuth,
       avatar: userInfo.avatar,
-      language: userInfo.language,
+      language,
       role: userInfo.role || 0
     }
 
     // Only save auth after both steps succeed
     await chrome.storage.local.set({ gbAuth })
 
-    showStatus(loginStatus, 'Login successful!', 'success')
+    // Update server if login screen language differs from server
+    if (language !== serverLanguage) {
+      updateUserLanguage(gbAuth.access_token, language).catch(() => {})
+    }
+
+    showStatus(loginStatus, t('auth_login_success'), 'success')
 
     // Switch to main view after brief delay
     setTimeout(() => {
@@ -1527,7 +1619,7 @@ async function handleLogin() {
 
   } catch (err) {
     console.error('Login error:', err)
-    showStatus(loginStatus, err.message || 'Login failed', 'error')
+    showStatus(loginStatus, err.message || t('auth_login_failed'), 'error')
     loginButton.disabled = false
   }
 }
@@ -1539,6 +1631,14 @@ async function handleLogout() {
   stopAgeTicker()
   await chrome.storage.local.remove(['gbAuth'])
   clearElementColors(document.body)
+
+  const loginStatus = document.getElementById('loginStatus')
+  if (loginStatus) {
+    loginStatus.className = ''
+    loginStatus.textContent = ''
+    hide(loginStatus)
+  }
+
   initializeApp()
 }
 
@@ -1776,10 +1876,10 @@ function updateTabCacheDisplay(tabName, status) {
  */
 function getEmptyMessage(tabName) {
   switch (tabName) {
-    case 'party': return 'Browse a party in game to capture data'
-    case 'collection': return 'Browse your collection pages to capture data'
-    case 'database': return 'Browse detail pages to capture data'
-    default: return 'No data available'
+    case 'party': return t('empty_party')
+    case 'collection': return t('empty_collection')
+    case 'database': return t('empty_database')
+    default: return t('empty_no_data')
   }
 }
 
@@ -1799,7 +1899,7 @@ async function handleClearCache() {
     }
   }
 
-  showTabStatus(activeTab, 'Cache cleared', 'info')
+  showTabStatus(activeTab, t('cache_cleared'), 'info')
   setTimeout(() => hideTabStatus(activeTab), 2000)
 }
 
@@ -1821,7 +1921,7 @@ async function handleMessages(message) {
       if (activeTab !== tabName) {
         switchTab(tabName)
       }
-      showTabStatus(tabName, `${getDataTypeName(message.dataType)} data captured!`, 'success')
+      showTabStatus(tabName, t('toast_data_captured', { name: getDataTypeName(message.dataType) }), 'success')
       setTimeout(() => hideTabStatus(tabName), 2000)
     }
 
@@ -1858,7 +1958,7 @@ async function refreshDetailView() {
   // Update item count
   if (currentDetailDataType === 'character_stats') {
     const count = Object.keys(response.data).length
-    document.getElementById('detailItemCount').textContent = `${count} characters`
+    document.getElementById('detailItemCount').textContent = t('count_characters', { count })
   }
 
   // Count existing items before re-render (for scroll-to-new behavior)
