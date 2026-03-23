@@ -9,6 +9,7 @@ import {
   GAME_CHARACTER_SERIES_NAMES, GAME_WEAPON_SERIES_NAMES, GAME_SUMMON_SERIES_NAMES,
   WEAPON_AWAKENING_ICONS, WEAPON_KEY_SERIES, CHARACTER_AWAKENING_MAPPING
 } from './game-data.js'
+import { t, translateSeries } from './i18n.js'
 
 // ==========================================
 // DATA TYPE HELPERS
@@ -166,7 +167,7 @@ export function renderCharacterModifiers(item) {
   if (!mods.perpetuity) return ''
 
   return `<div class="char-modifiers">
-    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">
+    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t('stat_perpetuity_ring')}" title="${t('stat_perpetuity_ring')}">
   </div>`
 }
 
@@ -215,7 +216,7 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
 
   if (mods.awakening) {
     const iconName = WEAPON_AWAKENING_ICONS[mods.awakening.form_name] || 'weapon-atk'
-    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="Awakening" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
+    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="${t('stat_awakening')}" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`
   }
 
   const hasSkills = mods.axSkill || mods.befoulment || mods.weaponKeys.length > 0
@@ -223,7 +224,7 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
     html += '<div class="weapon-skills">'
 
     if (mods.axSkill) {
-      html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="AX Skill" title="AX Skill">`
+      html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="${t('stat_ax_skills')}" title="${t('stat_ax_skills')}">`
     }
 
     if (mods.befoulment) {
@@ -232,7 +233,7 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
       const maxLevel = mods.befoulment.maxExorcismLevel
       const showValue = skill?.show_value || 'Befouled'
       const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
-      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="Befoulment" title="Befoulment: ${showValue} (Exorcism ${exLevel}/${maxLevel})">`
+      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="${t('stat_befoulment')}" title="${t('stat_befoulment')}: ${showValue} (${t('stat_exorcism')} ${exLevel}/${maxLevel})">`
     }
 
     for (const slug of mods.weaponKeys) {
@@ -282,16 +283,16 @@ function renderBaseStats({ data, name, id, seriesMap, element, proficiencies, ty
   const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
-  html += statRow('Name', name)
-  if (id) html += statRow('ID', id)
+  html += statRow(t('stat_name'), name)
+  if (id) html += statRow(t('stat_id'), id)
 
   const seriesId = data.series_id || master.series_id
   if (seriesId && seriesMap?.[seriesId]) {
-    html += statRow('Series', seriesMap[seriesId])
+    html += statRow(t('stat_series'), translateSeries(seriesMap[seriesId], type))
   }
 
   if (element && GAME_ELEMENT_NAMES[element]) {
-    html += statRow('Element', `<img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}">`)
+    html += statRow(t('stat_element'), `<img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element]}.png`)}" alt="${GAME_ELEMENT_NAMES[element]}">`)
   }
 
   if (proficiencies?.length > 0) {
@@ -299,15 +300,15 @@ function renderBaseStats({ data, name, id, seriesMap, element, proficiencies, ty
       .filter(p => GAME_PROFICIENCY_NAMES[p])
       .map(p => `<img class="stat-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[p]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[p]}">`)
       .join('')
-    if (profIcons) html += statRow('Proficiency', profIcons)
+    if (profIcons) html += statRow(t('stat_proficiency'), profIcons)
   }
 
-  if (level) html += statRow('Uncap', renderStars(level, type))
-  if (minHp) html += statRow('Min HP', Number(minHp).toLocaleString())
-  if (maxHp) html += statRow('Max HP', Number(maxHp).toLocaleString())
-  if (minAtk) html += statRow('Min ATK', Number(minAtk).toLocaleString())
-  if (maxAtk) html += statRow('Max ATK', Number(maxAtk).toLocaleString())
-  if (level) html += statRow('Max Level', level)
+  if (level) html += statRow(t('stat_uncap'), renderStars(level, type))
+  if (minHp) html += statRow(t('stat_min_hp'), Number(minHp).toLocaleString())
+  if (maxHp) html += statRow(t('stat_max_hp'), Number(maxHp).toLocaleString())
+  if (minAtk) html += statRow(t('stat_min_atk'), Number(minAtk).toLocaleString())
+  if (maxAtk) html += statRow(t('stat_max_atk'), Number(maxAtk).toLocaleString())
+  if (level) html += statRow(t('stat_max_level'), level)
 
   return { html, master, param }
 }
@@ -329,7 +330,7 @@ export function renderCharacterStats(data, name, id, element, proficiencies = []
   let html = base
 
   if (param.has_npcaugment_constant) {
-    html += statRow('Perpetuity Ring', '✓')
+    html += statRow(t('stat_perpetuity_ring'), '✓')
   }
 
   return closeStats(html, data, master)
@@ -346,19 +347,19 @@ export function renderWeaponStats(data, name, id, element, proficiency) {
 
   const arousal = param.arousal
   if (arousal?.is_arousal_weapon) {
-    html += statRow('Awakening', `${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}`)
+    html += statRow(t('stat_awakening'), `${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}`)
   }
 
   const odiant = param.odiant
   if (odiant?.is_odiant_weapon) {
     const befoulSkill = param.augment_skill_info?.[0]?.[0]
-    html += statRow('Befoulment', befoulSkill?.show_value || 'Active')
-    html += statRow('Exorcism', `${odiant.exorcision_level || 0}/${odiant.max_exorcision_level || 5}`)
+    html += statRow(t('stat_befoulment'), befoulSkill?.show_value || 'Active')
+    html += statRow(t('stat_exorcism'), `${odiant.exorcision_level || 0}/${odiant.max_exorcision_level || 5}`)
   } else {
     const axSkills = param.augment_skill_info?.[0]
     if (axSkills && Object.keys(axSkills).length > 0) {
       const axCount = Object.keys(axSkills).length
-      html += statRow('AX Skills', `${axCount} skill${axCount > 1 ? 's' : ''}`)
+      html += statRow(t('stat_ax_skills'), `${axCount} skill${axCount > 1 ? 's' : ''}`)
     }
   }
 
@@ -375,7 +376,7 @@ export function renderSummonStats(data, name, id, element) {
 
   const subAura = data.sub_skill?.name
   if (subAura) {
-    html += statRow('Sub Aura', subAura)
+    html += statRow(t('stat_sub_aura'), subAura)
   }
 
   return closeStats(html, data, master)
@@ -405,11 +406,11 @@ export function renderPartyDetail(container, data, options = {}) {
   if (job?.master?.id || accessoryIds.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Job</h3>
+        <h3 class="party-section-title">${t('party_section_job')}</h3>
         <div class="job-row">
           ${job?.master?.id ? `
             <div class="wide-item">
-              <img src="${getImageUrl(`job-wide/${job.master.id}_a.jpg`)}" alt="${job.master.name || 'Job'}">
+              <img src="${getImageUrl(`job-wide/${job.master.id}_a.jpg`)}" alt="${job.master.name || t('party_section_job')}">
             </div>
           ` : ''}
           ${accessoryIds.map(id => `
@@ -439,7 +440,7 @@ export function renderPartyDetail(container, data, options = {}) {
   if (characters.length > 0) {
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Characters</h3>
+        <h3 class="party-section-title">${t('party_section_characters')}</h3>
         <div class="character-grid">
           ${characters.map(item => {
             const id = item.master?.id || item.param?.id || item.id
@@ -451,8 +452,8 @@ export function renderPartyDetail(container, data, options = {}) {
             const hasModifiers = (awakeningSlug && awakeningSlug !== 'character-balanced') || hasPerpetuit
             const modifiersHtml = hasModifiers ? `
               <div class="char-modifiers">
-                ${hasPerpetuit ? '<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="Perpetuity Ring" title="Perpetuity Ring">' : ''}
-                ${awakeningSlug && awakeningSlug !== 'character-balanced' ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${awakeningSlug}" title="${awakeningSlug}">` : ''}
+                ${hasPerpetuit ? `<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t('stat_perpetuity_ring')}" title="${t('stat_perpetuity_ring')}">` : ''}
+                ${awakeningSlug && awakeningSlug !== 'character-balanced' ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${t('stat_awakening')}" title="${t('stat_awakening')}">` : ''}
               </div>
             ` : ''
             return `
@@ -473,7 +474,7 @@ export function renderPartyDetail(container, data, options = {}) {
     const mainhandSuffix = getImageSuffix(mainhand)
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Weapons</h3>
+        <h3 class="party-section-title">${t('party_section_weapons')}</h3>
         <div class="weapon-layout">
           <div class="weapon-mainhand">
             ${renderWeaponModifiers(mainhand, weaponKeyMap)}
@@ -502,7 +503,7 @@ export function renderPartyDetail(container, data, options = {}) {
 
     html += `
       <div class="party-section">
-        <h3 class="party-section-title">Summons</h3>
+        <h3 class="party-section-title">${t('party_section_summons')}</h3>
         <div class="summon-layout">
           ${mainSummon ? (() => {
             const id = mainSummon.master?.id || mainSummon.param?.id || mainSummon.id
@@ -520,7 +521,7 @@ export function renderPartyDetail(container, data, options = {}) {
               const isQuickSummon = quickSummonId && String(item.param?.id) === String(quickSummonId)
               return `
                 <div class="grid-item">
-                  ${isQuickSummon ? '<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="Quick Summon" title="Quick Summon"></div>' : ''}
+                  ${isQuickSummon ? `<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="${t('stat_quick_summon')}" title="${t('stat_quick_summon')}"></div>` : ''}
                   <img src="${getImageUrl(`summon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `
@@ -547,7 +548,7 @@ export function renderPartyDetail(container, data, options = {}) {
     if (bullets.length > 0) {
       html += `
         <div class="party-section">
-          <h3 class="party-section-title">${bullets.length} Bullets</h3>
+          <h3 class="party-section-title">${t('count_bullets', { count: bullets.length })}</h3>
           <div class="item-grid bullets">
             ${bullets.map(bullet => {
               const imageUrl = getImageUrl(`bullet-square/${bullet.bullet_id}.jpg`)
@@ -563,7 +564,7 @@ export function renderPartyDetail(container, data, options = {}) {
     }
   }
 
-  container.innerHTML = html || '<p class="cache-empty">No party data</p>'
+  container.innerHTML = html || `<p class="cache-empty">${t('party_no_data')}</p>`
 }
 
 export function renderDatabaseDetail(container, dataType, data) {
