@@ -485,7 +485,7 @@ export function renderPartyDetail(container, data, options = {}) {
               const isQuickSummon = quickSummonId && String(item.param?.id) === String(quickSummonId)
               return `
                 <div class="grid-item">
-                  ${isQuickSummon ? '<img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="Quick Summon" title="Quick Summon">' : ''}
+                  ${isQuickSummon ? '<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="Quick Summon" title="Quick Summon"></div>' : ''}
                   <img src="${getImageUrl(`summon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `

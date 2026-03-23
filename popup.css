@@ -1335,14 +1335,20 @@ body.light #detailImport {
 }
 
 /* Quick Summon Badge */
-.quick-summon-badge {
+.summon-modifiers {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.summon-modifiers .quick-summon-badge {
   position: absolute;
   width: 24px;
   height: auto;
   top: -4px;
   right: -4px;
-  z-index: 3;
-  pointer-events: none;
 }
 
 /* Character Awakening Icon */
