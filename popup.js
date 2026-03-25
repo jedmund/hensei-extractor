@@ -117,6 +117,14 @@ async function initializeApp() {
     updateLanguageToggleUI()
     updateTabVisibility(gbAuth.role)
     initializeEventListeners()
+
+    // Hide pop-out button if already in standalone window
+    chrome.windows.getCurrent((win) => {
+      if (win.type === 'popup') {
+        document.getElementById('popOutButton')?.classList.add('hidden')
+      }
+    })
+
     refreshAllCaches()
     startAgeTicker()
     checkForUpdate()
@@ -216,6 +224,10 @@ function initializeEventListeners() {
   document.getElementById('showWarning')?.addEventListener('click', () => {
     hideProfilePopover()
     handleShowWarning()
+  })
+  document.getElementById('popOutButton')?.addEventListener('click', () => {
+    hideProfilePopover()
+    chrome.runtime.sendMessage({ action: 'popOutWindow' })
   })
 
   // Language toggle switch

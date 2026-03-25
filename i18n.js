@@ -63,6 +63,7 @@ const strings = {
   profile_language:          { en: 'Language', ja: '言語' },
   profile_clear_cache:      { en: 'Clear captured data', ja: 'キャプチャデータを削除' },
   profile_show_disclaimer:  { en: 'Show extension disclaimer', ja: '拡張機能の免責事項を表示' },
+  profile_pop_out:          { en: 'Pop out to window', ja: 'ウィンドウで開く' },
   profile_logout:           { en: 'Log out', ja: 'ログアウト' },
 
   // Detail view actions
