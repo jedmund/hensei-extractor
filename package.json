@@ -4,8 +4,19 @@
   "description": "A Chrome extension that extracts data from Granblue Fantasy",
   "main": "background.js",
   "scripts": {
-    "build": "node build-manifest.js"
+    "build": "node build-manifest.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "author": "Justin Edmund",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1"
+  }
 }
