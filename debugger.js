@@ -11,6 +11,8 @@
 // ENDPOINT PATTERNS TO INTERCEPT
 // ==========================================
 
+const GBF_DOMAINS = ['game.granbluefantasy.jp', 'steam.granbluefantasy.com']
+
 const INTERCEPT_PATTERNS = [
   '/party/deck',
   '/archive/npc_detail',
@@ -116,7 +118,7 @@ export async function detachFromTab(tabId) {
  */
 async function attachToExistingTabs() {
   try {
-    const tabs = await chrome.tabs.query({ url: 'https://game.granbluefantasy.jp/*' })
+    const tabs = await chrome.tabs.query({ url: GBF_DOMAINS.map(d => `https://${d}/*`) })
     for (const tab of tabs) {
       await doAttach(tab.id)
     }
@@ -129,7 +131,7 @@ async function attachToExistingTabs() {
  * Handle tab updates - attach when GBF is loaded
  */
 function handleTabUpdated(tabId, changeInfo, tab) {
-  if (tab.url?.includes('game.granbluefantasy.jp') && changeInfo.status === 'complete') {
+  if (GBF_DOMAINS.some(d => tab.url?.includes(d)) && changeInfo.status === 'complete') {
     doAttach(tabId)
   }
 }
