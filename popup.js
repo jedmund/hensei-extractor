@@ -1588,7 +1588,7 @@ async function handleDetailImport() {
  * Handle login button click
  */
 async function handleLogin() {
-  const username = document.getElementById('loginUsername').value.trim()
+  const username = document.getElementById('loginUsername').value.trim().toLowerCase()
   const password = document.getElementById('loginPassword').value.trim()
   const loginButton = document.getElementById('loginButton')
   const loginStatus = document.getElementById('loginStatus')
