@@ -13,6 +13,7 @@
   "key": "{{UNIQUE_KEY}}",
   "host_permissions": [
     "https://game.granbluefantasy.jp/*",
+    "https://steam.granbluefantasy.com/*",
     "https://granblue.team/*",
     "https://api.granblue.team/*"
   ],
