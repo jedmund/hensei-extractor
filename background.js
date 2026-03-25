@@ -36,11 +36,21 @@ let collectionIdsCache = null;
 let collectionIdsCacheTime = 0;
 const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000;
 
+// Track standalone pop-out window
+let popOutWindowId = null;
+
 /**
  * Open side panel when extension icon is clicked
  */
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
+// Clean up pop-out window tracking when the window is closed
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId === popOutWindowId) {
+    popOutWindowId = null;
+  }
 });
 
 // ==========================================
@@ -507,6 +517,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         attached: isAttached(),
         tabs: getAttachedTabs(),
       });
+      return false;
+
+    case "popOutWindow":
+      if (popOutWindowId) {
+        chrome.windows.update(popOutWindowId, { focused: true });
+        sendResponse({ windowId: popOutWindowId, alreadyOpen: true });
+      } else {
+        chrome.windows.create(
+          {
+            url: "popup.html",
+            type: "popup",
+            width: 420,
+            height: 700,
+          },
+          (win) => {
+            popOutWindowId = win.id;
+            sendResponse({ windowId: win.id, alreadyOpen: false });
+          },
+        );
+        return true;
+      }
       return false;
 
     case "fetchRaidGroups":
