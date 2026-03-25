@@ -10,7 +10,38 @@ import { getApiUrl, getEnvConfig } from './constants.js'
 // ==========================================
 
 /**
+ * Make an authenticated API request.
+ * @param {string} endpoint - API endpoint path
+ * @param {string} accessToken - OAuth access token
+ * @param {Object} [options] - Additional fetch options (method, body)
+ * @returns {Promise<Object>} Parsed JSON response
+ */
+async function authenticatedFetch(endpoint, accessToken, options = {}) {
+  const apiUrl = await getApiUrl(endpoint)
+  const headers = { Authorization: `Bearer ${accessToken}` }
+
+  if (options.body) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  const response = await fetch(apiUrl, {
+    method: options.method || 'GET',
+    headers,
+    ...(options.body && { body: JSON.stringify(options.body) })
+  })
+
+  if (!response.ok) {
+    const err = new Error(`API request failed: ${response.status}`)
+    err.code = 'request_failed'
+    throw err
+  }
+
+  return response.json()
+}
+
+/**
  * Performs the login request to Granblue Team API.
+ * Uses the root /oauth/token endpoint (not versioned API path).
  * @param {string} username - User's email address.
  * @param {string} password - User's password.
  * @returns {Promise<Object>} Returns the formatted auth object.
@@ -19,28 +50,29 @@ import { getApiUrl, getEnvConfig } from './constants.js'
 export async function performLogin(username, password) {
   const config = await getEnvConfig()
 
-  try {
-    const response = await fetch(`${config.apiUrl}/oauth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: username,
-        password,
-        grant_type: "password",
-      }),
-    })
+  const response = await fetch(`${config.apiUrl}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: username,
+      password,
+      grant_type: "password",
+    }),
+  })
 
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`Login failed: ${errText}`)
-    }
-
-    const data = await response.json()
-    return formatAuthData(data)
-  } catch (error) {
-    console.error("Login error:", error)
-    throw error
+  if (!response.ok) {
+    let code = 'unknown'
+    try {
+      const errBody = await response.json()
+      code = errBody.error || 'unknown'
+    } catch (_) {}
+    const err = new Error(code)
+    err.code = code
+    throw err
   }
+
+  const data = await response.json()
+  return formatAuthData(data)
 }
 
 /**
@@ -66,35 +98,11 @@ function formatAuthData(data) {
 
 /**
  * Fetches current user's settings from Granblue Team API.
- * Uses the /users/me endpoint which gets user from the access token.
  * @param {string} accessToken - OAuth access token.
  * @returns {Promise<Object>} The user settings object.
- * @throws {Error} If the request fails.
  */
 export async function fetchUserInfo(accessToken) {
-  const apiUrl = await getApiUrl('/users/me')
-
-  try {
-    const response = await fetch(
-      apiUrl,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch user info: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error fetching user info:", error)
-    throw error
-  }
+  return authenticatedFetch('/users/me', accessToken)
 }
 
 /**
@@ -104,20 +112,8 @@ export async function fetchUserInfo(accessToken) {
  * @returns {Promise<Object>} The updated user object.
  */
 export async function updateUserLanguage(accessToken, language) {
-  const apiUrl = await getApiUrl('/users/me')
-
-  const response = await fetch(apiUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({ user: { language } }),
+  return authenticatedFetch('/users/me', accessToken, {
+    method: 'PUT',
+    body: { user: { language } }
   })
-
-  if (!response.ok) {
-    throw new Error(`Failed to update language: ${response.status}`)
-  }
-
-  return await response.json()
 }
