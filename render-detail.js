@@ -7,7 +7,8 @@ import { getImageUrl, GBF_CDN } from './constants.js'
 import {
   GAME_ELEMENT_NAMES, GAME_PROFICIENCY_NAMES,
   GAME_CHARACTER_SERIES_NAMES, GAME_WEAPON_SERIES_NAMES, GAME_SUMMON_SERIES_NAMES,
-  WEAPON_AWAKENING_ICONS, WEAPON_KEY_SERIES, CHARACTER_AWAKENING_MAPPING
+  WEAPON_AWAKENING_ICONS, WEAPON_KEY_SERIES, CHARACTER_AWAKENING_MAPPING,
+  AUGMENT_ICON_MAP
 } from './game-data.js'
 import { t, translateSeries } from './i18n.js'
 
@@ -197,7 +198,10 @@ export function getWeaponModifiers(item, weaponKeyMap = null) {
 
   return {
     awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
-    axSkill: !isOdiant ? param.augment_skill_info?.[0] || null : null,
+    axSkill: !isOdiant && param.augment_skill_info?.[0] ? {
+      skill: param.augment_skill_info[0],
+      iconImage: param.augment_skill_icon_image?.[0] || null
+    } : null,
     befoulment: isOdiant ? {
       skill: param.augment_skill_info?.[0]?.[0] || null,
       exorcismLevel: odiant.exorcision_level || 0,
@@ -224,7 +228,9 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
     html += '<div class="weapon-skills">'
 
     if (mods.axSkill) {
-      html += `<img class="ax-skill-icon" src="${getImageUrl('ax/atk.png')}" alt="${t('stat_ax_skills')}" title="${t('stat_ax_skills')}">`
+      const iconSlug = mods.axSkill.iconImage || 'ex_skill_atk'
+      const iconFile = AUGMENT_ICON_MAP[iconSlug] || 'ax_atk'
+      html += `<img class="ax-skill-icon" src="${getImageUrl(`ax/${iconFile}.png`)}" alt="${t('stat_ax_skills')}" title="${t('stat_ax_skills')}">`
     }
 
     if (mods.befoulment) {
@@ -232,8 +238,9 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
       const exLevel = mods.befoulment.exorcismLevel
       const maxLevel = mods.befoulment.maxExorcismLevel
       const showValue = skill?.show_value || 'Befouled'
-      const iconImage = mods.befoulment.iconImage || 'ex_skill_def_down'
-      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="${t('stat_befoulment')}" title="${t('stat_befoulment')}: ${showValue} (${t('stat_exorcism')} ${exLevel}/${maxLevel})">`
+      const iconSlug = mods.befoulment.iconImage || 'ex_skill_def_down'
+      const iconFile = AUGMENT_ICON_MAP[iconSlug] || 'befoul_def_down'
+      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconFile}.png`)}" alt="${t('stat_befoulment')}" title="${t('stat_befoulment')}: ${showValue} (${t('stat_exorcism')} ${exLevel}/${maxLevel})">`
     }
 
     for (const slug of mods.weaponKeys) {

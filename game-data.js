@@ -50,6 +50,37 @@ export const WEAPON_AWAKENING_ICONS = {
 }
 
 // ==========================================
+// AUGMENT ICON MAPPING (game API slug → S3 filename without extension)
+// ==========================================
+
+export const AUGMENT_ICON_MAP = {
+  // AX skills
+  ex_skill_atk: 'ax_atk',
+  ex_skill_hp: 'ax_hp',
+  ex_skill_def: 'ax_def',
+  ex_skill_da: 'ax_da',
+  ex_skill_ta: 'ax_ta',
+  ex_skill_exp: 'ax_exp',
+  ex_skill_attribute: 'ax_ele_atk',
+  ex_skill_sp_atk: 'ax_ca_dmg',
+  ex_skill_sp_add: 'ax_ca_supp',
+  ex_skill_normal_limit: 'ax_na_cap',
+  ex_skill_ab_add: 'ax_healing',
+  ex_skill_ab_limit: 'ax_skill_cap',
+  ex_skill_backwater: 'ax_enmity',
+  ex_skill_whole: 'ax_stamina',
+  ex_skill_guard_ailment: 'ax_debuff_res',
+  // Befoulment
+  ex_skill_atk_down: 'befoul_atk_down',
+  ex_skill_def_down: 'befoul_def_down',
+  ex_skill_hp_down: 'befoul_hp_down',
+  ex_skill_ta_down: 'befoul_da_ta_down',
+  ex_skill_sp_atk_down: 'befoul_ca_dmg_down',
+  ex_skill_ab_atk_down: 'befoul_ability_dmg_down',
+  ex_skill_ailment_enhance_down: 'befoul_debuff_down',
+}
+
+// ==========================================
 // SPECIAL WEAPON SERIES (series with weapon keys)
 // ==========================================
 
