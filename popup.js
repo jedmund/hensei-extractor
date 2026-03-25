@@ -39,7 +39,7 @@ import {
   showPlaylistPicker, hidePlaylistPicker, getSelectedPlaylists, clearSelectedPlaylists
 } from "./playlist-picker.js"
 import {
-  setLocale, getLocale, t, translatePage, getPreferredLocale
+  setLocale, getLocale, t, tError, translatePage, getPreferredLocale
 } from "./i18n.js"
 
 // ==========================================
@@ -1550,7 +1550,7 @@ async function handleDetailImport() {
     }
 
     if (uploadResponse.error) {
-      showToast(uploadResponse.error)
+      showToast(tError(uploadResponse.error))
     } else if (uploadResponse.url) {
       // Party import - opens in new tab
       chrome.tabs.create({ url: uploadResponse.url })
@@ -1637,7 +1637,12 @@ async function handleLogin() {
 
   } catch (err) {
     console.error('Login error:', err)
-    showStatus(loginStatus, err.message || t('auth_login_failed'), 'error')
+    const errorKeys = {
+      invalid_grant: 'auth_invalid_credentials',
+      request_failed: 'error_request_failed',
+    }
+    const key = errorKeys[err.code] || 'auth_login_failed'
+    showStatus(loginStatus, t(key), 'error')
     loginButton.disabled = false
   }
 }

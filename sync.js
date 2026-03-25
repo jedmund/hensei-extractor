@@ -4,7 +4,7 @@
  */
 
 import { getImageUrl } from './constants.js'
-import { t } from './i18n.js'
+import { t, tError } from './i18n.js'
 
 // Internal state for pending sync operations
 let pendingSyncData = null
@@ -32,7 +32,7 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     })
 
     if (response.error) {
-      showToast(t('toast_sync_failed', { error: response.error }))
+      showToast(t('toast_sync_failed', { error: tError(response.error) }))
       return
     }
 
@@ -46,7 +46,7 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     })
 
     if (previewResponse.error) {
-      showToast(t('toast_preview_failed', { error: previewResponse.error }))
+      showToast(t('toast_preview_failed', { error: tError(previewResponse.error) }))
       return
     }
 
@@ -183,7 +183,7 @@ export async function confirmSync(currentDetailDataType, showToast) {
     })
 
     if (uploadResponse.error) {
-      showToast(uploadResponse.error)
+      showToast(tError(uploadResponse.error))
     } else {
       // Show sync results
       const total = uploadResponse.created + uploadResponse.updated

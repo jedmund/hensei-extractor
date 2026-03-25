@@ -524,12 +524,12 @@ async function handleGetCachedData(dataType) {
     const cached = result[CACHE_KEYS.character_stats]
 
     if (!cached || Object.keys(cached.updates || {}).length === 0) {
-      return { error: 'No character stats captured. Browse character detail or zenith pages in-game.' }
+      return { error: 'no_character_stats' }
     }
 
     const age = Date.now() - cached.lastUpdated
     if (age > CACHE_TTL_MS) {
-      return { error: 'Cached data is stale. Please browse character pages again in-game.' }
+      return { error: 'stale_data' }
     }
 
     return {
@@ -543,21 +543,21 @@ async function handleGetCachedData(dataType) {
 
   const cacheKey = resolveCacheKey(dataType)
   if (!cacheKey) {
-    return { error: `Unknown data type: ${dataType}` }
+    return { error: 'unknown_type' }
   }
 
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey]
 
   if (!cached) {
-    return { error: 'No cached data available. Browse to the relevant page in-game to capture data.' }
+    return { error: 'no_cached_data' }
   }
 
   const timestamp = cached.timestamp || cached.lastUpdated
   const age = Date.now() - timestamp
 
   if (age > CACHE_TTL_MS) {
-    return { error: 'Cached data is stale. Please refresh the page in-game.' }
+    return { error: 'stale_data' }
   }
 
   if (dataType.startsWith('list_') || dataType.startsWith('collection_') || dataType.startsWith('stash_')) {
@@ -730,12 +730,11 @@ function resolveEndpoint(dataType) {
  * Parse an error response into a user-friendly message.
  */
 async function parseErrorResponse(response) {
-  const text = await response.text()
   try {
-    const json = JSON.parse(text)
+    const json = await response.json()
     if (json.error) return json.error
   } catch { /* not JSON */ }
-  return text || `Request failed (${response.status})`
+  return 'server_error'
 }
 
 /**
@@ -744,7 +743,7 @@ async function parseErrorResponse(response) {
  */
 async function authenticatedPost(endpoint, body) {
   const auth = await getAuthToken()
-  if (!auth) return { error: 'Not logged in. Please log in first.' }
+  if (!auth) return { error: 'not_logged_in' }
 
   const apiUrl = await getApiUrl(endpoint)
   try {
@@ -763,7 +762,7 @@ async function authenticatedPost(endpoint, body) {
 
     return { data: await response.json(), auth }
   } catch (error) {
-    return { error: `Request failed: ${error.message}` }
+    return { error: 'request_failed' }
   }
 }
 
@@ -868,10 +867,10 @@ function extractFilterFromPages(pagesData) {
 
 async function previewSyncDeletions(pagesData, dataType) {
   const endpoint = resolveEndpoint(dataType)
-  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
+  if (!endpoint) return { error: 'unknown_type' }
 
   const allItems = collectPageItems(pagesData)
-  if (allItems.length === 0) return { error: 'No items found in collection data' }
+  if (allItems.length === 0) return { error: 'no_items' }
 
   const activeFilter = extractFilterFromPages(pagesData)
   const result = await authenticatedPost(`/collection/${endpoint}/preview_sync`, {
@@ -884,10 +883,10 @@ async function previewSyncDeletions(pagesData, dataType) {
 
 async function checkConflicts(pagesData, dataType) {
   const endpoint = resolveEndpoint(dataType)
-  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
+  if (!endpoint) return { error: 'unknown_type' }
 
   const allItems = collectPageItems(pagesData)
-  if (allItems.length === 0) return { error: 'No items found in collection data' }
+  if (allItems.length === 0) return { error: 'no_items' }
 
   const result = await authenticatedPost(`/collection/${endpoint}/check_conflicts`, {
     data: { list: allItems }
@@ -900,10 +899,10 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
   const { updateExisting = false, isFullInventory = false, reconcileDeletions = false, conflictResolutions = null } = options
 
   const endpoint = resolveEndpoint(dataType)
-  if (!endpoint) return { error: `Unknown collection type: ${dataType}` }
+  if (!endpoint) return { error: 'unknown_type' }
 
   const allItems = collectPageItems(pagesData)
-  if (allItems.length === 0) return { error: 'No items found in collection data' }
+  if (allItems.length === 0) return { error: 'no_items' }
 
   const activeFilter = extractFilterFromPages(pagesData)
   const body = {
@@ -976,7 +975,7 @@ async function uploadCharacterStats(statsData) {
   })
 
   if (items.length === 0) {
-    return { error: 'No character stats to import' }
+    return { error: 'no_items' }
   }
 
   const result = await authenticatedPost('/collection/characters/import', {
@@ -1002,12 +1001,12 @@ async function fetchUserPlaylists() {
     const response = await fetch(`${await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`)}`, {
       headers: { 'Authorization': `Bearer ${auth.access_token}` }
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    if (!response.ok) throw new Error('request_failed')
     const data = await response.json()
     return { data }
   } catch (error) {
     console.error('Failed to fetch playlists:', error)
-    return { error: error.message }
+    return { error: 'request_failed' }
   }
 }
 
@@ -1019,7 +1018,7 @@ async function createPlaylist({ title, description, visibility }) {
     return result
   } catch (error) {
     console.error('Failed to create playlist:', error)
-    return { error: error.message }
+    return { error: 'request_failed' }
   }
 }
 
@@ -1033,7 +1032,7 @@ async function fetchRaidGroups(forceRefresh = false) {
   }
 
   const auth = await getAuthToken()
-  if (!auth) return { error: 'Not logged in. Please log in first.' }
+  if (!auth) return { error: 'not_logged_in' }
 
   const apiUrl = await getApiUrl('/raid_groups')
   try {
@@ -1059,7 +1058,7 @@ async function fetchRaidGroups(forceRefresh = false) {
 
     return { data }
   } catch (error) {
-    return { error: `Request failed: ${error.message}` }
+    return { error: 'request_failed' }
   }
 }
 
@@ -1070,10 +1069,10 @@ async function getCollectionIds() {
   }
 
   const auth = await getAuthToken()
-  if (!auth) return { error: 'Not logged in' }
+  if (!auth) return { error: 'not_logged_in' }
 
   const userId = auth.user?.id
-  if (!userId) return { error: 'No user ID' }
+  if (!userId) return { error: 'not_logged_in' }
 
   const apiUrl = await getApiUrl(`/users/${userId}/collection/game_ids`)
   try {
@@ -1084,14 +1083,14 @@ async function getCollectionIds() {
       }
     })
 
-    if (!response.ok) return { error: `Request failed (${response.status})` }
+    if (!response.ok) return { error: 'request_failed' }
 
     const data = await response.json()
     collectionIdsCache = data
     collectionIdsCacheTime = now
     return data
   } catch (error) {
-    return { error: error.message }
+    return { error: 'request_failed' }
   }
 }
 

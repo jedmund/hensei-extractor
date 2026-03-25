@@ -32,6 +32,17 @@ const strings = {
   auth_login_success:  { en: 'Login successful!', ja: 'ログインしました' },
   auth_login_failed:   { en: 'Login failed', ja: 'ログインに失敗しました' },
   auth_enter_credentials: { en: 'Please enter username and password', ja: 'メールアドレスとパスワードを入力してください' },
+  auth_invalid_credentials: { en: 'Incorrect email or password', ja: 'メールアドレスまたはパスワードが正しくありません' },
+
+  // Error codes (from background.js)
+  error_not_logged_in:       { en: 'Please log in first', ja: 'ログインしてください' },
+  error_no_cached_data:      { en: 'No data found. Browse the relevant page in-game first.', ja: 'データが見つかりません。まずゲーム内の該当ページを開いてください。' },
+  error_stale_data:          { en: 'Data is outdated. Please refresh the page in-game.', ja: 'データが古くなっています。ゲーム内でページを更新してください。' },
+  error_no_character_stats:  { en: 'No character stats found. Browse character pages in-game first.', ja: 'キャラクターのデータが見つかりません。まずゲーム内のキャラクターページを開いてください。' },
+  error_no_items:            { en: 'No items found', ja: 'アイテムが見つかりません' },
+  error_unknown_type:        { en: 'Unsupported data type', ja: '対応していないデータ形式です' },
+  error_request_failed:      { en: 'Could not connect to server. Please try again.', ja: 'サーバーに接続できませんでした。再度お試しください。' },
+  error_server_error:        { en: 'Server error. Please try again.', ja: 'サーバーエラーが発生しました。再度お試しください。' },
 
   // Warning / disclaimer
   warning_p1: {
@@ -445,6 +456,15 @@ export function t(key, params) {
   }
 
   return str
+}
+
+/**
+ * Translate a background.js error code to a user-friendly message.
+ * @param {string} code - Error code from background.js (e.g. 'not_logged_in')
+ * @returns {string} Translated error message, or a generic fallback
+ */
+export function tError(code) {
+  return t(`error_${code}`) !== `error_${code}` ? t(`error_${code}`) : t('error_request_failed')
 }
 
 /**
