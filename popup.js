@@ -3,75 +3,100 @@
  * Handles tab navigation, authentication, and data operations.
  */
 
-import { performLogin, fetchUserInfo, updateUserLanguage } from "./auth.js"
-import { formatCacheStatus, formatAge } from "./cache.js"
+import { performLogin, fetchUserInfo, updateUserLanguage } from "./auth.js";
+import { formatCacheStatus, formatAge } from "./cache.js";
 import {
   getDataTypeName,
   TAB_DATA_TYPES,
   getImageUrl,
   getApiUrl,
-  getSiteBaseUrl
-} from "./constants.js"
+  getSiteBaseUrl,
+} from "./constants.js";
+import { show, hide, setElementColor, clearElementColors } from "./dom.js";
 import {
-  show,
-  hide,
-  setElementColor,
-  clearElementColors
-} from "./dom.js"
+  OVER_MASTERY_NAMES,
+  AETHERIAL_NAMES,
+  PERPETUITY_NAMES,
+  formatModifier,
+  formatPerpetuityBonus,
+} from "./mastery.js";
+import { RARITY_LABELS, GAME_ELEMENT_NAMES } from "./game-data.js";
+import { handleDetailSync, hideSyncModal, confirmSync } from "./sync.js";
 import {
-  OVER_MASTERY_NAMES, AETHERIAL_NAMES, PERPETUITY_NAMES,
-  formatModifier, formatPerpetuityBonus
-} from "./mastery.js"
-import { RARITY_LABELS, GAME_ELEMENT_NAMES } from "./game-data.js"
-import { handleDetailSync, hideSyncModal, confirmSync } from "./sync.js"
-import { showConflictModal, hideConflictModal, initConflictListeners } from "./conflict-resolution.js"
+  showConflictModal,
+  hideConflictModal,
+  initConflictListeners,
+} from "./conflict-resolution.js";
 import {
-  isCollectionType, isDatabaseDetailType, isWeaponOrSummonCollection,
-  toArray, extractItems, countItems,
-  getItemImageUrl, getArtifactLabels, getGridClass,
-  getCharacterModifiers, renderCharacterModifiers, getWeaponModifiers, renderWeaponModifiers,
-  renderPartyDetail, renderDatabaseDetail
-} from "./render-detail.js"
+  isCollectionType,
+  isDatabaseDetailType,
+  isWeaponOrSummonCollection,
+  toArray,
+  extractItems,
+  countItems,
+  getItemImageUrl,
+  getArtifactLabels,
+  getGridClass,
+  getCharacterModifiers,
+  renderCharacterModifiers,
+  getWeaponModifiers,
+  renderWeaponModifiers,
+  renderPartyDetail,
+  renderDatabaseDetail,
+} from "./render-detail.js";
 import {
-  showRaidPicker, hideRaidPicker, getSelectedRaid, setSelectedRaid, clearSelectedRaid
-} from "./raid-picker.js"
+  showRaidPicker,
+  hideRaidPicker,
+  getSelectedRaid,
+  setSelectedRaid,
+  clearSelectedRaid,
+} from "./raid-picker.js";
 import {
-  showPlaylistPicker, hidePlaylistPicker, getSelectedPlaylists, clearSelectedPlaylists
-} from "./playlist-picker.js"
+  showPlaylistPicker,
+  hidePlaylistPicker,
+  getSelectedPlaylists,
+  clearSelectedPlaylists,
+} from "./playlist-picker.js";
 import {
-  setLocale, getLocale, t, tPlural, tError, translatePage, getPreferredLocale
-} from "./i18n.js"
-import { initTooltip } from "./tooltip.js"
+  setLocale,
+  getLocale,
+  t,
+  tPlural,
+  tError,
+  translatePage,
+  getPreferredLocale,
+} from "./i18n.js";
+import { initTooltip } from "./tooltip.js";
 
 // ==========================================
 // STATE
 // ==========================================
 
-let activeTab = 'party'
+let activeTab = "party";
 let selectedDataTypes = {
   party: null,
   collection: null,
-  database: null
-}
-let cachedStatus = null
+  database: null,
+};
+let cachedStatus = null;
 
 // Detail view navigation state
-let detailViewActive = false
-let currentDetailDataType = null
-let selectedItems = new Set() // Track selected item indices for collection views
-let manuallyUnchecked = new Set() // Track items user explicitly unchecked (persists across re-renders)
-let brokenImageIndices = new Set() // Track items with broken images (persists across re-renders)
+let detailViewActive = false;
+let currentDetailDataType = null;
+let selectedItems = new Set(); // Track selected item indices for collection views
+let manuallyUnchecked = new Set(); // Track items user explicitly unchecked (persists across re-renders)
+let brokenImageIndices = new Set(); // Track items with broken images (persists across re-renders)
 
 // Filter state
-let activeRarityFilters = new Set(['4']) // SSR by default
-let excludeLv1Items = true
+let activeRarityFilters = new Set(["4"]); // SSR by default
+let excludeLv1Items = true;
 
 // Conflict resolution state
-let pendingConflicts = null // Array of conflict objects from API
-let conflictResolutions = null // Map of game_id → 'import' | 'skip' (after user review)
+let pendingConflicts = null; // Array of conflict objects from API
+let conflictResolutions = null; // Map of game_id → 'import' | 'skip' (after user review)
 
 // Age ticker state
-let ageTickerInterval = null
+let ageTickerInterval = null;
 
 // ==========================================
 // INITIALIZATION
@@ -80,76 +105,77 @@ let ageTickerInterval = null
 document.addEventListener("DOMContentLoaded", () => {
   // Set CSS variables for images
   document.documentElement.style.setProperty(
-    '--login-bg-image',
-    `url('${getImageUrl('port-breeze.jpg')}')`
-  )
+    "--login-bg-image",
+    `url('${getImageUrl("port-breeze.jpg")}')`,
+  );
 
-  initTooltip()
-  initializeApp()
-})
+  initTooltip();
+  initializeApp();
+});
 
 /**
  * Initialize the app based on auth state
  */
 async function initializeApp() {
   const { gbAuth, noticeAcknowledged } = await chrome.storage.local.get([
-    'gbAuth',
-    'noticeAcknowledged'
-  ])
+    "gbAuth",
+    "noticeAcknowledged",
+  ]);
 
-  const loginView = document.getElementById('loginView')
-  const mainView = document.getElementById('mainView')
-  const warning = document.getElementById('warning')
-  const loginFormContainer = document.getElementById('loginFormContainer')
+  const loginView = document.getElementById("loginView");
+  const mainView = document.getElementById("mainView");
+  const warning = document.getElementById("warning");
+  const loginFormContainer = document.getElementById("loginFormContainer");
 
   // Set locale from auth or browser
-  setLocale(getPreferredLocale(gbAuth))
-  translatePage()
+  setLocale(getPreferredLocale(gbAuth));
+  translatePage();
 
   // Show version
-  const version = chrome.runtime.getManifest().version
-  document.getElementById('versionLabel').textContent = `v${version}`
+  const version = chrome.runtime.getManifest().version;
+  document.getElementById("versionLabel").textContent = `v${version}`;
 
   if (gbAuth?.access_token) {
     // User is logged in - show main view
-    hide(loginView)
-    show(mainView)
+    hide(loginView);
+    show(mainView);
 
-    updateProfileUI(gbAuth)
-    updateLanguageToggleUI()
-    updateTabVisibility(gbAuth.role)
-    initializeEventListeners()
+    updateProfileUI(gbAuth);
+    updateLanguageToggleUI();
+    updateTabVisibility(gbAuth.role);
+    initializeEventListeners();
 
     // Hide pop-out button if already in standalone window
     chrome.windows.getCurrent((win) => {
-      if (win.type === 'popup') {
-        document.getElementById('popOutButton')?.classList.add('hidden')
+      if (win.type === "popup") {
+        document.getElementById("popOutButton")?.classList.add("hidden");
       }
-    })
+    });
 
-    refreshAllCaches()
-    startAgeTicker()
-    checkForUpdate()
+    refreshAllCaches();
+    startAgeTicker();
+    checkForUpdate();
+    refreshUserInfo(gbAuth);
   } else {
     // User not logged in - show login view
-    show(loginView)
-    hide(mainView)
+    show(loginView);
+    hide(mainView);
 
     // Handle warning acknowledgment
     if (noticeAcknowledged) {
-      hide(warning)
-      show(loginFormContainer)
+      hide(warning);
+      show(loginFormContainer);
     } else {
-      show(warning)
-      hide(loginFormContainer)
+      show(warning);
+      hide(loginFormContainer);
     }
 
-    initializeLoginListeners()
-    updateLoginLanguageSwitch()
+    initializeLoginListeners();
+    updateLoginLanguageSwitch();
   }
 
   // Set up message listener for data capture events
-  chrome.runtime.onMessage.addListener(handleMessages)
+  chrome.runtime.onMessage.addListener(handleMessages);
 }
 
 // ==========================================
@@ -160,33 +186,33 @@ async function initializeApp() {
  * Set up login view event listeners
  */
 function initializeLoginListeners() {
-  const acknowledgeButton = document.getElementById('acknowledgeButton')
-  const loginButton = document.getElementById('loginButton')
-  const warning = document.getElementById('warning')
-  const loginFormContainer = document.getElementById('loginFormContainer')
+  const acknowledgeButton = document.getElementById("acknowledgeButton");
+  const loginButton = document.getElementById("loginButton");
+  const warning = document.getElementById("warning");
+  const loginFormContainer = document.getElementById("loginFormContainer");
 
-  acknowledgeButton?.addEventListener('click', () => {
-    chrome.storage.local.set({ noticeAcknowledged: true })
-    hide(warning)
-    show(loginFormContainer)
-  })
+  acknowledgeButton?.addEventListener("click", () => {
+    chrome.storage.local.set({ noticeAcknowledged: true });
+    hide(warning);
+    show(loginFormContainer);
+  });
 
-  loginButton?.addEventListener('click', handleLogin)
+  loginButton?.addEventListener("click", handleLogin);
 
   // Handle enter key in login form
-  document.getElementById('loginPassword')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleLogin()
-  })
+  document.getElementById("loginPassword")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleLogin();
+  });
 
   // Language switch on login screen
-  const loginLangSwitch = document.getElementById('loginLanguageSwitch')
-  loginLangSwitch?.addEventListener('click', (e) => {
-    e.preventDefault()
-    const newLang = getLocale() === 'en' ? 'ja' : 'en'
-    setLocale(newLang)
-    translatePage()
-    updateLoginLanguageSwitch()
-  })
+  const loginLangSwitch = document.getElementById("loginLanguageSwitch");
+  loginLangSwitch?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const newLang = getLocale() === "en" ? "ja" : "en";
+    setLocale(newLang);
+    translatePage();
+    updateLoginLanguageSwitch();
+  });
 }
 
 /**
@@ -194,130 +220,156 @@ function initializeLoginListeners() {
  */
 function initializeEventListeners() {
   // Tab navigation
-  document.querySelectorAll('.tab[data-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      switchTab(tab.dataset.tab)
-    })
-  })
+  document.querySelectorAll(".tab[data-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      switchTab(tab.dataset.tab);
+    });
+  });
 
   // Profile popover toggle
-  document.getElementById('profileButton')?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    toggleProfilePopover()
-  })
+  document.getElementById("profileButton")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleProfilePopover();
+  });
 
   // Close popover when clicking outside
-  document.addEventListener('click', (e) => {
-    const popover = document.getElementById('profilePopover')
-    if (!popover?.classList.contains('hidden') && !popover?.contains(e.target)) {
-      hideProfilePopover()
+  document.addEventListener("click", (e) => {
+    const popover = document.getElementById("profilePopover");
+    if (
+      !popover?.classList.contains("hidden") &&
+      !popover?.contains(e.target)
+    ) {
+      hideProfilePopover();
     }
-  })
+  });
 
   // Profile actions (close popover after action)
-  document.getElementById('logoutButton')?.addEventListener('click', () => {
-    hideProfilePopover()
-    handleLogout()
-  })
-  document.getElementById('clearCacheButton')?.addEventListener('click', () => {
-    hideProfilePopover()
-    handleClearCache()
-  })
-  document.getElementById('showWarning')?.addEventListener('click', () => {
-    hideProfilePopover()
-    handleShowWarning()
-  })
-  document.getElementById('popOutButton')?.addEventListener('click', () => {
-    hideProfilePopover()
-    chrome.runtime.sendMessage({ action: 'popOutWindow' })
-  })
+  document.getElementById("logoutButton")?.addEventListener("click", () => {
+    hideProfilePopover();
+    handleLogout();
+  });
+  document.getElementById("clearCacheButton")?.addEventListener("click", () => {
+    hideProfilePopover();
+    handleClearCache();
+  });
+  document.getElementById("showWarning")?.addEventListener("click", () => {
+    hideProfilePopover();
+    handleShowWarning();
+  });
+  document.getElementById("popOutButton")?.addEventListener("click", () => {
+    hideProfilePopover();
+    chrome.runtime.sendMessage({ action: "popOutWindow" });
+  });
 
   // Language toggle switch
-  document.querySelector('#languageToggle .language-switch')?.addEventListener('click', () => {
-    const isJapanese = getLocale() === 'ja'
-    handleLanguageToggle(isJapanese ? 'en' : 'ja')
-  })
+  document
+    .querySelector("#languageToggle .language-switch")
+    ?.addEventListener("click", () => {
+      const isJapanese = getLocale() === "ja";
+      handleLanguageToggle(isJapanese ? "en" : "ja");
+    });
 
   // Detail view buttons
-  document.getElementById('detailBack')?.addEventListener('click', hideDetailView)
+  document
+    .getElementById("detailBack")
+    ?.addEventListener("click", hideDetailView);
   // Copy dropdown toggle
-  const copyDropdownToggle = document.getElementById('copyDropdownToggle')
-  const copyDropdownMenu = document.getElementById('copyDropdownMenu')
+  const copyDropdownToggle = document.getElementById("copyDropdownToggle");
+  const copyDropdownMenu = document.getElementById("copyDropdownMenu");
 
-  copyDropdownToggle?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    copyDropdownMenu.classList.toggle('open')
-  })
+  copyDropdownToggle?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    copyDropdownMenu.classList.toggle("open");
+  });
 
-  copyDropdownMenu?.addEventListener('click', (e) => {
-    const item = e.target.closest('[data-action]')
-    if (!item) return
-    copyDropdownMenu.classList.remove('open')
-    if (item.dataset.action === 'copy') handleDetailCopy()
-    else if (item.dataset.action === 'save') handleDetailSave()
-  })
+  copyDropdownMenu?.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-action]");
+    if (!item) return;
+    copyDropdownMenu.classList.remove("open");
+    if (item.dataset.action === "copy") handleDetailCopy();
+    else if (item.dataset.action === "save") handleDetailSave();
+  });
 
-  document.addEventListener('click', () => {
-    copyDropdownMenu?.classList.remove('open')
-  })
-  document.getElementById('detailImport')?.addEventListener('click', handleDetailImport)
-  document.getElementById('detailSync')?.addEventListener('click', () => handleDetailSync(currentDetailDataType, showToast))
-  document.getElementById('detailReview')?.addEventListener('click', handleDetailReview)
+  document.addEventListener("click", () => {
+    copyDropdownMenu?.classList.remove("open");
+  });
+  document
+    .getElementById("detailImport")
+    ?.addEventListener("click", handleDetailImport);
+  document
+    .getElementById("detailSync")
+    ?.addEventListener("click", () =>
+      handleDetailSync(currentDetailDataType, showToast),
+    );
+  document
+    .getElementById("detailReview")
+    ?.addEventListener("click", handleDetailReview);
 
   // Select all tri-state checkbox
-  document.getElementById('selectAllToggle')?.addEventListener('click', () => {
-    const toggle = document.getElementById('selectAllToggle')
-    const state = toggle?.dataset.state
-    const container = document.getElementById('detailItems')
-    const checkboxes = container?.querySelectorAll('.item-checkbox') || []
+  document.getElementById("selectAllToggle")?.addEventListener("click", () => {
+    const toggle = document.getElementById("selectAllToggle");
+    const state = toggle?.dataset.state;
+    const container = document.getElementById("detailItems");
+    const checkboxes = container?.querySelectorAll(".item-checkbox") || [];
 
-    if (state === 'checked') {
+    if (state === "checked") {
       // All selected → deselect all
-      checkboxes.forEach(checkbox => {
-        const index = parseInt(checkbox.dataset.index, 10)
-        selectedItems.delete(index)
-        manuallyUnchecked.add(index)
-        checkbox.classList.remove('checked')
-      })
+      checkboxes.forEach((checkbox) => {
+        const index = parseInt(checkbox.dataset.index, 10);
+        selectedItems.delete(index);
+        manuallyUnchecked.add(index);
+        checkbox.classList.remove("checked");
+      });
     } else {
       // None or some selected → select all
-      checkboxes.forEach(checkbox => {
-        const index = parseInt(checkbox.dataset.index, 10)
-        selectedItems.add(index)
-        manuallyUnchecked.delete(index)
-        checkbox.classList.add('checked')
-      })
+      checkboxes.forEach((checkbox) => {
+        const index = parseInt(checkbox.dataset.index, 10);
+        selectedItems.add(index);
+        manuallyUnchecked.delete(index);
+        checkbox.classList.add("checked");
+      });
     }
-    updateSelectionCount()
-  })
-
+    updateSelectionCount();
+  });
 
   // Raid selector button
-  document.getElementById('raidSelectorButton')?.addEventListener('click', () => {
-    showRaidPicker({
-      currentRaid: getSelectedRaid(),
-      onSelect: (raid) => updateRaidSelectorUI(raid)
-    })
-  })
+  document
+    .getElementById("raidSelectorButton")
+    ?.addEventListener("click", () => {
+      showRaidPicker({
+        currentRaid: getSelectedRaid(),
+        onSelect: (raid) => updateRaidSelectorUI(raid),
+      });
+    });
 
   // Playlist selector button
-  document.getElementById('playlistSelectorButton')?.addEventListener('click', () => {
-    showPlaylistPicker({
-      currentPlaylists: getSelectedPlaylists(),
-      onSelect: (playlists) => updatePlaylistSelectorUI(playlists)
-    })
-  })
+  document
+    .getElementById("playlistSelectorButton")
+    ?.addEventListener("click", () => {
+      showPlaylistPicker({
+        currentPlaylists: getSelectedPlaylists(),
+        onSelect: (playlists) => updatePlaylistSelectorUI(playlists),
+      });
+    });
 
   // Sync modal buttons
-  document.getElementById('cancelSync')?.addEventListener('click', hideSyncModal)
-  document.getElementById('confirmSync')?.addEventListener('click', () => confirmSync(currentDetailDataType, showToast))
-  document.querySelector('#syncModal .modal-backdrop')?.addEventListener('click', hideSyncModal)
+  document
+    .getElementById("cancelSync")
+    ?.addEventListener("click", hideSyncModal);
+  document
+    .getElementById("confirmSync")
+    ?.addEventListener("click", () =>
+      confirmSync(currentDetailDataType, showToast),
+    );
+  document
+    .querySelector("#syncModal .modal-backdrop")
+    ?.addEventListener("click", hideSyncModal);
 
   // Conflict modal listeners
-  initConflictListeners()
+  initConflictListeners();
 
   // Filter listeners
-  initializeFilterListeners()
+  initializeFilterListeners();
 }
 
 // ==========================================
@@ -329,22 +381,22 @@ function initializeEventListeners() {
  */
 function switchTab(tabName) {
   // Close profile popover when switching tabs
-  hideProfilePopover()
-  activeTab = tabName
+  hideProfilePopover();
+  activeTab = tabName;
 
   // Update tab buttons
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === tabName)
-  })
+  document.querySelectorAll(".tab").forEach((t) => {
+    t.classList.toggle("active", t.dataset.tab === tabName);
+  });
 
   // Update panels
-  document.querySelectorAll('.panel').forEach(p => {
-    p.classList.toggle('active', p.id === `${tabName}Panel`)
-  })
+  document.querySelectorAll(".panel").forEach((p) => {
+    p.classList.toggle("active", p.id === `${tabName}Panel`);
+  });
 
   // Refresh cache display for this tab
   if (cachedStatus) {
-    updateTabCacheDisplay(tabName, cachedStatus)
+    updateTabCacheDisplay(tabName, cachedStatus);
   }
 }
 
@@ -352,11 +404,11 @@ function switchTab(tabName) {
  * Show/hide Database tab based on user role
  */
 function updateTabVisibility(userRole) {
-  const databaseTab = document.getElementById('databaseTab')
+  const databaseTab = document.getElementById("databaseTab");
   if (userRole >= 7) {
-    databaseTab?.classList.remove('hidden')
+    databaseTab?.classList.remove("hidden");
   } else {
-    databaseTab?.classList.add('hidden')
+    databaseTab?.classList.add("hidden");
   }
 }
 
@@ -368,13 +420,13 @@ function updateTabVisibility(userRole) {
  * Toggle profile popover visibility
  */
 function toggleProfilePopover() {
-  const popover = document.getElementById('profilePopover')
-  const button = document.getElementById('profileButton')
-  if (popover?.classList.contains('hidden')) {
-    popover.classList.remove('hidden')
-    button?.classList.add('active')
+  const popover = document.getElementById("profilePopover");
+  const button = document.getElementById("profileButton");
+  if (popover?.classList.contains("hidden")) {
+    popover.classList.remove("hidden");
+    button?.classList.add("active");
   } else {
-    hideProfilePopover()
+    hideProfilePopover();
   }
 }
 
@@ -382,8 +434,8 @@ function toggleProfilePopover() {
  * Hide profile popover
  */
 function hideProfilePopover() {
-  document.getElementById('profilePopover')?.classList.add('hidden')
-  document.getElementById('profileButton')?.classList.remove('active')
+  document.getElementById("profilePopover")?.classList.add("hidden");
+  document.getElementById("profileButton")?.classList.remove("active");
 }
 
 // ==========================================
@@ -394,9 +446,10 @@ function hideProfilePopover() {
  * Update login screen language switch text
  */
 function updateLoginLanguageSwitch() {
-  const link = document.getElementById('loginLanguageSwitch')
+  const link = document.getElementById("loginLanguageSwitch");
   if (link) {
-    link.textContent = getLocale() === 'en' ? '日本語で表示' : 'Switch to English'
+    link.textContent =
+      getLocale() === "en" ? "日本語で表示" : "Switch to English";
   }
 }
 
@@ -404,10 +457,10 @@ function updateLoginLanguageSwitch() {
  * Update language toggle button UI to reflect current locale
  */
 function updateLanguageToggleUI() {
-  const isJapanese = getLocale() === 'ja'
-  const switchEl = document.querySelector('#languageToggle .language-switch')
+  const isJapanese = getLocale() === "ja";
+  const switchEl = document.querySelector("#languageToggle .language-switch");
   if (switchEl) {
-    switchEl.setAttribute('aria-checked', String(isJapanese))
+    switchEl.setAttribute("aria-checked", String(isJapanese));
   }
 }
 
@@ -415,42 +468,47 @@ function updateLanguageToggleUI() {
  * Handle language toggle button click
  */
 async function handleLanguageToggle(lang) {
-  setLocale(lang)
-  translatePage()
-  updateLanguageToggleUI()
+  setLocale(lang);
+  translatePage();
+  updateLanguageToggleUI();
 
   // Refresh cache display with translated names
   if (cachedStatus) {
-    cachedStatus = formatCacheStatus(await chrome.runtime.sendMessage({ action: 'getCacheStatus' }) || {})
-    updateTabCacheDisplay('party', cachedStatus)
-    updateTabCacheDisplay('collection', cachedStatus)
-    updateTabCacheDisplay('database', cachedStatus)
+    cachedStatus = formatCacheStatus(
+      (await chrome.runtime.sendMessage({ action: "getCacheStatus" })) || {},
+    );
+    updateTabCacheDisplay("party", cachedStatus);
+    updateTabCacheDisplay("collection", cachedStatus);
+    updateTabCacheDisplay("database", cachedStatus);
   }
 
   // Persist to server
-  const { gbAuth } = await chrome.storage.local.get('gbAuth')
+  const { gbAuth } = await chrome.storage.local.get("gbAuth");
   if (gbAuth?.access_token) {
-    gbAuth.language = lang
-    await chrome.storage.local.set({ gbAuth })
+    gbAuth.language = lang;
+    await chrome.storage.local.set({ gbAuth });
     try {
-      await updateUserLanguage(gbAuth.access_token, lang)
+      await updateUserLanguage(gbAuth.access_token, lang);
     } catch {
       // Silently fail — local preference is saved anyway
     }
   }
 
   // Sync website locale cookie so granblue.team renders the correct language
-  if (lang === 'en') {
-    chrome.cookies.remove({ url: 'https://granblue.team', name: 'PARAGLIDE_LOCALE' })
+  if (lang === "en") {
+    chrome.cookies.remove({
+      url: "https://granblue.team",
+      name: "PARAGLIDE_LOCALE",
+    });
   } else {
     chrome.cookies.set({
-      url: 'https://granblue.team',
-      name: 'PARAGLIDE_LOCALE',
+      url: "https://granblue.team",
+      name: "PARAGLIDE_LOCALE",
       value: lang,
-      path: '/',
-      sameSite: 'lax',
-      expirationDate: Math.floor(Date.now() / 1000) + 34560000
-    })
+      path: "/",
+      sameSite: "lax",
+      expirationDate: Math.floor(Date.now() / 1000) + 34560000,
+    });
   }
 }
 
@@ -463,215 +521,228 @@ async function handleLanguageToggle(lang) {
  */
 async function showDetailView(dataType) {
   const response = await chrome.runtime.sendMessage({
-    action: 'getCachedData',
-    dataType
-  })
+    action: "getCachedData",
+    dataType,
+  });
 
   if (response.error) {
-    showTabStatus(activeTab, tError(response.error), 'error')
-    return
+    showTabStatus(activeTab, tError(response.error), "error");
+    return;
   }
 
-  currentDetailDataType = dataType
+  currentDetailDataType = dataType;
 
   // Update metadata
-  const status = cachedStatus[dataType]
-  const freshnessEl = document.getElementById('detailFreshness')
-  if (freshnessEl) freshnessEl.textContent = status.ageText
+  const status = cachedStatus[dataType];
+  const freshnessEl = document.getElementById("detailFreshness");
+  if (freshnessEl) freshnessEl.textContent = status.ageText;
 
-  const itemCountEl = document.getElementById('detailItemCount')
-  const selectAllToggle = document.getElementById('selectAllToggle')
-  const isCollection = isCollectionType(dataType) && dataType !== 'character_stats'
+  const itemCountEl = document.getElementById("detailItemCount");
+  const selectAllToggle = document.getElementById("selectAllToggle");
+  const isCollection =
+    isCollectionType(dataType) && dataType !== "character_stats";
 
-  if (dataType.startsWith('party_')) {
+  if (dataType.startsWith("party_")) {
     // Party counts are shown inline in section labels — hide the meta row
-    const deck = response.data.deck || {}
-    const pc = deck.pc || {}
-    const chars = toArray(deck.npc).filter(Boolean).length
-    const wpns = toArray(pc.weapons).filter(Boolean).length
-    itemCountEl.textContent = ''
-    itemCountEl.dataset.tooltip = ''
-    document.querySelector('.detail-meta')?.classList.add('hidden')
+    const deck = response.data.deck || {};
+    const pc = deck.pc || {};
+    const chars = toArray(deck.npc).filter(Boolean).length;
+    const wpns = toArray(pc.weapons).filter(Boolean).length;
+    itemCountEl.textContent = "";
+    itemCountEl.dataset.tooltip = "";
+    document.querySelector(".detail-meta")?.classList.add("hidden");
 
     // Show party meta and pre-fill name from deck data
-    document.getElementById('partyMeta')?.classList.remove('hidden')
-    const partyNameInput = document.getElementById('partyNameInput')
-    if (partyNameInput) partyNameInput.value = deck.name || ''
-    autoSuggestRaid(wpns, chars)
-  } else if (dataType === 'character_stats') {
-    const characterCount = Object.keys(response.data).length
-    itemCountEl.textContent = tPlural('count_character', 'count_characters', characterCount)
-    itemCountEl.dataset.tooltip = ''
+    document.getElementById("partyMeta")?.classList.remove("hidden");
+    const partyNameInput = document.getElementById("partyNameInput");
+    if (partyNameInput) partyNameInput.value = deck.name || "";
+    autoSuggestRaid(wpns, chars);
+  } else if (dataType === "character_stats") {
+    const characterCount = Object.keys(response.data).length;
+    itemCountEl.textContent = tPlural(
+      "count_character",
+      "count_characters",
+      characterCount,
+    );
+    itemCountEl.dataset.tooltip = "";
   } else if (isDatabaseDetailType(dataType)) {
-    const name = response.data.name || response.data.master?.name || ''
-    itemCountEl.textContent = name
-    itemCountEl.dataset.tooltip = ''
+    const name = response.data.name || response.data.master?.name || "";
+    itemCountEl.textContent = name;
+    itemCountEl.dataset.tooltip = "";
   } else {
-    const itemCount = status.totalItems || countItems(dataType, response.data)
-    itemCountEl.textContent = tPlural('count_item', 'count_items', itemCount)
-    itemCountEl.dataset.tooltip = ''
+    const itemCount = status.totalItems || countItems(dataType, response.data);
+    itemCountEl.textContent = tPlural("count_item", "count_items", itemCount);
+    itemCountEl.dataset.tooltip = "";
   }
 
   // Show/hide stash name in center with combined tooltip
-  const stashNameEl = document.getElementById('detailStashName')
+  const stashNameEl = document.getElementById("detailStashName");
   if (stashNameEl) {
-    if (dataType.startsWith('stash_')) {
-      const stashId = dataType.split('_').pop()
-      const stashLabel = status?.stashName || status?.displayName || getDataTypeName(dataType)
-      stashNameEl.textContent = stashLabel
-      const tooltipParts = [`ID: ${stashId}`]
-      if (status.pageCount) tooltipParts.push(tPlural('count_page', 'count_pages', status.pageCount))
-      if (status.ageText) tooltipParts.push(status.ageText)
-      stashNameEl.dataset.tooltip = tooltipParts.join(' · ')
-      stashNameEl.classList.remove('hidden')
+    if (dataType.startsWith("stash_")) {
+      const stashId = dataType.split("_").pop();
+      const stashLabel =
+        status?.stashName || status?.displayName || getDataTypeName(dataType);
+      stashNameEl.textContent = stashLabel;
+      const tooltipParts = [`ID: ${stashId}`];
+      if (status.pageCount)
+        tooltipParts.push(
+          tPlural("count_page", "count_pages", status.pageCount),
+        );
+      if (status.ageText) tooltipParts.push(status.ageText);
+      stashNameEl.dataset.tooltip = tooltipParts.join(" · ");
+      stashNameEl.classList.remove("hidden");
     } else {
-      const displayName = status?.displayName || getDataTypeName(dataType)
-      stashNameEl.textContent = displayName
-      const tooltipParts = []
-      if (status.pageCount) tooltipParts.push(tPlural('count_page', 'count_pages', status.pageCount))
-      if (status.ageText) tooltipParts.push(status.ageText)
-      stashNameEl.dataset.tooltip = tooltipParts.join(' · ')
-      stashNameEl.classList.remove('hidden')
+      const displayName = status?.displayName || getDataTypeName(dataType);
+      stashNameEl.textContent = displayName;
+      const tooltipParts = [];
+      if (status.pageCount)
+        tooltipParts.push(
+          tPlural("count_page", "count_pages", status.pageCount),
+        );
+      if (status.ageText) tooltipParts.push(status.ageText);
+      stashNameEl.dataset.tooltip = tooltipParts.join(" · ");
+      stashNameEl.classList.remove("hidden");
     }
   }
 
   // Show/hide select all toggle for collection views
   // When select-all is shown, it includes the item count in its label
   if (isCollection) {
-    selectAllToggle?.classList.remove('hidden')
-    itemCountEl?.classList.add('hidden')
+    selectAllToggle?.classList.remove("hidden");
+    itemCountEl?.classList.add("hidden");
   } else {
-    selectAllToggle?.classList.add('hidden')
-    itemCountEl?.classList.remove('hidden')
+    selectAllToggle?.classList.add("hidden");
+    itemCountEl?.classList.remove("hidden");
   }
 
   // Hide party meta and show detail meta row for non-party types
-  if (!dataType.startsWith('party_')) {
-    document.getElementById('partyMeta')?.classList.add('hidden')
-    document.querySelector('.detail-meta')?.classList.remove('hidden')
-    clearSelectedRaid()
-    clearSelectedPlaylists()
-    updatePlaylistSelectorUI([])
+  if (!dataType.startsWith("party_")) {
+    document.getElementById("partyMeta")?.classList.add("hidden");
+    document.querySelector(".detail-meta")?.classList.remove("hidden");
+    clearSelectedRaid();
+    clearSelectedPlaylists();
+    updatePlaylistSelectorUI([]);
   }
 
   // Reset import/sync buttons based on checkbox state
-  const importBtn = document.getElementById('detailImport')
-  const syncBtn = document.getElementById('detailSync')
-  const enableSyncCheckbox = document.getElementById('enableFullSyncCheckbox')
-  const isCollectionSync = isCollectionType(dataType) && dataType !== 'character_stats'
-  const syncActive = isCollectionSync && enableSyncCheckbox?.checked
+  const importBtn = document.getElementById("detailImport");
+  const syncBtn = document.getElementById("detailSync");
+  const enableSyncCheckbox = document.getElementById("enableFullSyncCheckbox");
+  const isCollectionSync =
+    isCollectionType(dataType) && dataType !== "character_stats";
+  const syncActive = isCollectionSync && enableSyncCheckbox?.checked;
 
-  importBtn.textContent = t('action_import')
-  importBtn.disabled = false
-  importBtn.classList.remove('imported')
+  importBtn.textContent = t("action_import");
+  importBtn.disabled = false;
+  importBtn.classList.remove("imported");
 
   if (syncActive) {
-    importBtn.classList.add('hidden')
-    syncBtn?.classList.remove('hidden')
+    importBtn.classList.add("hidden");
+    syncBtn?.classList.remove("hidden");
     if (syncBtn) {
-      syncBtn.textContent = t('action_full_sync')
-      syncBtn.disabled = false
+      syncBtn.textContent = t("action_full_sync");
+      syncBtn.disabled = false;
     }
   } else {
-    importBtn.classList.remove('hidden')
-    syncBtn?.classList.add('hidden')
+    importBtn.classList.remove("hidden");
+    syncBtn?.classList.add("hidden");
   }
 
   // Show/hide filter based on data type
-  const detailFilter = document.getElementById('detailFilter')
-  const rarityFilters = document.getElementById('rarityFilters')
-  const lv1FilterSection = document.getElementById('lv1FilterSection')
-  const syncFilterSection = document.getElementById('syncFilterSection')
-  const filterButton = document.getElementById('filterButton')
+  const detailFilter = document.getElementById("detailFilter");
+  const rarityFilters = document.getElementById("rarityFilters");
+  const lv1FilterSection = document.getElementById("lv1FilterSection");
+  const syncFilterSection = document.getElementById("syncFilterSection");
+  const filterButton = document.getElementById("filterButton");
 
   // Show filter for weapons, summons, and artifacts (collection types that support sync)
-  const showFilter = isWeaponOrSummonCollection(dataType) || dataType === 'collection_artifact'
-  const isArtifact = dataType === 'collection_artifact'
+  const showFilter =
+    isWeaponOrSummonCollection(dataType) || dataType === "collection_artifact";
+  const isArtifact = dataType === "collection_artifact";
 
   if (showFilter) {
-    detailFilter?.classList.remove('hidden')
+    detailFilter?.classList.remove("hidden");
 
     // Rarity and Lv1 filters only for weapons/summons (not artifacts)
     if (isWeaponOrSummonCollection(dataType)) {
-      rarityFilters?.classList.remove('hidden')
-      lv1FilterSection?.classList.remove('hidden')
-      updateFilterButtonLabel()
-
+      rarityFilters?.classList.remove("hidden");
+      lv1FilterSection?.classList.remove("hidden");
+      updateFilterButtonLabel();
     } else {
-      rarityFilters?.classList.add('hidden')
-      lv1FilterSection?.classList.add('hidden')
+      rarityFilters?.classList.add("hidden");
+      lv1FilterSection?.classList.add("hidden");
 
       // For artifacts, just show "Filter" as the button label
       if (filterButton) {
-        filterButton.querySelector('span').textContent = t('filter_options')
+        filterButton.querySelector("span").textContent = t("filter_options");
       }
     }
 
     // Sync filter for all collection types
     if (isCollectionSync) {
-      syncFilterSection?.classList.remove('hidden')
+      syncFilterSection?.classList.remove("hidden");
     } else {
-      syncFilterSection?.classList.add('hidden')
+      syncFilterSection?.classList.add("hidden");
     }
   } else {
-    detailFilter?.classList.add('hidden')
-    rarityFilters?.classList.add('hidden')
-    lv1FilterSection?.classList.add('hidden')
-    syncFilterSection?.classList.add('hidden')
+    detailFilter?.classList.add("hidden");
+    rarityFilters?.classList.add("hidden");
+    lv1FilterSection?.classList.add("hidden");
+    syncFilterSection?.classList.add("hidden");
   }
 
   // Render items
-  renderDetailItems(dataType, response.data)
+  renderDetailItems(dataType, response.data);
 
   // Slide in
-  document.getElementById('detailView').classList.add('active')
-  detailViewActive = true
+  document.getElementById("detailView").classList.add("active");
+  detailViewActive = true;
 }
 
 /**
  * Hide detail view
  */
 function hideDetailView() {
-  document.getElementById('detailView').classList.remove('active')
-  detailViewActive = false
-  currentDetailDataType = null
+  document.getElementById("detailView").classList.remove("active");
+  detailViewActive = false;
+  currentDetailDataType = null;
   // Clear selection state for next view
-  selectedItems.clear()
-  manuallyUnchecked.clear()
-  brokenImageIndices.clear()
+  selectedItems.clear();
+  manuallyUnchecked.clear();
+  brokenImageIndices.clear();
 
   // Reset sync button state
-  const syncBtn = document.getElementById('detailSync')
+  const syncBtn = document.getElementById("detailSync");
   if (syncBtn) {
-    syncBtn.classList.add('hidden')
-    syncBtn.classList.remove('synced')
-    syncBtn.disabled = false
-    syncBtn.textContent = t('action_full_sync')
+    syncBtn.classList.add("hidden");
+    syncBtn.classList.remove("synced");
+    syncBtn.disabled = false;
+    syncBtn.textContent = t("action_full_sync");
   }
 
   // Reset sync checkbox
-  const enableSyncCheckbox = document.getElementById('enableFullSyncCheckbox')
+  const enableSyncCheckbox = document.getElementById("enableFullSyncCheckbox");
   if (enableSyncCheckbox) {
-    enableSyncCheckbox.checked = false
+    enableSyncCheckbox.checked = false;
   }
 
   // Reset party meta
-  const partyNameInput = document.getElementById('partyNameInput')
-  if (partyNameInput) partyNameInput.value = ''
-  document.getElementById('partyMeta')?.classList.add('hidden')
-  clearSelectedRaid()
-  updateRaidSelectorUI(null)
-  clearSelectedPlaylists()
-  updatePlaylistSelectorUI([])
+  const partyNameInput = document.getElementById("partyNameInput");
+  if (partyNameInput) partyNameInput.value = "";
+  document.getElementById("partyMeta")?.classList.add("hidden");
+  clearSelectedRaid();
+  updateRaidSelectorUI(null);
+  clearSelectedPlaylists();
+  updatePlaylistSelectorUI([]);
 
   // Reset conflict state
-  pendingConflicts = null
-  conflictResolutions = null
-  const reviewBtn = document.getElementById('detailReview')
+  pendingConflicts = null;
+  conflictResolutions = null;
+  const reviewBtn = document.getElementById("detailReview");
   if (reviewBtn) {
-    reviewBtn.classList.add('hidden')
-    reviewBtn.classList.remove('imported')
-    reviewBtn.textContent = t('action_review')
+    reviewBtn.classList.add("hidden");
+    reviewBtn.classList.remove("imported");
+    reviewBtn.textContent = t("action_review");
   }
 }
 
@@ -684,47 +755,52 @@ function hideDetailView() {
  * @param {Object|null} raid
  */
 const RAID_ELEMENT_CLASSES = {
-  0: 'raid-null',
-  1: 'raid-wind',
-  2: 'raid-fire',
-  3: 'raid-water',
-  4: 'raid-earth',
-  5: 'raid-dark',
-  6: 'raid-light'
-}
+  0: "raid-null",
+  1: "raid-wind",
+  2: "raid-fire",
+  3: "raid-water",
+  4: "raid-earth",
+  5: "raid-dark",
+  6: "raid-light",
+};
 
 function updateRaidSelectorUI(raid) {
-  const label = document.getElementById('raidSelectorLabel')
-  const btn = document.getElementById('raidSelectorButton')
-  const img = document.getElementById('raidSelectorImage')
-  if (!label || !btn) return
+  const label = document.getElementById("raidSelectorLabel");
+  const btn = document.getElementById("raidSelectorButton");
+  const img = document.getElementById("raidSelectorImage");
+  if (!label || !btn) return;
 
   // Remove any previous element class
-  Object.values(RAID_ELEMENT_CLASSES).forEach(cls => btn.classList.remove(cls))
+  Object.values(RAID_ELEMENT_CLASSES).forEach((cls) =>
+    btn.classList.remove(cls),
+  );
 
   if (raid) {
-    const name = typeof raid.name === 'string' ? raid.name : (raid.name?.en || raid.name_en || 'Unknown')
-    const level = raid.level ? ` Lv. ${raid.level}` : ''
-    label.textContent = `${name}${level}`
-    const elementClass = RAID_ELEMENT_CLASSES[raid.element] || 'raid-null'
-    btn.classList.add(elementClass)
+    const name =
+      typeof raid.name === "string"
+        ? raid.name
+        : raid.name?.en || raid.name_en || "Unknown";
+    const level = raid.level ? ` Lv. ${raid.level}` : "";
+    label.textContent = `${name}${level}`;
+    const elementClass = RAID_ELEMENT_CLASSES[raid.element] || "raid-null";
+    btn.classList.add(elementClass);
 
     // Show raid thumbnail
     if (img && raid.slug) {
-      img.src = getImageUrl(`raid-thumbnail/${raid.slug}.png`)
-      img.classList.remove('hidden')
-      img.onerror = () => img.classList.add('hidden')
+      img.src = getImageUrl(`raid-thumbnail/${raid.slug}.png`);
+      img.classList.remove("hidden");
+      img.onerror = () => img.classList.add("hidden");
     }
 
-    setSelectedRaid(raid)
+    setSelectedRaid(raid);
   } else {
-    label.textContent = t('raid_select')
+    label.textContent = t("raid_select");
 
     if (img) {
-      img.src = ''
-      img.classList.add('hidden')
+      img.src = "";
+      img.classList.add("hidden");
     }
-    clearSelectedRaid()
+    clearSelectedRaid();
   }
 }
 
@@ -737,14 +813,14 @@ function updateRaidSelectorUI(raid) {
  * @param {Array} playlists
  */
 function updatePlaylistSelectorUI(playlists) {
-  const label = document.getElementById('playlistSelectorLabel')
-  if (!label) return
+  const label = document.getElementById("playlistSelectorLabel");
+  if (!label) return;
   if (!playlists || playlists.length === 0) {
-    label.textContent = t('playlist_label')
+    label.textContent = t("playlist_label");
   } else if (playlists.length === 1) {
-    label.textContent = playlists[0].title
+    label.textContent = playlists[0].title;
   } else {
-    label.textContent = t('count_playlists', { count: playlists.length })
+    label.textContent = t("count_playlists", { count: playlists.length });
   }
 }
 
@@ -755,22 +831,24 @@ function updatePlaylistSelectorUI(playlists) {
  */
 async function autoSuggestRaid(weaponCount, characterCount) {
   // Fetch raid groups to find matching raids
-  const response = await chrome.runtime.sendMessage({ action: 'fetchRaidGroups' })
-  if (response.error || !response.data) return
+  const response = await chrome.runtime.sendMessage({
+    action: "fetchRaidGroups",
+  });
+  if (response.error || !response.data) return;
 
-  const groups = response.data
-  let suggestedRaid = null
+  const groups = response.data;
+  let suggestedRaid = null;
 
   if (weaponCount === 13 && characterCount === 8) {
-    suggestedRaid = findRaidBySlug(groups, 'versusia')
+    suggestedRaid = findRaidBySlug(groups, "versusia");
   } else if (weaponCount === 13 && characterCount === 5) {
-    suggestedRaid = findRaidBySlug(groups, 'farming-ex')
+    suggestedRaid = findRaidBySlug(groups, "farming-ex");
   } else if (characterCount === 5) {
-    suggestedRaid = findRaidBySlug(groups, 'farming')
+    suggestedRaid = findRaidBySlug(groups, "farming");
   }
 
   if (suggestedRaid) {
-    updateRaidSelectorUI(suggestedRaid)
+    updateRaidSelectorUI(suggestedRaid);
   }
 }
 
@@ -779,70 +857,74 @@ async function autoSuggestRaid(weaponCount, characterCount) {
  */
 function findRaidBySlug(groups, slug) {
   for (const group of groups) {
-    const raid = (group.raids || []).find(r => r.slug === slug)
-    if (raid) return { ...raid, group }
+    const raid = (group.raids || []).find((r) => r.slug === slug);
+    if (raid) return { ...raid, group };
   }
-  return null
+  return null;
 }
 
 // Checkmark SVG for checkboxes
-const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
+const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`;
 
 /**
  * Initialize filter dropdown and checkbox listeners
  */
 function initializeFilterListeners() {
-  const filterButton = document.getElementById('filterButton')
-  const filterDropdown = document.getElementById('filterDropdown')
+  const filterButton = document.getElementById("filterButton");
+  const filterDropdown = document.getElementById("filterDropdown");
 
   // Toggle dropdown on button click
-  filterButton?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    filterDropdown?.classList.toggle('open')
-  })
+  filterButton?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    filterDropdown?.classList.toggle("open");
+  });
 
   // Close dropdown when clicking outside
-  document.addEventListener('click', () => {
-    filterDropdown?.classList.remove('open')
-  })
+  document.addEventListener("click", () => {
+    filterDropdown?.classList.remove("open");
+  });
 
   // Prevent dropdown from closing when clicking inside it
-  filterDropdown?.addEventListener('click', (e) => {
-    e.stopPropagation()
-  })
+  filterDropdown?.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
 
   // Rarity checkbox changes (value="4", "3", "2")
-  filterDropdown?.querySelectorAll('input[type="checkbox"][value]').forEach(checkbox => {
-    checkbox.addEventListener('change', () => {
-      updateRarityFilter(checkbox.value, checkbox.checked)
-    })
-  })
+  filterDropdown
+    ?.querySelectorAll('input[type="checkbox"][value]')
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        updateRarityFilter(checkbox.value, checkbox.checked);
+      });
+    });
 
   // Lv1 exclusion checkbox
-  const excludeLv1Checkbox = document.getElementById('excludeLv1Checkbox')
-  excludeLv1Checkbox?.addEventListener('change', () => {
-    excludeLv1Items = excludeLv1Checkbox.checked
-    updateLv1Badge()
-    refreshDetailViewWithFilters()
-  })
+  const excludeLv1Checkbox = document.getElementById("excludeLv1Checkbox");
+  excludeLv1Checkbox?.addEventListener("change", () => {
+    excludeLv1Items = excludeLv1Checkbox.checked;
+    updateLv1Badge();
+    refreshDetailViewWithFilters();
+  });
 
   // Sync deletions checkbox - swaps Import button with Import & Sync
-  const enableFullSyncCheckbox = document.getElementById('enableFullSyncCheckbox')
-  enableFullSyncCheckbox?.addEventListener('change', (e) => {
-    const importBtn = document.getElementById('detailImport')
-    const syncBtn = document.getElementById('detailSync')
+  const enableFullSyncCheckbox = document.getElementById(
+    "enableFullSyncCheckbox",
+  );
+  enableFullSyncCheckbox?.addEventListener("change", (e) => {
+    const importBtn = document.getElementById("detailImport");
+    const syncBtn = document.getElementById("detailSync");
     if (syncBtn && importBtn) {
       if (e.target.checked) {
-        importBtn.classList.add('hidden')
-        syncBtn.classList.remove('hidden')
-        syncBtn.textContent = t('action_full_sync')
-        syncBtn.disabled = false
+        importBtn.classList.add("hidden");
+        syncBtn.classList.remove("hidden");
+        syncBtn.textContent = t("action_full_sync");
+        syncBtn.disabled = false;
       } else {
-        importBtn.classList.remove('hidden')
-        syncBtn.classList.add('hidden')
+        importBtn.classList.remove("hidden");
+        syncBtn.classList.add("hidden");
       }
     }
-  })
+  });
 }
 
 /**
@@ -850,69 +932,70 @@ function initializeFilterListeners() {
  */
 function updateRarityFilter(rarity, isChecked) {
   if (isChecked) {
-    activeRarityFilters.add(rarity)
+    activeRarityFilters.add(rarity);
   } else {
-    activeRarityFilters.delete(rarity)
+    activeRarityFilters.delete(rarity);
   }
-  updateFilterButtonLabel()
-  refreshDetailViewWithFilters()
+  updateFilterButtonLabel();
+  refreshDetailViewWithFilters();
 }
 
 /**
  * Update the filter button label based on active filters
  */
 function updateFilterButtonLabel() {
-  const filterButton = document.getElementById('filterButton')
-  if (!filterButton) return
+  const filterButton = document.getElementById("filterButton");
+  if (!filterButton) return;
 
-  const labelSpan = filterButton.querySelector('span')
-  if (!labelSpan) return
+  const labelSpan = filterButton.querySelector("span");
+  if (!labelSpan) return;
 
   const activeLabels = Array.from(activeRarityFilters)
     .sort((a, b) => parseInt(b) - parseInt(a)) // Sort descending (SSR, SR, R)
-    .map(r => RARITY_LABELS[r])
-    .filter(Boolean)
+    .map((r) => RARITY_LABELS[r])
+    .filter(Boolean);
 
-  labelSpan.textContent = activeLabels.length > 0 ? activeLabels.join('/') : t('filter_default')
+  labelSpan.textContent =
+    activeLabels.length > 0 ? activeLabels.join("/") : t("filter_default");
 }
 
 /**
  * Refresh detail view with current filters applied
  */
 async function refreshDetailViewWithFilters() {
-  if (!detailViewActive || !currentDetailDataType) return
+  if (!detailViewActive || !currentDetailDataType) return;
 
   const response = await chrome.runtime.sendMessage({
-    action: 'getCachedData',
-    dataType: currentDetailDataType
-  })
+    action: "getCachedData",
+    dataType: currentDetailDataType,
+  });
 
-  if (response.error) return
+  if (response.error) return;
 
-  renderDetailItems(currentDetailDataType, response.data)
+  renderDetailItems(currentDetailDataType, response.data);
 }
 
 /**
  * Check if an item should be filtered out based on rarity
  */
 function shouldFilterByRarity(item, dataType) {
-  if (!isWeaponOrSummonCollection(dataType)) return false
+  if (!isWeaponOrSummonCollection(dataType)) return false;
 
-  const rarity = item.master?.rarity?.toString() || item.rarity?.toString()
-  if (!rarity) return false
+  const rarity = item.master?.rarity?.toString() || item.rarity?.toString();
+  if (!rarity) return false;
 
-  return !activeRarityFilters.has(rarity)
+  return !activeRarityFilters.has(rarity);
 }
 
 /**
  * Check if an item should be filtered out due to Lv1 exclusion
  */
 function shouldFilterByLv1(item, dataType) {
-  if (!isWeaponOrSummonCollection(dataType)) return false
-  if (!excludeLv1Items) return false
+  if (!isWeaponOrSummonCollection(dataType)) return false;
+  if (!excludeLv1Items) return false;
 
-  const level = item.param?.level || item.level || item.lv
-  return level === 1 || level === '1'
+  const level = item.param?.level || item.level || item.lv;
+  return level === 1 || level === "1";
 }
 
 /**
@@ -920,46 +1003,60 @@ function shouldFilterByLv1(item, dataType) {
  * Matches hensei-svelte's SUMMON_ALT_ART_THRESHOLD.
  */
 const SUMMON_ALT_ART_THRESHOLD = new Map([
-  ['2040094000', 5], ['2040100000', 5], ['2040080000', 5], ['2040098000', 5],
-  ['2040090000', 5], ['2040084000', 5], ['2040003000', 5], ['2040056000', 5], ['2040065000', 5],
-  ['2040020000', 4], ['2040034000', 4], ['2040028000', 4], ['2040027000', 4],
-  ['2040046000', 4], ['2040047000', 4], ['2040430000', 4]
-])
+  ["2040094000", 5],
+  ["2040100000", 5],
+  ["2040080000", 5],
+  ["2040098000", 5],
+  ["2040090000", 5],
+  ["2040084000", 5],
+  ["2040003000", 5],
+  ["2040056000", 5],
+  ["2040065000", 5],
+  ["2040020000", 4],
+  ["2040034000", 4],
+  ["2040028000", 4],
+  ["2040027000", 4],
+  ["2040046000", 4],
+  ["2040047000", 4],
+  ["2040430000", 4],
+]);
 
 /**
  * Get the max uncap art suffix for a summon based on its uncap flags.
  */
 function getMaxSummonSuffix(granblueId, uncap) {
-  if (!uncap) return ''
-  const threshold = SUMMON_ALT_ART_THRESHOLD.get(String(granblueId))
-  if (!threshold) return ''
-  if (uncap.transcendence) return '_04'
-  if (uncap.ulb) return '_03'
-  if (uncap.flb || threshold <= 4) return '_02'
-  return ''
+  if (!uncap) return "";
+  const threshold = SUMMON_ALT_ART_THRESHOLD.get(String(granblueId));
+  if (!threshold) return "";
+  if (uncap.transcendence) return "_04";
+  if (uncap.ulb) return "_03";
+  if (uncap.flb || threshold <= 4) return "_02";
+  return "";
 }
 
 /**
  * Search for a summon by name using the API
  */
 async function searchSummonByName(name) {
-  if (!name) return null
+  if (!name) return null;
   try {
-    const apiUrl = await getApiUrl('/search/summons')
+    const apiUrl = await getApiUrl("/search/summons");
     const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ search: { query: name } })
-    })
-    if (!response.ok) return null
-    const json = await response.json()
-    const results = json.results || []
-    const match = results.find(s => s.name?.en === name || s.name?.ja === name)
-    if (!match) return null
-    match.imageSuffix = getMaxSummonSuffix(match.granblue_id, match.uncap)
-    return match
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ search: { query: name } }),
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    const results = json.results || [];
+    const match = results.find(
+      (s) => s.name?.en === name || s.name?.ja === name,
+    );
+    if (!match) return null;
+    match.imageSuffix = getMaxSummonSuffix(match.granblue_id, match.uncap);
+    return match;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -967,17 +1064,17 @@ async function searchSummonByName(name) {
  * Fetch weapon key skill_id → slug mapping from the API.
  * Cached in memory for the session.
  */
-let _weaponKeyMapCache = null
+let _weaponKeyMapCache = null;
 async function fetchWeaponKeyMap() {
-  if (_weaponKeyMapCache) return _weaponKeyMapCache
+  if (_weaponKeyMapCache) return _weaponKeyMapCache;
   try {
-    const apiUrl = await getApiUrl('/weapon_keys/skill_map')
-    const response = await fetch(apiUrl)
-    if (!response.ok) return null
-    _weaponKeyMapCache = await response.json()
-    return _weaponKeyMapCache
+    const apiUrl = await getApiUrl("/weapon_keys/skill_map");
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    _weaponKeyMapCache = await response.json();
+    return _weaponKeyMapCache;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -986,25 +1083,25 @@ async function fetchWeaponKeyMap() {
  * Returns a map of slug → { nameEn, nameJp, suffix } for tooltip display.
  * Cached in memory for the session.
  */
-let _weaponStatModCache = null
+let _weaponStatModCache = null;
 async function fetchWeaponStatModifiers() {
-  if (_weaponStatModCache) return _weaponStatModCache
+  if (_weaponStatModCache) return _weaponStatModCache;
   try {
-    const apiUrl = await getApiUrl('/weapon_stat_modifiers')
-    const response = await fetch(apiUrl)
-    if (!response.ok) return null
-    const modifiers = await response.json()
-    _weaponStatModCache = {}
+    const apiUrl = await getApiUrl("/weapon_stat_modifiers");
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    const modifiers = await response.json();
+    _weaponStatModCache = {};
     for (const mod of modifiers) {
       _weaponStatModCache[mod.slug] = {
         nameEn: mod.name_en,
         nameJp: mod.name_jp,
-        suffix: mod.suffix || ''
-      }
+        suffix: mod.suffix || "",
+      };
     }
-    return _weaponStatModCache
+    return _weaponStatModCache;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -1012,222 +1109,260 @@ async function fetchWeaponStatModifiers() {
  * Fetch job skill slugs by name from the API.
  * Cached in memory for the session.
  */
-let _jobSkillCache = {}
+let _jobSkillCache = {};
 async function fetchJobSkillSlugs(names) {
-  const uncached = names.filter(n => !(n in _jobSkillCache))
+  const uncached = names.filter((n) => !(n in _jobSkillCache));
   if (uncached.length === 0) {
-    return Object.fromEntries(names.map(n => [n, _jobSkillCache[n] || null]))
+    return Object.fromEntries(names.map((n) => [n, _jobSkillCache[n] || null]));
   }
   try {
-    const apiUrl = await getApiUrl('/job_skills/resolve')
+    const apiUrl = await getApiUrl("/job_skills/resolve");
     const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ names: uncached })
-    })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ names: uncached }),
+    });
     if (response.ok) {
-      const results = await response.json()
-      for (const r of results) _jobSkillCache[r.name] = r.slug
+      const results = await response.json();
+      for (const r of results) _jobSkillCache[r.name] = r.slug;
     }
-  } catch { /* fall through */ }
-  return Object.fromEntries(names.map(n => [n, _jobSkillCache[n] || null]))
+  } catch {
+    /* fall through */
+  }
+  return Object.fromEntries(names.map((n) => [n, _jobSkillCache[n] || null]));
 }
 
 /**
  * Render items in detail view
  */
 async function renderDetailItems(dataType, data) {
-  const container = document.getElementById('detailItems')
+  const container = document.getElementById("detailItems");
+  const { gbAuth: authData } = await chrome.storage.local.get("gbAuth");
+  const simplePortraits = authData?.simplePortraits || false;
 
   // Party gets special sectioned layout
-  if (dataType.startsWith('party_')) {
-    const friendSummonName = data?.deck?.pc?.damage_info?.summon_name
-    const setAction = data?.deck?.pc?.set_action || []
-    const skillNames = setAction.map(s => s.name).filter(Boolean)
-    const [friendSummon, weaponKeyMap, jobSkillSlugs, weaponStatModifiers] = await Promise.all([
-      searchSummonByName(friendSummonName),
-      fetchWeaponKeyMap(),
-      skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({}),
-      fetchWeaponStatModifiers()
-    ])
-    renderPartyDetail(container, data, { friendSummon, weaponKeyMap, jobSkillSlugs, weaponStatModifiers })
-    return
+  if (dataType.startsWith("party_")) {
+    const friendSummonName = data?.deck?.pc?.damage_info?.summon_name;
+    const setAction = data?.deck?.pc?.set_action || [];
+    const skillNames = setAction.map((s) => s.name).filter(Boolean);
+    const [friendSummon, weaponKeyMap, jobSkillSlugs, weaponStatModifiers] =
+      await Promise.all([
+        searchSummonByName(friendSummonName),
+        fetchWeaponKeyMap(),
+        skillNames.length > 0
+          ? fetchJobSkillSlugs(skillNames)
+          : Promise.resolve({}),
+        fetchWeaponStatModifiers(),
+      ]);
+    renderPartyDetail(container, data, {
+      friendSummon,
+      weaponKeyMap,
+      jobSkillSlugs,
+      weaponStatModifiers,
+      simplePortraits,
+    });
+    return;
   }
 
   // Database detail items get their own layout
   if (isDatabaseDetailType(dataType)) {
-    renderDatabaseDetail(container, dataType, data)
-    return
+    renderDatabaseDetail(container, dataType, data);
+    return;
   }
 
   // Character stats gets its own list layout
-  if (dataType === 'character_stats') {
-    renderCharacterStatsDetail(container, data)
-    return
+  if (dataType === "character_stats") {
+    renderCharacterStatsDetail(container, data);
+    return;
   }
 
-  const isWeaponType = dataType.includes('weapon') || dataType.startsWith('stash_weapon')
-  const weaponStatModifiers = isWeaponType ? await fetchWeaponStatModifiers() : null
+  const isWeaponType =
+    dataType.includes("weapon") || dataType.startsWith("stash_weapon");
+  const weaponStatModifiers = isWeaponType
+    ? await fetchWeaponStatModifiers()
+    : null;
 
-  const allItems = extractItems(dataType, data)
-  const isCollection = isCollectionType(dataType)
+  const allItems = extractItems(dataType, data);
+  const isCollection = isCollectionType(dataType);
 
   // Apply filters (preserving original indices for selection)
   // Track hidden item counts by filter type
-  let hiddenByRarity = 0
-  let hiddenByLv1 = 0
-  const itemsWithIndices = allItems.map((item, index) => ({ item, originalIndex: index }))
+  let hiddenByRarity = 0;
+  let hiddenByLv1 = 0;
+  const itemsWithIndices = allItems
+    .map((item, index) => ({ item, originalIndex: index }))
     .filter(({ item, originalIndex }) => {
-      if (brokenImageIndices.has(originalIndex)) return false
-      const filteredByRarity = shouldFilterByRarity(item, dataType)
-      const filteredByLv1 = shouldFilterByLv1(item, dataType)
-      if (filteredByRarity) hiddenByRarity++
-      if (filteredByLv1) hiddenByLv1++
-      return !filteredByRarity && !filteredByLv1
-    })
+      if (brokenImageIndices.has(originalIndex)) return false;
+      const filteredByRarity = shouldFilterByRarity(item, dataType);
+      const filteredByLv1 = shouldFilterByLv1(item, dataType);
+      if (filteredByRarity) hiddenByRarity++;
+      if (filteredByLv1) hiddenByLv1++;
+      return !filteredByRarity && !filteredByLv1;
+    });
 
-  const hasNames = itemsWithIndices.some(({ item }) => item.name || item.master?.name)
+  const hasNames = itemsWithIndices.some(
+    ({ item }) => item.name || item.master?.name,
+  );
 
   // For collections, all displayed items start selected unless manually unchecked
   // (error handlers will deselect broken ones)
   if (isCollection) {
     itemsWithIndices.forEach(({ originalIndex }) => {
       if (!manuallyUnchecked.has(originalIndex)) {
-        selectedItems.add(originalIndex)
+        selectedItems.add(originalIndex);
       }
-    })
+    });
   }
 
   // Determine ownership ID for each item (game_id for weapons/summons/artifacts, granblue_id for characters)
-  const isCharacterType = dataType.includes('npc') || dataType.includes('character')
-  const isArtifactType = dataType.includes('artifact')
+  const isCharacterType =
+    dataType.includes("npc") || dataType.includes("character");
+  const isArtifactType = dataType.includes("artifact");
   const getOwnershipId = (item) => {
-    if (isCharacterType) return item.master?.id?.toString() || ''
-    if (isArtifactType) return item.id?.toString() || ''
-    return item.param?.id?.toString() || ''
-  }
+    if (isCharacterType) return item.master?.id?.toString() || "";
+    if (isArtifactType) return item.id?.toString() || "";
+    return item.param?.id?.toString() || "";
+  };
 
   if (hasNames) {
     // List layout with names
     container.innerHTML = `<div class="item-list">
-      ${itemsWithIndices.map(({ item, originalIndex }) => {
-        const name = item.name || item.master?.name || ''
-        const level = item.level || item.lv
-        const levelText = level ? ` <span class="list-item-level">Lv.${level}</span>` : ''
-        const isChecked = !isCollection || selectedItems.has(originalIndex)
-        const checkboxHtml = isCollection ? `
-          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
+      ${itemsWithIndices
+        .map(({ item, originalIndex }) => {
+          const name = item.name || item.master?.name || "";
+          const level = item.level || item.lv;
+          const levelText = level
+            ? ` <span class="list-item-level">Lv.${level}</span>`
+            : "";
+          const isChecked = !isCollection || selectedItems.has(originalIndex);
+          const checkboxHtml = isCollection
+            ? `
+          <label class="item-checkbox${isChecked ? " checked" : ""}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
-        ` : ''
-        return `
-        <div class="list-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
-          <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
+        `
+            : "";
+          return `
+        <div class="list-item${isCollection ? " selectable" : ""}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
+          <img class="list-item-image" src="${getItemImageUrl(dataType, item, simplePortraits)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
-            ${dataType.includes('artifact') ? getArtifactLabels(item) : ''}
+            ${dataType.includes("artifact") ? getArtifactLabels(item) : ""}
           </div>
           ${checkboxHtml}
         </div>
-      `}).join('')}
-    </div>`
+      `;
+        })
+        .join("")}
+    </div>`;
   } else {
     // Grid layout (collection views use square-cells for fixed width)
-    const gridClass = getGridClass(dataType)
+    const gridClass = getGridClass(dataType);
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
-      ${itemsWithIndices.map(({ item, originalIndex }) => {
-        const isChecked = !isCollection || selectedItems.has(originalIndex)
-        const checkboxHtml = isCollection ? `
-          <label class="item-checkbox${isChecked ? ' checked' : ''}" data-index="${originalIndex}">
+      ${itemsWithIndices
+        .map(({ item, originalIndex }) => {
+          const isChecked = !isCollection || selectedItems.has(originalIndex);
+          const checkboxHtml = isCollection
+            ? `
+          <label class="item-checkbox${isChecked ? " checked" : ""}" data-index="${originalIndex}">
             <span class="checkbox-indicator">${CHECK_ICON}</span>
           </label>
-        ` : ''
-        const modifiersHtml = isCharacterType
-          ? renderCharacterModifiers(item)
-          : isWeaponType ? renderWeaponModifiers(item, null, weaponStatModifiers) : ''
-        return `
-        <div class="grid-item${isCollection ? ' selectable' : ''}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
+        `
+            : "";
+          const modifiersHtml = isCharacterType
+            ? renderCharacterModifiers(item)
+            : isWeaponType
+              ? renderWeaponModifiers(item, null, weaponStatModifiers)
+              : "";
+          return `
+        <div class="grid-item${isCollection ? " selectable" : ""}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
           ${modifiersHtml}
-          <img src="${getItemImageUrl(dataType, item)}" alt="">
+          <img src="${getItemImageUrl(dataType, item, simplePortraits)}" alt="">
           ${checkboxHtml}
         </div>
-      `}).join('')}
-    </div>`
+      `;
+        })
+        .join("")}
+    </div>`;
   }
 
   // Show hidden items message
-  const totalHidden = hiddenByRarity + hiddenByLv1
+  const totalHidden = hiddenByRarity + hiddenByLv1;
   if (totalHidden > 0) {
-    const bothRarityAndLv1 = hiddenByRarity > 0 && hiddenByLv1 > 0
+    const bothRarityAndLv1 = hiddenByRarity > 0 && hiddenByLv1 > 0;
     const message = bothRarityAndLv1
-      ? t('filter_hidden_both').replace('{count}', totalHidden)
+      ? t("filter_hidden_both").replace("{count}", totalHidden)
       : hiddenByRarity > 0
-        ? t('filter_hidden_rarity').replace('{count}', hiddenByRarity)
-        : t('filter_hidden_lv1').replace('{count}', hiddenByLv1)
+        ? t("filter_hidden_rarity").replace("{count}", hiddenByRarity)
+        : t("filter_hidden_lv1").replace("{count}", hiddenByLv1);
 
     const hiddenHtml = `
       <div class="filter-hidden-message">
         <p>${message}</p>
-        <button class="filter-show-all">${t('filter_show_all')}</button>
-      </div>`
-    container.insertAdjacentHTML('beforeend', hiddenHtml)
+        <button class="filter-show-all">${t("filter_show_all")}</button>
+      </div>`;
+    container.insertAdjacentHTML("beforeend", hiddenHtml);
 
-    container.querySelector('.filter-show-all')?.addEventListener('click', () => {
-      // Enable all rarities
-      activeRarityFilters = new Set(['2', '3', '4'])
-      document.querySelectorAll('#rarityFilters input[type="checkbox"]').forEach(cb => {
-        cb.checked = true
-      })
-      updateFilterButtonLabel()
-      // Disable Lv1 exclusion
-      excludeLv1Items = false
-      const lv1Checkbox = document.getElementById('excludeLv1Checkbox')
-      if (lv1Checkbox) lv1Checkbox.checked = false
+    container
+      .querySelector(".filter-show-all")
+      ?.addEventListener("click", () => {
+        // Enable all rarities
+        activeRarityFilters = new Set(["2", "3", "4"]);
+        document
+          .querySelectorAll('#rarityFilters input[type="checkbox"]')
+          .forEach((cb) => {
+            cb.checked = true;
+          });
+        updateFilterButtonLabel();
+        // Disable Lv1 exclusion
+        excludeLv1Items = false;
+        const lv1Checkbox = document.getElementById("excludeLv1Checkbox");
+        if (lv1Checkbox) lv1Checkbox.checked = false;
 
-      refreshDetailViewWithFilters()
-    })
+        refreshDetailViewWithFilters();
+      });
   }
 
   // Add click handlers for selectable items (whole item toggles checkbox)
   if (isCollection) {
-    container.querySelectorAll('.selectable').forEach(item => {
-      item.addEventListener('click', () => {
-        const index = parseInt(item.dataset.index, 10)
-        const checkbox = item.querySelector('.item-checkbox')
+    container.querySelectorAll(".selectable").forEach((item) => {
+      item.addEventListener("click", () => {
+        const index = parseInt(item.dataset.index, 10);
+        const checkbox = item.querySelector(".item-checkbox");
         if (checkbox) {
-          toggleItemSelection(index, checkbox)
+          toggleItemSelection(index, checkbox);
         }
-      })
-    })
+      });
+    });
 
     // Hide items when their image fails to load, trying fallback first
-    container.querySelectorAll('.selectable img').forEach(img => {
-      img.addEventListener('error', () => {
+    container.querySelectorAll(".selectable img").forEach((img) => {
+      img.addEventListener("error", () => {
         // Try fallback: remove element suffix (e.g., _0.jpg -> .jpg) before hiding
-        const fallbackSrc = img.src.replace(/_\d+\.jpg$/, '.jpg')
+        const fallbackSrc = img.src.replace(/_\d+\.jpg$/, ".jpg");
         if (img.src !== fallbackSrc && !img.dataset.fallbackAttempted) {
-          img.dataset.fallbackAttempted = 'true'
-          img.src = fallbackSrc
-          return
+          img.dataset.fallbackAttempted = "true";
+          img.src = fallbackSrc;
+          return;
         }
 
-        const item = img.closest('.selectable')
-        if (!item) return
-        const index = parseInt(item.dataset.index, 10)
+        const item = img.closest(".selectable");
+        if (!item) return;
+        const index = parseInt(item.dataset.index, 10);
         // Track broken image and hide the item
-        brokenImageIndices.add(index)
-        selectedItems.delete(index)
-        item.style.display = 'none'
-        updateSelectionCount()
-      })
-    })
+        brokenImageIndices.add(index);
+        selectedItems.delete(index);
+        item.style.display = "none";
+        updateSelectionCount();
+      });
+    });
 
-    updateSelectionCount()
+    updateSelectionCount();
   }
 
   // Async: dim items already in the user's collection
   if (isCollection) {
-    applyOwnershipDimming(container, dataType)
+    applyOwnershipDimming(container, dataType);
   }
 }
 
@@ -1236,39 +1371,45 @@ async function renderDetailItems(dataType, data) {
  */
 async function applyOwnershipDimming(container, dataType) {
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'getCollectionIds' })
-    if (response?.error) return
+    const response = await chrome.runtime.sendMessage({
+      action: "getCollectionIds",
+    });
+    if (response?.error) return;
 
     // Determine which ID set to check against
-    const isCharacterType = dataType.includes('npc') || dataType.includes('character')
-    let ownedIds
-    if (dataType.includes('weapon') || dataType.startsWith('stash_weapon')) {
-      ownedIds = new Set(response.weapons || [])
-    } else if (dataType.includes('summon') || dataType.startsWith('stash_summon')) {
-      ownedIds = new Set(response.summons || [])
-    } else if (dataType.includes('artifact')) {
-      ownedIds = new Set(response.artifacts || [])
+    const isCharacterType =
+      dataType.includes("npc") || dataType.includes("character");
+    let ownedIds;
+    if (dataType.includes("weapon") || dataType.startsWith("stash_weapon")) {
+      ownedIds = new Set(response.weapons || []);
+    } else if (
+      dataType.includes("summon") ||
+      dataType.startsWith("stash_summon")
+    ) {
+      ownedIds = new Set(response.summons || []);
+    } else if (dataType.includes("artifact")) {
+      ownedIds = new Set(response.artifacts || []);
     } else if (isCharacterType) {
-      ownedIds = new Set(response.characters || [])
+      ownedIds = new Set(response.characters || []);
     } else {
-      return
+      return;
     }
 
-    container.querySelectorAll('[data-ownership-id]').forEach(el => {
-      const id = el.dataset.ownershipId
+    container.querySelectorAll("[data-ownership-id]").forEach((el) => {
+      const id = el.dataset.ownershipId;
       if (id && ownedIds.has(id)) {
-        el.classList.add('owned')
-        el.dataset.tooltip = t('stat_already_owned')
+        el.classList.add("owned");
+        el.dataset.tooltip = t("stat_already_owned");
         // Uncheck owned items by default
-        const checkbox = el.querySelector('.item-checkbox')
+        const checkbox = el.querySelector(".item-checkbox");
         if (checkbox) {
-          const index = parseInt(checkbox.dataset.index, 10)
-          selectedItems.delete(index)
-          checkbox.classList.remove('checked')
+          const index = parseInt(checkbox.dataset.index, 10);
+          selectedItems.delete(index);
+          checkbox.classList.remove("checked");
         }
       }
-    })
-    updateSelectionCount()
+    });
+    updateSelectionCount();
   } catch {
     // Not logged in or API error — skip silently
   }
@@ -1279,15 +1420,15 @@ async function applyOwnershipDimming(container, dataType) {
  */
 function toggleItemSelection(index, checkbox) {
   if (selectedItems.has(index)) {
-    selectedItems.delete(index)
-    manuallyUnchecked.add(index) // Track manual unchecking
-    checkbox.classList.remove('checked')
+    selectedItems.delete(index);
+    manuallyUnchecked.add(index); // Track manual unchecking
+    checkbox.classList.remove("checked");
   } else {
-    selectedItems.add(index)
-    manuallyUnchecked.delete(index) // Clear manual uncheck if re-checked
-    checkbox.classList.add('checked')
+    selectedItems.add(index);
+    manuallyUnchecked.delete(index); // Clear manual uncheck if re-checked
+    checkbox.classList.add("checked");
   }
-  updateSelectionCount()
+  updateSelectionCount();
 }
 
 /**
@@ -1295,42 +1436,54 @@ function toggleItemSelection(index, checkbox) {
  */
 function updateSelectionCount() {
   // Update tri-state checkbox and label
-  const toggle = document.getElementById('selectAllToggle')
+  const toggle = document.getElementById("selectAllToggle");
   if (toggle) {
-    const checkboxes = document.querySelectorAll('#detailItems .item-checkbox')
-    const total = checkboxes.length
-    const checked = document.querySelectorAll('#detailItems .item-checkbox.checked').length
+    const checkboxes = document.querySelectorAll("#detailItems .item-checkbox");
+    const total = checkboxes.length;
+    const checked = document.querySelectorAll(
+      "#detailItems .item-checkbox.checked",
+    ).length;
 
     // Disable when no items are visible
     if (total === 0) {
-      toggle.dataset.state = 'unchecked'
-      toggle.classList.add('disabled')
+      toggle.dataset.state = "unchecked";
+      toggle.classList.add("disabled");
     } else {
-      toggle.classList.remove('disabled')
+      toggle.classList.remove("disabled");
       if (checked === 0) {
-        toggle.dataset.state = 'unchecked'
+        toggle.dataset.state = "unchecked";
       } else if (checked === total) {
-        toggle.dataset.state = 'checked'
+        toggle.dataset.state = "checked";
       } else {
-        toggle.dataset.state = 'indeterminate'
+        toggle.dataset.state = "indeterminate";
       }
     }
     // Update label with count
-    const label = document.getElementById('selectAllLabel')
+    const label = document.getElementById("selectAllLabel");
     if (label) {
-      if (toggle.dataset.state === 'checked') {
-        label.textContent = tPlural('action_deselect_count_one', 'action_deselect_count', total, { count: total })
+      if (toggle.dataset.state === "checked") {
+        label.textContent = tPlural(
+          "action_deselect_count_one",
+          "action_deselect_count",
+          total,
+          { count: total },
+        );
       } else {
-        const remaining = total - checked
-        label.textContent = tPlural('action_select_count_one', 'action_select_count', remaining, { count: remaining })
+        const remaining = total - checked;
+        label.textContent = tPlural(
+          "action_select_count_one",
+          "action_select_count",
+          remaining,
+          { count: remaining },
+        );
       }
     }
   }
 
   // Update standalone item count for non-collection views
-  const countEl = document.getElementById('detailItemCount')
+  const countEl = document.getElementById("detailItemCount");
   if (countEl && !isCollectionType(currentDetailDataType)) {
-    countEl.classList.remove('hidden')
+    countEl.classList.remove("hidden");
   }
 }
 
@@ -1341,91 +1494,103 @@ function updateSelectionCount() {
  * Render character stats detail view
  */
 // Track the last render timestamp for character stats to detect new items
-let lastCharacterStatsRenderTime = 0
+let lastCharacterStatsRenderTime = 0;
 
 function renderCharacterStatsDetail(container, data) {
   // Data is keyed by masterId
-  let characters = Object.values(data)
+  let characters = Object.values(data);
 
   if (characters.length === 0) {
-    container.innerHTML = `<p class="cache-empty">${t('char_stats_no_captured')}</p>`
-    return
+    container.innerHTML = `<p class="cache-empty">${t("char_stats_no_captured")}</p>`;
+    return;
   }
 
   // Sort by timestamp descending (most recent first)
-  characters = characters.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+  characters = characters.sort(
+    (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
+  );
 
   // Determine which items are "new" (added since last render)
-  const renderTime = Date.now()
-  const newThreshold = lastCharacterStatsRenderTime || 0
+  const renderTime = Date.now();
+  const newThreshold = lastCharacterStatsRenderTime || 0;
 
   // Initialize all items as selected
-  selectedItems = new Set(characters.map((_, i) => i))
+  selectedItems = new Set(characters.map((_, i) => i));
 
-  let html = '<div class="char-stats-list">'
+  let html = '<div class="char-stats-list">';
 
   characters.forEach((char, index) => {
-    const masterId = char.masterId
-    const name = char.masterName || `Character ${masterId}`
-    const imageUrl = getImageUrl(`character-square/${masterId}_01.jpg`)
+    const masterId = char.masterId;
+    const name = char.masterName || `Character ${masterId}`;
+    const imageUrl = getImageUrl(`character-square/${masterId}_01.jpg`);
 
     // Element label
-    const elementHtml = char.element && GAME_ELEMENT_NAMES[char.element]
-      ? `<img class="char-stats-element" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[char.element]}.png`)}" alt="${GAME_ELEMENT_NAMES[char.element]}">`
-      : ''
+    const elementHtml =
+      char.element && GAME_ELEMENT_NAMES[char.element]
+        ? `<img class="char-stats-element" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[char.element]}.png`)}" alt="${GAME_ELEMENT_NAMES[char.element]}">`
+        : "";
 
     // Awakening line
     const awakeningHtml = char.awakening
-      ? `<div class="char-stats-awakening">${char.awakening.typeName || t('stat_awakening')} Lv.${char.awakening.level || 1}${char.perpetuity ? ` · ${t('stat_perpetuity_ring')}` : ''}</div>`
-      : (char.perpetuity ? `<div class="char-stats-awakening">${t('stat_perpetuity_ring')}</div>` : '')
+      ? `<div class="char-stats-awakening">${char.awakening.typeName || t("stat_awakening")} Lv.${char.awakening.level || 1}${char.perpetuity ? ` · ${t("stat_perpetuity_ring")}` : ""}</div>`
+      : char.perpetuity
+        ? `<div class="char-stats-awakening">${t("stat_perpetuity_ring")}</div>`
+        : "";
 
     // Over Mastery (rings) section
-    let overMasteryHtml = ''
+    let overMasteryHtml = "";
     if (char.rings && char.rings.length > 0) {
-      overMasteryHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_over_mastery')}</div>`
+      overMasteryHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t("char_over_mastery")}</div>`;
       for (const ring of char.rings) {
-        const ringStr = formatModifier(ring, OVER_MASTERY_NAMES)
+        const ringStr = formatModifier(ring, OVER_MASTERY_NAMES);
         if (ringStr) {
-          overMasteryHtml += `<div class="char-stats-line">${ringStr}</div>`
+          overMasteryHtml += `<div class="char-stats-line">${ringStr}</div>`;
         }
       }
-      overMasteryHtml += '</div>'
+      overMasteryHtml += "</div>";
     }
 
     // Aetherial Mastery (earring) section
-    let aetherialHtml = ''
+    let aetherialHtml = "";
     if (char.earring) {
-      const earringStr = formatModifier(char.earring, AETHERIAL_NAMES)
+      const earringStr = formatModifier(char.earring, AETHERIAL_NAMES);
       if (earringStr) {
-        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_aetherial_mastery')}</div><div class="char-stats-line">${earringStr}</div></div>`
+        aetherialHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t("char_aetherial_mastery")}</div><div class="char-stats-line">${earringStr}</div></div>`;
       }
     }
 
     // Perpetuity Ring bonuses section
-    let perpetuityHtml = ''
+    let perpetuityHtml = "";
     if (char.perpetuityBonuses && char.perpetuityBonuses.length > 0) {
-      perpetuityHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t('char_perpetuity_bonuses')}</div>`
+      perpetuityHtml = `<div class="char-stats-section"><div class="char-stats-subheader">${t("char_perpetuity_bonuses")}</div>`;
       for (const bonus of char.perpetuityBonuses) {
-        const bonusStr = formatPerpetuityBonus(bonus)
+        const bonusStr = formatPerpetuityBonus(bonus);
         if (bonusStr) {
-          perpetuityHtml += `<div class="char-stats-line">${bonusStr}</div>`
+          perpetuityHtml += `<div class="char-stats-line">${bonusStr}</div>`;
         }
       }
-      perpetuityHtml += '</div>'
+      perpetuityHtml += "</div>";
     }
 
     // Check if we have any stats to show
-    const hasStats = char.awakening || char.perpetuity || (char.rings && char.rings.length > 0) || char.earring || (char.perpetuityBonuses && char.perpetuityBonuses.length > 0)
-    const noStatsHtml = !hasStats ? `<div class="char-stats-empty">${t('char_stats_no_stats')}</div>` : ''
+    const hasStats =
+      char.awakening ||
+      char.perpetuity ||
+      (char.rings && char.rings.length > 0) ||
+      char.earring ||
+      (char.perpetuityBonuses && char.perpetuityBonuses.length > 0);
+    const noStatsHtml = !hasStats
+      ? `<div class="char-stats-empty">${t("char_stats_no_stats")}</div>`
+      : "";
 
     // Perpetuity icon overlay on character image
     const perpetuityIconHtml = char.perpetuity
-      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="${t('stat_perpetuity_ring')}" title="${t('stat_perpetuity_ring')}">`
-      : ''
+      ? `<img class="char-stats-perpetuity" src="icons/perpetuity/filled.svg" alt="${t("stat_perpetuity_ring")}" title="${t("stat_perpetuity_ring")}">`
+      : "";
 
     // Check if this item is new (added/updated since last render)
-    const isNew = char.timestamp && char.timestamp > newThreshold
-    const newClass = isNew ? ' new-item' : ''
+    const isNew = char.timestamp && char.timestamp > newThreshold;
+    const newClass = isNew ? " new-item" : "";
 
     html += `
       <div class="char-stats-item selectable${newClass}" data-index="${index}" data-master-id="${masterId}">
@@ -1450,115 +1615,118 @@ function renderCharacterStatsDetail(container, data) {
           ${noStatsHtml}
         </div>
       </div>
-    `
-  })
+    `;
+  });
 
-  html += '</div>'
-  container.innerHTML = html
+  html += "</div>";
+  container.innerHTML = html;
 
   // Add click handlers for checkboxes only (not entire item since it's larger now)
-  container.querySelectorAll('.item-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('click', (e) => {
-      e.stopPropagation()
-      const index = parseInt(checkbox.dataset.index, 10)
-      toggleItemSelection(index, checkbox)
-    })
-  })
+  container.querySelectorAll(".item-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const index = parseInt(checkbox.dataset.index, 10);
+      toggleItemSelection(index, checkbox);
+    });
+  });
 
   // Uncheck items when their image fails to load
-  container.querySelectorAll('.char-stats-image').forEach(img => {
-    img.addEventListener('error', () => {
-      const item = img.closest('.char-stats-item')
-      if (!item) return
-      const index = parseInt(item.dataset.index, 10)
-      const checkbox = item.querySelector('.item-checkbox')
+  container.querySelectorAll(".char-stats-image").forEach((img) => {
+    img.addEventListener("error", () => {
+      const item = img.closest(".char-stats-item");
+      if (!item) return;
+      const index = parseInt(item.dataset.index, 10);
+      const checkbox = item.querySelector(".item-checkbox");
       if (checkbox && selectedItems.has(index)) {
-        selectedItems.delete(index)
-        checkbox.classList.remove('checked')
-        updateSelectionCount()
+        selectedItems.delete(index);
+        checkbox.classList.remove("checked");
+        updateSelectionCount();
       }
-    })
-  })
+    });
+  });
 
   // Update last render time for detecting new items on next render
-  lastCharacterStatsRenderTime = renderTime
+  lastCharacterStatsRenderTime = renderTime;
 }
 
 /**
  * Filter collection data to only include selected items
  */
 function filterSelectedItems(dataType, data) {
-  if (!isCollectionType(dataType)) return data
+  if (!isCollectionType(dataType)) return data;
 
   // Character stats: copy raw game data for debugging, not processed data
-  if (dataType === 'character_stats') {
-    const characters = Object.values(data)
-    const result = {}
+  if (dataType === "character_stats") {
+    const characters = Object.values(data);
+    const result = {};
     characters.forEach((char, index) => {
       if (selectedItems.has(index)) {
-        result[char.masterId] = char.rawData || char
+        result[char.masterId] = char.rawData || char;
       }
-    })
-    return result
+    });
+    return result;
   }
 
-  const items = extractItems(dataType, data)
-  const filteredItems = items.filter((_, i) => selectedItems.has(i))
+  const items = extractItems(dataType, data);
+  const filteredItems = items.filter((_, i) => selectedItems.has(i));
 
   // Reconstruct the data structure with filtered items
   // Collection data is an object keyed by page number, each with a 'list' array
-  const result = {}
-  let itemIndex = 0
+  const result = {};
+  let itemIndex = 0;
 
   for (const [pageNum, pageData] of Object.entries(data)) {
-    const pageItems = pageData.list || []
-    const filteredPageItems = []
+    const pageItems = pageData.list || [];
+    const filteredPageItems = [];
 
     for (const item of pageItems) {
       if (selectedItems.has(itemIndex)) {
-        filteredPageItems.push(item)
+        filteredPageItems.push(item);
       }
-      itemIndex++
+      itemIndex++;
     }
 
     if (filteredPageItems.length > 0) {
-      result[pageNum] = { ...pageData, list: filteredPageItems }
+      result[pageNum] = { ...pageData, list: filteredPageItems };
     }
   }
 
-  return result
+  return result;
 }
 
 /**
  * Handle copy from detail view
  */
 async function handleDetailCopy() {
-  if (!currentDetailDataType) return
+  if (!currentDetailDataType) return;
 
   try {
     const response = await chrome.runtime.sendMessage({
-      action: 'getCachedData',
-      dataType: currentDetailDataType
-    })
+      action: "getCachedData",
+      dataType: currentDetailDataType,
+    });
 
     if (response.error) {
-      showToast(t('toast_copy_failed'))
-      return
+      showToast(t("toast_copy_failed"));
+      return;
     }
 
     // Filter to selected items for collections
-    const dataToExport = filterSelectedItems(currentDetailDataType, response.data)
+    const dataToExport = filterSelectedItems(
+      currentDetailDataType,
+      response.data,
+    );
 
-    const jsonString = JSON.stringify(dataToExport, null, 2)
-    await navigator.clipboard.writeText(jsonString)
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    await navigator.clipboard.writeText(jsonString);
 
     if (isCollectionType(currentDetailDataType)) {
-      showToast(t('toast_copied_items', { count: selectedItems.size }))
+      showToast(t("toast_copied_items", { count: selectedItems.size }));
     } else {
-      showToast(t('toast_copied'))
+      showToast(t("toast_copied"));
     }
   } catch (error) {
-    showToast(t('toast_copy_failed'))
+    showToast(t("toast_copy_failed"));
   }
 }
 
@@ -1566,32 +1734,37 @@ async function handleDetailCopy() {
  * Handle save/download from detail view
  */
 async function handleDetailSave() {
-  if (!currentDetailDataType) return
+  if (!currentDetailDataType) return;
 
   try {
     const response = await chrome.runtime.sendMessage({
-      action: 'getCachedData',
-      dataType: currentDetailDataType
-    })
+      action: "getCachedData",
+      dataType: currentDetailDataType,
+    });
 
     if (response.error) {
-      showToast(t('toast_save_failed'))
-      return
+      showToast(t("toast_save_failed"));
+      return;
     }
 
-    const dataToExport = filterSelectedItems(currentDetailDataType, response.data)
-    const jsonString = JSON.stringify(dataToExport, null, 2)
-    const blob = new Blob([jsonString], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${currentDetailDataType}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    const dataToExport = filterSelectedItems(
+      currentDetailDataType,
+      response.data,
+    );
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentDetailDataType}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
 
-    showToast(t('toast_saved_file', { filename: `${currentDetailDataType}.json` }))
+    showToast(
+      t("toast_saved_file", { filename: `${currentDetailDataType}.json` }),
+    );
   } catch (error) {
-    showToast(t('toast_save_failed'))
+    showToast(t("toast_save_failed"));
   }
 }
 
@@ -1599,156 +1772,175 @@ async function handleDetailSave() {
  * Handle Review button click — open the conflict resolution modal
  */
 function handleDetailReview() {
-  if (!pendingConflicts || pendingConflicts.length === 0) return
+  if (!pendingConflicts || pendingConflicts.length === 0) return;
 
   showConflictModal(pendingConflicts, currentDetailDataType, (decisions) => {
     // Convert Map to plain object for serialization
-    conflictResolutions = {}
+    conflictResolutions = {};
     for (const [gameId, decision] of decisions) {
-      conflictResolutions[gameId] = decision
+      conflictResolutions[gameId] = decision;
     }
 
     // Hide the review button since user has resolved
-    const reviewBtn = document.getElementById('detailReview')
+    const reviewBtn = document.getElementById("detailReview");
     if (reviewBtn) {
-      reviewBtn.textContent = t('action_reviewed')
-      reviewBtn.classList.add('imported')
+      reviewBtn.textContent = t("action_reviewed");
+      reviewBtn.classList.add("imported");
     }
-  })
+  });
 }
 
 /**
  * Check if this is a weapon/summon collection type that supports conflict checking
  */
 function supportsConflictCheck(dataType) {
-  return dataType === 'collection_weapon' || dataType === 'collection_summon' ||
-         dataType === 'list_weapon' || dataType === 'list_summon' ||
-         dataType?.startsWith('stash_weapon') || dataType?.startsWith('stash_summon')
+  return (
+    dataType === "collection_weapon" ||
+    dataType === "collection_summon" ||
+    dataType === "list_weapon" ||
+    dataType === "list_summon" ||
+    dataType?.startsWith("stash_weapon") ||
+    dataType?.startsWith("stash_summon")
+  );
 }
 
 /**
  * Handle import from detail view
  */
 async function handleDetailImport() {
-  if (!currentDetailDataType) return
+  if (!currentDetailDataType) return;
 
-  const importBtn = document.getElementById('detailImport')
+  const importBtn = document.getElementById("detailImport");
   if (importBtn) {
-    importBtn.disabled = true
-    importBtn.textContent = t('action_importing')
+    importBtn.disabled = true;
+    importBtn.textContent = t("action_importing");
   }
 
   try {
     // Get cached data
     const response = await chrome.runtime.sendMessage({
-      action: 'getCachedData',
-      dataType: currentDetailDataType
-    })
+      action: "getCachedData",
+      dataType: currentDetailDataType,
+    });
 
     if (response.error) {
-      showToast(t('toast_import_failed'))
-      return
+      showToast(t("toast_import_failed"));
+      return;
     }
 
     // Filter to selected items for collections
-    const dataToUpload = filterSelectedItems(currentDetailDataType, response.data)
+    const dataToUpload = filterSelectedItems(
+      currentDetailDataType,
+      response.data,
+    );
 
     // For weapon/summon collections, check for conflicts on first import attempt
-    if (supportsConflictCheck(currentDetailDataType) && !conflictResolutions && !pendingConflicts) {
-      importBtn.textContent = t('action_checking')
+    if (
+      supportsConflictCheck(currentDetailDataType) &&
+      !conflictResolutions &&
+      !pendingConflicts
+    ) {
+      importBtn.textContent = t("action_checking");
 
       const conflictResponse = await chrome.runtime.sendMessage({
-        action: 'checkConflicts',
+        action: "checkConflicts",
         data: dataToUpload,
-        dataType: currentDetailDataType
-      })
+        dataType: currentDetailDataType,
+      });
 
       if (!conflictResponse.error && conflictResponse.conflicts?.length > 0) {
         // Conflicts found — show Review button and pause import
-        pendingConflicts = conflictResponse.conflicts
-        const reviewBtn = document.getElementById('detailReview')
+        pendingConflicts = conflictResponse.conflicts;
+        const reviewBtn = document.getElementById("detailReview");
         if (reviewBtn) {
-          reviewBtn.textContent = `${t('action_review')} (${pendingConflicts.length})`
-          reviewBtn.classList.remove('hidden')
+          reviewBtn.textContent = `${t("action_review")} (${pendingConflicts.length})`;
+          reviewBtn.classList.remove("hidden");
         }
-        showToast(pendingConflicts.length > 1
-          ? t('toast_items_need_review', { count: pendingConflicts.length })
-          : t('toast_item_needs_review', { count: pendingConflicts.length }))
-        return
+        showToast(
+          pendingConflicts.length > 1
+            ? t("toast_items_need_review", { count: pendingConflicts.length })
+            : t("toast_item_needs_review", { count: pendingConflicts.length }),
+        );
+        return;
       }
       // No conflicts — proceed normally
     }
 
     // If there are unresolved conflicts, prompt user to review first
     if (pendingConflicts && !conflictResolutions) {
-      showToast(t('toast_review_conflicts'))
-      return
+      showToast(t("toast_review_conflicts"));
+      return;
     }
 
     // Upload based on data type
-    let uploadResponse
-    if (currentDetailDataType.startsWith('party_')) {
-      const raid = getSelectedRaid()
-      const playlists = getSelectedPlaylists()
-      const partyName = document.getElementById('partyNameInput')?.value?.trim() || null
+    let uploadResponse;
+    if (currentDetailDataType.startsWith("party_")) {
+      const raid = getSelectedRaid();
+      const playlists = getSelectedPlaylists();
+      const partyName =
+        document.getElementById("partyNameInput")?.value?.trim() || null;
       uploadResponse = await chrome.runtime.sendMessage({
-        action: 'uploadPartyData',
+        action: "uploadPartyData",
         data: dataToUpload,
         raidId: raid?.id || null,
-        playlistIds: playlists.map(p => p.id),
-        name: partyName
-      })
-    } else if (currentDetailDataType.startsWith('detail_')) {
+        playlistIds: playlists.map((p) => p.id),
+        name: partyName,
+      });
+    } else if (currentDetailDataType.startsWith("detail_")) {
       uploadResponse = await chrome.runtime.sendMessage({
-        action: 'uploadDetailData',
-        data: dataToUpload,
-        dataType: currentDetailDataType
-      })
-    } else if (currentDetailDataType.startsWith('collection_') || currentDetailDataType.startsWith('list_') || currentDetailDataType.startsWith('stash_')) {
-      uploadResponse = await chrome.runtime.sendMessage({
-        action: 'uploadCollectionData',
+        action: "uploadDetailData",
         data: dataToUpload,
         dataType: currentDetailDataType,
-        updateExisting: currentDetailDataType === 'collection_artifact',
-        conflictResolutions: conflictResolutions || undefined
-      })
-    } else if (currentDetailDataType === 'character_stats') {
+      });
+    } else if (
+      currentDetailDataType.startsWith("collection_") ||
+      currentDetailDataType.startsWith("list_") ||
+      currentDetailDataType.startsWith("stash_")
+    ) {
       uploadResponse = await chrome.runtime.sendMessage({
-        action: 'uploadCharacterStats',
-        data: dataToUpload
-      })
+        action: "uploadCollectionData",
+        data: dataToUpload,
+        dataType: currentDetailDataType,
+        updateExisting: currentDetailDataType === "collection_artifact",
+        conflictResolutions: conflictResolutions || undefined,
+      });
+    } else if (currentDetailDataType === "character_stats") {
+      uploadResponse = await chrome.runtime.sendMessage({
+        action: "uploadCharacterStats",
+        data: dataToUpload,
+      });
     } else {
-      showToast(t('toast_import_not_supported'))
-      return
+      showToast(t("toast_import_not_supported"));
+      return;
     }
 
     if (uploadResponse.error) {
-      showToast(tError(uploadResponse.error))
+      showToast(tError(uploadResponse.error));
     } else if (uploadResponse.url) {
       // Party import - opens in new tab
-      chrome.tabs.create({ url: uploadResponse.url })
-      showToast(t('toast_opening_party'))
+      chrome.tabs.create({ url: uploadResponse.url });
+      showToast(t("toast_opening_party"));
     } else if (uploadResponse.created !== undefined) {
       // Collection import
-      const total = uploadResponse.created + uploadResponse.updated
-      showToast(t('toast_imported_items', { total }))
+      const total = uploadResponse.created + uploadResponse.updated;
+      showToast(t("toast_imported_items", { total }));
       if (importBtn) {
-        importBtn.textContent = t('action_imported')
-        importBtn.classList.add('imported')
+        importBtn.textContent = t("action_imported");
+        importBtn.classList.add("imported");
       }
     } else {
-      showToast(t('toast_import_success'))
+      showToast(t("toast_import_success"));
       if (importBtn) {
-        importBtn.textContent = t('action_imported')
-        importBtn.classList.add('imported')
+        importBtn.textContent = t("action_imported");
+        importBtn.classList.add("imported");
       }
     }
   } catch (error) {
-    showToast(t('toast_import_failed'))
+    showToast(t("toast_import_failed"));
   } finally {
-    if (importBtn && !importBtn.classList.contains('imported')) {
-      importBtn.disabled = false
-      importBtn.textContent = t('action_import')
+    if (importBtn && !importBtn.classList.contains("imported")) {
+      importBtn.disabled = false;
+      importBtn.textContent = t("action_import");
     }
   }
 }
@@ -1761,62 +1953,70 @@ async function handleDetailImport() {
  * Handle login button click
  */
 async function handleLogin() {
-  const username = document.getElementById('loginUsername').value.trim().toLowerCase()
-  const password = document.getElementById('loginPassword').value.trim()
-  const loginButton = document.getElementById('loginButton')
-  const loginStatus = document.getElementById('loginStatus')
+  const username = document
+    .getElementById("loginUsername")
+    .value.trim()
+    .toLowerCase();
+  const password = document.getElementById("loginPassword").value.trim();
+  const loginButton = document.getElementById("loginButton");
+  const loginStatus = document.getElementById("loginStatus");
 
   if (!username || !password) {
-    showStatus(loginStatus, t('auth_enter_credentials'), 'error')
-    return
+    showStatus(loginStatus, t("auth_enter_credentials"), "error");
+    return;
   }
 
-  loginButton.disabled = true
-  showStatus(loginStatus, t('auth_logging_in'), 'info')
+  loginButton.disabled = true;
+  showStatus(loginStatus, t("auth_logging_in"), "info");
 
   try {
     // Perform login
-    let gbAuth = await performLogin(username, password)
+    let gbAuth = await performLogin(username, password);
 
     // Fetch additional user info (including role for permissions)
-    const userInfo = await fetchUserInfo(gbAuth.access_token)
+    const userInfo = await fetchUserInfo(gbAuth.access_token);
 
     // If the user switched language on the login screen, persist that choice
-    const loginLocale = getLocale()
-    const serverLanguage = userInfo.language || 'en'
-    const language = loginLocale !== 'en' ? loginLocale : serverLanguage
+    const loginLocale = getLocale();
+    const serverLanguage = userInfo.language || "en";
+    const language = loginLocale !== "en" ? loginLocale : serverLanguage;
 
     gbAuth = {
       ...gbAuth,
       avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
       language,
-      role: userInfo.role || 0
-    }
+      role: userInfo.role || 0,
+      simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
+    };
 
     // Only save auth after both steps succeed
-    await chrome.storage.local.set({ gbAuth })
+    await chrome.storage.local.set({ gbAuth });
 
     // Update server if login screen language differs from server
     if (language !== serverLanguage) {
-      updateUserLanguage(gbAuth.access_token, language).catch(() => {})
+      updateUserLanguage(gbAuth.access_token, language).catch(() => {});
     }
 
-    showStatus(loginStatus, t('auth_login_success'), 'success')
+    showStatus(loginStatus, t("auth_login_success"), "success");
 
     // Switch to main view after brief delay
     setTimeout(() => {
-      initializeApp()
-    }, 1000)
-
+      initializeApp();
+    }, 1000);
   } catch (err) {
-    console.error('Login error:', err)
+    console.error("Login error:", err);
     const errorKeys = {
-      invalid_grant: 'auth_invalid_credentials',
-      request_failed: 'error_request_failed',
-    }
-    const key = errorKeys[err.code] || 'auth_login_failed'
-    showStatus(loginStatus, t(key), 'error')
-    loginButton.disabled = false
+      invalid_grant: "auth_invalid_credentials",
+      request_failed: "error_request_failed",
+    };
+    const key = errorKeys[err.code] || "auth_login_failed";
+    showStatus(loginStatus, t(key), "error");
+    loginButton.disabled = false;
   }
 }
 
@@ -1824,44 +2024,44 @@ async function handleLogin() {
  * Handle logout
  */
 async function handleLogout() {
-  stopAgeTicker()
-  await chrome.storage.local.remove(['gbAuth'])
-  clearElementColors(document.body)
+  stopAgeTicker();
+  await chrome.storage.local.remove(["gbAuth"]);
+  clearElementColors(document.body);
 
-  const loginStatus = document.getElementById('loginStatus')
+  const loginStatus = document.getElementById("loginStatus");
   if (loginStatus) {
-    loginStatus.className = ''
-    loginStatus.textContent = ''
-    hide(loginStatus)
+    loginStatus.className = "";
+    loginStatus.textContent = "";
+    hide(loginStatus);
   }
 
-  initializeApp()
+  initializeApp();
 }
 
 /**
  * Handle show warning/disclaimer
  */
 function handleShowWarning() {
-  const loginView = document.getElementById('loginView')
-  const mainView = document.getElementById('mainView')
-  const warning = document.getElementById('warning')
-  const loginFormContainer = document.getElementById('loginFormContainer')
+  const loginView = document.getElementById("loginView");
+  const mainView = document.getElementById("mainView");
+  const warning = document.getElementById("warning");
+  const loginFormContainer = document.getElementById("loginFormContainer");
 
   // Show warning in login view, hide main view
-  show(loginView)
-  hide(mainView)
-  show(warning)
-  hide(loginFormContainer)
+  show(loginView);
+  hide(mainView);
+  show(warning);
+  hide(loginFormContainer);
 
   // Update acknowledge button to return to main view instead of showing login
-  const acknowledgeButton = document.getElementById('acknowledgeButton')
+  const acknowledgeButton = document.getElementById("acknowledgeButton");
   acknowledgeButton.onclick = () => {
-    hide(loginView)
-    show(mainView)
+    hide(loginView);
+    show(mainView);
     // Reset the button for normal login flow
-    acknowledgeButton.onclick = null
-    initializeLoginListeners()
-  }
+    acknowledgeButton.onclick = null;
+    initializeLoginListeners();
+  };
 }
 
 // ==========================================
@@ -1872,33 +2072,75 @@ function handleShowWarning() {
  * Update profile UI with user data
  */
 async function updateProfileUI(gbAuth) {
-  const tabAvatar = document.getElementById('tabAvatar')
-  const profileAvatar = document.getElementById('profileAvatar')
-  const profileUsername = document.getElementById('profileUsername')
-  const profileHeader = document.getElementById('viewProfile')
+  const tabAvatar = document.getElementById("tabAvatar");
+  const profileAvatar = document.getElementById("profileAvatar");
+  const profileUsername = document.getElementById("profileUsername");
+  const profileHeader = document.getElementById("viewProfile");
 
   // Update username
   if (profileUsername) {
-    profileUsername.textContent = gbAuth.user?.username || 'User'
+    profileUsername.textContent = gbAuth.displayName || gbAuth.user?.username || "User";
   }
 
   // Update avatars
   const avatarUrl = gbAuth.avatar?.picture
     ? getImageUrl(`profile/${gbAuth.avatar.picture}@2x.png`)
-    : getImageUrl('profile/npc@2x.png')
+    : getImageUrl("profile/npc@2x.png");
 
-  if (tabAvatar) tabAvatar.src = avatarUrl
-  if (profileAvatar) profileAvatar.src = avatarUrl
+  if (tabAvatar) tabAvatar.src = avatarUrl;
+  if (profileAvatar) profileAvatar.src = avatarUrl;
 
   // Set element color on body
   if (gbAuth.avatar?.element) {
-    setElementColor(document.body, gbAuth.avatar.element)
+    setElementColor(document.body, gbAuth.avatar.element);
   }
 
   // Update profile link
   if (profileHeader && gbAuth.user?.username) {
-    const siteUrl = await getSiteBaseUrl()
-    profileHeader.href = `${siteUrl}/${gbAuth.user.username}`
+    const siteUrl = await getSiteBaseUrl();
+    profileHeader.href = `${siteUrl}/${gbAuth.user.username}`;
+  }
+}
+
+/**
+ * Non-blocking refresh of user info from the API.
+ * Updates storage and UI if any fields have changed.
+ */
+async function refreshUserInfo(gbAuth) {
+  try {
+    if (!gbAuth?.access_token || (gbAuth.expires_at && gbAuth.expires_at < Date.now())) {
+      return;
+    }
+
+    const userInfo = await fetchUserInfo(gbAuth.access_token);
+
+    const updated = {
+      ...gbAuth,
+      avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
+      language: userInfo.language || gbAuth.language,
+      role: userInfo.role ?? gbAuth.role,
+      simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
+    };
+
+    const changed =
+      JSON.stringify(updated.avatar) !== JSON.stringify(gbAuth.avatar) ||
+      updated.displayName !== gbAuth.displayName ||
+      updated.language !== gbAuth.language ||
+      updated.role !== gbAuth.role ||
+      updated.simplePortraits !== gbAuth.simplePortraits ||
+      updated.user.username !== gbAuth.user?.username;
+
+    if (changed) {
+      await chrome.storage.local.set({ gbAuth: updated });
+      updateProfileUI(updated);
+    }
+  } catch (_) {
+    // Silently fail — cached data remains usable
   }
 }
 
@@ -1910,8 +2152,8 @@ async function updateProfileUI(gbAuth) {
  * Start the age ticker interval
  */
 function startAgeTicker() {
-  stopAgeTicker()
-  ageTickerInterval = setInterval(updateAgeDisplays, 1000)
+  stopAgeTicker();
+  ageTickerInterval = setInterval(updateAgeDisplays, 1000);
 }
 
 /**
@@ -1919,8 +2161,8 @@ function startAgeTicker() {
  */
 function stopAgeTicker() {
   if (ageTickerInterval) {
-    clearInterval(ageTickerInterval)
-    ageTickerInterval = null
+    clearInterval(ageTickerInterval);
+    ageTickerInterval = null;
   }
 }
 
@@ -1929,25 +2171,29 @@ function stopAgeTicker() {
  */
 function updateAgeDisplays() {
   // Update detail view freshness
-  if (detailViewActive && currentDetailDataType && cachedStatus?.[currentDetailDataType]) {
-    const status = cachedStatus[currentDetailDataType]
+  if (
+    detailViewActive &&
+    currentDetailDataType &&
+    cachedStatus?.[currentDetailDataType]
+  ) {
+    const status = cachedStatus[currentDetailDataType];
     if (status.lastUpdated) {
-      const age = Date.now() - status.lastUpdated
-      const el = document.getElementById('detailFreshness')
-      if (el) el.textContent = formatAge(age)
+      const age = Date.now() - status.lastUpdated;
+      const el = document.getElementById("detailFreshness");
+      if (el) el.textContent = formatAge(age);
     }
   }
 
   // Update list view cache ages
-  document.querySelectorAll('.cache-item[data-type]').forEach(item => {
-    const dataType = item.dataset.type
-    const status = cachedStatus?.[dataType]
+  document.querySelectorAll(".cache-item[data-type]").forEach((item) => {
+    const dataType = item.dataset.type;
+    const status = cachedStatus?.[dataType];
     if (status?.lastUpdated) {
-      const age = Date.now() - status.lastUpdated
-      const ageEl = item.querySelector('.cache-age')
-      if (ageEl) ageEl.textContent = formatAge(age)
+      const age = Date.now() - status.lastUpdated;
+      const ageEl = item.querySelector(".cache-age");
+      if (ageEl) ageEl.textContent = formatAge(age);
     }
-  })
+  });
 }
 
 // ==========================================
@@ -1959,90 +2205,95 @@ function updateAgeDisplays() {
  */
 async function refreshAllCaches() {
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'getCacheStatus' })
+    const response = await chrome.runtime.sendMessage({
+      action: "getCacheStatus",
+    });
 
     if (response?.error) {
-      console.error('Cache status error:', response.error)
-      cachedStatus = {}
+      console.error("Cache status error:", response.error);
+      cachedStatus = {};
     } else {
-      cachedStatus = formatCacheStatus(response || {})
+      cachedStatus = formatCacheStatus(response || {});
     }
   } catch (error) {
-    console.error('Error refreshing cache:', error)
-    cachedStatus = {}
+    console.error("Error refreshing cache:", error);
+    cachedStatus = {};
   }
 
   // Always update all data tabs
-  updateTabCacheDisplay('party', cachedStatus)
-  updateTabCacheDisplay('collection', cachedStatus)
-  updateTabCacheDisplay('database', cachedStatus)
+  updateTabCacheDisplay("party", cachedStatus);
+  updateTabCacheDisplay("collection", cachedStatus);
+  updateTabCacheDisplay("database", cachedStatus);
 }
 
 /**
  * Update cache display for a specific tab
  */
 function updateTabCacheDisplay(tabName, status) {
-  const container = document.getElementById(`${tabName}Items`)
-  if (!container) return
+  const container = document.getElementById(`${tabName}Items`);
+  if (!container) return;
 
   // Get types to display - party and database tabs discover dynamically from status
-  let typesToDisplay = []
-  if (tabName === 'party') {
+  let typesToDisplay = [];
+  if (tabName === "party") {
     // Find all party_* types in status
-    typesToDisplay = Object.keys(status || {})
-      .filter(type => type.startsWith('party_') && status[type]?.available)
-  } else if (tabName === 'database') {
+    typesToDisplay = Object.keys(status || {}).filter(
+      (type) => type.startsWith("party_") && status[type]?.available,
+    );
+  } else if (tabName === "database") {
     // Find all detail_*_* types in status (per-item, like parties)
-    typesToDisplay = Object.keys(status || {})
-      .filter(type =>
-        (type.startsWith('detail_npc_') ||
-         type.startsWith('detail_weapon_') ||
-         type.startsWith('detail_summon_')) &&
-        status[type]?.available
-      )
+    typesToDisplay = Object.keys(status || {}).filter(
+      (type) =>
+        (type.startsWith("detail_npc_") ||
+          type.startsWith("detail_weapon_") ||
+          type.startsWith("detail_summon_")) &&
+        status[type]?.available,
+    );
   } else {
-    typesToDisplay = (TAB_DATA_TYPES[tabName] || [])
-      .filter(type => status?.[type]?.available)
+    typesToDisplay = (TAB_DATA_TYPES[tabName] || []).filter(
+      (type) => status?.[type]?.available,
+    );
     // Discover dynamic stash types for the collection tab
-    if (tabName === 'collection') {
-      const stashTypes = Object.keys(status || {})
-        .filter(type =>
-          (type.startsWith('stash_weapon_') || type.startsWith('stash_summon_')) &&
-          status[type]?.available
-        )
-      typesToDisplay.push(...stashTypes)
+    if (tabName === "collection") {
+      const stashTypes = Object.keys(status || {}).filter(
+        (type) =>
+          (type.startsWith("stash_weapon_") ||
+            type.startsWith("stash_summon_")) &&
+          status[type]?.available,
+      );
+      typesToDisplay.push(...stashTypes);
     }
   }
 
   // Sort by lastUpdated descending (most recent first)
   typesToDisplay.sort((a, b) => {
-    const aTime = status[a]?.lastUpdated || 0
-    const bTime = status[b]?.lastUpdated || 0
-    return bTime - aTime
-  })
+    const aTime = status[a]?.lastUpdated || 0;
+    const bTime = status[b]?.lastUpdated || 0;
+    return bTime - aTime;
+  });
 
   if (typesToDisplay.length === 0) {
-    container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`
-    return
+    container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`;
+    return;
   }
 
-  let html = ''
+  let html = "";
 
   for (const type of typesToDisplay) {
-    const info = status[type]
-    if (!info?.available) continue
+    const info = status[type];
+    if (!info?.available) continue;
 
     // Use partyName for parties, displayName for others
-    const displayName = info.partyName || info.displayName
-    const isStash = type.startsWith('stash_')
+    const displayName = info.partyName || info.displayName;
+    const isStash = type.startsWith("stash_");
 
     const stashTagHtml = isStash
-      ? `<span class="stash-tag">${t('tag_stash')}</span>`
-      : ''
+      ? `<span class="stash-tag">${t("tag_stash")}</span>`
+      : "";
 
     const subtitleHtml = info.subtitle
       ? `<span class="cache-subtitle">${info.subtitle}</span>`
-      : ''
+      : "";
 
     html += `
       <div class="cache-item ${info.statusClass}" data-type="${type}" data-tab="${tabName}">
@@ -2061,18 +2312,18 @@ function updateTabCacheDisplay(tabName, status) {
           </button>
         </div>
       </div>
-    `
+    `;
   }
 
-  container.innerHTML = html
+  container.innerHTML = html;
 
   // Add click handlers for rows - open detail view
-  container.querySelectorAll('.cache-item[data-type]').forEach(item => {
-    item.addEventListener('click', () => {
-      if (item.classList.contains('stale')) return
-      showDetailView(item.dataset.type)
-    })
-  })
+  container.querySelectorAll(".cache-item[data-type]").forEach((item) => {
+    item.addEventListener("click", () => {
+      if (item.classList.contains("stale")) return;
+      showDetailView(item.dataset.type);
+    });
+  });
 }
 
 /**
@@ -2080,10 +2331,14 @@ function updateTabCacheDisplay(tabName, status) {
  */
 function getEmptyMessage(tabName) {
   switch (tabName) {
-    case 'party': return t('empty_party')
-    case 'collection': return t('empty_collection')
-    case 'database': return t('empty_database')
-    default: return t('empty_no_data')
+    case "party":
+      return t("empty_party");
+    case "collection":
+      return t("empty_collection");
+    case "database":
+      return t("empty_database");
+    default:
+      return t("empty_no_data");
   }
 }
 
@@ -2091,20 +2346,20 @@ function getEmptyMessage(tabName) {
  * Handle clear cache
  */
 async function handleClearCache() {
-  await chrome.runtime.sendMessage({ action: 'clearCache' })
-  selectedDataTypes = { party: null, collection: null, database: null }
-  cachedStatus = null
+  await chrome.runtime.sendMessage({ action: "clearCache" });
+  selectedDataTypes = { party: null, collection: null, database: null };
+  cachedStatus = null;
 
   // Reset all tab displays
-  for (const tabName of ['party', 'collection', 'database']) {
-    const container = document.getElementById(`${tabName}Items`)
+  for (const tabName of ["party", "collection", "database"]) {
+    const container = document.getElementById(`${tabName}Items`);
     if (container) {
-      container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`
+      container.innerHTML = `<p class="cache-empty">${getEmptyMessage(tabName)}</p>`;
     }
   }
 
-  showTabStatus(activeTab, t('cache_cleared'), 'info')
-  setTimeout(() => hideTabStatus(activeTab), 2000)
+  showTabStatus(activeTab, t("cache_cleared"), "info");
+  setTimeout(() => hideTabStatus(activeTab), 2000);
 }
 
 // ==========================================
@@ -2115,24 +2370,28 @@ async function handleClearCache() {
  * Handle messages from content script / background
  */
 async function handleMessages(message) {
-  if (message.action === 'dataCaptured') {
+  if (message.action === "dataCaptured") {
     // Refresh cache status
-    await refreshAllCaches()
+    await refreshAllCaches();
 
     // Switch to the appropriate tab and show notification
-    const tabName = getTabForDataType(message.dataType)
+    const tabName = getTabForDataType(message.dataType);
     if (tabName) {
       if (activeTab !== tabName) {
-        switchTab(tabName)
+        switchTab(tabName);
       }
-      showTabStatus(tabName, t('toast_data_captured', { name: getDataTypeName(message.dataType) }), 'success')
-      setTimeout(() => hideTabStatus(tabName), 2000)
+      showTabStatus(
+        tabName,
+        t("toast_data_captured", { name: getDataTypeName(message.dataType) }),
+        "success",
+      );
+      setTimeout(() => hideTabStatus(tabName), 2000);
     }
 
     // Refresh detail view if it's currently showing the same data type
     if (detailViewActive && currentDetailDataType) {
       if (message.dataType === currentDetailDataType) {
-        refreshDetailView()
+        refreshDetailView();
       }
     }
   }
@@ -2142,48 +2401,56 @@ async function handleMessages(message) {
  * Refresh the current detail view with latest data
  */
 async function refreshDetailView() {
-  if (!currentDetailDataType) return
+  if (!currentDetailDataType) return;
 
   const response = await chrome.runtime.sendMessage({
-    action: 'getCachedData',
-    dataType: currentDetailDataType
-  })
+    action: "getCachedData",
+    dataType: currentDetailDataType,
+  });
 
   if (response.error) {
-    return
+    return;
   }
 
   // Update freshness text
-  const status = cachedStatus[currentDetailDataType]
+  const status = cachedStatus[currentDetailDataType];
   if (status) {
-    const freshnessEl = document.getElementById('detailFreshness')
-  if (freshnessEl) freshnessEl.textContent = status.ageText
+    const freshnessEl = document.getElementById("detailFreshness");
+    if (freshnessEl) freshnessEl.textContent = status.ageText;
   }
 
   // Update item count
-  if (currentDetailDataType === 'character_stats') {
-    const count = Object.keys(response.data).length
-    document.getElementById('detailItemCount').textContent = tPlural('count_character', 'count_characters', count)
+  if (currentDetailDataType === "character_stats") {
+    const count = Object.keys(response.data).length;
+    document.getElementById("detailItemCount").textContent = tPlural(
+      "count_character",
+      "count_characters",
+      count,
+    );
   }
 
   // Count existing items before re-render (for scroll-to-new behavior)
-  const container = document.getElementById('detailItems')
-  const oldItemCount = container.querySelectorAll('.grid-item, .list-item, .char-stats-item').length
+  const container = document.getElementById("detailItems");
+  const oldItemCount = container.querySelectorAll(
+    ".grid-item, .list-item, .char-stats-item",
+  ).length;
 
   // Re-render detail items
-  renderDetailItems(currentDetailDataType, response.data)
+  renderDetailItems(currentDetailDataType, response.data);
 
   // Scroll to show new items if count increased
-  const newItems = container.querySelectorAll('.grid-item, .list-item, .char-stats-item')
+  const newItems = container.querySelectorAll(
+    ".grid-item, .list-item, .char-stats-item",
+  );
   if (newItems.length > oldItemCount && oldItemCount > 0) {
     // For character stats (sorted newest first), scroll to top
-    if (currentDetailDataType === 'character_stats') {
-      container.scrollTop = 0
+    if (currentDetailDataType === "character_stats") {
+      container.scrollTop = 0;
     } else {
       // For list pages (appended at end), scroll to first new item
-      const firstNewItem = newItems[oldItemCount]
+      const firstNewItem = newItems[oldItemCount];
       if (firstNewItem) {
-        firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        firstNewItem.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
   }
@@ -2194,17 +2461,17 @@ async function refreshDetailView() {
  */
 function getTabForDataType(dataType) {
   // Party types are dynamic, not in TAB_DATA_TYPES
-  if (dataType.startsWith('party_')) {
-    return 'party'
+  if (dataType.startsWith("party_")) {
+    return "party";
   }
   // Stash types are dynamic (per-stash entries)
-  if (dataType.startsWith('stash_')) {
-    return 'collection'
+  if (dataType.startsWith("stash_")) {
+    return "collection";
   }
   for (const [tab, types] of Object.entries(TAB_DATA_TYPES)) {
-    if (types.includes(dataType)) return tab
+    if (types.includes(dataType)) return tab;
   }
-  return null
+  return null;
 }
 
 // ==========================================
@@ -2214,14 +2481,14 @@ function getTabForDataType(dataType) {
 /**
  * Show status message in a tab
  */
-function showTabStatus(tabName, message, type = 'info') {
-  const notice = document.getElementById(`${tabName}Notice`)
-  const status = document.getElementById(`${tabName}Status`)
+function showTabStatus(tabName, message, type = "info") {
+  const notice = document.getElementById(`${tabName}Notice`);
+  const status = document.getElementById(`${tabName}Status`);
 
   if (notice && status) {
-    notice.classList.remove('hidden')
-    notice.className = `notice status-${type}`
-    status.textContent = message
+    notice.classList.remove("hidden");
+    notice.className = `notice status-${type}`;
+    status.textContent = message;
   }
 }
 
@@ -2229,60 +2496,62 @@ function showTabStatus(tabName, message, type = 'info') {
  * Hide status message in a tab
  */
 function hideTabStatus(tabName) {
-  const notice = document.getElementById(`${tabName}Notice`)
+  const notice = document.getElementById(`${tabName}Notice`);
   if (notice) {
-    notice.classList.add('hidden')
+    notice.classList.add("hidden");
   }
 }
 
 /**
  * Show status message in an element
  */
-function showStatus(element, message, type = 'info') {
-  if (!element) return
-  element.textContent = message
-  element.className = `status-${type}`
-  show(element)
+function showStatus(element, message, type = "info") {
+  if (!element) return;
+  element.textContent = message;
+  element.className = `status-${type}`;
+  show(element);
 }
 
 /**
  * Capitalize first letter
  */
 function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**
  * Show a toast message
  */
-let toastTimeout = null
+let toastTimeout = null;
 function showToast(message) {
-  const toast = document.getElementById('toast')
-  if (!toast) return
+  const toast = document.getElementById("toast");
+  if (!toast) return;
 
   // Clear any existing timeout
   if (toastTimeout) {
-    clearTimeout(toastTimeout)
+    clearTimeout(toastTimeout);
   }
 
-  toast.textContent = message
-  toast.classList.add('visible')
+  toast.textContent = message;
+  toast.classList.add("visible");
 
   toastTimeout = setTimeout(() => {
-    toast.classList.remove('visible')
-  }, 2500)
+    toast.classList.remove("visible");
+  }, 2500);
 }
 
 /**
  * Check if the extension is outdated and show a banner if so
  */
 async function checkForUpdate() {
-  const response = await chrome.runtime.sendMessage({ action: 'checkExtensionVersion' })
+  const response = await chrome.runtime.sendMessage({
+    action: "checkExtensionVersion",
+  });
   if (response?.isOutdated) {
-    const banner = document.getElementById('updateBanner')
-    const versionSpan = document.getElementById('updateVersion')
-    if (!banner || !versionSpan) return
-    versionSpan.textContent = response.latest
-    banner.classList.remove('hidden')
+    const banner = document.getElementById("updateBanner");
+    const versionSpan = document.getElementById("updateVersion");
+    if (!banner || !versionSpan) return;
+    versionSpan.textContent = response.latest;
+    banner.classList.remove("hidden");
   }
 }
