@@ -164,6 +164,29 @@ export const GAME_WEAPON_SERIES_NAMES = {
   44: 'Destroyer'
 }
 
+// ==========================================
+// FORGED ARCARUM SUMMON ID MAPPING
+// Forged Arcarum summons use different master IDs in-game.
+// Maps forged (evolved) IDs → base SSR IDs stored in the database.
+// ==========================================
+
+export const FORGED_ARCARUM_SUMMON_IDS = {
+  '2040313000': '2040236000', // Justice
+  '2040314000': '2040237000', // The Hanged Man
+  '2040315000': '2040238000', // Death
+  '2040316000': '2040239000', // Temperance
+  '2040317000': '2040240000', // The Devil
+  '2040318000': '2040241000', // The Tower
+  '2040319000': '2040242000', // The Star
+  '2040320000': '2040243000', // The Moon
+  '2040321000': '2040244000', // The Sun
+  '2040322000': '2040245000', // Judgement
+}
+
+export function resolveForgedSummonId(id) {
+  return FORGED_ARCARUM_SUMMON_IDS[String(id)] || id
+}
+
 export const GAME_SUMMON_SERIES_NAMES = {
   1: 'Providence',
   2: 'Genesis',

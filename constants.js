@@ -163,10 +163,10 @@ export function getDataTypeName(dataType) {
   const key = DATA_TYPE_I18N_KEYS[dataType]
   if (key) return t(key)
   if (dataType.startsWith('stash_weapon_')) {
-    return `${t('type_weapon_stash')} ${dataType.replace('stash_weapon_', '')}`
+    return t('type_weapon_stash')
   }
   if (dataType.startsWith('stash_summon_')) {
-    return `${t('type_summon_stash')} ${dataType.replace('stash_summon_', '')}`
+    return t('type_summon_stash')
   }
   return dataType
 }

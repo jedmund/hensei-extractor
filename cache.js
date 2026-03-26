@@ -40,10 +40,14 @@ export function formatCacheStatus(status) {
   const formatted = {}
 
   for (const [type, info] of Object.entries(status)) {
+    const stashDisplayName = (type.startsWith('stash_') && info.stashName)
+      ? info.stashName
+      : getDataTypeName(type)
+
     if (!info.available) {
       formatted[type] = {
         ...info,
-        displayName: getDataTypeName(type),
+        displayName: stashDisplayName,
         subtitle: null,
         ageText: t('cache_no_data'),
         statusClass: 'unavailable'
@@ -51,7 +55,7 @@ export function formatCacheStatus(status) {
     } else if (info.isStale) {
       formatted[type] = {
         ...info,
-        displayName: getDataTypeName(type),
+        displayName: stashDisplayName,
         subtitle: null,
         ageText: t('cache_stale'),
         statusClass: 'stale'
@@ -59,7 +63,7 @@ export function formatCacheStatus(status) {
     } else {
       const ageText = formatAge(info.age)
       let subtitle = null
-      let displayName = getDataTypeName(type)
+      let displayName = stashDisplayName
 
       if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
         subtitle = t('count_items_pages', { items: info.totalItems, pages: info.pageCount })

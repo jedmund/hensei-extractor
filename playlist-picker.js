@@ -3,7 +3,7 @@
  * Mirrors the raid-picker pattern with multi-select, search, and inline creation.
  */
 
-import { t } from './i18n.js'
+import { t, tPlural } from './i18n.js'
 
 // ==========================================
 // STATE
@@ -133,9 +133,7 @@ function renderPlaylistItem(playlist) {
   const isSelected = selectedPlaylists.some(p => p.id === playlist.id)
   const title = playlist.title || t('playlist_untitled')
   const partyCount = playlist.party_count || playlist.parties_count || 0
-  const countText = partyCount === 1
-    ? t('count_party', { count: partyCount })
-    : t('count_parties', { count: partyCount })
+  const countText = tPlural('count_party', 'count_parties', partyCount)
 
   return `
     <button type="button" class="playlist-item ${isSelected ? 'selected' : ''}" data-playlist-id="${playlist.id}">
