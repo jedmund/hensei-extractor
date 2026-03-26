@@ -28,7 +28,7 @@ jobs:
           cp popup.html popup.js popup.css granblue-team-extension/
           cp auth.js cache.js conflict-resolution.js constants.js granblue-team-extension/
           cp debugger.js dom.js game-data.js i18n.js mastery.js granblue-team-extension/
-          cp playlist-picker.js raid-picker.js render-detail.js storage.js sync.js granblue-team-extension/
+          cp playlist-picker.js raid-picker.js render-detail.js storage.js sync.js tooltip.js granblue-team-extension/
           cp icon16.png icon48.png icon128.png granblue-team-extension/
           cp -r icons granblue-team-extension/
           cd granblue-team-extension && zip -r ../granblue-team-extension.zip . && cd ..
