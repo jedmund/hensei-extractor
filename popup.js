@@ -155,6 +155,7 @@ async function initializeApp() {
     refreshAllCaches();
     startAgeTicker();
     checkForUpdate();
+    refreshUserInfo(gbAuth);
   } else {
     // User not logged in - show login view
     show(loginView);
@@ -1983,9 +1984,14 @@ async function handleLogin() {
     gbAuth = {
       ...gbAuth,
       avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
       language,
       role: userInfo.role || 0,
       simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
     };
 
     // Only save auth after both steps succeed
@@ -2073,7 +2079,7 @@ async function updateProfileUI(gbAuth) {
 
   // Update username
   if (profileUsername) {
-    profileUsername.textContent = gbAuth.user?.username || "User";
+    profileUsername.textContent = gbAuth.displayName || gbAuth.user?.username || "User";
   }
 
   // Update avatars
@@ -2093,6 +2099,48 @@ async function updateProfileUI(gbAuth) {
   if (profileHeader && gbAuth.user?.username) {
     const siteUrl = await getSiteBaseUrl();
     profileHeader.href = `${siteUrl}/${gbAuth.user.username}`;
+  }
+}
+
+/**
+ * Non-blocking refresh of user info from the API.
+ * Updates storage and UI if any fields have changed.
+ */
+async function refreshUserInfo(gbAuth) {
+  try {
+    if (!gbAuth?.access_token || (gbAuth.expires_at && gbAuth.expires_at < Date.now())) {
+      return;
+    }
+
+    const userInfo = await fetchUserInfo(gbAuth.access_token);
+
+    const updated = {
+      ...gbAuth,
+      avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
+      language: userInfo.language || gbAuth.language,
+      role: userInfo.role ?? gbAuth.role,
+      simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
+    };
+
+    const changed =
+      JSON.stringify(updated.avatar) !== JSON.stringify(gbAuth.avatar) ||
+      updated.displayName !== gbAuth.displayName ||
+      updated.language !== gbAuth.language ||
+      updated.role !== gbAuth.role ||
+      updated.simplePortraits !== gbAuth.simplePortraits ||
+      updated.user.username !== gbAuth.user?.username;
+
+    if (changed) {
+      await chrome.storage.local.set({ gbAuth: updated });
+      updateProfileUI(updated);
+    }
+  } catch (_) {
+    // Silently fail — cached data remains usable
   }
 }
 
