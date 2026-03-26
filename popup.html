@@ -152,7 +152,7 @@
               </button>
               <div class="copy-dropdown-menu" id="copyDropdownMenu">
                 <button class="copy-dropdown-item" data-action="copy" data-i18n="action_copy">Copy</button>
-                <button class="copy-dropdown-item" data-action="save" data-i18n="action_save">Save</button>
+                <button class="copy-dropdown-item" data-action="save" data-i18n="action_save">Save...</button>
               </div>
             </div>
             <button id="detailSync" class="button small hidden" data-i18n="action_full_sync">Full Sync</button>
@@ -162,13 +162,23 @@
         </header>
         <div class="detail-meta">
           <div class="detail-meta-left">
-            <span id="detailPageCount"></span>
-            <span class="detail-meta-separator">&middot;</span>
-            <span id="detailItemCount"></span>
-            <span class="detail-meta-separator">&middot;</span>
-            <span id="detailFreshness"></span>
+            <label class="select-all-toggle hidden" id="selectAllToggle">
+              <span class="select-all-checkbox" id="selectAllCheckbox">
+                <span class="select-all-check">
+                  <svg viewBox="0 0 12 12" fill="none"><polyline points="2.5 6 5 8.5 9.5 3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="select-all-dash">
+                  <svg viewBox="0 0 12 12" fill="none"><line x1="2.5" y1="6" x2="9.5" y2="6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                </span>
+              </span>
+              <span class="select-all-label" id="selectAllLabel"></span>
+            </label>
+            <span id="detailItemCount" class="detail-item-count-standalone hidden"></span>
           </div>
-          <div class="detail-filter hidden" id="detailFilter">
+          <span id="detailPageCount" class="hidden"></span>
+          <span id="detailStashName" class="detail-meta-center hidden" data-tooltip=""></span>
+          <div class="detail-meta-right">
+            <div class="detail-filter hidden" id="detailFilter">
             <button class="filter-button" id="filterButton">
               <span>SSR</span>
               <svg class="filter-chevron" viewBox="0 0 14 14" fill="currentColor">
@@ -177,6 +187,7 @@
             </button>
             <div class="filter-dropdown" id="filterDropdown">
               <div id="rarityFilters">
+                <div class="filter-section-title" data-i18n="filter_section_rarity">Rarity</div>
                 <label class="filter-option">
                   <input type="checkbox" value="4" checked disabled>
                   <span>SSR</span>
@@ -190,17 +201,27 @@
                   <span>R</span>
                 </label>
               </div>
-              <div class="filter-divider hidden" id="lv1FilterDivider"></div>
-              <label class="filter-option hidden" id="lv1FilterOption">
-                <input type="checkbox" id="excludeLv1Checkbox" checked>
-                <span data-i18n="filter_exclude_lv1">Exclude Lv1</span>
-              </label>
-              <div class="filter-divider hidden" id="syncFilterDivider"></div>
-              <label class="filter-option hidden" id="syncFilterOption">
-                <input type="checkbox" id="enableFullSyncCheckbox">
-                <span data-i18n="filter_enable_sync">Enable Full Sync</span>
-              </label>
+              <div class="filter-section hidden" id="lv1FilterSection">
+                <div class="filter-section-title" data-i18n="filter_section_options">Options</div>
+                <label class="filter-option" id="lv1FilterOption">
+                  <input type="checkbox" id="excludeLv1Checkbox" checked>
+                  <div class="filter-option-text">
+                    <span data-i18n="filter_exclude_lv1">Exclude Lv1</span>
+                    <span class="filter-option-desc" data-i18n="filter_exclude_lv1_desc">Hide uncapped weapons and summons</span>
+                  </div>
+                </label>
+              </div>
+              <div class="filter-section hidden" id="syncFilterSection">
+                <label class="filter-option" id="syncFilterOption">
+                  <input type="checkbox" id="enableFullSyncCheckbox">
+                  <div class="filter-option-text">
+                    <span data-i18n="filter_enable_sync">Enable Full Sync</span>
+                    <span class="filter-option-desc" data-i18n="filter_enable_sync_desc">Sync entire collection, not just selected</span>
+                  </div>
+                </label>
+              </div>
             </div>
+          </div>
           </div>
         </div>
         <!-- Party meta (party only) -->
@@ -358,6 +379,7 @@
       </div>
     </div>
 
+    <div id="tooltip" class="tooltip" aria-hidden="true"></div>
     <script type="module" src="popup.js"></script>
   </body>
 </html>

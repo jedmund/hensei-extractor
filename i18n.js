@@ -37,7 +37,7 @@ const strings = {
   // Error codes (from background.js)
   error_not_logged_in:       { en: 'Please log in first', ja: 'ログインしてください' },
   error_no_cached_data:      { en: 'No data found. Browse the relevant page in-game first.', ja: 'データが見つかりません。まずゲーム内の該当ページを開いてください。' },
-  error_stale_data:          { en: 'Data is outdated. Please refresh the page in-game.', ja: 'データが古くなっています。ゲーム内でページを更新してください。' },
+  error_stale_data:          { en: 'This data has expired. Visit the page in-game to refresh it.', ja: 'データの有効期限が切れました。ゲーム内でページを開いて更新してください。' },
   error_no_character_stats:  { en: 'No character stats found. Browse character pages in-game first.', ja: 'キャラクターのデータが見つかりません。まずゲーム内のキャラクターページを開いてください。' },
   error_no_items:            { en: 'No items found', ja: 'アイテムが見つかりません' },
   error_unknown_type:        { en: 'Unsupported data type', ja: '対応していないデータ形式です' },
@@ -68,14 +68,20 @@ const strings = {
 
   // Detail view actions
   action_back:        { en: 'Back', ja: '戻る' },
+  action_select_all:  { en: 'Select all', ja: 'すべて選択' },
+  action_deselect_all: { en: 'Deselect all', ja: 'すべて解除' },
+  action_select_count: { en: 'Select {count} items', ja: '{count}件を選択' },
+  action_select_count_one: { en: 'Select {count} item', ja: '{count}件を選択' },
+  action_deselect_count: { en: 'Deselect {count} items', ja: '{count}件を解除' },
+  action_deselect_count_one: { en: 'Deselect {count} item', ja: '{count}件を解除' },
   action_copy:        { en: 'Copy', ja: 'コピー' },
-  action_save:        { en: 'Save', ja: '保存' },
+  action_save:        { en: 'Save...', ja: '保存...' },
   action_import:      { en: 'Import', ja: 'インポート' },
   action_importing:   { en: 'Importing...', ja: 'インポート中...' },
   action_imported:    { en: 'Imported', ja: 'インポート済み' },
-  action_full_sync:   { en: 'Full Sync', ja: 'フルシンク' },
-  action_syncing:     { en: 'Syncing...', ja: 'シンク中...' },
-  action_synced:      { en: 'Synced', ja: 'シンク済み' },
+  action_full_sync:   { en: 'Import & Sync', ja: 'インポート＆同期' },
+  action_syncing:     { en: 'Syncing...', ja: '同期中...' },
+  action_synced:      { en: 'Synced', ja: '同期済み' },
   action_checking:    { en: 'Checking...', ja: '確認中...' },
   action_review:      { en: 'Review', ja: '確認' },
   action_reviewed:    { en: 'Reviewed', ja: '確認済み' },
@@ -90,7 +96,16 @@ const strings = {
   filter_sr:              { en: 'SR', ja: 'SR' },
   filter_r:               { en: 'R', ja: 'R' },
   filter_exclude_lv1:     { en: 'Exclude Lv1', ja: 'Lv1を除外' },
-  filter_enable_sync:     { en: 'Enable Full Sync', ja: 'フルシンクを有効にする' },
+
+  filter_exclude_lv1_desc: { en: 'Hide weapons and summons that are Level 1', ja: 'レベル1の武器と召喚石を非表示' },
+  filter_enable_sync:     { en: 'Sync Deletions', ja: '削除を同期' },
+  filter_enable_sync_desc: { en: 'Previously imported items that are no longer in your game inventory will also be deleted on granblue.team', ja: '以前インポートしたアイテムがゲーム内に存在しない場合、granblue.teamからも削除されます' },
+  filter_hidden_rarity:   { en: '{count} items hidden by rarity filter', ja: 'レアリティフィルターにより{count}件非表示' },
+  filter_hidden_lv1:      { en: '{count} items hidden because they are Level 1', ja: 'レベル1のため{count}件非表示' },
+  filter_hidden_both:     { en: '{count} items hidden by rarity filter and Level 1', ja: 'レアリティフィルターとレベル1により{count}件非表示' },
+  filter_show_all:        { en: 'Show all', ja: 'すべて表示' },
+  filter_section_rarity:  { en: 'Rarity', ja: 'レアリティ' },
+  filter_section_options: { en: 'Options', ja: 'オプション' },
   filter_options:         { en: 'Options', ja: 'オプション' },
   filter_default:         { en: 'Filter', ja: 'フィルター' },
 
@@ -116,8 +131,8 @@ const strings = {
   type_weapon:               { en: 'Weapon', ja: '武器' },
   type_summon:               { en: 'Summon', ja: '召喚石' },
   type_character_list:       { en: 'Character List', ja: 'キャラクターリスト' },
-  type_weapon_list:          { en: 'Weapon List', ja: '武器リスト' },
-  type_summon_list:          { en: 'Summon List', ja: '召喚石リスト' },
+  type_weapon_list:          { en: 'Weapon Inventory', ja: '武器リスト' },
+  type_summon_list:          { en: 'Summon Inventory', ja: '召喚石リスト' },
   type_weapon_collection:    { en: 'Weapon Collection', ja: '武器コレクション' },
   type_character_collection: { en: 'Character Collection', ja: 'キャラクターコレクション' },
   type_summon_collection:    { en: 'Summon Collection', ja: '召喚石コレクション' },
@@ -125,6 +140,7 @@ const strings = {
   type_character_stats:      { en: 'Character Stats', ja: 'キャラクターステータス' },
   type_weapon_stash:         { en: 'Weapon Stash', ja: '武器倉庫' },
   type_summon_stash:         { en: 'Summon Stash', ja: '召喚石倉庫' },
+  tag_stash:                 { en: 'Stash', ja: '倉庫' },
 
   // Party sections
   party_section_job:         { en: 'Job', ja: 'ジョブ' },
@@ -136,6 +152,7 @@ const strings = {
   party_no_data:             { en: 'No party data', ja: 'パーティデータがありません' },
 
   // Detail stats
+  stat_already_owned: { en: 'Already in your collection', ja: 'コレクションに登録済み' },
   stat_name:        { en: 'Name', ja: '名前' },
   stat_id:          { en: 'ID', ja: 'ID' },
   stat_series:      { en: 'Series', ja: 'シリーズ' },
@@ -149,6 +166,7 @@ const strings = {
   stat_max_level:   { en: 'Max Level', ja: '最大レベル' },
   stat_perpetuity_ring: { en: 'Perpetuity Ring', ja: '久遠の指輪' },
   stat_awakening:   { en: 'Awakening', ja: '覚醒' },
+  stat_not_awakened: { en: 'Not awakened', ja: '未覚醒' },
   stat_befoulment:  { en: 'Befoulment', ja: '魔蝕' },
   stat_exorcism:    { en: 'Exorcism', ja: '退魔' },
   stat_ax_skills:   { en: 'AX Skills', ja: 'EXスキル' },
@@ -187,14 +205,18 @@ const strings = {
   playlist_untitled:       { en: 'Untitled', ja: '無題' },
 
   // Plurals
+  count_character:        { en: '{count} character', ja: '{count}キャラクター' },
   count_characters:       { en: '{count} characters', ja: '{count}キャラクター' },
+  count_item:             { en: '{count} item', ja: '{count}アイテム' },
   count_items:            { en: '{count} items', ja: '{count}アイテム' },
+  count_page:             { en: '{count} page', ja: '{count}ページ' },
   count_pages:            { en: '{count} pages', ja: '{count}ページ' },
   count_playlists:        { en: '{count} playlists selected', ja: '{count}件のプレイリストを選択中' },
   count_selected:         { en: '{selected}/{total} selected', ja: '{selected}/{total} 選択中' },
   count_party:            { en: '{count} party', ja: '{count}編成' },
   count_parties:          { en: '{count} parties', ja: '{count}編成' },
   count_items_pages:      { en: '{items} items · {pages} pages', ja: '{items}アイテム · {pages}ページ' },
+  count_bullet:           { en: '{count} Bullet', ja: '{count}バレット' },
   count_bullets:          { en: '{count} Bullets', ja: '{count}バレット' },
 
   // Sync modal
@@ -464,6 +486,19 @@ export function t(key, params) {
  * @param {string} code - Error code from background.js (e.g. 'not_logged_in')
  * @returns {string} Translated error message, or a generic fallback
  */
+/**
+ * Translate with automatic pluralization.
+ * Uses singular key when count is 1, plural key otherwise.
+ * @param {string} singular - Singular translation key (e.g., 'count_item')
+ * @param {string} plural - Plural translation key (e.g., 'count_items')
+ * @param {number} count - The count value
+ * @param {Object} [params] - Additional params beyond { count }
+ */
+export function tPlural(singular, plural, count, params = {}) {
+  const key = count === 1 ? singular : plural
+  return t(key, { count, ...params })
+}
+
 export function tError(code) {
   return t(`error_${code}`) !== `error_${code}` ? t(`error_${code}`) : t('error_request_failed')
 }

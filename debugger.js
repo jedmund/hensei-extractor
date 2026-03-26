@@ -33,7 +33,9 @@ const INTERCEPT_PATTERNS = [
   '/npczenith/content/index/',
   // Stash (container) pages
   '/weapon/container_list/',
-  '/summon/container_list/'
+  '/summon/container_list/',
+  // Stash content pages (for extracting stash names from HTML)
+  '/container/content/list/'
 ]
 
 // ==========================================
@@ -42,6 +44,10 @@ const INTERCEPT_PATTERNS = [
 
 // Track attached tabs
 const attachedTabs = new Set()
+
+// Most recently seen stash name, extracted from container/content/list HTML.
+// Since the user browses one stash at a time, we just track the latest.
+let lastStashName = null
 
 // Track pending requests waiting for response body
 // Map<requestId, { url, tabId }>
@@ -281,6 +287,12 @@ function shouldIntercept(url) {
  * Process intercepted data and notify callback
  */
 function processInterceptedData(url, data, timestamp) {
+  // Extract and cache stash names from container content pages
+  if (url.includes('/container/content/list/')) {
+    extractStashName(url, data)
+    return // Not a data type we forward
+  }
+
   if (!onDataIntercepted) return
 
   const dataType = getDataType(url)
@@ -294,7 +306,8 @@ function processInterceptedData(url, data, timestamp) {
     pageNumber,
     partyId: dataType === 'party' ? getPartyId(url, data) : null,
     masterId: getMasterId(url, data, dataType),
-    stashNumber: dataType.startsWith('stash_') ? getStashNumber(url) : null
+    stashNumber: dataType.startsWith('stash_') ? getStashNumber(url) : null,
+    stashName: dataType.startsWith('stash_') ? getStashName() : null
   }
 
   onDataIntercepted(url, data, dataType, metadata, timestamp)
@@ -340,6 +353,29 @@ function getPageNumber(url) {
 function getStashNumber(url) {
   const match = url.match(/\/(?:weapon|summon)\/container_list\/\d+\/(\d+)/)
   return match ? match[1] : '1'
+}
+
+/**
+ * Extract stash name from container/content/list HTML response.
+ * The response has a `data` field with URL-encoded HTML containing
+ * <div class="prt-container-name">StashName</div>
+ */
+function extractStashName(url, data) {
+  if (!data?.data) return
+
+  const html = decodeURIComponent(data.data)
+  const nameMatch = html.match(/class="prt-container-name">([^<]+)</)
+  if (nameMatch) {
+    lastStashName = nameMatch[1].trim()
+  }
+}
+
+/**
+ * Get the most recently extracted stash name and clear it.
+ */
+function getStashName() {
+  const name = lastStashName
+  return name || null
 }
 
 /**

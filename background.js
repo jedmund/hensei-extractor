@@ -77,7 +77,7 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     } else if (dataType.startsWith('stash_')) {
       const stashNum = metadata.stashNumber || '1'
       const prefix = CACHE_PREFIXES[dataType]
-      await cacheListPage(dataType, pageNumber, data, timestamp, prefix + stashNum)
+      await cacheListPage(dataType, pageNumber, data, timestamp, prefix + stashNum, metadata.stashName)
       actualDataType = `${dataType}_${stashNum}`
     } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
       await cacheListPage(dataType, pageNumber, data, timestamp)
@@ -174,12 +174,16 @@ async function cacheParty(partyId, data, timestamp, url) {
 /**
  * Cache a page of list data, accumulating with existing pages
  */
-async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOverride) {
+async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOverride, stashName) {
   const cacheKey = cacheKeyOverride || CACHE_KEYS[dataType]
   if (!cacheKey) return
 
   const result = await chrome.storage.local.get(cacheKey)
   const existing = result[cacheKey] || { pages: {}, lastUpdated: null }
+
+  if (stashName) {
+    existing.stashName = stashName
+  }
 
   // Clear stale data
   if (existing.lastUpdated && (timestamp - existing.lastUpdated > CACHE_TTL_MS)) {
@@ -681,7 +685,8 @@ async function handleGetCacheStatus() {
         available: !stale && cached.pageCount > 0,
         pageCount: cached.pageCount || 0,
         totalItems: cached.totalItems || 0,
-        lastUpdated: timestamp, age, isStale: stale
+        lastUpdated: timestamp, age, isStale: stale,
+        stashName: cached.stashName || null
       }
     } else if (matchedPrefix.startsWith('detail_')) {
       status[dataType] = {
