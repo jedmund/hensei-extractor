@@ -1983,9 +1983,14 @@ async function handleLogin() {
     gbAuth = {
       ...gbAuth,
       avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
       language,
       role: userInfo.role || 0,
       simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
     };
 
     // Only save auth after both steps succeed
@@ -2073,7 +2078,7 @@ async function updateProfileUI(gbAuth) {
 
   // Update username
   if (profileUsername) {
-    profileUsername.textContent = gbAuth.user?.username || "User";
+    profileUsername.textContent = gbAuth.displayName || gbAuth.user?.username || "User";
   }
 
   // Update avatars
