@@ -1503,20 +1503,9 @@ async function handleDetailCopy() {
       return;
     }
 
-    // Filter to selected items for collections
-    const dataToExport = filterSelectedItems(
-      currentDetailDataType,
-      response.data,
-    );
-
-    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const jsonString = JSON.stringify(response.data, null, 2);
     await navigator.clipboard.writeText(jsonString);
-
-    if (isCollectionType(currentDetailDataType)) {
-      showToast(t("toast_copied_items", { count: selectedItems.size }));
-    } else {
-      showToast(t("toast_copied"));
-    }
+    showToast(t("toast_copied"));
   } catch {
     showToast(t("toast_copy_failed"));
   }
@@ -1539,11 +1528,7 @@ async function handleDetailSave() {
       return;
     }
 
-    const dataToExport = filterSelectedItems(
-      currentDetailDataType,
-      response.data,
-    );
-    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const jsonString = JSON.stringify(response.data, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
