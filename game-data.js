@@ -25,13 +25,13 @@ export const GAME_ELEMENT_NAMES = {
 export const GAME_PROFICIENCY_NAMES = {
   1: "Sabre",
   2: "Dagger",
-  3: "Axe",
-  4: "Spear",
-  5: "Bow",
-  6: "Staff",
+  3: "Spear",
+  4: "Axe",
+  5: "Staff",
+  6: "Gun",
   7: "Melee",
-  8: "Harp",
-  9: "Gun",
+  8: "Bow",
+  9: "Harp",
   10: "Katana",
 };
 
