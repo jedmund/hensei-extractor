@@ -3,8 +3,8 @@
  * Provides helper functions for formatting cache status and managing cache data.
  */
 
-import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
-import { t } from './i18n.js'
+import { CACHE_TTL_MS, getDataTypeName } from "./constants.js";
+import { t } from "./i18n.js";
 
 /**
  * Format a timestamp age into a human-readable string
@@ -12,14 +12,14 @@ import { t } from './i18n.js'
  * @returns {string} Formatted age string
  */
 export function formatAge(ageMs) {
-  const seconds = Math.floor(ageMs / 1000)
-  if (seconds < 60) return t('time_seconds_ago', { count: seconds })
+  const seconds = Math.floor(ageMs / 1000);
+  if (seconds < 60) return t("time_seconds_ago", { count: seconds });
 
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return t('time_minutes_ago', { count: minutes })
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return t("time_minutes_ago", { count: minutes });
 
-  const hours = Math.floor(minutes / 60)
-  return t('time_hours_ago', { count: hours })
+  const hours = Math.floor(minutes / 60);
+  return t("time_hours_ago", { count: hours });
 }
 
 /**
@@ -28,7 +28,7 @@ export function formatAge(ageMs) {
  * @returns {boolean} True if stale
  */
 export function isStale(timestamp) {
-  return Date.now() - timestamp > CACHE_TTL_MS
+  return Date.now() - timestamp > CACHE_TTL_MS;
 }
 
 /**
@@ -37,45 +37,48 @@ export function isStale(timestamp) {
  * @returns {object} Formatted status with display strings
  */
 export function formatCacheStatus(status) {
-  const formatted = {}
+  const formatted = {};
 
   for (const [type, info] of Object.entries(status)) {
-    const stashDisplayName = (type.startsWith('stash_') && info.stashName)
-      ? info.stashName
-      : getDataTypeName(type)
-
     if (!info.available) {
       formatted[type] = {
         ...info,
-        displayName: stashDisplayName,
+        displayName: getDataTypeName(type),
         subtitle: null,
-        ageText: t('cache_no_data'),
-        statusClass: 'unavailable'
-      }
+        ageText: t("cache_no_data"),
+        statusClass: "unavailable",
+      };
     } else if (info.isStale) {
       formatted[type] = {
         ...info,
-        displayName: stashDisplayName,
+        displayName: getDataTypeName(type),
         subtitle: null,
-        ageText: t('cache_stale'),
-        statusClass: 'stale'
-      }
+        ageText: t("cache_stale"),
+        statusClass: "stale",
+      };
     } else {
-      const ageText = formatAge(info.age)
-      let subtitle = null
-      let displayName = stashDisplayName
+      const ageText = formatAge(info.age);
+      let subtitle = null;
+      let displayName = getDataTypeName(type);
 
-      if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
-        subtitle = t('count_items_pages', { items: info.totalItems, pages: info.pageCount })
+      if (
+        type.startsWith("list_") ||
+        type.startsWith("collection_") ||
+        type.startsWith("stash_")
+      ) {
+        subtitle = t("count_items_pages", {
+          items: info.totalItems,
+          pages: info.pageCount,
+        });
       }
 
       // Handle per-item detail types (use item name as display name)
-      if (type.startsWith('detail_npc_')) {
-        displayName = info.itemName || t('type_character')
-      } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName || t('type_weapon')
-      } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName || t('type_summon')
+      if (type.startsWith("detail_npc_")) {
+        displayName = info.itemName || t("type_character");
+      } else if (type.startsWith("detail_weapon_")) {
+        displayName = info.itemName || t("type_weapon");
+      } else if (type.startsWith("detail_summon_")) {
+        displayName = info.itemName || t("type_summon");
       }
 
       formatted[type] = {
@@ -83,10 +86,10 @@ export function formatCacheStatus(status) {
         displayName,
         subtitle,
         ageText,
-        statusClass: 'available'
-      }
+        statusClass: "available",
+      };
     }
   }
 
-  return formatted
+  return formatted;
 }

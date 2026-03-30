@@ -3,7 +3,7 @@
  * Handles login and user information requests to the Granblue Team API.
  */
 
-import { getApiUrl, getEnvConfig } from './constants.js'
+import { getApiUrl, getEnvConfig } from "./constants.js";
 
 // ==========================================
 // AUTHENTICATION
@@ -17,26 +17,26 @@ import { getApiUrl, getEnvConfig } from './constants.js'
  * @returns {Promise<Object>} Parsed JSON response
  */
 async function authenticatedFetch(endpoint, accessToken, options = {}) {
-  const apiUrl = await getApiUrl(endpoint)
-  const headers = { Authorization: `Bearer ${accessToken}` }
+  const apiUrl = await getApiUrl(endpoint);
+  const headers = { Authorization: `Bearer ${accessToken}` };
 
   if (options.body) {
-    headers['Content-Type'] = 'application/json'
+    headers["Content-Type"] = "application/json";
   }
 
   const response = await fetch(apiUrl, {
-    method: options.method || 'GET',
+    method: options.method || "GET",
     headers,
-    ...(options.body && { body: JSON.stringify(options.body) })
-  })
+    ...(options.body && { body: JSON.stringify(options.body) }),
+  });
 
   if (!response.ok) {
-    const err = new Error(`API request failed: ${response.status}`)
-    err.code = 'request_failed'
-    throw err
+    const err = new Error(`API request failed: ${response.status}`);
+    err.code = "request_failed";
+    throw err;
   }
 
-  return response.json()
+  return response.json();
 }
 
 /**
@@ -48,7 +48,7 @@ async function authenticatedFetch(endpoint, accessToken, options = {}) {
  * @throws {Error} If login fails.
  */
 export async function performLogin(username, password) {
-  const config = await getEnvConfig()
+  const config = await getEnvConfig();
 
   const response = await fetch(`${config.apiUrl}/oauth/token`, {
     method: "POST",
@@ -58,21 +58,23 @@ export async function performLogin(username, password) {
       password,
       grant_type: "password",
     }),
-  })
+  });
 
   if (!response.ok) {
-    let code = 'unknown'
+    let code = "unknown";
     try {
-      const errBody = await response.json()
-      code = errBody.error || 'unknown'
-    } catch (_) {}
-    const err = new Error(code)
-    err.code = code
-    throw err
+      const errBody = await response.json();
+      code = errBody.error || "unknown";
+    } catch {
+      // response may not be JSON
+    }
+    const err = new Error(code);
+    err.code = code;
+    throw err;
   }
 
-  const data = await response.json()
-  return formatAuthData(data)
+  const data = await response.json();
+  return formatAuthData(data);
 }
 
 /**
@@ -81,8 +83,8 @@ export async function performLogin(username, password) {
  * @returns {Object} Formatted auth object with token and user info.
  */
 function formatAuthData(data) {
-  const nowMs = Date.now()
-  const expiresMs = nowMs + data.expires_in * 1000
+  const nowMs = Date.now();
+  const expiresMs = nowMs + data.expires_in * 1000;
 
   return {
     access_token: data.access_token,
@@ -93,7 +95,7 @@ function formatAuthData(data) {
       id: data.user.id,
       username: data.user.username,
     },
-  }
+  };
 }
 
 /**
@@ -102,7 +104,7 @@ function formatAuthData(data) {
  * @returns {Promise<Object>} The user settings object.
  */
 export async function fetchUserInfo(accessToken) {
-  return authenticatedFetch('/users/me', accessToken)
+  return authenticatedFetch("/users/me", accessToken);
 }
 
 /**
@@ -112,8 +114,8 @@ export async function fetchUserInfo(accessToken) {
  * @returns {Promise<Object>} The updated user object.
  */
 export async function updateUserLanguage(accessToken, language) {
-  return authenticatedFetch('/users/me', accessToken, {
-    method: 'PUT',
-    body: { user: { language } }
-  })
+  return authenticatedFetch("/users/me", accessToken, {
+    method: "PUT",
+    body: { user: { language } },
+  });
 }
