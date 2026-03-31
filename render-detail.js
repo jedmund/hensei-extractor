@@ -13,8 +13,10 @@ import {
   WEAPON_AWAKENING_ICONS,
   WEAPON_KEY_SERIES,
   CHARACTER_AWAKENING_MAPPING,
+  AUGMENT_ICON_MAP,
+  resolveForgedSummonId,
 } from "./game-data.js";
-import { t, translateSeries } from "./i18n.js";
+import { t, tPlural, translateSeries, getLocale } from "./i18n.js";
 
 // ==========================================
 // DATA TYPE HELPERS
@@ -93,18 +95,18 @@ export function countItems(dataType, data) {
  * Get character pose suffix based on uncap level and transcendence.
  * _01: base (0-2 stars), _02: MLB (3+ stars), _03: FLB (5+ stars), _04: transcendence
  */
-function getCharacterPose(uncapLevel, transcendenceStep) {
+function getCharacterPose(uncapLevel, transcendenceStep, simplePortraits) {
   if (transcendenceStep && transcendenceStep > 0) return "_04";
   if (uncapLevel && uncapLevel >= 5) return "_03";
-  if (uncapLevel && uncapLevel > 2) return "_02";
+  if (uncapLevel && uncapLevel > 2) return simplePortraits ? "_01" : "_02";
   return "_01";
 }
 
-function getCharacterImageSuffix(item) {
+function getCharacterImageSuffix(item, simplePortraits) {
   if (item.param?.style === "2") return "_01_style";
   const evolution = item.param?.evolution;
   const phase = item.param?.phase;
-  return getCharacterPose(evolution, phase);
+  return getCharacterPose(evolution, phase, simplePortraits);
 }
 
 /**
@@ -122,11 +124,11 @@ function getImageSuffix(item) {
   return imageId.slice(String(id).length);
 }
 
-export function getItemImageUrl(dataType, item) {
+export function getItemImageUrl(dataType, item, simplePortraits) {
   const granblueId = item.master?.id || item.param?.id || item.id;
 
   if (dataType.includes("npc") || dataType.includes("character")) {
-    const suffix = getCharacterImageSuffix(item);
+    const suffix = getCharacterImageSuffix(item, simplePortraits);
     return getImageUrl(`character-square/${granblueId}${suffix}.jpg`);
   }
   if (dataType.includes("weapon")) {
@@ -135,7 +137,8 @@ export function getItemImageUrl(dataType, item) {
   }
   if (dataType.includes("summon")) {
     const suffix = getImageSuffix(item);
-    return getImageUrl(`summon-square/${granblueId}${suffix}.jpg`);
+    const resolvedId = resolveForgedSummonId(granblueId);
+    return getImageUrl(`summon-square/${resolvedId}${suffix}.jpg`);
   }
   if (dataType.includes("artifact")) {
     const artifactId = item.artifact_id || granblueId;
@@ -187,7 +190,7 @@ export function renderCharacterModifiers(item) {
   if (!mods.perpetuity) return "";
 
   return `<div class="char-modifiers">
-    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t("stat_perpetuity_ring")}" title="${t("stat_perpetuity_ring")}">
+    <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t("stat_perpetuity_ring")}" data-tooltip="${t("stat_perpetuity_ring")}">
   </div>`;
 }
 
@@ -223,8 +226,19 @@ export function getWeaponModifiers(item, weaponKeyMap = null) {
   }
 
   return {
-    awakening: param.arousal?.is_arousal_weapon ? param.arousal : null,
-    axSkill: !isOdiant ? param.augment_skill_info?.[0] || null : null,
+    awakening:
+      param.arousal?.is_arousal_weapon &&
+      param.arousal?.form_name &&
+      param.arousal?.level
+        ? param.arousal
+        : null,
+    axSkill:
+      !isOdiant && param.augment_skill_info?.[0]
+        ? {
+            skill: param.augment_skill_info[0],
+            iconImage: param.augment_skill_icon_image?.[0] || null,
+          }
+        : null,
     befoulment: isOdiant
       ? {
           skill: param.augment_skill_info?.[0]?.[0] || null,
@@ -237,7 +251,11 @@ export function getWeaponModifiers(item, weaponKeyMap = null) {
   };
 }
 
-export function renderWeaponModifiers(item, weaponKeyMap = null) {
+export function renderWeaponModifiers(
+  item,
+  weaponKeyMap = null,
+  weaponStatModifiers = null,
+) {
   const mods = getWeaponModifiers(item, weaponKeyMap);
   if (
     !mods.awakening &&
@@ -252,7 +270,7 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
   if (mods.awakening) {
     const iconName =
       WEAPON_AWAKENING_ICONS[mods.awakening.form_name] || "weapon-atk";
-    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="${t("stat_awakening")}" title="${mods.awakening.form_name} Lv.${mods.awakening.level}">`;
+    html += `<img class="awakening-icon" src="${getImageUrl(`awakening/${iconName}.png`)}" alt="${t("stat_awakening")}" data-tooltip="${mods.awakening.form_name} Lv.${mods.awakening.level}">`;
   }
 
   const hasSkills =
@@ -261,7 +279,31 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
     html += '<div class="weapon-skills">';
 
     if (mods.axSkill) {
-      html += `<img class="ax-skill-icon" src="${getImageUrl("ax/atk.png")}" alt="${t("stat_ax_skills")}" title="${t("stat_ax_skills")}">`;
+      const iconSlug = mods.axSkill.iconImage || "ex_skill_atk";
+      const iconFile = AUGMENT_ICON_MAP[iconSlug] || "ax_atk";
+      const axEntries = Object.values(mods.axSkill.skill || {});
+      const locale = getLocale();
+      const axTip =
+        axEntries.length > 0
+          ? axEntries
+              .map((s) => {
+                const entryIconSlug = s.image || iconSlug;
+                const entryFile =
+                  AUGMENT_ICON_MAP[entryIconSlug] || entryIconSlug;
+                const mod = weaponStatModifiers?.[entryFile];
+                const name = mod
+                  ? locale === "ja"
+                    ? mod.nameJp
+                    : mod.nameEn
+                  : "";
+                const value = s.show_value || "";
+                return name && value ? `${name} ${value}` : name || value;
+              })
+              .filter(Boolean)
+              .map((l) => `<div>${l}</div>`)
+              .join("")
+          : t("stat_ax_skills");
+      html += `<img class="ax-skill-icon" src="${getImageUrl(`ax/${iconFile}.png`)}" alt="${t("stat_ax_skills")}" data-tooltip="${axTip}">`;
     }
 
     if (mods.befoulment) {
@@ -269,12 +311,13 @@ export function renderWeaponModifiers(item, weaponKeyMap = null) {
       const exLevel = mods.befoulment.exorcismLevel;
       const maxLevel = mods.befoulment.maxExorcismLevel;
       const showValue = skill?.show_value || "Befouled";
-      const iconImage = mods.befoulment.iconImage || "ex_skill_def_down";
-      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconImage}.png`)}" alt="${t("stat_befoulment")}" title="${t("stat_befoulment")}: ${showValue} (${t("stat_exorcism")} ${exLevel}/${maxLevel})">`;
+      const iconSlug = mods.befoulment.iconImage || "ex_skill_def_down";
+      const iconFile = AUGMENT_ICON_MAP[iconSlug] || "befoul_def_down";
+      html += `<img class="befoulment-icon" src="${getImageUrl(`ax/${iconFile}.png`)}" alt="${t("stat_befoulment")}" data-tooltip="<div>${t("stat_befoulment")}: ${showValue}</div><div>${t("stat_exorcism")} ${exLevel}/${maxLevel}</div>">`;
     }
 
     for (const slug of mods.weaponKeys) {
-      html += `<img class="weapon-key-icon" src="${getImageUrl(`weapon-keys/${slug}.png`)}" alt="${slug}" title="${slug}">`;
+      html += `<img class="weapon-key-icon" src="${getImageUrl(`weapon-keys/${slug}.png`)}" alt="${slug}" data-tooltip="${slug}">`;
     }
 
     html += "</div>";
@@ -508,6 +551,8 @@ export function renderPartyDetail(container, data, options = {}) {
   const friendSummon = options.friendSummon || null;
   const accessoryIds = [pc.familiar_id, pc.shield_id].filter(Boolean);
   const weaponKeyMap = options.weaponKeyMap || null;
+  const weaponStatModifiers = options.weaponStatModifiers || null;
+  const simplePortraits = options.simplePortraits || false;
   const quickSummonId = pc.quick_user_summon_id;
   const setAction = pc.set_action || [];
   const jobSkillSlugs = options.jobSkillSlugs || {};
@@ -572,7 +617,7 @@ export function renderPartyDetail(container, data, options = {}) {
           ${characters
             .map((item) => {
               const id = item.master?.id || item.param?.id || item.id;
-              const suffix = getCharacterImageSuffix(item);
+              const suffix = getCharacterImageSuffix(item, simplePortraits);
               const imageUrl = getImageUrl(`character-main/${id}${suffix}.jpg`);
               const arousalForm = item.param?.npc_arousal_form;
               const awakeningSlug = arousalForm
@@ -585,8 +630,8 @@ export function renderPartyDetail(container, data, options = {}) {
               const modifiersHtml = hasModifiers
                 ? `
               <div class="char-modifiers">
-                ${hasPerpetuit ? `<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t("stat_perpetuity_ring")}" title="${t("stat_perpetuity_ring")}">` : ""}
-                ${awakeningSlug && awakeningSlug !== "character-balanced" ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${t("stat_awakening")}" title="${t("stat_awakening")}">` : ""}
+                ${hasPerpetuit ? `<img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt="${t("stat_perpetuity_ring")}" data-tooltip="${t("stat_perpetuity_ring")}">` : ""}
+                ${awakeningSlug && awakeningSlug !== "character-balanced" ? `<img class="awakening-icon" src="${getImageUrl(`awakening/${awakeningSlug}.jpg`)}" alt="${t("stat_awakening")}" data-tooltip="${t("stat_awakening")}">` : ""}
               </div>
             `
                 : "";
@@ -612,7 +657,7 @@ export function renderPartyDetail(container, data, options = {}) {
         <h3 class="party-section-title">${t("party_section_weapons")}</h3>
         <div class="weapon-layout">
           <div class="weapon-mainhand">
-            ${renderWeaponModifiers(mainhand, weaponKeyMap)}
+            ${renderWeaponModifiers(mainhand, weaponKeyMap, weaponStatModifiers)}
             <img src="${getImageUrl(`weapon-main/${mainhandId}${mainhandSuffix}.jpg`)}" alt="">
           </div>
           <div class="weapon-grid">
@@ -622,7 +667,7 @@ export function renderPartyDetail(container, data, options = {}) {
                 const suffix = getImageSuffix(item);
                 return `
                 <div class="grid-item">
-                  ${renderWeaponModifiers(item, weaponKeyMap)}
+                  ${renderWeaponModifiers(item, weaponKeyMap, weaponStatModifiers)}
                   <img src="${getImageUrl(`weapon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `;
@@ -645,10 +690,11 @@ export function renderPartyDetail(container, data, options = {}) {
           ${
             mainSummon
               ? (() => {
-                  const id =
+                  const id = resolveForgedSummonId(
                     mainSummon.master?.id ||
-                    mainSummon.param?.id ||
-                    mainSummon.id;
+                      mainSummon.param?.id ||
+                      mainSummon.id,
+                  );
                   const suffix = getImageSuffix(mainSummon);
                   return `
               <div class="summon-main">
@@ -661,14 +707,16 @@ export function renderPartyDetail(container, data, options = {}) {
           <div class="summon-grid">
             ${allSubSummons
               .map((item) => {
-                const id = item.master?.id || item.param?.id || item.id;
+                const id = resolveForgedSummonId(
+                  item.master?.id || item.param?.id || item.id,
+                );
                 const suffix = getImageSuffix(item);
                 const isQuickSummon =
                   quickSummonId &&
                   String(item.param?.id) === String(quickSummonId);
                 return `
                 <div class="grid-item">
-                  ${isQuickSummon ? `<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="${t("stat_quick_summon")}" title="${t("stat_quick_summon")}"></div>` : ""}
+                  ${isQuickSummon ? `<div class="summon-modifiers"><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt="${t("stat_quick_summon")}" data-tooltip="${t("stat_quick_summon")}"></div>` : ""}
                   <img src="${getImageUrl(`summon-grid/${id}${suffix}.jpg`)}" alt="">
                 </div>
               `;
@@ -699,7 +747,7 @@ export function renderPartyDetail(container, data, options = {}) {
     if (bullets.length > 0) {
       html += `
         <div class="party-section">
-          <h3 class="party-section-title">${t("count_bullets", { count: bullets.length })}</h3>
+          <h3 class="party-section-title">${tPlural("count_bullet", "count_bullets", bullets.length)}</h3>
           <div class="item-grid bullets">
             ${bullets
               .map((bullet) => {
@@ -707,7 +755,7 @@ export function renderPartyDetail(container, data, options = {}) {
                   `bullet-square/${bullet.bullet_id}.jpg`,
                 );
                 return `
-                <div class="grid-item" title="${bullet.name || ""}">
+                <div class="grid-item" data-tooltip="${bullet.name || ""}">
                   <img src="${imageUrl}" alt="${bullet.name || ""}">
                 </div>
               `;

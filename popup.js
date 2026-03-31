@@ -16,6 +16,7 @@ import { show, hide, setElementColor, clearElementColors } from "./dom.js";
 import {
   OVER_MASTERY_NAMES,
   AETHERIAL_NAMES,
+  PERPETUITY_NAMES,
   formatModifier,
   formatPerpetuityBonus,
 } from "./mastery.js";
@@ -23,6 +24,7 @@ import { RARITY_LABELS, GAME_ELEMENT_NAMES } from "./game-data.js";
 import { handleDetailSync, hideSyncModal, confirmSync } from "./sync.js";
 import {
   showConflictModal,
+  hideConflictModal,
   initConflictListeners,
 } from "./conflict-resolution.js";
 import {
@@ -35,19 +37,23 @@ import {
   getItemImageUrl,
   getArtifactLabels,
   getGridClass,
+  getCharacterModifiers,
   renderCharacterModifiers,
+  getWeaponModifiers,
   renderWeaponModifiers,
   renderPartyDetail,
   renderDatabaseDetail,
 } from "./render-detail.js";
 import {
   showRaidPicker,
+  hideRaidPicker,
   getSelectedRaid,
   setSelectedRaid,
   clearSelectedRaid,
 } from "./raid-picker.js";
 import {
   showPlaylistPicker,
+  hidePlaylistPicker,
   getSelectedPlaylists,
   clearSelectedPlaylists,
 } from "./playlist-picker.js";
@@ -55,17 +61,19 @@ import {
   setLocale,
   getLocale,
   t,
+  tPlural,
   tError,
   translatePage,
   getPreferredLocale,
 } from "./i18n.js";
+import { initTooltip } from "./tooltip.js";
 
 // ==========================================
 // STATE
 // ==========================================
 
 let activeTab = "party";
-let _selectedDataTypes = {
+let selectedDataTypes = {
   party: null,
   collection: null,
   database: null,
@@ -101,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `url('${getImageUrl("port-breeze.jpg")}')`,
   );
 
+  initTooltip();
   initializeApp();
 });
 
@@ -135,9 +144,18 @@ async function initializeApp() {
     updateLanguageToggleUI();
     updateTabVisibility(gbAuth.role);
     initializeEventListeners();
+
+    // Hide pop-out button if already in standalone window
+    chrome.windows.getCurrent((win) => {
+      if (win.type === "popup") {
+        document.getElementById("popOutButton")?.classList.add("hidden");
+      }
+    });
+
     refreshAllCaches();
     startAgeTicker();
     checkForUpdate();
+    refreshUserInfo(gbAuth);
   } else {
     // User not logged in - show login view
     show(loginView);
@@ -238,6 +256,10 @@ function initializeEventListeners() {
     hideProfilePopover();
     handleShowWarning();
   });
+  document.getElementById("popOutButton")?.addEventListener("click", () => {
+    hideProfilePopover();
+    chrome.runtime.sendMessage({ action: "popOutWindow" });
+  });
 
   // Language toggle switch
   document
@@ -282,6 +304,33 @@ function initializeEventListeners() {
   document
     .getElementById("detailReview")
     ?.addEventListener("click", handleDetailReview);
+
+  // Select all tri-state checkbox
+  document.getElementById("selectAllToggle")?.addEventListener("click", () => {
+    const toggle = document.getElementById("selectAllToggle");
+    const state = toggle?.dataset.state;
+    const container = document.getElementById("detailItems");
+    const checkboxes = container?.querySelectorAll(".item-checkbox") || [];
+
+    if (state === "checked") {
+      // All selected → deselect all
+      checkboxes.forEach((checkbox) => {
+        const index = parseInt(checkbox.dataset.index, 10);
+        selectedItems.delete(index);
+        manuallyUnchecked.add(index);
+        checkbox.classList.remove("checked");
+      });
+    } else {
+      // None or some selected → select all
+      checkboxes.forEach((checkbox) => {
+        const index = parseInt(checkbox.dataset.index, 10);
+        selectedItems.add(index);
+        manuallyUnchecked.delete(index);
+        checkbox.classList.add("checked");
+      });
+    }
+    updateSelectionCount();
+  });
 
   // Raid selector button
   document
@@ -477,7 +526,7 @@ async function showDetailView(dataType) {
   });
 
   if (response.error) {
-    showTabStatus(activeTab, response.error, "error");
+    showTabStatus(activeTab, tError(response.error), "error");
     return;
   }
 
@@ -485,7 +534,13 @@ async function showDetailView(dataType) {
 
   // Update metadata
   const status = cachedStatus[dataType];
-  document.getElementById("detailFreshness").textContent = status.ageText;
+  const freshnessEl = document.getElementById("detailFreshness");
+  if (freshnessEl) freshnessEl.textContent = status.ageText;
+
+  const itemCountEl = document.getElementById("detailItemCount");
+  const selectAllToggle = document.getElementById("selectAllToggle");
+  const isCollection =
+    isCollectionType(dataType) && dataType !== "character_stats";
 
   if (dataType.startsWith("party_")) {
     // Party counts are shown inline in section labels — hide the meta row
@@ -493,8 +548,8 @@ async function showDetailView(dataType) {
     const pc = deck.pc || {};
     const chars = toArray(deck.npc).filter(Boolean).length;
     const wpns = toArray(pc.weapons).filter(Boolean).length;
-    document.getElementById("detailPageCount").textContent = "";
-    document.getElementById("detailItemCount").textContent = "";
+    itemCountEl.textContent = "";
+    itemCountEl.dataset.tooltip = "";
     document.querySelector(".detail-meta")?.classList.add("hidden");
 
     // Show party meta and pre-fill name from deck data
@@ -503,25 +558,61 @@ async function showDetailView(dataType) {
     if (partyNameInput) partyNameInput.value = deck.name || "";
     autoSuggestRaid(wpns, chars);
   } else if (dataType === "character_stats") {
-    // Character stats shows character count
     const characterCount = Object.keys(response.data).length;
-    document.getElementById("detailPageCount").textContent = "";
-    document.getElementById("detailItemCount").textContent = t(
+    itemCountEl.textContent = tPlural(
+      "count_character",
       "count_characters",
-      { count: characterCount },
+      characterCount,
     );
+    itemCountEl.dataset.tooltip = "";
   } else if (isDatabaseDetailType(dataType)) {
-    // Database detail shows item name
     const name = response.data.name || response.data.master?.name || "";
-    document.getElementById("detailPageCount").textContent = "";
-    document.getElementById("detailItemCount").textContent = name;
+    itemCountEl.textContent = name;
+    itemCountEl.dataset.tooltip = "";
   } else {
-    document.getElementById("detailPageCount").textContent = status.pageCount
-      ? t("count_pages", { count: status.pageCount })
-      : "";
-    document.getElementById("detailItemCount").textContent = t("count_items", {
-      count: status.totalItems || countItems(dataType, response.data),
-    });
+    const itemCount = status.totalItems || countItems(dataType, response.data);
+    itemCountEl.textContent = tPlural("count_item", "count_items", itemCount);
+    itemCountEl.dataset.tooltip = "";
+  }
+
+  // Show/hide stash name in center with combined tooltip
+  const stashNameEl = document.getElementById("detailStashName");
+  if (stashNameEl) {
+    if (dataType.startsWith("stash_")) {
+      const stashId = dataType.split("_").pop();
+      const stashLabel =
+        status?.stashName || status?.displayName || getDataTypeName(dataType);
+      stashNameEl.textContent = stashLabel;
+      const tooltipParts = [`ID: ${stashId}`];
+      if (status.pageCount)
+        tooltipParts.push(
+          tPlural("count_page", "count_pages", status.pageCount),
+        );
+      if (status.ageText) tooltipParts.push(status.ageText);
+      stashNameEl.dataset.tooltip = tooltipParts.join(" · ");
+      stashNameEl.classList.remove("hidden");
+    } else {
+      const displayName = status?.displayName || getDataTypeName(dataType);
+      stashNameEl.textContent = displayName;
+      const tooltipParts = [];
+      if (status.pageCount)
+        tooltipParts.push(
+          tPlural("count_page", "count_pages", status.pageCount),
+        );
+      if (status.ageText) tooltipParts.push(status.ageText);
+      stashNameEl.dataset.tooltip = tooltipParts.join(" · ");
+      stashNameEl.classList.remove("hidden");
+    }
+  }
+
+  // Show/hide select all toggle for collection views
+  // When select-all is shown, it includes the item count in its label
+  if (isCollection) {
+    selectAllToggle?.classList.remove("hidden");
+    itemCountEl?.classList.add("hidden");
+  } else {
+    selectAllToggle?.classList.add("hidden");
+    itemCountEl?.classList.remove("hidden");
   }
 
   // Hide party meta and show detail meta row for non-party types
@@ -533,35 +624,35 @@ async function showDetailView(dataType) {
     updatePlaylistSelectorUI([]);
   }
 
-  // Reset import button
+  // Reset import/sync buttons based on checkbox state
   const importBtn = document.getElementById("detailImport");
-  importBtn.textContent = t("action_import");
-  importBtn.disabled = false;
-  importBtn.classList.remove("imported");
-
-  // Show/hide sync button based on checkbox state (user-controlled)
   const syncBtn = document.getElementById("detailSync");
   const enableSyncCheckbox = document.getElementById("enableFullSyncCheckbox");
   const isCollectionSync =
     isCollectionType(dataType) && dataType !== "character_stats";
-  if (syncBtn) {
-    // Sync button visibility is controlled by checkbox, not isComplete
-    if (isCollectionSync && enableSyncCheckbox?.checked) {
-      syncBtn.classList.remove("hidden");
+  const syncActive = isCollectionSync && enableSyncCheckbox?.checked;
+
+  importBtn.textContent = t("action_import");
+  importBtn.disabled = false;
+  importBtn.classList.remove("imported");
+
+  if (syncActive) {
+    importBtn.classList.add("hidden");
+    syncBtn?.classList.remove("hidden");
+    if (syncBtn) {
       syncBtn.textContent = t("action_full_sync");
       syncBtn.disabled = false;
-    } else {
-      syncBtn.classList.add("hidden");
     }
+  } else {
+    importBtn.classList.remove("hidden");
+    syncBtn?.classList.add("hidden");
   }
 
   // Show/hide filter based on data type
   const detailFilter = document.getElementById("detailFilter");
   const rarityFilters = document.getElementById("rarityFilters");
-  const lv1FilterDivider = document.getElementById("lv1FilterDivider");
-  const lv1FilterOption = document.getElementById("lv1FilterOption");
-  const syncFilterDivider = document.getElementById("syncFilterDivider");
-  const syncFilterOption = document.getElementById("syncFilterOption");
+  const lv1FilterSection = document.getElementById("lv1FilterSection");
+  const syncFilterSection = document.getElementById("syncFilterSection");
   const filterButton = document.getElementById("filterButton");
 
   // Show filter for weapons, summons, and artifacts (collection types that support sync)
@@ -575,13 +666,12 @@ async function showDetailView(dataType) {
     // Rarity and Lv1 filters only for weapons/summons (not artifacts)
     if (isWeaponOrSummonCollection(dataType)) {
       rarityFilters?.classList.remove("hidden");
-      lv1FilterDivider?.classList.remove("hidden");
-      lv1FilterOption?.classList.remove("hidden");
+      lv1FilterSection?.classList.remove("hidden");
       updateFilterButtonLabel();
     } else {
       rarityFilters?.classList.add("hidden");
-      lv1FilterDivider?.classList.add("hidden");
-      lv1FilterOption?.classList.add("hidden");
+      lv1FilterSection?.classList.add("hidden");
+
       // For artifacts, just show "Filter" as the button label
       if (filterButton) {
         filterButton.querySelector("span").textContent = t("filter_options");
@@ -590,23 +680,15 @@ async function showDetailView(dataType) {
 
     // Sync filter for all collection types
     if (isCollectionSync) {
-      syncFilterDivider?.classList.remove("hidden");
-      syncFilterOption?.classList.remove("hidden");
-      // For artifacts, no divider needed since it's the only option
-      if (isArtifact) {
-        syncFilterDivider?.classList.add("hidden");
-      }
+      syncFilterSection?.classList.remove("hidden");
     } else {
-      syncFilterDivider?.classList.add("hidden");
-      syncFilterOption?.classList.add("hidden");
+      syncFilterSection?.classList.add("hidden");
     }
   } else {
     detailFilter?.classList.add("hidden");
     rarityFilters?.classList.add("hidden");
-    lv1FilterDivider?.classList.add("hidden");
-    lv1FilterOption?.classList.add("hidden");
-    syncFilterDivider?.classList.add("hidden");
-    syncFilterOption?.classList.add("hidden");
+    lv1FilterSection?.classList.add("hidden");
+    syncFilterSection?.classList.add("hidden");
   }
 
   // Render items
@@ -820,21 +902,25 @@ function initializeFilterListeners() {
   const excludeLv1Checkbox = document.getElementById("excludeLv1Checkbox");
   excludeLv1Checkbox?.addEventListener("change", () => {
     excludeLv1Items = excludeLv1Checkbox.checked;
+    updateLv1Badge();
     refreshDetailViewWithFilters();
   });
 
-  // Full sync checkbox - toggles sync button visibility
+  // Sync deletions checkbox - swaps Import button with Import & Sync
   const enableFullSyncCheckbox = document.getElementById(
     "enableFullSyncCheckbox",
   );
   enableFullSyncCheckbox?.addEventListener("change", (e) => {
+    const importBtn = document.getElementById("detailImport");
     const syncBtn = document.getElementById("detailSync");
-    if (syncBtn) {
+    if (syncBtn && importBtn) {
       if (e.target.checked) {
+        importBtn.classList.add("hidden");
         syncBtn.classList.remove("hidden");
         syncBtn.textContent = t("action_full_sync");
         syncBtn.disabled = false;
       } else {
+        importBtn.classList.remove("hidden");
         syncBtn.classList.add("hidden");
       }
     }
@@ -993,6 +1079,33 @@ async function fetchWeaponKeyMap() {
 }
 
 /**
+ * Fetch weapon stat modifiers from the API.
+ * Returns a map of slug → { nameEn, nameJp, suffix } for tooltip display.
+ * Cached in memory for the session.
+ */
+let _weaponStatModCache = null;
+async function fetchWeaponStatModifiers() {
+  if (_weaponStatModCache) return _weaponStatModCache;
+  try {
+    const apiUrl = await getApiUrl("/weapon_stat_modifiers");
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    const modifiers = await response.json();
+    _weaponStatModCache = {};
+    for (const mod of modifiers) {
+      _weaponStatModCache[mod.slug] = {
+        nameEn: mod.name_en,
+        nameJp: mod.name_jp,
+        suffix: mod.suffix || "",
+      };
+    }
+    return _weaponStatModCache;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch job skill slugs by name from the API.
  * Cached in memory for the session.
  */
@@ -1024,23 +1137,29 @@ async function fetchJobSkillSlugs(names) {
  */
 async function renderDetailItems(dataType, data) {
   const container = document.getElementById("detailItems");
+  const { gbAuth: authData } = await chrome.storage.local.get("gbAuth");
+  const simplePortraits = authData?.simplePortraits || false;
 
   // Party gets special sectioned layout
   if (dataType.startsWith("party_")) {
     const friendSummonName = data?.deck?.pc?.damage_info?.summon_name;
     const setAction = data?.deck?.pc?.set_action || [];
     const skillNames = setAction.map((s) => s.name).filter(Boolean);
-    const [friendSummon, weaponKeyMap, jobSkillSlugs] = await Promise.all([
-      searchSummonByName(friendSummonName),
-      fetchWeaponKeyMap(),
-      skillNames.length > 0
-        ? fetchJobSkillSlugs(skillNames)
-        : Promise.resolve({}),
-    ]);
+    const [friendSummon, weaponKeyMap, jobSkillSlugs, weaponStatModifiers] =
+      await Promise.all([
+        searchSummonByName(friendSummonName),
+        fetchWeaponKeyMap(),
+        skillNames.length > 0
+          ? fetchJobSkillSlugs(skillNames)
+          : Promise.resolve({}),
+        fetchWeaponStatModifiers(),
+      ]);
     renderPartyDetail(container, data, {
       friendSummon,
       weaponKeyMap,
       jobSkillSlugs,
+      weaponStatModifiers,
+      simplePortraits,
     });
     return;
   }
@@ -1057,21 +1176,28 @@ async function renderDetailItems(dataType, data) {
     return;
   }
 
+  const isWeaponType =
+    dataType.includes("weapon") || dataType.startsWith("stash_weapon");
+  const weaponStatModifiers = isWeaponType
+    ? await fetchWeaponStatModifiers()
+    : null;
+
   const allItems = extractItems(dataType, data);
   const isCollection = isCollectionType(dataType);
 
   // Apply filters (preserving original indices for selection)
-  // Create array of { item, originalIndex } pairs
+  // Track hidden item counts by filter type
+  let hiddenByRarity = 0;
+  let hiddenByLv1 = 0;
   const itemsWithIndices = allItems
     .map((item, index) => ({ item, originalIndex: index }))
     .filter(({ item, originalIndex }) => {
-      // Skip items with known broken images
       if (brokenImageIndices.has(originalIndex)) return false;
-      // Skip items filtered by rarity
-      if (shouldFilterByRarity(item, dataType)) return false;
-      // Skip items filtered by Lv1
-      if (shouldFilterByLv1(item, dataType)) return false;
-      return true;
+      const filteredByRarity = shouldFilterByRarity(item, dataType);
+      const filteredByLv1 = shouldFilterByLv1(item, dataType);
+      if (filteredByRarity) hiddenByRarity++;
+      if (filteredByLv1) hiddenByLv1++;
+      return !filteredByRarity && !filteredByLv1;
     });
 
   const hasNames = itemsWithIndices.some(
@@ -1118,7 +1244,7 @@ async function renderDetailItems(dataType, data) {
             : "";
           return `
         <div class="list-item${isCollection ? " selectable" : ""}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
-          <img class="list-item-image" src="${getItemImageUrl(dataType, item)}" alt="">
+          <img class="list-item-image" src="${getItemImageUrl(dataType, item, simplePortraits)}" alt="">
           <div class="list-item-info">
             <span class="list-item-name">${name}${levelText}</span>
             ${dataType.includes("artifact") ? getArtifactLabels(item) : ""}
@@ -1132,7 +1258,6 @@ async function renderDetailItems(dataType, data) {
   } else {
     // Grid layout (collection views use square-cells for fixed width)
     const gridClass = getGridClass(dataType);
-    const isWeaponType = dataType.includes("weapon");
     container.innerHTML = `<div class="item-grid ${gridClass} square-cells">
       ${itemsWithIndices
         .map(({ item, originalIndex }) => {
@@ -1147,18 +1272,55 @@ async function renderDetailItems(dataType, data) {
           const modifiersHtml = isCharacterType
             ? renderCharacterModifiers(item)
             : isWeaponType
-              ? renderWeaponModifiers(item)
+              ? renderWeaponModifiers(item, null, weaponStatModifiers)
               : "";
           return `
         <div class="grid-item${isCollection ? " selectable" : ""}" data-index="${originalIndex}" data-ownership-id="${getOwnershipId(item)}">
           ${modifiersHtml}
-          <img src="${getItemImageUrl(dataType, item)}" alt="">
+          <img src="${getItemImageUrl(dataType, item, simplePortraits)}" alt="">
           ${checkboxHtml}
         </div>
       `;
         })
         .join("")}
     </div>`;
+  }
+
+  // Show hidden items message
+  const totalHidden = hiddenByRarity + hiddenByLv1;
+  if (totalHidden > 0) {
+    const bothRarityAndLv1 = hiddenByRarity > 0 && hiddenByLv1 > 0;
+    const message = bothRarityAndLv1
+      ? t("filter_hidden_both").replace("{count}", totalHidden)
+      : hiddenByRarity > 0
+        ? t("filter_hidden_rarity").replace("{count}", hiddenByRarity)
+        : t("filter_hidden_lv1").replace("{count}", hiddenByLv1);
+
+    const hiddenHtml = `
+      <div class="filter-hidden-message">
+        <p>${message}</p>
+        <button class="filter-show-all">${t("filter_show_all")}</button>
+      </div>`;
+    container.insertAdjacentHTML("beforeend", hiddenHtml);
+
+    container
+      .querySelector(".filter-show-all")
+      ?.addEventListener("click", () => {
+        // Enable all rarities
+        activeRarityFilters = new Set(["2", "3", "4"]);
+        document
+          .querySelectorAll('#rarityFilters input[type="checkbox"]')
+          .forEach((cb) => {
+            cb.checked = true;
+          });
+        updateFilterButtonLabel();
+        // Disable Lv1 exclusion
+        excludeLv1Items = false;
+        const lv1Checkbox = document.getElementById("excludeLv1Checkbox");
+        if (lv1Checkbox) lv1Checkbox.checked = false;
+
+        refreshDetailViewWithFilters();
+      });
   }
 
   // Add click handlers for selectable items (whole item toggles checkbox)
@@ -1237,8 +1399,17 @@ async function applyOwnershipDimming(container, dataType) {
       const id = el.dataset.ownershipId;
       if (id && ownedIds.has(id)) {
         el.classList.add("owned");
+        el.dataset.tooltip = t("stat_already_owned");
+        // Uncheck owned items by default
+        const checkbox = el.querySelector(".item-checkbox");
+        if (checkbox) {
+          const index = parseInt(checkbox.dataset.index, 10);
+          selectedItems.delete(index);
+          checkbox.classList.remove("checked");
+        }
       }
     });
+    updateSelectionCount();
   } catch {
     // Not logged in or API error — skip silently
   }
@@ -1264,18 +1435,55 @@ function toggleItemSelection(index, checkbox) {
  * Update the selection count in the header
  */
 function updateSelectionCount() {
-  const countEl = document.getElementById("detailItemCount");
-  if (countEl && isCollectionType(currentDetailDataType)) {
-    // Count only items currently visible in the DOM (respecting filters)
+  // Update tri-state checkbox and label
+  const toggle = document.getElementById("selectAllToggle");
+  if (toggle) {
     const checkboxes = document.querySelectorAll("#detailItems .item-checkbox");
     const total = checkboxes.length;
-    // Count selected items that are currently visible
-    let selected = 0;
-    checkboxes.forEach((checkbox) => {
-      const index = parseInt(checkbox.dataset.index, 10);
-      if (selectedItems.has(index)) selected++;
-    });
-    countEl.textContent = t("count_selected", { selected, total });
+    const checked = document.querySelectorAll(
+      "#detailItems .item-checkbox.checked",
+    ).length;
+
+    // Disable when no items are visible
+    if (total === 0) {
+      toggle.dataset.state = "unchecked";
+      toggle.classList.add("disabled");
+    } else {
+      toggle.classList.remove("disabled");
+      if (checked === 0) {
+        toggle.dataset.state = "unchecked";
+      } else if (checked === total) {
+        toggle.dataset.state = "checked";
+      } else {
+        toggle.dataset.state = "indeterminate";
+      }
+    }
+    // Update label with count
+    const label = document.getElementById("selectAllLabel");
+    if (label) {
+      if (toggle.dataset.state === "checked") {
+        label.textContent = tPlural(
+          "action_deselect_count_one",
+          "action_deselect_count",
+          total,
+          { count: total },
+        );
+      } else {
+        const remaining = total - checked;
+        label.textContent = tPlural(
+          "action_select_count_one",
+          "action_select_count",
+          remaining,
+          { count: remaining },
+        );
+      }
+    }
+  }
+
+  // Update standalone item count for non-collection views
+  const countEl = document.getElementById("detailItemCount");
+  if (countEl && !isCollectionType(currentDetailDataType)) {
+    countEl.classList.remove("hidden");
   }
 }
 
@@ -1460,7 +1668,7 @@ function filterSelectedItems(dataType, data) {
   }
 
   const items = extractItems(dataType, data);
-  const _filteredItems = items.filter((_, i) => selectedItems.has(i));
+  const filteredItems = items.filter((_, i) => selectedItems.has(i));
 
   // Reconstruct the data structure with filtered items
   // Collection data is an object keyed by page number, each with a 'list' array
@@ -1505,8 +1713,8 @@ async function handleDetailCopy() {
 
     const jsonString = JSON.stringify(response.data, null, 2);
     await navigator.clipboard.writeText(jsonString);
-    showToast(t("toast_copied"));
-  } catch {
+    showToast(t('toast_copied'));
+  } catch (error) {
     showToast(t("toast_copy_failed"));
   }
 }
@@ -1540,7 +1748,7 @@ async function handleDetailSave() {
     showToast(
       t("toast_saved_file", { filename: `${currentDetailDataType}.json` }),
     );
-  } catch {
+  } catch (error) {
     showToast(t("toast_save_failed"));
   }
 }
@@ -1712,7 +1920,7 @@ async function handleDetailImport() {
         importBtn.classList.add("imported");
       }
     }
-  } catch {
+  } catch (error) {
     showToast(t("toast_import_failed"));
   } finally {
     if (importBtn && !importBtn.classList.contains("imported")) {
@@ -1761,8 +1969,14 @@ async function handleLogin() {
     gbAuth = {
       ...gbAuth,
       avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
       language,
       role: userInfo.role || 0,
+      simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
     };
 
     // Only save auth after both steps succeed
@@ -1850,7 +2064,7 @@ async function updateProfileUI(gbAuth) {
 
   // Update username
   if (profileUsername) {
-    profileUsername.textContent = gbAuth.user?.username || "User";
+    profileUsername.textContent = gbAuth.displayName || gbAuth.user?.username || "User";
   }
 
   // Update avatars
@@ -1870,6 +2084,48 @@ async function updateProfileUI(gbAuth) {
   if (profileHeader && gbAuth.user?.username) {
     const siteUrl = await getSiteBaseUrl();
     profileHeader.href = `${siteUrl}/${gbAuth.user.username}`;
+  }
+}
+
+/**
+ * Non-blocking refresh of user info from the API.
+ * Updates storage and UI if any fields have changed.
+ */
+async function refreshUserInfo(gbAuth) {
+  try {
+    if (!gbAuth?.access_token || (gbAuth.expires_at && gbAuth.expires_at < Date.now())) {
+      return;
+    }
+
+    const userInfo = await fetchUserInfo(gbAuth.access_token);
+
+    const updated = {
+      ...gbAuth,
+      avatar: userInfo.avatar,
+      displayName: userInfo.display_name || null,
+      language: userInfo.language || gbAuth.language,
+      role: userInfo.role ?? gbAuth.role,
+      simplePortraits: userInfo.simple_portraits || false,
+      user: {
+        ...gbAuth.user,
+        username: userInfo.username || gbAuth.user.username,
+      },
+    };
+
+    const changed =
+      JSON.stringify(updated.avatar) !== JSON.stringify(gbAuth.avatar) ||
+      updated.displayName !== gbAuth.displayName ||
+      updated.language !== gbAuth.language ||
+      updated.role !== gbAuth.role ||
+      updated.simplePortraits !== gbAuth.simplePortraits ||
+      updated.user.username !== gbAuth.user?.username;
+
+    if (changed) {
+      await chrome.storage.local.set({ gbAuth: updated });
+      updateProfileUI(updated);
+    }
+  } catch (_) {
+    // Silently fail — cached data remains usable
   }
 }
 
@@ -1908,7 +2164,8 @@ function updateAgeDisplays() {
     const status = cachedStatus[currentDetailDataType];
     if (status.lastUpdated) {
       const age = Date.now() - status.lastUpdated;
-      document.getElementById("detailFreshness").textContent = formatAge(age);
+      const el = document.getElementById("detailFreshness");
+      if (el) el.textContent = formatAge(age);
     }
   }
 
@@ -1962,7 +2219,7 @@ function updateTabCacheDisplay(tabName, status) {
   if (!container) return;
 
   // Get types to display - party and database tabs discover dynamically from status
-  let typesToDisplay;
+  let typesToDisplay = [];
   if (tabName === "party") {
     // Find all party_* types in status
     typesToDisplay = Object.keys(status || {}).filter(
@@ -2013,6 +2270,11 @@ function updateTabCacheDisplay(tabName, status) {
 
     // Use partyName for parties, displayName for others
     const displayName = info.partyName || info.displayName;
+    const isStash = type.startsWith("stash_");
+
+    const stashTagHtml = isStash
+      ? `<span class="stash-tag">${t("tag_stash")}</span>`
+      : "";
 
     const subtitleHtml = info.subtitle
       ? `<span class="cache-subtitle">${info.subtitle}</span>`
@@ -2021,7 +2283,9 @@ function updateTabCacheDisplay(tabName, status) {
     html += `
       <div class="cache-item ${info.statusClass}" data-type="${type}" data-tab="${tabName}">
         <div class="cache-info">
-          <span class="cache-name">${displayName}</span>
+          <div class="cache-name-row">
+            <span class="cache-name">${displayName}</span>${stashTagHtml}
+          </div>
           ${subtitleHtml}
         </div>
         <div class="cache-right">
@@ -2068,7 +2332,7 @@ function getEmptyMessage(tabName) {
  */
 async function handleClearCache() {
   await chrome.runtime.sendMessage({ action: "clearCache" });
-  _selectedDataTypes = { party: null, collection: null, database: null };
+  selectedDataTypes = { party: null, collection: null, database: null };
   cachedStatus = null;
 
   // Reset all tab displays
@@ -2136,15 +2400,17 @@ async function refreshDetailView() {
   // Update freshness text
   const status = cachedStatus[currentDetailDataType];
   if (status) {
-    document.getElementById("detailFreshness").textContent = status.ageText;
+    const freshnessEl = document.getElementById("detailFreshness");
+    if (freshnessEl) freshnessEl.textContent = status.ageText;
   }
 
   // Update item count
   if (currentDetailDataType === "character_stats") {
     const count = Object.keys(response.data).length;
-    document.getElementById("detailItemCount").textContent = t(
+    document.getElementById("detailItemCount").textContent = tPlural(
+      "count_character",
       "count_characters",
-      { count },
+      count,
     );
   }
 
@@ -2229,6 +2495,13 @@ function showStatus(element, message, type = "info") {
   element.textContent = message;
   element.className = `status-${type}`;
   show(element);
+}
+
+/**
+ * Capitalize first letter
+ */
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**
