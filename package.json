@@ -4,8 +4,13 @@
   "description": "A Chrome extension that extracts data from Granblue Fantasy",
   "main": "background.js",
   "scripts": {
-    "build": "node build-manifest.js"
+    "build": "node build-manifest.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "author": "Justin Edmund",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
 }
