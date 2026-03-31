@@ -2,72 +2,64 @@
    FONTS (loaded from AWS)
    ========================================== */
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/437fb160c86d1771.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/437fb160c86d1771.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/90e2044c61d1d575.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/90e2044c61d1d575.woff2') format('woff2');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/db6054d73906f6d1.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/db6054d73906f6d1.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/54cf3d47648cbde4.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/54cf3d47648cbde4.woff2') format('woff2');
   font-weight: 500;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/a9a1343791e012e7.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/a9a1343791e012e7.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/0137ea08b8d14fae.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/0137ea08b8d14fae.woff2') format('woff2');
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/83b98eb4efef82d6.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/83b98eb4efef82d6.woff2') format('woff2');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "AGrot";
-  src: url("https://siero-img.s3-us-west-2.amazonaws.com/fonts/8fd873f2349d20e6.woff2")
-    format("woff2");
+  font-family: 'AGrot';
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/8fd873f2349d20e6.woff2') format('woff2');
   font-weight: 900;
   font-style: italic;
   font-display: swap;
@@ -199,13 +191,7 @@ body.dark {
 body {
   margin: 0;
   padding: 0;
-  font-family:
-    "AGrot",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: 'AGrot', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: white;
   height: 100vh;
   overflow: hidden;
@@ -263,7 +249,7 @@ h1 {
 }
 
 .login-background::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
@@ -367,9 +353,7 @@ h1 {
   font-weight: 500;
   color: var(--color-text-tertiary);
   text-decoration: none;
-  transition:
-    color var(--transition-fast),
-    background-color var(--transition-fast);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .tab:hover {
@@ -608,9 +592,7 @@ input::placeholder {
   display: inline-flex;
   padding: 12px 20px;
   height: 44px;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 /* Button sizes */
@@ -766,9 +748,7 @@ button:disabled,
   background: transparent;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .cache-item:hover {
@@ -777,12 +757,29 @@ button:disabled,
 }
 
 .cache-item.stale {
-  opacity: 0.5;
   cursor: not-allowed;
+  color: var(--text-secondary);
+}
+
+.cache-item.stale .cache-name,
+.cache-item.stale .cache-age,
+.cache-item.stale .cache-subtitle,
+.cache-item.stale .icon-chevron {
+  color: var(--text-secondary);
+}
+
+.cache-item.stale .stash-tag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .cache-item.stale:hover {
   background: transparent;
+}
+
+.cache-item.stale:hover .stash-tag {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .cache-info {
@@ -790,6 +787,12 @@ button:disabled,
   flex-direction: column;
   gap: 2px;
   flex: 1;
+}
+
+.cache-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .cache-name {
@@ -800,6 +803,22 @@ button:disabled,
 
 .cache-item:hover .cache-name {
   color: inherit;
+}
+
+.stash-tag {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--element-bg);
+  color: var(--element-text);
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cache-item:hover .stash-tag {
+  background: var(--element-button-bg);
+  color: white;
 }
 
 .cache-subtitle {
@@ -1093,17 +1112,20 @@ button:disabled,
 }
 
 /* Elemental Import button in detail view */
-#detailImport {
+#detailImport,
+#detailSync {
   background-color: var(--element-button-bg);
   border: none;
   color: white;
 }
 
-#detailImport:hover:not(:disabled) {
+#detailImport:hover:not(:disabled),
+#detailSync:hover:not(:disabled) {
   background-color: var(--element-button-bg-hover);
 }
 
-body.light #detailImport {
+body.light #detailImport,
+body.light #detailSync {
   color: var(--element-button-text, white);
 }
 
@@ -1111,10 +1133,12 @@ body.light #detailImport {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  z-index: 5;
   font-size: 14px;
   color: var(--color-text-tertiary);
   background: var(--color-bg);
-  padding: 12px 16px;
+  padding: 8px 16px;
   flex-shrink: 0;
 }
 
@@ -1124,11 +1148,126 @@ body.light #detailImport {
   gap: 6px;
 }
 
-.detail-meta span:empty {
+#detailItemCount {
+  cursor: default;
+  position: relative;
+}
+
+
+.detail-meta-center {
+  cursor: default;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  pointer-events: auto;
+}
+
+
+.detail-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Select all tri-state checkbox */
+.select-all-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.select-all-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--color-text-tertiary);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.select-all-checkbox svg {
+  width: 12px;
+  height: 12px;
+  color: white;
+}
+
+.select-all-check,
+.select-all-dash {
+  display: none;
+  line-height: 0;
+}
+
+.select-all-toggle[data-state="checked"] .select-all-checkbox {
+  background: var(--element-button-bg);
+  border-color: var(--element-button-bg);
+}
+
+.select-all-toggle[data-state="checked"] .select-all-check {
+  display: block;
+}
+
+.select-all-toggle[data-state="indeterminate"] .select-all-checkbox {
+  background: var(--element-button-bg);
+  border-color: var(--element-button-bg);
+}
+
+.select-all-toggle[data-state="indeterminate"] .select-all-dash {
+  display: block;
+}
+
+/* Unchecked hover: preview checked state */
+.select-all-toggle[data-state="unchecked"]:hover .select-all-checkbox {
+  background: var(--element-button-bg);
+  border-color: var(--element-button-bg);
+}
+
+.select-all-toggle[data-state="unchecked"]:hover .select-all-check {
+  display: block;
+}
+
+/* Indeterminate hover: preview checked state */
+.select-all-toggle[data-state="indeterminate"]:hover .select-all-checkbox {
+  background: var(--element-button-bg-hover);
+  border-color: var(--element-button-bg-hover);
+}
+
+.select-all-toggle[data-state="indeterminate"]:hover .select-all-dash {
   display: none;
 }
 
-.detail-meta span:empty + .detail-meta-separator {
+.select-all-toggle[data-state="indeterminate"]:hover .select-all-check {
+  display: block;
+}
+
+/* Checked hover: preview unchecked state */
+.select-all-toggle[data-state="checked"]:hover .select-all-checkbox {
+  background: white;
+  border-color: var(--color-text-tertiary);
+}
+
+.select-all-toggle[data-state="checked"]:hover .select-all-check {
+  display: none;
+}
+
+.select-all-label {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.select-all-toggle.disabled {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.detail-meta span:empty {
   display: none;
 }
 
@@ -1155,9 +1294,7 @@ body.light #detailImport {
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    border-color var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .filter-button:hover {
@@ -1185,7 +1322,7 @@ body.light #detailImport {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 140px;
+  min-width: 252px;
   padding: 8px 0;
   z-index: 20;
   display: none;
@@ -1197,7 +1334,7 @@ body.light #detailImport {
 
 .filter-option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 8px 12px;
   font-size: 14px;
@@ -1214,7 +1351,10 @@ body.light #detailImport {
 .filter-option input[type="checkbox"] {
   width: 16px;
   height: 16px;
+  min-width: 16px;
+  min-height: 16px;
   margin: 0;
+  margin-top: 1px;
   cursor: pointer;
 }
 
@@ -1223,10 +1363,62 @@ body.light #detailImport {
   opacity: 0.6;
 }
 
-.filter-divider {
-  height: 1px;
-  background: var(--color-border-light);
-  margin: 8px 0;
+.filter-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding: 8px 12px 4px;
+}
+
+.filter-section + .filter-section .filter-section-title,
+#rarityFilters + .filter-section .filter-section-title {
+  padding-top: 12px;
+}
+
+.filter-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-option-desc {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* Filter Hidden Message */
+.filter-hidden-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 80px 16px;
+  text-align: center;
+}
+
+.filter-hidden-message p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.filter-show-all {
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.filter-show-all:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border);
 }
 
 /* Copy Dropdown */
@@ -1276,7 +1468,7 @@ body.light #detailImport {
 .detail-items {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
   background: #f5f5f5;
 }
 
@@ -1343,32 +1535,6 @@ body.light #detailImport {
   opacity: 0.35;
 }
 
-.grid-item.owned::after,
-.list-item.owned::after {
-  content: "This item is already in your collection";
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 140px;
-  padding: 6px 8px;
-  background: #000;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.3;
-  border-radius: 4px;
-  text-align: center;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 10;
-}
-
-.grid-item.owned:hover::after,
-.list-item.owned:hover::after {
-  opacity: 1;
-}
 
 /* Character Modifiers (perpetuity ring overlay) */
 .char-modifiers {
@@ -1416,6 +1582,34 @@ body.light #detailImport {
 .weapon-modifiers .weapon-skills img {
   width: 28px;
   height: auto;
+  pointer-events: auto;
+}
+
+
+.weapon-modifiers .awakening-icon,
+.char-modifiers .perpetuity-ring,
+.char-modifiers .awakening-icon,
+.summon-modifiers .quick-summon-badge {
+  pointer-events: auto;
+}
+
+.square-cells .weapon-modifiers .weapon-skills {
+  bottom: 0px;
+  right: 24px;
+}
+
+.square-cells .weapon-modifiers .weapon-skills img {
+  width: 24px;
+}
+
+.square-cells .weapon-modifiers .weapon-skills img.ax-skill-icon {
+  margin-bottom: 2px;
+  margin-right: 2px;
+}
+
+.square-cells .weapon-modifiers .weapon-skills img.befoulment-icon {
+  width: 32px;
+  margin-bottom: -2px;
 }
 
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
@@ -1463,19 +1657,19 @@ body.light #detailImport {
   right: 4px;
   width: 20px;
   height: 20px;
-  background: #b4b4b4;
+  background: white;
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background-color 0.15s,
-    transform 0.1s;
+  transition: background-color 0.15s, transform 0.1s;
 }
 
-.item-checkbox:hover {
-  background: #a0a0a0;
+.item-checkbox:hover,
+.grid-item:hover .item-checkbox,
+.list-item:hover .item-checkbox {
+  background: #e8e8e8;
   transform: scale(1.05);
 }
 
@@ -1483,7 +1677,9 @@ body.light #detailImport {
   background: var(--element-button-bg);
 }
 
-.item-checkbox.checked:hover {
+.item-checkbox.checked:hover,
+.grid-item:hover .item-checkbox.checked,
+.list-item:hover .item-checkbox.checked {
   background: var(--element-button-bg-hover);
 }
 
@@ -1945,34 +2141,13 @@ body.light #detailImport {
   background: var(--button-bg-hover);
 }
 
-.raid-selector-button.raid-fire {
-  background: #ffcdcd;
-  color: #6e0000;
-}
-.raid-selector-button.raid-wind {
-  background: #cdffed;
-  color: #006a45;
-}
-.raid-selector-button.raid-water {
-  background: #cdedff;
-  color: #004b77;
-}
-.raid-selector-button.raid-earth {
-  background: #ffe2cd;
-  color: #863504;
-}
-.raid-selector-button.raid-light {
-  background: #fffacd;
-  color: #715100;
-}
-.raid-selector-button.raid-dark {
-  background: #f2cdff;
-  color: #560075;
-}
-.raid-selector-button.raid-null {
-  background: var(--color-bg);
-  color: var(--color-text);
-}
+.raid-selector-button.raid-fire { background: #ffcdcd; color: #6e0000; }
+.raid-selector-button.raid-wind { background: #cdffed; color: #006a45; }
+.raid-selector-button.raid-water { background: #cdedff; color: #004b77; }
+.raid-selector-button.raid-earth { background: #ffe2cd; color: #863504; }
+.raid-selector-button.raid-light { background: #fffacd; color: #715100; }
+.raid-selector-button.raid-dark { background: #f2cdff; color: #560075; }
+.raid-selector-button.raid-null { background: var(--color-bg); color: var(--color-text); }
 
 .raid-selector-image {
   height: 32px;
@@ -2052,12 +2227,8 @@ body.light #detailImport {
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .raid-picker-title {
@@ -2480,9 +2651,7 @@ body.light #detailImport {
   font-size: 14px;
   font-weight: 500;
   opacity: 0;
-  transition:
-    transform 0.3s ease,
-    opacity 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   z-index: 200;
   pointer-events: none;
 }
@@ -2579,19 +2748,19 @@ body.light #detailImport {
 }
 
 .star.empty {
-  background-image: url("icons/uncap/empty@2x.png");
+  background-image: url('icons/uncap/empty@2x.png');
 }
 
 .star.filled {
-  background-image: url("icons/uncap/yellow@2x.png");
+  background-image: url('icons/uncap/yellow@2x.png');
 }
 
 .star.flb {
-  background-image: url("icons/uncap/blue@2x.png");
+  background-image: url('icons/uncap/blue@2x.png');
 }
 
 .star.ulb {
-  background-image: url("icons/uncap/purple@2x.png");
+  background-image: url('icons/uncap/purple@2x.png');
 }
 
 /* ==========================================
@@ -2732,18 +2901,8 @@ body.light #detailImport {
   min-width: 80px;
 }
 
-/* Sync button styling */
-#detailSync {
-  background-color: var(--color-success);
-  color: white;
-}
-
-#detailSync:hover:not(:disabled) {
-  background-color: #43a047;
-}
-
 #detailSync.synced {
-  background-color: #81c784;
+  opacity: 0.7;
   cursor: default;
 }
 
@@ -2894,41 +3053,45 @@ body.light #detailImport {
 
 /* Shake animation */
 @keyframes shake {
-  0% {
-    transform: translateX(0);
-  }
-  10% {
-    transform: translateX(-6px);
-  }
-  20% {
-    transform: translateX(6px);
-  }
-  30% {
-    transform: translateX(-4px);
-  }
-  40% {
-    transform: translateX(4px);
-  }
-  50% {
-    transform: translateX(-2px);
-  }
-  60% {
-    transform: translateX(2px);
-  }
-  70% {
-    transform: translateX(-1px);
-  }
-  80% {
-    transform: translateX(1px);
-  }
-  90% {
-    transform: translateX(-0.5px);
-  }
-  100% {
-    transform: translateX(0);
-  }
+  0% { transform: translateX(0); }
+  10% { transform: translateX(-6px); }
+  20% { transform: translateX(6px); }
+  30% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  50% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+  90% { transform: translateX(-0.5px); }
+  100% { transform: translateX(0); }
 }
 
 .shake {
   animation: shake 0.6s ease-out;
+}
+
+/* ==========================================
+   Portal Tooltip
+   ========================================== */
+
+.tooltip {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  padding: 6px 10px;
+  background: #333;
+  color: white;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.tooltip.visible {
+  opacity: 1;
+}
+
 }

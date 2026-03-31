@@ -4,14 +4,14 @@
  */
 
 // Element color classes used for theming
-const ELEMENT_CLASSES = ["fire", "water", "earth", "wind", "light", "dark"];
+const ELEMENT_CLASSES = ['fire', 'water', 'earth', 'wind', 'light', 'dark']
 
 /**
  * Shows an element by removing the 'hidden' class
  * @param {HTMLElement} element - The element to show
  */
 export function show(element) {
-  if (element) element.classList.remove("hidden");
+  if (element) element.classList.remove('hidden')
 }
 
 /**
@@ -19,7 +19,7 @@ export function show(element) {
  * @param {HTMLElement} element - The element to hide
  */
 export function hide(element) {
-  if (element) element.classList.add("hidden");
+  if (element) element.classList.add('hidden')
 }
 
 /**
@@ -27,8 +27,8 @@ export function hide(element) {
  * @param {HTMLElement} element - The element to clear colors from
  */
 export function clearElementColors(element) {
-  if (!element) return;
-  element.classList.remove(...ELEMENT_CLASSES);
+  if (!element) return
+  element.classList.remove(...ELEMENT_CLASSES)
 }
 
 /**
@@ -37,10 +37,10 @@ export function clearElementColors(element) {
  * @param {string|null} color - The element color to set, or null to clear
  */
 export function setElementColor(element, color) {
-  if (!element) return;
-  clearElementColors(element);
+  if (!element) return
+  clearElementColors(element)
   if (color && ELEMENT_CLASSES.includes(color)) {
-    element.classList.add(color);
+    element.classList.add(color)
   }
 }
 
@@ -50,10 +50,10 @@ export function setElementColor(element, color) {
  * @param {number} duration - Animation duration in ms (default: 600)
  */
 export function shake(element, duration = 600) {
-  if (!element) return;
+  if (!element) return
   // Remove and force reflow to re-trigger animation
-  element.classList.remove("shake");
-  void element.offsetWidth;
-  element.classList.add("shake");
-  setTimeout(() => element.classList.remove("shake"), duration);
+  element.classList.remove('shake')
+  void element.offsetWidth
+  element.classList.add('shake')
+  setTimeout(() => element.classList.remove('shake'), duration)
 }

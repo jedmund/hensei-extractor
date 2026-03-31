@@ -10,10 +10,10 @@
  */
 export async function safeGet(keys) {
   try {
-    return await chrome.storage.local.get(keys);
+    return await chrome.storage.local.get(keys)
   } catch (error) {
-    console.error("Storage get failed:", error);
-    return {};
+    console.error('Storage get failed:', error)
+    return {}
   }
 }
 
@@ -23,12 +23,12 @@ export async function safeGet(keys) {
  */
 export async function getStorageUsage() {
   try {
-    const bytesInUse = await chrome.storage.local.getBytesInUse();
+    const bytesInUse = await chrome.storage.local.getBytesInUse()
     // Chrome's local storage quota is typically 10MB (10485760 bytes)
-    const quota = 10485760;
-    return { bytesInUse, quota };
+    const quota = 10485760
+    return { bytesInUse, quota }
   } catch (error) {
-    console.error("Failed to get storage usage:", error);
-    return null;
+    console.error('Failed to get storage usage:', error)
+    return null
   }
 }

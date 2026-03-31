@@ -18,6 +18,3 @@ manifest.json
 
 # Don't commit documentation drafts
 docs/
-
-# Dependencies
-node_modules/
