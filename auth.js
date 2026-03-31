@@ -51,13 +51,13 @@ export async function performLogin(username, password) {
   const config = await getEnvConfig()
 
   const response = await fetch(`${config.apiUrl}/oauth/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: username,
       password,
-      grant_type: "password",
-    }),
+      grant_type: 'password'
+    })
   })
 
   if (!response.ok) {
@@ -91,8 +91,8 @@ function formatAuthData(data) {
     refresh_token: data.refresh_token,
     user: {
       id: data.user.id,
-      username: data.user.username,
-    },
+      username: data.user.username
+    }
   }
 }
 

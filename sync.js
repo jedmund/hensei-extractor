@@ -46,7 +46,9 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
     })
 
     if (previewResponse.error) {
-      showToast(t('toast_preview_failed', { error: tError(previewResponse.error) }))
+      showToast(
+        t('toast_preview_failed', { error: tError(previewResponse.error) })
+      )
       return
     }
 
@@ -77,23 +79,31 @@ function updateSyncModalContent(preview, currentDetailDataType) {
     warningDiv.classList.remove('hidden')
 
     // Build the grid of items with images
-    const itemsHtml = preview.willDelete.slice(0, 12).map(item => {
-      const name = item.name || `Unknown`
-      const imageUrl = getSyncPreviewImageUrl(item.granblue_id, currentDetailDataType)
-      return `
+    const itemsHtml = preview.willDelete
+      .slice(0, 12)
+      .map((item) => {
+        const name = item.name || `Unknown`
+        const imageUrl = getSyncPreviewImageUrl(
+          item.granblue_id,
+          currentDetailDataType
+        )
+        return `
         <div class="sync-delete-item" title="${name}">
           <img src="${imageUrl}" alt="${name}">
         </div>
       `
-    }).join('')
+      })
+      .join('')
 
-    const moreCount = preview.count > 12
-      ? `<p class="more-items">${t('sync_more_items', { count: preview.count - 12 })}</p>`
-      : ''
+    const moreCount =
+      preview.count > 12
+        ? `<p class="more-items">${t('sync_more_items', { count: preview.count - 12 })}</p>`
+        : ''
 
-    const deleteCountText = preview.count > 1
-      ? t('sync_delete_count_plural', { count: preview.count })
-      : t('sync_delete_count', { count: preview.count })
+    const deleteCountText =
+      preview.count > 1
+        ? t('sync_delete_count_plural', { count: preview.count })
+        : t('sync_delete_count', { count: preview.count })
 
     if (deleteListDiv) {
       deleteListDiv.innerHTML = `
@@ -128,7 +138,10 @@ function getSyncPreviewImageUrl(granblueId, currentDetailDataType) {
   if (currentDetailDataType?.includes('artifact')) {
     return getImageUrl(`artifact-square/${granblueId}.jpg`)
   }
-  if (currentDetailDataType?.includes('npc') || currentDetailDataType?.includes('character')) {
+  if (
+    currentDetailDataType?.includes('npc') ||
+    currentDetailDataType?.includes('character')
+  ) {
     return getImageUrl(`character-square/${granblueId}_01.jpg`)
   }
   return ''

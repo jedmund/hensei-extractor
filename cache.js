@@ -40,9 +40,10 @@ export function formatCacheStatus(status) {
   const formatted = {}
 
   for (const [type, info] of Object.entries(status)) {
-    const stashDisplayName = (type.startsWith('stash_') && info.stashName)
-      ? info.stashName
-      : getDataTypeName(type)
+    const stashDisplayName =
+      type.startsWith('stash_') && info.stashName
+        ? info.stashName
+        : getDataTypeName(type)
 
     if (!info.available) {
       formatted[type] = {
@@ -65,8 +66,15 @@ export function formatCacheStatus(status) {
       let subtitle = null
       let displayName = stashDisplayName
 
-      if (type.startsWith('list_') || type.startsWith('collection_') || type.startsWith('stash_')) {
-        subtitle = t('count_items_pages', { items: info.totalItems, pages: info.pageCount })
+      if (
+        type.startsWith('list_') ||
+        type.startsWith('collection_') ||
+        type.startsWith('stash_')
+      ) {
+        subtitle = t('count_items_pages', {
+          items: info.totalItems,
+          pages: info.pageCount
+        })
       }
 
       // Handle per-item detail types (use item name as display name)

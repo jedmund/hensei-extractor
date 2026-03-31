@@ -28,7 +28,12 @@ function onMouseOver(e) {
 
 function onMouseOut(e) {
   const related = e.relatedTarget
-  if (related && related.closest && related.closest('[data-tooltip]') === activeTarget) return
+  if (
+    related &&
+    related.closest &&
+    related.closest('[data-tooltip]') === activeTarget
+  )
+    return
   const target = e.target.closest('[data-tooltip]')
   if (!target) return
   if (target === activeTarget) hide()

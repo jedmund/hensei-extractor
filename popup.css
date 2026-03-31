@@ -3,7 +3,8 @@
    ========================================== */
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/437fb160c86d1771.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/437fb160c86d1771.woff2')
+    format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -11,7 +12,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/90e2044c61d1d575.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/90e2044c61d1d575.woff2')
+    format('woff2');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
@@ -19,7 +21,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/db6054d73906f6d1.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/db6054d73906f6d1.woff2')
+    format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -27,7 +30,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/54cf3d47648cbde4.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/54cf3d47648cbde4.woff2')
+    format('woff2');
   font-weight: 500;
   font-style: italic;
   font-display: swap;
@@ -35,7 +39,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/a9a1343791e012e7.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/a9a1343791e012e7.woff2')
+    format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -43,7 +48,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/0137ea08b8d14fae.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/0137ea08b8d14fae.woff2')
+    format('woff2');
   font-weight: 700;
   font-style: italic;
   font-display: swap;
@@ -51,7 +57,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/83b98eb4efef82d6.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/83b98eb4efef82d6.woff2')
+    format('woff2');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -59,7 +66,8 @@
 
 @font-face {
   font-family: 'AGrot';
-  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/8fd873f2349d20e6.woff2') format('woff2');
+  src: url('https://siero-img.s3-us-west-2.amazonaws.com/fonts/8fd873f2349d20e6.woff2')
+    format('woff2');
   font-weight: 900;
   font-style: italic;
   font-display: swap;
@@ -191,7 +199,13 @@ body.dark {
 body {
   margin: 0;
   padding: 0;
-  font-family: 'AGrot', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    'AGrot',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   background: white;
   height: 100vh;
   overflow: hidden;
@@ -353,7 +367,9 @@ h1 {
   font-weight: 500;
   color: var(--color-text-tertiary);
   text-decoration: none;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .tab:hover {
@@ -522,10 +538,10 @@ label {
   font-weight: 500;
 }
 
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="number"],
+input[type='text'],
+input[type='password'],
+input[type='email'],
+input[type='number'],
 select {
   -webkit-font-smoothing: antialiased;
   background-color: var(--input-bg);
@@ -541,10 +557,10 @@ select {
   transition: background-color var(--transition-fast);
 }
 
-input[type="text"]:hover:not(:disabled),
-input[type="password"]:hover:not(:disabled),
-input[type="email"]:hover:not(:disabled),
-input[type="number"]:hover:not(:disabled),
+input[type='text']:hover:not(:disabled),
+input[type='password']:hover:not(:disabled),
+input[type='email']:hover:not(:disabled),
+input[type='number']:hover:not(:disabled),
 select:hover:not(:disabled) {
   background-color: var(--input-bg-hover);
 }
@@ -592,7 +608,9 @@ input::placeholder {
   display: inline-flex;
   padding: 12px 20px;
   height: 44px;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 /* Button sizes */
@@ -748,7 +766,9 @@ button:disabled,
   background: transparent;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .cache-item:hover {
@@ -813,7 +833,9 @@ button:disabled,
   background: var(--element-bg);
   color: var(--element-text);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .cache-item:hover .stash-tag {
@@ -1018,7 +1040,7 @@ button:disabled,
   pointer-events: none;
 }
 
-.language-switch[aria-checked="true"] .language-thumb {
+.language-switch[aria-checked='true'] .language-thumb {
   left: 23px;
 }
 
@@ -1153,7 +1175,6 @@ body.light #detailSync {
   position: relative;
 }
 
-
 .detail-meta-center {
   cursor: default;
   position: absolute;
@@ -1163,7 +1184,6 @@ body.light #detailSync {
   color: var(--color-text-primary);
   pointer-events: auto;
 }
-
 
 .detail-meta-right {
   display: flex;
@@ -1189,7 +1209,9 @@ body.light #detailSync {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
   flex-shrink: 0;
 }
 
@@ -1205,55 +1227,55 @@ body.light #detailSync {
   line-height: 0;
 }
 
-.select-all-toggle[data-state="checked"] .select-all-checkbox {
+.select-all-toggle[data-state='checked'] .select-all-checkbox {
   background: var(--element-button-bg);
   border-color: var(--element-button-bg);
 }
 
-.select-all-toggle[data-state="checked"] .select-all-check {
+.select-all-toggle[data-state='checked'] .select-all-check {
   display: block;
 }
 
-.select-all-toggle[data-state="indeterminate"] .select-all-checkbox {
+.select-all-toggle[data-state='indeterminate'] .select-all-checkbox {
   background: var(--element-button-bg);
   border-color: var(--element-button-bg);
 }
 
-.select-all-toggle[data-state="indeterminate"] .select-all-dash {
+.select-all-toggle[data-state='indeterminate'] .select-all-dash {
   display: block;
 }
 
 /* Unchecked hover: preview checked state */
-.select-all-toggle[data-state="unchecked"]:hover .select-all-checkbox {
+.select-all-toggle[data-state='unchecked']:hover .select-all-checkbox {
   background: var(--element-button-bg);
   border-color: var(--element-button-bg);
 }
 
-.select-all-toggle[data-state="unchecked"]:hover .select-all-check {
+.select-all-toggle[data-state='unchecked']:hover .select-all-check {
   display: block;
 }
 
 /* Indeterminate hover: preview checked state */
-.select-all-toggle[data-state="indeterminate"]:hover .select-all-checkbox {
+.select-all-toggle[data-state='indeterminate']:hover .select-all-checkbox {
   background: var(--element-button-bg-hover);
   border-color: var(--element-button-bg-hover);
 }
 
-.select-all-toggle[data-state="indeterminate"]:hover .select-all-dash {
+.select-all-toggle[data-state='indeterminate']:hover .select-all-dash {
   display: none;
 }
 
-.select-all-toggle[data-state="indeterminate"]:hover .select-all-check {
+.select-all-toggle[data-state='indeterminate']:hover .select-all-check {
   display: block;
 }
 
 /* Checked hover: preview unchecked state */
-.select-all-toggle[data-state="checked"]:hover .select-all-checkbox {
+.select-all-toggle[data-state='checked']:hover .select-all-checkbox {
   background: white;
   border-color: var(--color-text-tertiary);
 }
 
-.select-all-toggle[data-state="checked"]:hover .select-all-check {
+.select-all-toggle[data-state='checked']:hover .select-all-check {
   display: none;
 }
 
@@ -1294,7 +1316,9 @@ body.light #detailSync {
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .filter-button:hover {
@@ -1309,7 +1333,7 @@ body.light #detailSync {
 }
 
 .filter-dropdown.open + .filter-chevron,
-.filter-button[aria-expanded="true"] .filter-chevron {
+.filter-button[aria-expanded='true'] .filter-chevron {
   transform: rotate(180deg);
 }
 
@@ -1348,7 +1372,7 @@ body.light #detailSync {
   background: var(--color-bg);
 }
 
-.filter-option input[type="checkbox"] {
+.filter-option input[type='checkbox'] {
   width: 16px;
   height: 16px;
   min-width: 16px;
@@ -1358,7 +1382,7 @@ body.light #detailSync {
   cursor: pointer;
 }
 
-.filter-option input[type="checkbox"]:disabled {
+.filter-option input[type='checkbox']:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -1413,7 +1437,9 @@ body.light #detailSync {
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .filter-show-all:hover {
@@ -1535,7 +1561,6 @@ body.light #detailSync {
   opacity: 0.35;
 }
 
-
 /* Character Modifiers (perpetuity ring overlay) */
 .char-modifiers {
   position: absolute;
@@ -1584,7 +1609,6 @@ body.light #detailSync {
   height: auto;
   pointer-events: auto;
 }
-
 
 .weapon-modifiers .awakening-icon,
 .char-modifiers .perpetuity-ring,
@@ -1663,7 +1687,9 @@ body.light #detailSync {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s, transform 0.1s;
+  transition:
+    background-color 0.15s,
+    transform 0.1s;
 }
 
 .item-checkbox:hover,
@@ -2141,13 +2167,34 @@ body.light #detailSync {
   background: var(--button-bg-hover);
 }
 
-.raid-selector-button.raid-fire { background: #ffcdcd; color: #6e0000; }
-.raid-selector-button.raid-wind { background: #cdffed; color: #006a45; }
-.raid-selector-button.raid-water { background: #cdedff; color: #004b77; }
-.raid-selector-button.raid-earth { background: #ffe2cd; color: #863504; }
-.raid-selector-button.raid-light { background: #fffacd; color: #715100; }
-.raid-selector-button.raid-dark { background: #f2cdff; color: #560075; }
-.raid-selector-button.raid-null { background: var(--color-bg); color: var(--color-text); }
+.raid-selector-button.raid-fire {
+  background: #ffcdcd;
+  color: #6e0000;
+}
+.raid-selector-button.raid-wind {
+  background: #cdffed;
+  color: #006a45;
+}
+.raid-selector-button.raid-water {
+  background: #cdedff;
+  color: #004b77;
+}
+.raid-selector-button.raid-earth {
+  background: #ffe2cd;
+  color: #863504;
+}
+.raid-selector-button.raid-light {
+  background: #fffacd;
+  color: #715100;
+}
+.raid-selector-button.raid-dark {
+  background: #f2cdff;
+  color: #560075;
+}
+.raid-selector-button.raid-null {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
 
 .raid-selector-image {
   height: 32px;
@@ -2227,8 +2274,12 @@ body.light #detailSync {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .raid-picker-title {
@@ -2651,7 +2702,9 @@ body.light #detailSync {
   font-size: 14px;
   font-weight: 500;
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
   z-index: 200;
   pointer-events: none;
 }
@@ -3053,17 +3106,39 @@ body.light #detailSync {
 
 /* Shake animation */
 @keyframes shake {
-  0% { transform: translateX(0); }
-  10% { transform: translateX(-6px); }
-  20% { transform: translateX(6px); }
-  30% { transform: translateX(-4px); }
-  40% { transform: translateX(4px); }
-  50% { transform: translateX(-2px); }
-  60% { transform: translateX(2px); }
-  70% { transform: translateX(-1px); }
-  80% { transform: translateX(1px); }
-  90% { transform: translateX(-0.5px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(-6px);
+  }
+  20% {
+    transform: translateX(6px);
+  }
+  30% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  50% {
+    transform: translateX(-2px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  70% {
+    transform: translateX(-1px);
+  }
+  80% {
+    transform: translateX(1px);
+  }
+  90% {
+    transform: translateX(-0.5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .shake {
@@ -3092,6 +3167,4 @@ body.light #detailSync {
 
 .tooltip.visible {
   opacity: 1;
-}
-
 }

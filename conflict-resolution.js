@@ -56,16 +56,30 @@ export function getConflictCount() {
  * Initialize event listeners for the conflict modal
  */
 export function initConflictListeners() {
-  document.getElementById('conflictPrev')?.addEventListener('click', () => navigateConflict(-1))
-  document.getElementById('conflictNext')?.addEventListener('click', () => navigateConflict(1))
-  document.getElementById('conflictSkip')?.addEventListener('click', () => decideItem('skip'))
-  document.getElementById('conflictImport')?.addEventListener('click', () => decideItem('import'))
+  document
+    .getElementById('conflictPrev')
+    ?.addEventListener('click', () => navigateConflict(-1))
+  document
+    .getElementById('conflictNext')
+    ?.addEventListener('click', () => navigateConflict(1))
+  document
+    .getElementById('conflictSkip')
+    ?.addEventListener('click', () => decideItem('skip'))
+  document
+    .getElementById('conflictImport')
+    ?.addEventListener('click', () => decideItem('import'))
   document.getElementById('conflictSkipAll')?.addEventListener('click', skipAll)
-  document.getElementById('conflictImportAll')?.addEventListener('click', importAll)
-  document.getElementById('conflictFinish')?.addEventListener('click', finishReview)
+  document
+    .getElementById('conflictImportAll')
+    ?.addEventListener('click', importAll)
+  document
+    .getElementById('conflictFinish')
+    ?.addEventListener('click', finishReview)
 
   // Close on backdrop click
-  document.querySelector('#conflictModal .modal-backdrop')?.addEventListener('click', hideConflictModal)
+  document
+    .querySelector('#conflictModal .modal-backdrop')
+    ?.addEventListener('click', hideConflictModal)
 }
 
 // ==========================================
@@ -177,17 +191,20 @@ function updateFinishButton() {
   const finishBtn = document.getElementById('conflictFinish')
   if (!finishBtn) return
 
-  const allDecided = conflictItems.every(item => decisions.has(item.game_id))
+  const allDecided = conflictItems.every((item) => decisions.has(item.game_id))
   finishBtn.disabled = !allDecided
 
   const decidedCount = decisions.size
   finishBtn.textContent = allDecided
     ? t('action_done')
-    : t('conflict_decided', { count: decidedCount, total: conflictItems.length })
+    : t('conflict_decided', {
+        count: decidedCount,
+        total: conflictItems.length
+      })
 }
 
 function finishReview() {
-  const allDecided = conflictItems.every(item => decisions.has(item.game_id))
+  const allDecided = conflictItems.every((item) => decisions.has(item.game_id))
   if (!allDecided) return
 
   const result = new Map(decisions)
