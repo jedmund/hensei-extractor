@@ -77,7 +77,8 @@ export const CACHE_TTL_MS = 30 * 60 * 1000
 export const RAID_GROUPS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 /** Granblue Fantasy CDN for game assets (new items not yet on S3) */
-export const GBF_CDN = 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
+export const GBF_CDN =
+  'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
 
 /** Cache storage keys for static (non-dynamic) data types */
 export const CACHE_KEYS = {
@@ -173,9 +174,16 @@ export function getDataTypeName(dataType) {
 
 /** Display order for data types in UI */
 export const DATA_TYPE_ORDER = [
-  'detail_npc', 'detail_weapon', 'detail_summon',
-  'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
-  'list_npc', 'list_weapon', 'list_summon'
+  'detail_npc',
+  'detail_weapon',
+  'detail_summon',
+  'collection_npc',
+  'collection_weapon',
+  'collection_summon',
+  'collection_artifact',
+  'list_npc',
+  'list_weapon',
+  'list_summon'
 ]
 
 /** Data types grouped by tab (party and database types are discovered dynamically) */
@@ -183,8 +191,13 @@ export const TAB_DATA_TYPES = {
   party: [], // Parties are dynamic - populated from cache status
   collection: [
     'character_stats', // Character extended stats (awakening, mastery bonuses)
-    'collection_npc', 'collection_weapon', 'collection_summon', 'collection_artifact',
-    'list_npc', 'list_weapon', 'list_summon'
+    'collection_npc',
+    'collection_weapon',
+    'collection_summon',
+    'collection_artifact',
+    'list_npc',
+    'list_weapon',
+    'list_summon'
   ],
   database: [] // Database items are dynamic - populated from cache status (like parties)
 }

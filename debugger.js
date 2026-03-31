@@ -124,7 +124,9 @@ export async function detachFromTab(tabId) {
  */
 async function attachToExistingTabs() {
   try {
-    const tabs = await chrome.tabs.query({ url: GBF_DOMAINS.map(d => `https://${d}/*`) })
+    const tabs = await chrome.tabs.query({
+      url: GBF_DOMAINS.map((d) => `https://${d}/*`)
+    })
     for (const tab of tabs) {
       await doAttach(tab.id)
     }
@@ -137,7 +139,10 @@ async function attachToExistingTabs() {
  * Handle tab updates - attach when GBF is loaded
  */
 function handleTabUpdated(tabId, changeInfo, tab) {
-  if (GBF_DOMAINS.some(d => tab.url?.includes(d)) && changeInfo.status === 'complete') {
+  if (
+    GBF_DOMAINS.some((d) => tab.url?.includes(d)) &&
+    changeInfo.status === 'complete'
+  ) {
     doAttach(tabId)
   }
 }
@@ -276,7 +281,7 @@ async function handleLoadingFinished(tabId, params) {
  */
 function shouldIntercept(url) {
   if (!url) return false
-  return INTERCEPT_PATTERNS.some(pattern => url.includes(pattern))
+  return INTERCEPT_PATTERNS.some((pattern) => url.includes(pattern))
 }
 
 // ==========================================
@@ -394,7 +399,10 @@ function getPartyId(url, data) {
       return `deck_${data.deck.priority}`
     }
     if (data.deck.name) {
-      return data.deck.name.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 20)
+      return data.deck.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .substring(0, 20)
     }
   }
 

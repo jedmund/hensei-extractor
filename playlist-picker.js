@@ -31,7 +31,9 @@ export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
   showCreateForm = false
 
   // Fetch playlists
-  const response = await chrome.runtime.sendMessage({ action: 'fetchUserPlaylists' })
+  const response = await chrome.runtime.sendMessage({
+    action: 'fetchUserPlaylists'
+  })
   if (response.error) {
     console.error('Failed to fetch playlists:', response.error)
     return
@@ -114,7 +116,9 @@ function renderPlaylistList() {
     return
   }
 
-  container.innerHTML = filtered.map(playlist => renderPlaylistItem(playlist)).join('')
+  container.innerHTML = filtered
+    .map((playlist) => renderPlaylistItem(playlist))
+    .join('')
 }
 
 function getFilteredPlaylists() {
@@ -122,7 +126,7 @@ function getFilteredPlaylists() {
 
   if (!query) return playlists
 
-  return playlists.filter(playlist => {
+  return playlists.filter((playlist) => {
     const title = (playlist.title || '').toLowerCase()
     const description = (playlist.description || '').toLowerCase()
     return title.includes(query) || description.includes(query)
@@ -130,7 +134,7 @@ function getFilteredPlaylists() {
 }
 
 function renderPlaylistItem(playlist) {
-  const isSelected = selectedPlaylists.some(p => p.id === playlist.id)
+  const isSelected = selectedPlaylists.some((p) => p.id === playlist.id)
   const title = playlist.title || t('playlist_untitled')
   const partyCount = playlist.party_count || playlist.parties_count || 0
   const countText = tPlural('count_party', 'count_parties', partyCount)
@@ -177,48 +181,62 @@ function bindEvents() {
   eventsBound = true
 
   // Back button
-  document.getElementById('playlistPickerBack')?.addEventListener('click', hidePlaylistPicker)
+  document
+    .getElementById('playlistPickerBack')
+    ?.addEventListener('click', hidePlaylistPicker)
 
   // Search input
-  document.getElementById('playlistSearchInput')?.addEventListener('input', (e) => {
-    searchQuery = e.target.value
-    renderPlaylistList()
-  })
+  document
+    .getElementById('playlistSearchInput')
+    ?.addEventListener('input', (e) => {
+      searchQuery = e.target.value
+      renderPlaylistList()
+    })
 
   // Create button (toggle form)
-  document.getElementById('playlistCreateBtn')?.addEventListener('click', () => {
-    showCreateForm = !showCreateForm
-    updateCreateForm()
-  })
+  document
+    .getElementById('playlistCreateBtn')
+    ?.addEventListener('click', () => {
+      showCreateForm = !showCreateForm
+      updateCreateForm()
+    })
 
   // Submit create form
-  document.getElementById('playlistCreateSubmit')?.addEventListener('click', handleCreatePlaylist)
+  document
+    .getElementById('playlistCreateSubmit')
+    ?.addEventListener('click', handleCreatePlaylist)
 
   // Playlist item clicks (delegated)
-  document.getElementById('playlistPickerContent')?.addEventListener('click', (e) => {
-    const playlistItem = e.target.closest('.playlist-item')
-    if (!playlistItem) return
+  document
+    .getElementById('playlistPickerContent')
+    ?.addEventListener('click', (e) => {
+      const playlistItem = e.target.closest('.playlist-item')
+      if (!playlistItem) return
 
-    const playlistId = playlistItem.dataset.playlistId
-    const playlist = playlists.find(p => p.id === playlistId)
-    if (!playlist) return
+      const playlistId = playlistItem.dataset.playlistId
+      const playlist = playlists.find((p) => p.id === playlistId)
+      if (!playlist) return
 
-    // Toggle: clicking toggles selection
-    const existingIndex = selectedPlaylists.findIndex(p => p.id === playlist.id)
-    if (existingIndex >= 0) {
-      selectedPlaylists.splice(existingIndex, 1)
-    } else {
-      selectedPlaylists.push(playlist)
-    }
+      // Toggle: clicking toggles selection
+      const existingIndex = selectedPlaylists.findIndex(
+        (p) => p.id === playlist.id
+      )
+      if (existingIndex >= 0) {
+        selectedPlaylists.splice(existingIndex, 1)
+      } else {
+        selectedPlaylists.push(playlist)
+      }
 
-    renderPlaylistList()
-  })
+      renderPlaylistList()
+    })
 
   // Done button
-  document.getElementById('playlistPickerDone')?.addEventListener('click', () => {
-    if (onSelectCallback) onSelectCallback(selectedPlaylists)
-    hidePlaylistPicker()
-  })
+  document
+    .getElementById('playlistPickerDone')
+    ?.addEventListener('click', () => {
+      if (onSelectCallback) onSelectCallback(selectedPlaylists)
+      hidePlaylistPicker()
+    })
 }
 
 async function handleCreatePlaylist() {

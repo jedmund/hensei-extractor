@@ -8,12 +8,20 @@
  */
 
 import {
-  getApiUrl, getSiteBaseUrl, TIMEOUTS,
-  CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS, RAID_GROUPS_CACHE_TTL_MS, resolveCacheKey
+  getApiUrl,
+  getSiteBaseUrl,
+  TIMEOUTS,
+  CACHE_KEYS,
+  CACHE_PREFIXES,
+  CACHE_TTL_MS,
+  RAID_GROUPS_CACHE_TTL_MS,
+  resolveCacheKey
 } from './constants.js'
 import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
 import {
-  OVER_MASTERY_TYPE_ID, lookupAetherialTypeId, PERPETUITY_TYPE_ID,
+  OVER_MASTERY_TYPE_ID,
+  lookupAetherialTypeId,
+  PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from './mastery.js'
 
@@ -77,30 +85,48 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     } else if (dataType.startsWith('stash_')) {
       const stashNum = metadata.stashNumber || '1'
       const prefix = CACHE_PREFIXES[dataType]
-      await cacheListPage(dataType, pageNumber, data, timestamp, prefix + stashNum, metadata.stashName)
+      await cacheListPage(
+        dataType,
+        pageNumber,
+        data,
+        timestamp,
+        prefix + stashNum,
+        metadata.stashName
+      )
       actualDataType = `${dataType}_${stashNum}`
-    } else if (dataType.startsWith('list_') || dataType.startsWith('collection_')) {
+    } else if (
+      dataType.startsWith('list_') ||
+      dataType.startsWith('collection_')
+    ) {
       await cacheListPage(dataType, pageNumber, data, timestamp)
     } else if (dataType.startsWith('detail_')) {
       const result = await cacheDetailItem(dataType, data, timestamp, url)
       actualDataType = result.dataType
       // Also update character stats cache with uncap data from character detail pages
       if (dataType === 'detail_npc') {
-        await cacheCharacterStats('character_detail', data, data?.master?.id, timestamp, url)
+        await cacheCharacterStats(
+          'character_detail',
+          data,
+          data?.master?.id,
+          timestamp,
+          url
+        )
       }
     } else {
       await cacheSingleItem(dataType, data, timestamp, url)
     }
 
     // Notify popup that new data is available
-    chrome.runtime.sendMessage({
-      action: 'dataCaptured',
-      dataType: actualDataType,
-      pageNumber: pageNumber,
-      timestamp: timestamp
-    }).catch(() => {
-      // Popup might not be open, ignore
-    })
+    chrome.runtime
+      .sendMessage({
+        action: 'dataCaptured',
+        dataType: actualDataType,
+        pageNumber: pageNumber,
+        timestamp: timestamp
+      })
+      .catch(() => {
+        // Popup might not be open, ignore
+      })
   } catch (error) {
     console.error('[Background] Error caching data:', error)
   }
@@ -174,7 +200,14 @@ async function cacheParty(partyId, data, timestamp, url) {
 /**
  * Cache a page of list data, accumulating with existing pages
  */
-async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOverride, stashName) {
+async function cacheListPage(
+  dataType,
+  pageNumber,
+  data,
+  timestamp,
+  cacheKeyOverride,
+  stashName
+) {
   const cacheKey = cacheKeyOverride || CACHE_KEYS[dataType]
   if (!cacheKey) return
 
@@ -186,7 +219,7 @@ async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOver
   }
 
   // Clear stale data
-  if (existing.lastUpdated && (timestamp - existing.lastUpdated > CACHE_TTL_MS)) {
+  if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.pages = {}
   }
 
@@ -222,10 +255,13 @@ async function cacheListPage(dataType, pageNumber, data, timestamp, cacheKeyOver
  */
 async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
-  const existing = result[CACHE_KEYS.character_stats] || { lastUpdated: null, updates: {} }
+  const existing = result[CACHE_KEYS.character_stats] || {
+    lastUpdated: null,
+    updates: {}
+  }
 
   // Clear stale data
-  if (existing.lastUpdated && (timestamp - existing.lastUpdated > CACHE_TTL_MS)) {
+  if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.updates = {}
   }
 
@@ -235,13 +271,19 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     return
   }
 
-  const current = existing.updates[resolvedMasterId] || { masterId: resolvedMasterId }
+  const current = existing.updates[resolvedMasterId] || {
+    masterId: resolvedMasterId
+  }
 
   // Store relevant raw game fields for debugging (copy button uses this)
   if (!current.rawData) current.rawData = {}
   if (dataType === 'character_detail') {
     current.rawData.character_detail = {
-      master: { id: data?.master?.id, name: data?.master?.name, attribute: data?.master?.attribute },
+      master: {
+        id: data?.master?.id,
+        name: data?.master?.name,
+        attribute: data?.master?.attribute
+      },
       param: data?.param,
       npc_arousal_form: data?.npc_arousal_form,
       npc_arousal_form_text: data?.npc_arousal_form_text,
@@ -265,7 +307,11 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     current.masterName = data?.master?.name || current.masterName
     current.timestamp = timestamp
 
-    const element = data?.attribute || data?.element || data?.master?.attribute || data?.master?.element
+    const element =
+      data?.attribute ||
+      data?.element ||
+      data?.master?.attribute ||
+      data?.master?.element
     if (element) {
       current.element = element
     }
@@ -309,7 +355,10 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
     if (masteryData.earring) {
       current.earring = masteryData.earring
     }
-    if (masteryData.perpetuityBonuses && masteryData.perpetuityBonuses.length > 0) {
+    if (
+      masteryData.perpetuityBonuses &&
+      masteryData.perpetuityBonuses.length > 0
+    ) {
       current.perpetuityBonuses = masteryData.perpetuityBonuses
     }
   }
@@ -326,7 +375,12 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
 // ==========================================
 
 function parseZenithMasteryData(data) {
-  const result = { rings: [], earring: null, masterName: null, perpetuityBonuses: [] }
+  const result = {
+    rings: [],
+    earring: null,
+    masterName: null,
+    perpetuityBonuses: []
+  }
 
   if (data?.option?.character?.name) {
     result.masterName = data.option.character.name
@@ -478,15 +532,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.windows.update(popOutWindowId, { focused: true })
         sendResponse({ windowId: popOutWindowId, alreadyOpen: true })
       } else {
-        chrome.windows.create({
-          url: 'popup.html',
-          type: 'popup',
-          width: 420,
-          height: 700
-        }, (win) => {
-          popOutWindowId = win.id
-          sendResponse({ windowId: win.id, alreadyOpen: false })
-        })
+        chrome.windows.create(
+          {
+            url: 'popup.html',
+            type: 'popup',
+            width: 420,
+            height: 700
+          },
+          (win) => {
+            popOutWindowId = win.id
+            sendResponse({ windowId: win.id, alreadyOpen: false })
+          }
+        )
         return true
       }
       return false
@@ -504,7 +561,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true
 
     case 'uploadPartyData':
-      uploadPartyData(message.data, message.raidId, message.playlistIds, message.name).then(sendResponse)
+      uploadPartyData(
+        message.data,
+        message.raidId,
+        message.playlistIds,
+        message.name
+      ).then(sendResponse)
       return true
 
     case 'uploadDetailData':
@@ -569,7 +631,8 @@ async function handleGetCachedData(dataType) {
       timestamp: cached.lastUpdated,
       age: age,
       dataType: dataType,
-      characterCount: cached.characterCount || Object.keys(cached.updates).length
+      characterCount:
+        cached.characterCount || Object.keys(cached.updates).length
     }
   }
 
@@ -592,7 +655,11 @@ async function handleGetCachedData(dataType) {
     return { error: 'stale_data' }
   }
 
-  if (dataType.startsWith('list_') || dataType.startsWith('collection_') || dataType.startsWith('stash_')) {
+  if (
+    dataType.startsWith('list_') ||
+    dataType.startsWith('collection_') ||
+    dataType.startsWith('stash_')
+  ) {
     return {
       data: cached.pages,
       timestamp: cached.lastUpdated,
@@ -637,7 +704,13 @@ async function handleGetCacheStatus() {
     if (type === 'character_stats') {
       const characterCount = Object.keys(cached.updates || {}).length
       if (characterCount > 0) {
-        status[type] = { available: !stale, lastUpdated: timestamp, age, isStale: stale, characterCount }
+        status[type] = {
+          available: !stale,
+          lastUpdated: timestamp,
+          age,
+          isStale: stale,
+          characterCount
+        }
       }
     } else if (type.startsWith('list_') || type.startsWith('collection_')) {
       status[type] = {
@@ -645,11 +718,18 @@ async function handleGetCacheStatus() {
         pageCount: cached.pageCount || 0,
         totalPages: cached.totalPages || null,
         totalItems: cached.totalItems || 0,
-        lastUpdated: timestamp, age, isStale: stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
         isComplete: cached.isComplete || false
       }
     } else {
-      status[type] = { available: !stale, lastUpdated: timestamp, age, isStale: stale }
+      status[type] = {
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale
+      }
     }
   }
 
@@ -676,7 +756,10 @@ async function handleGetCacheStatus() {
 
     if (matchedPrefix === 'party') {
       status[dataType] = {
-        available: !stale, lastUpdated: timestamp, age, isStale: stale,
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
         partyId: suffix,
         partyName: cached.partyName || `Party ${suffix.replace('_', '-')}`
       }
@@ -685,12 +768,17 @@ async function handleGetCacheStatus() {
         available: !stale && cached.pageCount > 0,
         pageCount: cached.pageCount || 0,
         totalItems: cached.totalItems || 0,
-        lastUpdated: timestamp, age, isStale: stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
         stashName: cached.stashName || null
       }
     } else if (matchedPrefix.startsWith('detail_')) {
       status[dataType] = {
-        available: !stale, lastUpdated: timestamp, age, isStale: stale,
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
         granblueId: suffix,
         itemName: cached.itemName || 'Unknown'
       }
@@ -712,8 +800,8 @@ async function handleClearCache(dataType) {
     const prefixValues = Object.values(CACHE_PREFIXES)
     const keysToRemove = [
       ...Object.values(CACHE_KEYS),
-      ...Object.keys(allStorage).filter(key =>
-        prefixValues.some(prefix => key.startsWith(prefix))
+      ...Object.keys(allStorage).filter((key) =>
+        prefixValues.some((prefix) => key.startsWith(prefix))
       )
     ]
     await chrome.storage.local.remove(keysToRemove)
@@ -766,7 +854,9 @@ async function parseErrorResponse(response) {
   try {
     const json = await response.json()
     if (json.error) return json.error
-  } catch { /* not JSON */ }
+  } catch {
+    /* not JSON */
+  }
   return 'server_error'
 }
 
@@ -784,7 +874,7 @@ async function authenticatedPost(endpoint, body) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.access_token}`
+        Authorization: `Bearer ${auth.access_token}`
       },
       body: JSON.stringify(body)
     })
@@ -828,7 +918,10 @@ async function uploadDetailData(data, dataType) {
     lang = 'jp'
   }
 
-  const result = await authenticatedPost(`/import/${endpoint}?lang=${lang}`, data)
+  const result = await authenticatedPost(
+    `/import/${endpoint}?lang=${lang}`,
+    data
+  )
   if (result.error) return result
   return { success: true, ...result.data }
 }
@@ -906,12 +999,18 @@ async function previewSyncDeletions(pagesData, dataType) {
   if (allItems.length === 0) return { error: 'no_items' }
 
   const activeFilter = extractFilterFromPages(pagesData)
-  const result = await authenticatedPost(`/collection/${endpoint}/preview_sync`, {
-    data: { list: allItems },
-    filter: activeFilter
-  })
+  const result = await authenticatedPost(
+    `/collection/${endpoint}/preview_sync`,
+    {
+      data: { list: allItems },
+      filter: activeFilter
+    }
+  )
   if (result.error) return result
-  return { willDelete: result.data.will_delete || [], count: result.data.count || 0 }
+  return {
+    willDelete: result.data.will_delete || [],
+    count: result.data.count || 0
+  }
 }
 
 async function checkConflicts(pagesData, dataType) {
@@ -921,15 +1020,23 @@ async function checkConflicts(pagesData, dataType) {
   const allItems = collectPageItems(pagesData)
   if (allItems.length === 0) return { error: 'no_items' }
 
-  const result = await authenticatedPost(`/collection/${endpoint}/check_conflicts`, {
-    data: { list: allItems }
-  })
+  const result = await authenticatedPost(
+    `/collection/${endpoint}/check_conflicts`,
+    {
+      data: { list: allItems }
+    }
+  )
   if (result.error) return result
   return { conflicts: result.data.conflicts || [] }
 }
 
 async function uploadCollectionData(pagesData, dataType, options = {}) {
-  const { updateExisting = false, isFullInventory = false, reconcileDeletions = false, conflictResolutions = null } = options
+  const {
+    updateExisting = false,
+    isFullInventory = false,
+    reconcileDeletions = false,
+    conflictResolutions = null
+  } = options
 
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
@@ -967,7 +1074,7 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
 }
 
 async function uploadCharacterStats(statsData) {
-  const items = Object.values(statsData).map(char => {
+  const items = Object.values(statsData).map((char) => {
     const item = { granblue_id: char.masterId }
 
     if (char.uncapLevel !== undefined) {
@@ -1031,9 +1138,12 @@ async function uploadCharacterStats(statsData) {
 async function fetchUserPlaylists() {
   try {
     const auth = await getAuthToken()
-    const response = await fetch(`${await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`)}`, {
-      headers: { 'Authorization': `Bearer ${auth.access_token}` }
-    })
+    const response = await fetch(
+      `${await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`)}`,
+      {
+        headers: { Authorization: `Bearer ${auth.access_token}` }
+      }
+    )
     if (!response.ok) throw new Error('request_failed')
     const data = await response.json()
     return { data }
@@ -1060,7 +1170,12 @@ async function fetchRaidGroups(forceRefresh = false) {
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey]
 
-  if (!forceRefresh && cached && cached.timestamp && (Date.now() - cached.timestamp) < RAID_GROUPS_CACHE_TTL_MS) {
+  if (
+    !forceRefresh &&
+    cached &&
+    cached.timestamp &&
+    Date.now() - cached.timestamp < RAID_GROUPS_CACHE_TTL_MS
+  ) {
     return { data: cached.data }
   }
 
@@ -1072,7 +1187,7 @@ async function fetchRaidGroups(forceRefresh = false) {
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${auth.access_token}`
+        Authorization: `Bearer ${auth.access_token}`
       }
     })
 
@@ -1097,7 +1212,10 @@ async function fetchRaidGroups(forceRefresh = false) {
 
 async function getCollectionIds() {
   const now = Date.now()
-  if (collectionIdsCache && (now - collectionIdsCacheTime) < COLLECTION_IDS_TTL_MS) {
+  if (
+    collectionIdsCache &&
+    now - collectionIdsCacheTime < COLLECTION_IDS_TTL_MS
+  ) {
     return collectionIdsCache
   }
 
@@ -1112,7 +1230,7 @@ async function getCollectionIds() {
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${auth.access_token}`
+        Authorization: `Bearer ${auth.access_token}`
       }
     })
 

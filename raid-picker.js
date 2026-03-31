@@ -33,7 +33,9 @@ export async function showRaidPicker({ currentRaid = null, onSelect }) {
   onSelectCallback = onSelect
 
   // Fetch raid groups
-  const response = await chrome.runtime.sendMessage({ action: 'fetchRaidGroups' })
+  const response = await chrome.runtime.sendMessage({
+    action: 'fetchRaidGroups'
+  })
   if (response.error) {
     console.error('Failed to fetch raid groups:', response.error)
     return
@@ -101,7 +103,7 @@ function renderPicker() {
 }
 
 function updateSectionTabs() {
-  document.querySelectorAll('.raid-section-tab').forEach(tab => {
+  document.querySelectorAll('.raid-section-tab').forEach((tab) => {
     const section = parseInt(tab.dataset.section)
     tab.classList.toggle('active', section === selectedSection)
   })
@@ -127,15 +129,18 @@ function renderRaidList() {
     return
   }
 
-  container.innerHTML = filtered.map(group => renderRaidGroup(group)).join('')
+  container.innerHTML = filtered.map((group) => renderRaidGroup(group)).join('')
 }
 
 function getFilteredGroups() {
   const query = searchQuery.toLowerCase().trim()
 
   // Filter by section
-  let groups = raidGroups.filter(group => {
-    const section = typeof group.section === 'string' ? parseInt(group.section) : group.section
+  let groups = raidGroups.filter((group) => {
+    const section =
+      typeof group.section === 'string'
+        ? parseInt(group.section)
+        : group.section
     return section === selectedSection
   })
 
@@ -147,21 +152,23 @@ function getFilteredGroups() {
 
   // Filter by search query
   if (query) {
-    groups = groups.map(group => {
-      const groupName = getGroupName(group).toLowerCase()
-      if (groupName.includes(query)) return group
+    groups = groups
+      .map((group) => {
+        const groupName = getGroupName(group).toLowerCase()
+        if (groupName.includes(query)) return group
 
-      const matchingRaids = (group.raids || []).filter(raid => {
-        const raidName = getRaidName(raid).toLowerCase()
-        const raidNameJp = getRaidNameJp(raid).toLowerCase()
-        return raidName.includes(query) || raidNameJp.includes(query)
+        const matchingRaids = (group.raids || []).filter((raid) => {
+          const raidName = getRaidName(raid).toLowerCase()
+          const raidNameJp = getRaidNameJp(raid).toLowerCase()
+          return raidName.includes(query) || raidNameJp.includes(query)
+        })
+
+        if (matchingRaids.length > 0) {
+          return { ...group, raids: matchingRaids }
+        }
+        return null
       })
-
-      if (matchingRaids.length > 0) {
-        return { ...group, raids: matchingRaids }
-      }
-      return null
-    }).filter(Boolean)
+      .filter(Boolean)
   }
 
   return groups
@@ -181,7 +188,7 @@ function renderRaidGroup(group) {
         ${extraBadge}
       </div>
       <div class="raid-group-raids">
-        ${raids.map(raid => renderRaidItem(raid)).join('')}
+        ${raids.map((raid) => renderRaidItem(raid)).join('')}
       </div>
     </div>
   `
@@ -212,17 +219,37 @@ function renderRaidItem(raid) {
 function getGroupName(group) {
   if (typeof group.name === 'string') return group.name
   if (getLocale() === 'ja') {
-    return group.name?.ja || group.name_jp || group.name?.en || group.name_en || 'Unknown'
+    return (
+      group.name?.ja ||
+      group.name_jp ||
+      group.name?.en ||
+      group.name_en ||
+      'Unknown'
+    )
   }
-  return group.name?.en || group.name_en || group.name?.ja || group.name_jp || 'Unknown'
+  return (
+    group.name?.en ||
+    group.name_en ||
+    group.name?.ja ||
+    group.name_jp ||
+    'Unknown'
+  )
 }
 
 function getRaidName(raid) {
   if (typeof raid.name === 'string') return raid.name
   if (getLocale() === 'ja') {
-    return raid.name?.ja || raid.name_jp || raid.name?.en || raid.name_en || 'Unknown'
+    return (
+      raid.name?.ja ||
+      raid.name_jp ||
+      raid.name?.en ||
+      raid.name_en ||
+      'Unknown'
+    )
   }
-  return raid.name?.en || raid.name_en || raid.name?.ja || raid.name_jp || 'Unknown'
+  return (
+    raid.name?.en || raid.name_en || raid.name?.ja || raid.name_jp || 'Unknown'
+  )
 }
 
 function getRaidNameJp(raid) {
@@ -248,7 +275,9 @@ function bindEvents() {
   eventsBound = true
 
   // Back button
-  document.getElementById('raidPickerBack')?.addEventListener('click', hideRaidPicker)
+  document
+    .getElementById('raidPickerBack')
+    ?.addEventListener('click', hideRaidPicker)
 
   // Search input
   document.getElementById('raidSearchInput')?.addEventListener('input', (e) => {
@@ -257,7 +286,7 @@ function bindEvents() {
   })
 
   // Section tabs
-  document.querySelectorAll('.raid-section-tab').forEach(tab => {
+  document.querySelectorAll('.raid-section-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       selectedSection = parseInt(tab.dataset.section)
       updateSectionTabs()
@@ -273,45 +302,52 @@ function bindEvents() {
   })
 
   // Refresh button
-  document.getElementById('raidRefreshBtn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('raidRefreshBtn')
-    btn.classList.add('loading')
+  document
+    .getElementById('raidRefreshBtn')
+    ?.addEventListener('click', async () => {
+      const btn = document.getElementById('raidRefreshBtn')
+      btn.classList.add('loading')
 
-    const response = await chrome.runtime.sendMessage({ action: 'fetchRaidGroups', forceRefresh: true })
-    if (response.error) {
-      console.error('Failed to refresh raid groups:', response.error)
-    } else {
-      raidGroups = response.data || []
-      renderRaidList()
-    }
+      const response = await chrome.runtime.sendMessage({
+        action: 'fetchRaidGroups',
+        forceRefresh: true
+      })
+      if (response.error) {
+        console.error('Failed to refresh raid groups:', response.error)
+      } else {
+        raidGroups = response.data || []
+        renderRaidList()
+      }
 
-    btn.classList.remove('loading')
-  })
+      btn.classList.remove('loading')
+    })
 
   // Raid item clicks (delegated)
-  document.getElementById('raidPickerContent')?.addEventListener('click', (e) => {
-    const raidItem = e.target.closest('.raid-item')
-    if (!raidItem) return
+  document
+    .getElementById('raidPickerContent')
+    ?.addEventListener('click', (e) => {
+      const raidItem = e.target.closest('.raid-item')
+      if (!raidItem) return
 
-    const raidId = raidItem.dataset.raidId
-    const raid = findRaidById(raidId)
-    if (!raid) return
+      const raidId = raidItem.dataset.raidId
+      const raid = findRaidById(raidId)
+      if (!raid) return
 
-    // Toggle: clicking selected raid unselects it
-    if (selectedRaid && selectedRaid.id === raid.id) {
-      selectedRaid = null
-    } else {
-      selectedRaid = raid
-    }
+      // Toggle: clicking selected raid unselects it
+      if (selectedRaid && selectedRaid.id === raid.id) {
+        selectedRaid = null
+      } else {
+        selectedRaid = raid
+      }
 
-    if (onSelectCallback) onSelectCallback(selectedRaid)
-    hideRaidPicker()
-  })
+      if (onSelectCallback) onSelectCallback(selectedRaid)
+      hideRaidPicker()
+    })
 }
 
 function findRaidById(id) {
   for (const group of raidGroups) {
-    const raid = (group.raids || []).find(r => r.id === id)
+    const raid = (group.raids || []).find((r) => r.id === id)
     if (raid) return { ...raid, group }
   }
   return null
