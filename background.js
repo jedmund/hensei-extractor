@@ -10,7 +10,6 @@
 import {
   getApiUrl,
   getSiteBaseUrl,
-  TIMEOUTS,
   CACHE_KEYS,
   CACHE_PREFIXES,
   CACHE_TTL_MS,
@@ -253,7 +252,7 @@ async function cacheListPage(
 /**
  * Cache character stats data (awakening + mastery bonuses)
  */
-async function cacheCharacterStats(dataType, data, masterId, timestamp, url) {
+async function cacheCharacterStats(dataType, data, masterId, timestamp, _url) {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
   const existing = result[CACHE_KEYS.character_stats] || {
     lastUpdated: null,
@@ -884,7 +883,7 @@ async function authenticatedPost(endpoint, body) {
     }
 
     return { data: await response.json(), auth }
-  } catch (error) {
+  } catch {
     return { error: 'request_failed' }
   }
 }
@@ -1205,7 +1204,7 @@ async function fetchRaidGroups(forceRefresh = false) {
     })
 
     return { data }
-  } catch (error) {
+  } catch {
     return { error: 'request_failed' }
   }
 }
@@ -1240,7 +1239,7 @@ async function getCollectionIds() {
     collectionIdsCache = data
     collectionIdsCacheTime = now
     return data
-  } catch (error) {
+  } catch {
     return { error: 'request_failed' }
   }
 }

@@ -193,7 +193,7 @@ async function doDetach(tabId) {
     await chrome.debugger.detach({ tabId })
     attachedTabs.delete(tabId)
     console.log(`[Debugger] Detached from tab ${tabId}`)
-  } catch (e) {
+  } catch {
     // Tab might already be closed
     attachedTabs.delete(tabId)
   }
@@ -271,7 +271,7 @@ async function handleLoadingFinished(tabId, params) {
 
     // Process the intercepted data
     processInterceptedData(pending.url, data, pending.timestamp)
-  } catch (e) {
+  } catch {
     // Response might not be JSON, or request might have failed
   }
 }
