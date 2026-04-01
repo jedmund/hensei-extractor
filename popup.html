@@ -865,22 +865,20 @@
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Update Banner -->
-      <div id="updateBanner" class="update-banner hidden">
-        <span
-          ><span data-i18n="update_available"
-            >A new version is available (v</span
-          ><span id="updateVersion"></span>)</span
-        >
-        <a
-          href="https://granblue.team/extension"
-          target="_blank"
-          class="update-link"
-          data-i18n="update_link"
-          >Update</a
-        >
-      </div>
+    <!-- Update Banner -->
+    <div id="updateBanner" class="update-banner hidden">
+      <span
+        ><span data-i18n="update_available"
+          >A new version is available (v</span
+        ><span id="updateVersion"></span>)</span
+      >
+      <button
+        class="button btn-ghost small update-link"
+        data-i18n="update_link"
+        onclick="window.open('https://granblue.team/extension', '_blank')"
+        >Update</button>
     </div>
 
     <div id="tooltip" class="tooltip" aria-hidden="true"></div>
