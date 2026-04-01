@@ -136,7 +136,21 @@ function initVisibilitySelector(gbAuth) {
 
   // Show crew share toggle if user is in a crew
   if (gbAuth?.hasCrew) {
-    document.getElementById('crewShareToggle')?.classList.remove('hidden')
+    const toggle = document.getElementById('crewShareToggle')
+    if (toggle) {
+      toggle.classList.remove('hidden')
+      toggle.addEventListener('click', () => {
+        const isChecked = toggle.dataset.state === 'checked'
+        toggle.dataset.state = isChecked ? 'unchecked' : 'checked'
+        toggle.setAttribute('aria-checked', String(!isChecked))
+      })
+      toggle.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          toggle.click()
+        }
+      })
+    }
   }
 }
 
@@ -161,7 +175,7 @@ function getSelectedVisibility() {
 }
 
 function shouldShareWithCrew() {
-  return document.getElementById('crewShareCheckbox')?.checked === true
+  return document.getElementById('crewShareToggle')?.dataset.state === 'checked'
 }
 
 // ==========================================

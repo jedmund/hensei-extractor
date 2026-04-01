@@ -2621,12 +2621,45 @@ body.light #detailSync {
   background: var(--button-bg-hover);
 }
 
-.crew-share-toggle input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--color-primary, #4a90d9);
+.crew-share-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.18s ease-out;
+}
+
+.crew-share-toggle:hover .crew-share-checkbox {
+  background: #fafafa;
+}
+
+.crew-share-check {
+  width: 12px;
+  height: 12px;
+  color: #515151;
+  display: none;
+}
+
+.crew-share-toggle[data-state='checked'] .crew-share-checkbox {
+  background: #a9a9a9;
+}
+
+.crew-share-toggle[data-state='checked']:hover .crew-share-checkbox {
+  background: #c6c6c6;
+}
+
+.crew-share-toggle[data-state='checked'] .crew-share-check {
+  display: block;
+  color: white;
+}
+
+.crew-share-toggle:focus-visible .crew-share-checkbox {
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
 }
 
 .crew-share-label {
