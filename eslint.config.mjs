@@ -20,14 +20,6 @@ export default [
     }
   },
   {
-    files: ['build-manifest.js'],
-    languageOptions: {
-      globals: {
-        ...globals.node
-      }
-    }
-  },
-  {
-    ignores: ['node_modules/', 'granblue-team-extension/']
+    ignores: ['node_modules/', '.output/', '.wxt/']
   }
 ]

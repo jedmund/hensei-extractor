@@ -1,10 +1,13 @@
 {
   "name": "hensei-extractor",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "A Chrome extension that extracts data from Granblue Fantasy",
-  "main": "background.js",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "build": "node build-manifest.js",
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -12,11 +15,23 @@
   },
   "author": "Justin Edmund",
   "license": "MIT",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "spawn-sync"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@wxt-dev/module-svelte": "latest",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "sass": "latest",
+    "svelte": "^5.0.0",
+    "typescript": "^5.0.0",
+    "wxt": "latest"
   }
 }
