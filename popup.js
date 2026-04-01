@@ -833,26 +833,11 @@ function hideDetailView() {
  * Update the raid selector button UI to reflect the selected raid
  * @param {Object|null} raid
  */
-const RAID_ELEMENT_CLASSES = {
-  0: 'raid-null',
-  1: 'raid-wind',
-  2: 'raid-fire',
-  3: 'raid-water',
-  4: 'raid-earth',
-  5: 'raid-dark',
-  6: 'raid-light'
-}
-
 function updateRaidSelectorUI(raid) {
   const label = document.getElementById('raidSelectorLabel')
   const btn = document.getElementById('raidSelectorButton')
   const img = document.getElementById('raidSelectorImage')
   if (!label || !btn) return
-
-  // Remove any previous element class
-  Object.values(RAID_ELEMENT_CLASSES).forEach((cls) =>
-    btn.classList.remove(cls)
-  )
 
   if (raid) {
     const name =
@@ -861,8 +846,6 @@ function updateRaidSelectorUI(raid) {
         : raid.name?.en || raid.name_en || 'Unknown'
     const level = raid.level ? ` Lv. ${raid.level}` : ''
     label.textContent = `${name}${level}`
-    const elementClass = RAID_ELEMENT_CLASSES[raid.element] || 'raid-null'
-    btn.classList.add(elementClass)
 
     // Show raid thumbnail
     if (img && raid.slug) {

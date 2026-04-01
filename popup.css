@@ -2162,49 +2162,19 @@ body.light #detailSync {
   gap: 8px;
   width: 100%;
   padding: 8px 16px;
-  background: var(--color-bg);
+  background: var(--input-bound-bg);
   border: none;
-  border-radius: var(--radius-md);
-  min-height: 50px;
+  border-radius: var(--input-corner);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--input-font-size);
+  font-weight: 400;
   color: var(--color-text);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: background-color var(--transition-fast);
 }
 
 .raid-selector-button:hover {
-  background: var(--button-bg-hover);
-}
-
-.raid-selector-button.raid-fire {
-  background: #ffcdcd;
-  color: #6e0000;
-}
-.raid-selector-button.raid-wind {
-  background: #cdffed;
-  color: #006a45;
-}
-.raid-selector-button.raid-water {
-  background: #cdedff;
-  color: #004b77;
-}
-.raid-selector-button.raid-earth {
-  background: #ffe2cd;
-  color: #863504;
-}
-.raid-selector-button.raid-light {
-  background: #fffacd;
-  color: #715100;
-}
-.raid-selector-button.raid-dark {
-  background: #f2cdff;
-  color: #560075;
-}
-.raid-selector-button.raid-null {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--input-bound-bg-hover);
 }
 
 .raid-selector-image {
@@ -2500,21 +2470,20 @@ body.light #detailSync {
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 50px;
-  padding: 8px 16px;
-  background: var(--color-bg);
+  padding: var(--input-padding);
+  background: var(--input-bound-bg);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--input-corner);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--input-font-size);
+  font-weight: 400;
   color: var(--color-text);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: background-color var(--transition-fast);
 }
 
 .playlist-selector-button:hover {
-  background: var(--button-bg-hover);
+  background-color: var(--input-bound-bg-hover);
 }
 
 .playlist-selector-label {
@@ -2542,21 +2511,30 @@ body.light #detailSync {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 16px;
-  background: var(--color-bg);
-  border: none;
-  border-radius: var(--radius-md);
-  min-height: 50px;
+  padding: var(--input-padding);
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-corner);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--input-font-size);
+  font-weight: 400;
   color: var(--color-text);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: background-color var(--transition-fast);
 }
 
 .visibility-selector-button:hover {
-  background: var(--button-bg-hover);
+  background-color: var(--input-bg-hover);
+}
+
+.visibility-selector-button.contained {
+  background-color: var(--input-bound-bg);
+  border: none;
+  border-radius: 8px;
+}
+
+.visibility-selector-button.contained:hover {
+  background-color: var(--input-bound-bg-hover);
 }
 
 .visibility-selector-label {
@@ -2623,14 +2601,13 @@ body.light #detailSync {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 16px;
-  background: var(--color-bg);
+  padding: var(--input-padding);
+  background: var(--input-bound-bg);
   border: none;
-  border-radius: var(--radius-md);
-  min-height: 50px;
+  border-radius: var(--input-corner);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--input-font-size);
+  font-weight: 400;
   color: var(--color-text);
   cursor: pointer;
   transition: background var(--transition-fast);
@@ -2638,12 +2615,12 @@ body.light #detailSync {
 }
 
 .crew-share-toggle:hover {
-  background: var(--button-bg-hover);
+  background: var(--input-bound-bg-hover);
 }
 
 .crew-share-checkbox {
-  width: 24px;
-  height: 24px;
+  width: 21px;
+  height: 21px;
   border-radius: 8px;
   background: white;
   display: inline-flex;
