@@ -87,6 +87,97 @@ let conflictResolutions = null // Map of game_id → 'import' | 'skip' (after us
 // Age ticker state
 let ageTickerInterval = null
 
+// Visibility selector state
+let selectedVisibility = 3 // Default to Private
+
+const VISIBILITY_LABELS = {
+  1: 'visibility_anyone',
+  2: 'visibility_unlisted',
+  3: 'visibility_private'
+}
+
+function initVisibilitySelector(gbAuth) {
+  selectedVisibility = gbAuth?.defaultImportVisibility || 3
+
+  const button = document.getElementById('visibilitySelectorButton')
+  const dropdown = document.getElementById('visibilityDropdown')
+  const label = document.getElementById('visibilitySelectorLabel')
+
+  if (!button || !dropdown || !label) return
+
+  // Set initial label
+  updateVisibilityLabel()
+
+  // Mark initial selected option
+  updateVisibilitySelection()
+
+  // Toggle dropdown on button click
+  button.addEventListener('click', (e) => {
+    e.stopPropagation()
+    dropdown.classList.toggle('hidden')
+  })
+
+  // Handle option clicks
+  dropdown.querySelectorAll('.visibility-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      selectedVisibility = parseInt(option.dataset.value, 10)
+      updateVisibilityLabel()
+      updateVisibilitySelection()
+      dropdown.classList.add('hidden')
+    })
+  })
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden')
+    }
+  })
+
+  // Show crew share toggle if user is in a crew
+  if (gbAuth?.hasCrew) {
+    const toggle = document.getElementById('crewShareToggle')
+    if (toggle) {
+      toggle.classList.remove('hidden')
+      toggle.addEventListener('click', () => {
+        const isChecked = toggle.dataset.state === 'checked'
+        toggle.dataset.state = isChecked ? 'unchecked' : 'checked'
+        toggle.setAttribute('aria-checked', String(!isChecked))
+      })
+      toggle.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          toggle.click()
+        }
+      })
+    }
+  }
+}
+
+function updateVisibilityLabel() {
+  const label = document.getElementById('visibilitySelectorLabel')
+  if (label) label.textContent = t(VISIBILITY_LABELS[selectedVisibility])
+}
+
+function updateVisibilitySelection() {
+  const dropdown = document.getElementById('visibilityDropdown')
+  if (!dropdown) return
+  dropdown.querySelectorAll('.visibility-option').forEach((opt) => {
+    opt.classList.toggle(
+      'selected',
+      parseInt(opt.dataset.value, 10) === selectedVisibility
+    )
+  })
+}
+
+function getSelectedVisibility() {
+  return selectedVisibility
+}
+
+function shouldShareWithCrew() {
+  return document.getElementById('crewShareToggle')?.dataset.state === 'checked'
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
@@ -133,6 +224,7 @@ async function initializeApp() {
     updateLanguageToggleUI()
     updateTabVisibility(gbAuth.role)
     initializeEventListeners()
+    initVisibilitySelector(gbAuth)
 
     // Hide pop-out button if already in standalone window
     chrome.windows.getCurrent((win) => {
@@ -1850,12 +1942,16 @@ async function handleDetailImport() {
       const playlists = getSelectedPlaylists()
       const partyName =
         document.getElementById('partyNameInput')?.value?.trim() || null
+      const visibility = getSelectedVisibility()
+      const shareWithCrew = shouldShareWithCrew()
       uploadResponse = await chrome.runtime.sendMessage({
         action: 'uploadPartyData',
         data: dataToUpload,
         raidId: raid?.id || null,
         playlistIds: playlists.map((p) => p.id),
-        name: partyName
+        name: partyName,
+        visibility,
+        shareWithCrew
       })
     } else if (currentDetailDataType.startsWith('detail_')) {
       uploadResponse = await chrome.runtime.sendMessage({
@@ -1959,6 +2055,8 @@ async function handleLogin() {
       language,
       role: userInfo.role || 0,
       simplePortraits: userInfo.simple_portraits || false,
+      defaultImportVisibility: userInfo.default_import_visibility || 1,
+      hasCrew: !!(userInfo.has_crew || userInfo.crew_name || userInfo.gamertag),
       user: {
         ...gbAuth.user,
         username: userInfo.username || gbAuth.user.username
@@ -2096,6 +2194,9 @@ async function refreshUserInfo(gbAuth) {
       language: userInfo.language || gbAuth.language,
       role: userInfo.role ?? gbAuth.role,
       simplePortraits: userInfo.simple_portraits || false,
+      defaultImportVisibility:
+        userInfo.default_import_visibility ?? gbAuth.defaultImportVisibility,
+      hasCrew: !!(userInfo.has_crew || userInfo.crew_name || userInfo.gamertag),
       user: {
         ...gbAuth.user,
         username: userInfo.username || gbAuth.user.username
@@ -2108,6 +2209,8 @@ async function refreshUserInfo(gbAuth) {
       updated.language !== gbAuth.language ||
       updated.role !== gbAuth.role ||
       updated.simplePortraits !== gbAuth.simplePortraits ||
+      updated.defaultImportVisibility !== gbAuth.defaultImportVisibility ||
+      updated.hasCrew !== gbAuth.hasCrew ||
       updated.user.username !== gbAuth.user?.username
 
     if (changed) {

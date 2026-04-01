@@ -444,6 +444,80 @@
               </svg>
             </button>
           </div>
+          <div class="visibility-row">
+            <div id="visibilitySelector" class="visibility-selector">
+              <button
+                id="visibilitySelectorButton"
+                class="visibility-selector-button"
+                type="button"
+              >
+                <span
+                  id="visibilitySelectorLabel"
+                  class="visibility-selector-label"
+                  data-i18n="visibility_private"
+                  >Private</span
+                >
+                <svg
+                  class="icon-chevron-down"
+                  viewBox="0 0 14 14"
+                  fill="currentColor"
+                  width="12"
+                  height="12"
+                >
+                  <path
+                    d="M2.04309 4.17094C1.6528 4.56138 1.6529 5.19456 2.04309 5.58486L6.28625 9.82702C6.45893 9.99963 6.67885 10.0961 6.90442 10.1161C7.19118 10.1435 7.48755 10.0466 7.70715 9.82702L11.9503 5.58486C12.3402 5.19441 12.3403 4.56118 11.9503 4.17094C11.5599 3.78059 10.9267 3.78069 10.5363 4.17094L6.99622 7.70901L3.45715 4.17094C3.06673 3.78059 2.43355 3.78069 2.04309 4.17094Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+              <div id="visibilityDropdown" class="visibility-dropdown hidden">
+                <div
+                  class="visibility-option"
+                  data-value="1"
+                  data-i18n="visibility_anyone"
+                >
+                  Anyone
+                </div>
+                <div
+                  class="visibility-option"
+                  data-value="2"
+                  data-i18n="visibility_unlisted"
+                >
+                  Unlisted
+                </div>
+                <div
+                  class="visibility-option selected"
+                  data-value="3"
+                  data-i18n="visibility_private"
+                >
+                  Private
+                </div>
+              </div>
+            </div>
+            <div
+              id="crewShareToggle"
+              class="crew-share-toggle hidden"
+              role="checkbox"
+              aria-checked="false"
+              tabindex="0"
+              data-state="unchecked"
+            >
+              <div class="crew-share-checkbox">
+                <svg
+                  class="crew-share-check"
+                  viewBox="0 0 14 14"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"
+                  />
+                </svg>
+              </div>
+              <span class="crew-share-label" data-i18n="crew_label">Crew</span>
+            </div>
+          </div>
           <div id="playlistSelector" class="playlist-selector">
             <button
               id="playlistSelectorButton"

@@ -2509,6 +2509,172 @@ body.light #detailSync {
 .playlist-selector-label {
   flex: 1;
   text-align: left;
+  user-select: none;
+}
+
+/* ==========================================
+   VISIBILITY SELECTOR (in party detail view)
+   ========================================== */
+.visibility-row {
+  display: flex;
+  gap: 8px;
+}
+
+.visibility-selector {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.visibility-selector-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  background: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  min-height: 50px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.visibility-selector-button:hover {
+  background: var(--button-bg-hover);
+}
+
+.visibility-selector-label {
+  flex: 1;
+  text-align: left;
+  user-select: none;
+}
+
+.icon-chevron-down {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.visibility-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  z-index: 100;
+  animation: visibilityFadeIn 0.15s ease-out;
+}
+
+@keyframes visibilityFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.visibility-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  user-select: none;
+}
+
+.visibility-option:hover {
+  background: var(--input-bound-bg-hover);
+}
+
+.visibility-option.selected {
+  font-weight: 500;
+}
+
+/* ==========================================
+   CREW SHARE TOGGLE (in party detail view)
+   ========================================== */
+.crew-share-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  min-height: 50px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.crew-share-toggle:hover {
+  background: var(--button-bg-hover);
+}
+
+.crew-share-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.18s ease-out;
+}
+
+.crew-share-toggle:hover .crew-share-checkbox {
+  background: #fafafa;
+}
+
+.crew-share-check {
+  width: 12px;
+  height: 12px;
+  color: #515151;
+  display: none;
+}
+
+.crew-share-toggle[data-state='checked'] .crew-share-checkbox {
+  background: var(--element-button-bg);
+}
+
+.crew-share-toggle[data-state='checked']:hover .crew-share-checkbox {
+  background: var(--element-button-bg-hover);
+}
+
+.crew-share-toggle[data-state='checked'] .crew-share-check {
+  display: block;
+  color: white;
+}
+
+.crew-share-toggle:focus-visible .crew-share-checkbox {
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.crew-share-label {
+  flex: 1;
+  text-align: left;
+  user-select: none;
 }
 
 /* ==========================================

@@ -564,7 +564,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         message.data,
         message.raidId,
         message.playlistIds,
-        message.name
+        message.name,
+        message.visibility,
+        message.shareWithCrew
       ).then(sendResponse)
       return true
 
@@ -888,14 +890,30 @@ async function authenticatedPost(endpoint, body) {
   }
 }
 
-async function uploadPartyData(data, raidId, playlistIds, name) {
+async function uploadPartyData(
+  data,
+  raidId,
+  playlistIds,
+  name,
+  visibility,
+  shareWithCrew
+) {
   const body = { import: data }
   if (raidId) body.raid_id = raidId
   if (playlistIds?.length > 0) body.playlist_ids = playlistIds
   if (name) body.name = name
+  if (visibility) body.visibility = visibility
 
   const result = await authenticatedPost('/import', body)
   if (result.error) return result
+
+  // Share with crew if requested
+  if (shareWithCrew && result.data?.party_id) {
+    await authenticatedPost(
+      `/parties/${result.data.party_id}/shares`,
+      {}
+    ).catch(() => {}) // Don't fail the import if sharing fails
+  }
 
   const siteUrl = await getSiteBaseUrl()
   return {
