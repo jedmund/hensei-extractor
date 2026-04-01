@@ -444,6 +444,61 @@
               </svg>
             </button>
           </div>
+          <div id="visibilitySelector" class="visibility-selector">
+            <button
+              id="visibilitySelectorButton"
+              class="visibility-selector-button"
+              type="button"
+            >
+              <span
+                id="visibilitySelectorLabel"
+                class="visibility-selector-label"
+                data-i18n="visibility_private"
+                >Private</span
+              >
+              <svg
+                class="icon-chevron-down"
+                viewBox="0 0 14 14"
+                fill="currentColor"
+                width="12"
+                height="12"
+              >
+                <path
+                  d="M2.04309 4.17094C1.6528 4.56138 1.6529 5.19456 2.04309 5.58486L6.28625 9.82702C6.45893 9.99963 6.67885 10.0961 6.90442 10.1161C7.19118 10.1435 7.48755 10.0466 7.70715 9.82702L11.9503 5.58486C12.3402 5.19441 12.3403 4.56118 11.9503 4.17094C11.5599 3.78059 10.9267 3.78069 10.5363 4.17094L6.99622 7.70901L3.45715 4.17094C3.06673 3.78059 2.43355 3.78069 2.04309 4.17094Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+            <div id="visibilityDropdown" class="visibility-dropdown hidden">
+              <div
+                class="visibility-option"
+                data-value="1"
+                data-i18n="visibility_anyone"
+              >
+                Anyone
+              </div>
+              <div
+                class="visibility-option"
+                data-value="2"
+                data-i18n="visibility_unlisted"
+              >
+                Unlisted
+              </div>
+              <div
+                class="visibility-option selected"
+                data-value="3"
+                data-i18n="visibility_private"
+              >
+                Private
+              </div>
+            </div>
+          </div>
+          <label id="crewShareToggle" class="crew-share-toggle hidden">
+            <input type="checkbox" id="crewShareCheckbox" />
+            <span class="crew-share-label" data-i18n="share_with_crew"
+              >Share with crew</span
+            >
+          </label>
           <div id="playlistSelector" class="playlist-selector">
             <button
               id="playlistSelectorButton"
