@@ -2605,6 +2605,8 @@ async function checkForUpdate() {
     const versionSpan = document.getElementById('updateVersion')
     if (!banner || !versionSpan) return
     versionSpan.textContent = response.latest
+    const currentSpan = document.getElementById('updateCurrentVersion')
+    if (currentSpan) currentSpan.textContent = response.current
     banner.classList.remove('hidden')
   }
 }
