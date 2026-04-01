@@ -2645,11 +2645,11 @@ body.light #detailSync {
 }
 
 .crew-share-toggle[data-state='checked'] .crew-share-checkbox {
-  background: #a9a9a9;
+  background: var(--element-button-bg);
 }
 
 .crew-share-toggle[data-state='checked']:hover .crew-share-checkbox {
-  background: #c6c6c6;
+  background: var(--element-button-bg-hover);
 }
 
 .crew-share-toggle[data-state='checked'] .crew-share-check {
