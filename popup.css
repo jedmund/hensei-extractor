@@ -473,7 +473,8 @@ body.dark .tab.active {
   bottom: var(--spacing-sm);
   left: var(--spacing-md);
   right: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm)
+    var(--spacing-md);
   background: var(--color-primary-light);
   border-radius: var(--radius-xl);
   font-size: 14px;
