@@ -12,6 +12,7 @@ cookie-sample.json
 
 # Don't commit environment variables
 .env
+.env.local
 
 # Don't commit the built manifest.json (since it has keys)
 manifest.json
@@ -21,3 +22,7 @@ docs/
 
 # Dependencies
 node_modules/
+
+# WXT
+.wxt/
+.output/
