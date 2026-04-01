@@ -1,6 +1,6 @@
 /**
  * @fileoverview Playlist picker view for selecting playlists before party import.
- * Mirrors the raid-picker pattern with multi-select, search, and inline creation.
+ * Mirrors the raid-picker pattern with multi-select, search, and sheet-based creation.
  */
 
 import { t, tPlural } from './i18n.js'
@@ -13,7 +13,13 @@ let playlists = []
 let selectedPlaylists = []
 let searchQuery = ''
 let onSelectCallback = null
-let showCreateForm = false
+let playlistVisibility = 3
+
+const PLAYLIST_VISIBILITY_LABELS = {
+  1: 'playlist_public',
+  2: 'playlist_unlisted',
+  3: 'playlist_private'
+}
 
 // ==========================================
 // PUBLIC API
@@ -28,7 +34,6 @@ let showCreateForm = false
 export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
   selectedPlaylists = [...currentPlaylists]
   onSelectCallback = onSelect
-  showCreateForm = false
 
   // Fetch playlists
   const response = await chrome.runtime.sendMessage({
@@ -52,9 +57,10 @@ export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
  * Hide the playlist picker view
  */
 export function hidePlaylistPicker() {
+  if (onSelectCallback) onSelectCallback(selectedPlaylists)
+  hidePlaylistCreateView()
   document.getElementById('playlistPickerView').classList.remove('active')
   searchQuery = ''
-  showCreateForm = false
 }
 
 /**
@@ -93,9 +99,6 @@ function renderPicker() {
   if (searchInput) searchInput.value = ''
   searchQuery = ''
 
-  // Update create form visibility
-  updateCreateForm()
-
   // Render playlist list
   renderPlaylistList()
 }
@@ -105,14 +108,23 @@ function renderPlaylistList() {
   if (!container) return
 
   const filtered = getFilteredPlaylists()
-
-  if (playlists.length === 0) {
-    container.innerHTML = `<div class="playlist-empty">${t('playlist_no_playlists')}</div>`
-    return
-  }
+  const query = searchQuery.trim()
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="playlist-empty">${t('playlist_no_results')}</div>`
+    const escaped = query
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+    container.innerHTML = query
+      ? `
+        <button type="button" class="playlist-item playlist-create-prompt" data-prefill="${escaped}">
+          <div class="playlist-item-info">
+            <span class="playlist-item-title">${t('playlist_create_with', { name: query })}</span>
+          </div>
+        </button>
+      `
+      : `<div class="playlist-empty">${playlists.length === 0 ? t('playlist_no_playlists') : t('playlist_no_results')}</div>`
     return
   }
 
@@ -134,7 +146,9 @@ function getFilteredPlaylists() {
 }
 
 function renderPlaylistItem(playlist) {
-  const isSelected = selectedPlaylists.some((p) => p.id === playlist.id)
+  const isSelected = selectedPlaylists.some(
+    (p) => String(p.id) === String(playlist.id)
+  )
   const title = playlist.title || t('playlist_untitled')
   const partyCount = playlist.party_count || playlist.parties_count || 0
   const countText = tPlural('count_party', 'count_parties', partyCount)
@@ -150,24 +164,31 @@ function renderPlaylistItem(playlist) {
   `
 }
 
-function updateCreateForm() {
-  const form = document.getElementById('playlistCreateForm')
-  if (!form) return
-
-  if (showCreateForm) {
-    form.classList.remove('hidden')
-  } else {
-    form.classList.add('hidden')
-    // Clear form fields
-    const titleInput = form.querySelector('#playlistCreateTitle')
-    const descInput = form.querySelector('#playlistCreateDescription')
-    const visInput = form.querySelector('#playlistCreateVisibility')
-    const errorEl = form.querySelector('.playlist-create-error')
-    if (titleInput) titleInput.value = ''
-    if (descInput) descInput.value = ''
-    if (visInput) visInput.value = '3'
-    if (errorEl) errorEl.textContent = ''
+function showPlaylistCreateView(prefillTitle) {
+  if (prefillTitle) {
+    const titleInput = document.getElementById('playlistCreateTitle')
+    if (titleInput) titleInput.value = prefillTitle
   }
+  document.getElementById('playlistCreateView')?.classList.add('active')
+  updateCreateSubmitState()
+}
+
+function hidePlaylistCreateView() {
+  const view = document.getElementById('playlistCreateView')
+  if (!view) return
+  view.classList.remove('active')
+
+  // Clear form fields
+  const titleInput = view.querySelector('#playlistCreateTitle')
+  const descInput = view.querySelector('#playlistCreateDescription')
+  const errorEl = view.querySelector('.playlist-create-error')
+  if (titleInput) titleInput.value = ''
+  if (descInput) descInput.value = ''
+  if (errorEl) errorEl.textContent = ''
+  updateCreateSubmitState()
+  playlistVisibility = 3
+  updatePlaylistVisibilityLabel()
+  updatePlaylistVisibilitySelection()
 }
 
 // ==========================================
@@ -193,13 +214,49 @@ function bindEvents() {
       renderPlaylistList()
     })
 
-  // Create button (toggle form)
+  // Create button (show create view)
   document
     .getElementById('playlistCreateBtn')
-    ?.addEventListener('click', () => {
-      showCreateForm = !showCreateForm
-      updateCreateForm()
+    ?.addEventListener('click', () => showPlaylistCreateView())
+
+  // Validate create form on title input
+  document
+    .getElementById('playlistCreateTitle')
+    ?.addEventListener('input', updateCreateSubmitState)
+
+  // Create view back button
+  document
+    .getElementById('playlistCreateBack')
+    ?.addEventListener('click', hidePlaylistCreateView)
+
+  // Playlist visibility selector
+  const plVisBtn = document.getElementById('playlistVisibilityButton')
+  const plVisDrop = document.getElementById('playlistVisibilityDropdown')
+
+  plVisBtn?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    plVisDrop?.classList.toggle('hidden')
+  })
+
+  plVisDrop?.querySelectorAll('.visibility-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      playlistVisibility = parseInt(option.dataset.value, 10)
+      updatePlaylistVisibilityLabel()
+      updatePlaylistVisibilitySelection()
+      plVisDrop.classList.add('hidden')
     })
+  })
+
+  document.addEventListener('click', (e) => {
+    if (
+      plVisBtn &&
+      plVisDrop &&
+      !plVisBtn.contains(e.target) &&
+      !plVisDrop.contains(e.target)
+    ) {
+      plVisDrop.classList.add('hidden')
+    }
+  })
 
   // Submit create form
   document
@@ -210,16 +267,22 @@ function bindEvents() {
   document
     .getElementById('playlistPickerContent')
     ?.addEventListener('click', (e) => {
+      const createPrompt = e.target.closest('.playlist-create-prompt')
+      if (createPrompt) {
+        showPlaylistCreateView(createPrompt.dataset.prefill)
+        return
+      }
+
       const playlistItem = e.target.closest('.playlist-item')
       if (!playlistItem) return
 
       const playlistId = playlistItem.dataset.playlistId
-      const playlist = playlists.find((p) => p.id === playlistId)
+      const playlist = playlists.find((p) => String(p.id) === playlistId)
       if (!playlist) return
 
       // Toggle: clicking toggles selection
       const existingIndex = selectedPlaylists.findIndex(
-        (p) => p.id === playlist.id
+        (p) => String(p.id) === String(playlist.id)
       )
       if (existingIndex >= 0) {
         selectedPlaylists.splice(existingIndex, 1)
@@ -233,16 +296,12 @@ function bindEvents() {
   // Done button
   document
     .getElementById('playlistPickerDone')
-    ?.addEventListener('click', () => {
-      if (onSelectCallback) onSelectCallback(selectedPlaylists)
-      hidePlaylistPicker()
-    })
+    ?.addEventListener('click', hidePlaylistPicker)
 }
 
 async function handleCreatePlaylist() {
   const titleInput = document.getElementById('playlistCreateTitle')
   const descInput = document.getElementById('playlistCreateDescription')
-  const visInput = document.getElementById('playlistCreateVisibility')
   const errorEl = document.querySelector('.playlist-create-error')
   const submitBtn = document.getElementById('playlistCreateSubmit')
 
@@ -263,7 +322,7 @@ async function handleCreatePlaylist() {
     data: {
       title,
       description: descInput?.value?.trim() || '',
-      visibility: parseInt(visInput?.value || '3')
+      visibility: playlistVisibility
     }
   })
 
@@ -277,13 +336,50 @@ async function handleCreatePlaylist() {
     return
   }
 
-  // Add new playlist to local list and auto-select it
-  const newPlaylist = response.data || response
-  playlists.unshift(newPlaylist)
+  // Auto-select the new playlist
+  const responseData = response.data || response
+  const newPlaylist = responseData.playlist || responseData
+  if (!newPlaylist.title) newPlaylist.title = title
   selectedPlaylists.push(newPlaylist)
 
-  // Hide form and re-render
-  showCreateForm = false
-  updateCreateForm()
+  // Re-fetch playlists, clear search, and go back
+  const refreshResponse = await chrome.runtime.sendMessage({
+    action: 'fetchUserPlaylists'
+  })
+  playlists = refreshResponse.data?.results || refreshResponse.data || []
+
+  // Reconcile selected playlists with fresh data
+  selectedPlaylists = selectedPlaylists.map(
+    (s) => playlists.find((p) => String(p.id) === String(s.id)) || s
+  )
+
+  searchQuery = ''
+  const searchInput = document.getElementById('playlistSearchInput')
+  if (searchInput) searchInput.value = ''
+
+  hidePlaylistCreateView()
   renderPlaylistList()
+}
+
+function updatePlaylistVisibilityLabel() {
+  const label = document.getElementById('playlistVisibilityLabel')
+  if (label)
+    label.textContent = t(PLAYLIST_VISIBILITY_LABELS[playlistVisibility])
+}
+
+function updateCreateSubmitState() {
+  const title = document.getElementById('playlistCreateTitle')?.value?.trim()
+  const btn = document.getElementById('playlistCreateSubmit')
+  if (btn) btn.disabled = !title
+}
+
+function updatePlaylistVisibilitySelection() {
+  const dropdown = document.getElementById('playlistVisibilityDropdown')
+  if (!dropdown) return
+  dropdown.querySelectorAll('.visibility-option').forEach((opt) => {
+    opt.classList.toggle(
+      'selected',
+      parseInt(opt.dataset.value, 10) === playlistVisibility
+    )
+  })
 }
