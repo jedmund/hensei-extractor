@@ -425,6 +425,7 @@ const strings = {
     ja: '新しいバージョンがあります（v'
   },
   update_link: { en: 'Update', ja: '更新' },
+  update_current: { en: "You're currently on v", ja: '現在のバージョン：v' },
 
   // Party name
   party_name_placeholder: { en: 'Party name', ja: 'パーティ名' },
