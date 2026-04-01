@@ -657,45 +657,14 @@
         <span class="playlist-picker-title" data-i18n="playlist_select"
           >Select Playlists</span
         >
-        <button id="playlistCreateBtn" class="playlist-create-btn">
-          <svg viewBox="0 0 14 14" fill="currentColor" width="14" height="14">
-            <path
-              d="M7 1a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H8v4a1 1 0 1 1-2 0V8H2a1 1 0 0 1 0-2h4V2a1 1 0 0 1 1-1z"
-            />
-          </svg>
+        <button
+          id="playlistCreateBtn"
+          class="button small"
+          data-i18n="action_new"
+        >
+          New
         </button>
       </header>
-      <div id="playlistCreateForm" class="playlist-create-form hidden">
-        <input
-          type="text"
-          id="playlistCreateTitle"
-          class="contained"
-          data-i18n-placeholder="playlist_title_field"
-          placeholder="Playlist title"
-        />
-        <textarea
-          id="playlistCreateDescription"
-          class="contained"
-          data-i18n-placeholder="playlist_desc_field"
-          placeholder="Description (optional)"
-          rows="2"
-        ></textarea>
-        <select id="playlistCreateVisibility" class="contained">
-          <option value="3" selected data-i18n="playlist_private">
-            Private
-          </option>
-          <option value="2" data-i18n="playlist_unlisted">Unlisted</option>
-          <option value="1" data-i18n="playlist_public">Public</option>
-        </select>
-        <button
-          id="playlistCreateSubmit"
-          class="button btn-primary small"
-          data-i18n="action_create"
-        >
-          Create
-        </button>
-        <div class="playlist-create-error"></div>
-      </div>
       <div class="playlist-picker-search">
         <input
           type="text"
@@ -716,6 +685,98 @@
         >
           Done
         </button>
+      </div>
+    </div>
+
+    <!-- Playlist Create View (slides over playlist picker) -->
+    <div id="playlistCreateView" class="playlist-create-view">
+      <header class="playlist-picker-header">
+        <button id="playlistCreateBack" class="detail-back">
+          <svg class="icon-chevron" viewBox="0 0 14 14" fill="currentColor">
+            <path
+              d="M9.82906 2.04309C9.43862 1.6528 8.8055 1.6529 8.415 2.04309L4.17281 6.28625C4.0002 6.45893 3.9037 6.67885 3.88375 6.90442C3.85638 7.19118 3.95321 7.48755 4.17281 7.70715L8.415 11.9503C8.80545 12.3402 9.43867 12.3403 9.82906 11.9503C10.2192 11.5599 10.219 10.9267 9.82906 10.5363L6.29098 6.99622L9.82906 3.45715C10.2192 3.06673 10.2191 2.43355 9.82906 2.04309Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span data-i18n="action_back">Back</span>
+        </button>
+        <span class="playlist-picker-title" data-i18n="playlist_new"
+          >New Playlist</span
+        >
+        <button
+          id="playlistCreateSubmit"
+          class="button small"
+          data-i18n="action_create"
+          disabled
+        >
+          Create
+        </button>
+      </header>
+      <div class="playlist-create-form">
+        <input
+          type="text"
+          id="playlistCreateTitle"
+          class="contained"
+          data-i18n-placeholder="playlist_title_field"
+          placeholder="Playlist title"
+        />
+        <textarea
+          id="playlistCreateDescription"
+          class="contained"
+          data-i18n-placeholder="playlist_desc_field"
+          placeholder="Description (optional)"
+          rows="2"
+        ></textarea>
+        <div id="playlistVisibilitySelector" class="visibility-selector">
+          <button
+            id="playlistVisibilityButton"
+            class="visibility-selector-button contained"
+            type="button"
+          >
+            <span
+              id="playlistVisibilityLabel"
+              class="visibility-selector-label"
+              data-i18n="playlist_private"
+              >Private</span
+            >
+            <svg
+              class="icon-chevron-down"
+              viewBox="0 0 14 14"
+              fill="currentColor"
+              width="12"
+              height="12"
+            >
+              <path
+                d="M2.04309 4.17094C1.6528 4.56138 1.6529 5.19456 2.04309 5.58486L6.28625 9.82702C6.45893 9.99963 6.67885 10.0961 6.90442 10.1161C7.19118 10.1435 7.48755 10.0466 7.70715 9.82702L11.9503 5.58486C12.3402 5.19441 12.3403 4.56118 11.9503 4.17094C11.5599 3.78059 10.9267 3.78069 10.5363 4.17094L6.99622 7.70901L3.45715 4.17094C3.06673 3.78059 2.43355 3.78069 2.04309 4.17094Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <div id="playlistVisibilityDropdown" class="visibility-dropdown hidden">
+            <div
+              class="visibility-option"
+              data-value="1"
+              data-i18n="playlist_public"
+            >
+              Public
+            </div>
+            <div
+              class="visibility-option"
+              data-value="2"
+              data-i18n="playlist_unlisted"
+            >
+              Unlisted
+            </div>
+            <div
+              class="visibility-option selected"
+              data-value="3"
+              data-i18n="playlist_private"
+            >
+              Private
+            </div>
+          </div>
+        </div>
+        <div class="playlist-create-error"></div>
       </div>
     </div>
 

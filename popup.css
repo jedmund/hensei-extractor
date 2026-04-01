@@ -1144,21 +1144,27 @@ button:disabled,
   opacity: 0.7;
 }
 
-/* Elemental Import button in detail view */
+/* Elemental buttons in detail view */
 #detailImport,
-#detailSync {
+#detailSync,
+#playlistCreateBtn,
+#playlistCreateSubmit {
   background-color: var(--element-button-bg);
   border: none;
   color: white;
 }
 
 #detailImport:hover:not(:disabled),
-#detailSync:hover:not(:disabled) {
+#detailSync:hover:not(:disabled),
+#playlistCreateBtn:hover:not(:disabled),
+#playlistCreateSubmit:hover:not(:disabled) {
   background-color: var(--element-button-bg-hover);
 }
 
 body.light #detailImport,
-body.light #detailSync {
+body.light #detailSync,
+body.light #playlistCreateBtn,
+body.light #playlistCreateSubmit {
   color: var(--element-button-text, white);
 }
 
@@ -2703,23 +2709,27 @@ body.light #detailSync {
   color: var(--color-text);
 }
 
-.playlist-create-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
+.playlist-picker-header .button.small {
   flex-shrink: 0;
-  transition: color var(--transition-fast);
 }
 
-.playlist-create-btn:hover {
-  color: var(--color-text);
+/* Create View (slides over playlist picker) */
+.playlist-create-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  z-index: 300;
+}
+
+.playlist-create-view.active {
+  transform: translateX(0);
 }
 
 /* Create Form */
@@ -2728,21 +2738,10 @@ body.light #detailSync {
   flex-direction: column;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border-light);
-  flex-shrink: 0;
 }
 
 .playlist-create-form textarea.contained {
-  resize: none;
-  padding: 12px;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.playlist-create-form select.contained {
-  padding: 12px;
-  font-size: 14px;
-  font-family: inherit;
+  resize: vertical;
 }
 
 .playlist-create-error {
@@ -2804,7 +2803,7 @@ body.light #detailSync {
 }
 
 .playlist-item.selected {
-  background: var(--element-bg);
+  background: transparent;
 }
 
 .playlist-item-info {
@@ -2830,14 +2829,16 @@ body.light #detailSync {
 }
 
 .playlist-item-check {
-  color: var(--element-text);
+  color: var(--element-button-bg);
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
 /* Footer */
 .playlist-picker-footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--color-border-light);
+  border-top: none;
   flex-shrink: 0;
 }
 

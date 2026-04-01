@@ -277,6 +277,11 @@ const strings = {
   // Playlist picker
   playlist_label: { en: 'Playlists', ja: 'プレイリスト' },
   playlist_select: { en: 'Select Playlists', ja: 'プレイリストを選択' },
+  playlist_new: { en: 'New Playlist', ja: '新規プレイリスト' },
+  playlist_create_with: {
+    en: 'Create "{name}"',
+    ja: '「{name}」を作成'
+  },
   playlist_search: { en: 'Search playlists...', ja: 'プレイリストを検索...' },
   playlist_title_field: { en: 'Playlist title', ja: 'プレイリストタイトル' },
   playlist_desc_field: { en: 'Description (optional)', ja: '説明（任意）' },
