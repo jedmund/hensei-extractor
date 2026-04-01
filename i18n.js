@@ -286,7 +286,7 @@ const strings = {
   visibility_anyone: { en: 'Anyone', ja: '全体公開' },
   visibility_unlisted: { en: 'Unlisted', ja: '限定公開' },
   visibility_private: { en: 'Private', ja: 'プライベート' },
-  share_with_crew: { en: 'Share with crew', ja: 'クルーと共有' },
+  crew_label: { en: 'Crew', ja: 'クルー' },
   playlist_no_playlists: {
     en: 'No playlists yet. Create one!',
     ja: 'プレイリストがまだありません。作成しましょう！'

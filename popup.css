@@ -2514,8 +2514,15 @@ body.light #detailSync {
 /* ==========================================
    VISIBILITY SELECTOR (in party detail view)
    ========================================== */
+.visibility-row {
+  display: flex;
+  gap: 8px;
+}
+
 .visibility-selector {
   position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 .visibility-selector-button {
@@ -2603,7 +2610,6 @@ body.light #detailSync {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
   padding: 8px 16px;
   background: var(--color-bg);
   border: none;
@@ -2615,6 +2621,7 @@ body.light #detailSync {
   color: var(--color-text);
   cursor: pointer;
   transition: background var(--transition-fast);
+  white-space: nowrap;
 }
 
 .crew-share-toggle:hover {
