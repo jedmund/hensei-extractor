@@ -16,7 +16,6 @@ import { show, hide, setElementColor, clearElementColors } from './dom.js'
 import {
   OVER_MASTERY_NAMES,
   AETHERIAL_NAMES,
-  PERPETUITY_NAMES,
   formatModifier,
   formatPerpetuityBonus
 } from './mastery.js'
@@ -24,7 +23,6 @@ import { RARITY_LABELS, GAME_ELEMENT_NAMES } from './game-data.js'
 import { handleDetailSync, hideSyncModal, confirmSync } from './sync.js'
 import {
   showConflictModal,
-  hideConflictModal,
   initConflictListeners
 } from './conflict-resolution.js'
 import {
@@ -37,23 +35,19 @@ import {
   getItemImageUrl,
   getArtifactLabels,
   getGridClass,
-  getCharacterModifiers,
   renderCharacterModifiers,
-  getWeaponModifiers,
   renderWeaponModifiers,
   renderPartyDetail,
   renderDatabaseDetail
 } from './render-detail.js'
 import {
   showRaidPicker,
-  hideRaidPicker,
   getSelectedRaid,
   setSelectedRaid,
   clearSelectedRaid
 } from './raid-picker.js'
 import {
   showPlaylistPicker,
-  hidePlaylistPicker,
   getSelectedPlaylists,
   clearSelectedPlaylists
 } from './playlist-picker.js'
@@ -73,11 +67,6 @@ import { initTooltip } from './tooltip.js'
 // ==========================================
 
 let activeTab = 'party'
-let selectedDataTypes = {
-  party: null,
-  collection: null,
-  database: null
-}
 let cachedStatus = null
 
 // Detail view navigation state
@@ -658,8 +647,6 @@ async function showDetailView(dataType) {
   // Show filter for weapons, summons, and artifacts (collection types that support sync)
   const showFilter =
     isWeaponOrSummonCollection(dataType) || dataType === 'collection_artifact'
-  const isArtifact = dataType === 'collection_artifact'
-
   if (showFilter) {
     detailFilter?.classList.remove('hidden')
 
@@ -902,7 +889,6 @@ function initializeFilterListeners() {
   const excludeLv1Checkbox = document.getElementById('excludeLv1Checkbox')
   excludeLv1Checkbox?.addEventListener('change', () => {
     excludeLv1Items = excludeLv1Checkbox.checked
-    updateLv1Badge()
     refreshDetailViewWithFilters()
   })
 
@@ -1668,7 +1654,7 @@ function filterSelectedItems(dataType, data) {
   }
 
   const items = extractItems(dataType, data)
-  const filteredItems = items.filter((_, i) => selectedItems.has(i))
+  items.filter((_, i) => selectedItems.has(i))
 
   // Reconstruct the data structure with filtered items
   // Collection data is an object keyed by page number, each with a 'list' array
@@ -1714,7 +1700,7 @@ async function handleDetailCopy() {
     const jsonString = JSON.stringify(response.data, null, 2)
     await navigator.clipboard.writeText(jsonString)
     showToast(t('toast_copied'))
-  } catch (error) {
+  } catch {
     showToast(t('toast_copy_failed'))
   }
 }
@@ -1748,7 +1734,7 @@ async function handleDetailSave() {
     showToast(
       t('toast_saved_file', { filename: `${currentDetailDataType}.json` })
     )
-  } catch (error) {
+  } catch {
     showToast(t('toast_save_failed'))
   }
 }
@@ -1920,7 +1906,7 @@ async function handleDetailImport() {
         importBtn.classList.add('imported')
       }
     }
-  } catch (error) {
+  } catch {
     showToast(t('toast_import_failed'))
   } finally {
     if (importBtn && !importBtn.classList.contains('imported')) {
@@ -2128,7 +2114,7 @@ async function refreshUserInfo(gbAuth) {
       await chrome.storage.local.set({ gbAuth: updated })
       updateProfileUI(updated)
     }
-  } catch (_) {
+  } catch {
     // Silently fail — cached data remains usable
   }
 }
@@ -2223,7 +2209,7 @@ function updateTabCacheDisplay(tabName, status) {
   if (!container) return
 
   // Get types to display - party and database tabs discover dynamically from status
-  let typesToDisplay = []
+  let typesToDisplay
   if (tabName === 'party') {
     // Find all party_* types in status
     typesToDisplay = Object.keys(status || {}).filter(
@@ -2336,7 +2322,6 @@ function getEmptyMessage(tabName) {
  */
 async function handleClearCache() {
   await chrome.runtime.sendMessage({ action: 'clearCache' })
-  selectedDataTypes = { party: null, collection: null, database: null }
   cachedStatus = null
 
   // Reset all tab displays
@@ -2499,13 +2484,6 @@ function showStatus(element, message, type = 'info') {
   element.textContent = message
   element.className = `status-${type}`
   show(element)
-}
-
-/**
- * Capitalize first letter
- */
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 /**

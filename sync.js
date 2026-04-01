@@ -8,7 +8,6 @@ import { t, tError } from './i18n.js'
 
 // Internal state for pending sync operations
 let pendingSyncData = null
-let pendingSyncPreview = null
 
 /**
  * Handle sync button click - fetch preview then show modal
@@ -51,8 +50,6 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
       )
       return
     }
-
-    pendingSyncPreview = previewResponse
 
     // Update modal content with preview
     updateSyncModalContent(previewResponse, currentDetailDataType)
@@ -162,7 +159,6 @@ export function hideSyncModal() {
   const modal = document.getElementById('syncModal')
   modal?.classList.add('hidden')
   pendingSyncData = null
-  pendingSyncPreview = null
 }
 
 /**

@@ -65,7 +65,9 @@ export async function performLogin(username, password) {
     try {
       const errBody = await response.json()
       code = errBody.error || 'unknown'
-    } catch (_) {}
+    } catch {
+      // ignore
+    }
     const err = new Error(code)
     err.code = code
     throw err
