@@ -1,38 +1,67 @@
 /**
- * @fileoverview Raid picker view for selecting a raid before party import.
+ * Raid picker view for selecting a raid before party import.
  * Mirrors the hensei-svelte EditRaidPane design with search, section tabs, and sort.
  */
 
-import { RAID_SECTIONS } from './constants.js'
-import { getImageUrl } from './constants.js'
+import { RAID_SECTIONS, getImageUrl } from './constants.js'
 import { t, getLocale } from './i18n.js'
+
+// ==========================================
+// TYPES
+// ==========================================
+
+interface LocalizedName {
+  en?: string
+  ja?: string
+}
+
+interface Raid {
+  id: string
+  name: string | LocalizedName
+  name_en?: string
+  name_jp?: string
+  level?: number
+  slug?: string
+  group?: RaidGroup
+}
+
+interface RaidGroup {
+  name: string | LocalizedName
+  name_en?: string
+  name_jp?: string
+  section: number | string
+  difficulty: number
+  extra?: boolean
+  raids?: Raid[]
+}
+
+interface ShowRaidPickerOptions {
+  currentRaid?: Raid | null
+  onSelect: (raid: Raid | null) => void
+}
 
 // ==========================================
 // STATE
 // ==========================================
 
-let raidGroups = []
-let selectedSection = RAID_SECTIONS.RAID
+let raidGroups: RaidGroup[] = []
+let selectedSection: number = RAID_SECTIONS.RAID
 let searchQuery = ''
 let sortAscending = false
-let selectedRaid = null
-let onSelectCallback = null
+let selectedRaid: Raid | null = null
+let onSelectCallback: ((raid: Raid | null) => void) | null = null
 
 // ==========================================
 // PUBLIC API
 // ==========================================
 
-/**
- * Show the raid picker view
- * @param {Object} options
- * @param {Object|null} options.currentRaid - Currently selected raid (if any)
- * @param {Function} options.onSelect - Callback when a raid is selected: (raid) => void
- */
-export async function showRaidPicker({ currentRaid = null, onSelect }) {
+export async function showRaidPicker({
+  currentRaid = null,
+  onSelect
+}: ShowRaidPickerOptions): Promise<void> {
   selectedRaid = currentRaid
   onSelectCallback = onSelect
 
-  // Fetch raid groups
   const response = await chrome.runtime.sendMessage({
     action: 'fetchRaidGroups'
   })
@@ -41,43 +70,28 @@ export async function showRaidPicker({ currentRaid = null, onSelect }) {
     return
   }
 
-  raidGroups = response.data || []
+  raidGroups = response.data ?? []
 
   renderPicker()
   bindEvents()
 
-  // Slide in
-  document.getElementById('raidPickerView').classList.add('active')
+  document.getElementById('raidPickerView')?.classList.add('active')
 }
 
-/**
- * Hide the raid picker view
- */
-export function hideRaidPicker() {
-  document.getElementById('raidPickerView').classList.remove('active')
+export function hideRaidPicker(): void {
+  document.getElementById('raidPickerView')?.classList.remove('active')
   searchQuery = ''
 }
 
-/**
- * Get the currently selected raid
- * @returns {Object|null}
- */
-export function getSelectedRaid() {
+export function getSelectedRaid(): Raid | null {
   return selectedRaid
 }
 
-/**
- * Set the selected raid programmatically (for auto-suggestion)
- * @param {Object|null} raid
- */
-export function setSelectedRaid(raid) {
+export function setSelectedRaid(raid: Raid | null): void {
   selectedRaid = raid
 }
 
-/**
- * Clear the selected raid
- */
-export function clearSelectedRaid() {
+export function clearSelectedRaid(): void {
   selectedRaid = null
 }
 
@@ -85,31 +99,29 @@ export function clearSelectedRaid() {
 // RENDERING
 // ==========================================
 
-function renderPicker() {
+function renderPicker(): void {
   const container = document.getElementById('raidPickerContent')
   if (!container) return
 
-  // Reset search input
-  const searchInput = document.getElementById('raidSearchInput')
+  const searchInput = document.getElementById(
+    'raidSearchInput'
+  ) as HTMLInputElement | null
   if (searchInput) searchInput.value = ''
   searchQuery = ''
 
-  // Update active section tab
   updateSectionTabs()
   updateSortButton()
-
-  // Render raid list
   renderRaidList()
 }
 
-function updateSectionTabs() {
-  document.querySelectorAll('.raid-section-tab').forEach((tab) => {
-    const section = parseInt(tab.dataset.section)
+function updateSectionTabs(): void {
+  document.querySelectorAll<HTMLElement>('.raid-section-tab').forEach((tab) => {
+    const section = parseInt(tab.dataset.section ?? '0')
     tab.classList.toggle('active', section === selectedSection)
   })
 }
 
-function updateSortButton() {
+function updateSortButton(): void {
   const sortBtn = document.getElementById('raidSortBtn')
   if (sortBtn) {
     sortBtn.innerHTML = sortAscending
@@ -118,7 +130,7 @@ function updateSortButton() {
   }
 }
 
-function renderRaidList() {
+function renderRaidList(): void {
   const container = document.getElementById('raidPickerContent')
   if (!container) return
 
@@ -132,10 +144,9 @@ function renderRaidList() {
   container.innerHTML = filtered.map((group) => renderRaidGroup(group)).join('')
 }
 
-function getFilteredGroups() {
+function getFilteredGroups(): RaidGroup[] {
   const query = searchQuery.toLowerCase().trim()
 
-  // Filter by section
   let groups = raidGroups.filter((group) => {
     const section =
       typeof group.section === 'string'
@@ -144,20 +155,18 @@ function getFilteredGroups() {
     return section === selectedSection
   })
 
-  // Sort by difficulty
   groups = [...groups].sort((a, b) => {
     const diff = a.difficulty - b.difficulty
     return sortAscending ? diff : -diff
   })
 
-  // Filter by search query
   if (query) {
     groups = groups
       .map((group) => {
         const groupName = getGroupName(group).toLowerCase()
         if (groupName.includes(query)) return group
 
-        const matchingRaids = (group.raids || []).filter((raid) => {
+        const matchingRaids = (group.raids ?? []).filter((raid) => {
           const raidName = getRaidName(raid).toLowerCase()
           const raidNameJp = getRaidNameJp(raid).toLowerCase()
           return raidName.includes(query) || raidNameJp.includes(query)
@@ -168,14 +177,14 @@ function getFilteredGroups() {
         }
         return null
       })
-      .filter(Boolean)
+      .filter((g): g is RaidGroup => g !== null)
   }
 
   return groups
 }
 
-function renderRaidGroup(group) {
-  const raids = group.raids || []
+function renderRaidGroup(group: RaidGroup): string {
+  const raids = group.raids ?? []
   if (raids.length === 0) return ''
 
   const groupName = getGroupName(group)
@@ -194,8 +203,8 @@ function renderRaidGroup(group) {
   `
 }
 
-function renderRaidItem(raid) {
-  const isSelected = selectedRaid && raid.id === selectedRaid.id
+function renderRaidItem(raid: Raid): string {
+  const isSelected = selectedRaid !== null && raid.id === selectedRaid.id
   const name = getRaidName(raid)
   const level = raid.level
   const imageUrl = getRaidImageUrl(raid)
@@ -216,48 +225,48 @@ function renderRaidItem(raid) {
 // HELPERS
 // ==========================================
 
-function getGroupName(group) {
+function getGroupName(group: RaidGroup): string {
   if (typeof group.name === 'string') return group.name
   if (getLocale() === 'ja') {
     return (
-      group.name?.ja ||
-      group.name_jp ||
-      group.name?.en ||
-      group.name_en ||
+      group.name?.ja ??
+      group.name_jp ??
+      group.name?.en ??
+      group.name_en ??
       'Unknown'
     )
   }
   return (
-    group.name?.en ||
-    group.name_en ||
-    group.name?.ja ||
-    group.name_jp ||
+    group.name?.en ??
+    group.name_en ??
+    group.name?.ja ??
+    group.name_jp ??
     'Unknown'
   )
 }
 
-function getRaidName(raid) {
+function getRaidName(raid: Raid): string {
   if (typeof raid.name === 'string') return raid.name
   if (getLocale() === 'ja') {
     return (
-      raid.name?.ja ||
-      raid.name_jp ||
-      raid.name?.en ||
-      raid.name_en ||
+      raid.name?.ja ??
+      raid.name_jp ??
+      raid.name?.en ??
+      raid.name_en ??
       'Unknown'
     )
   }
   return (
-    raid.name?.en || raid.name_en || raid.name?.ja || raid.name_jp || 'Unknown'
+    raid.name?.en ?? raid.name_en ?? raid.name?.ja ?? raid.name_jp ?? 'Unknown'
   )
 }
 
-function getRaidNameJp(raid) {
+function getRaidNameJp(raid: Raid): string {
   if (typeof raid.name === 'string') return ''
-  return raid.name?.ja || raid.name_jp || ''
+  return raid.name?.ja ?? raid.name_jp ?? ''
 }
 
-function getRaidImageUrl(raid) {
+function getRaidImageUrl(raid: Raid): string {
   if (raid.slug) {
     return getImageUrl(`raid-thumbnail/${raid.slug}.png`)
   }
@@ -270,43 +279,38 @@ function getRaidImageUrl(raid) {
 
 let eventsBound = false
 
-function bindEvents() {
+function bindEvents(): void {
   if (eventsBound) return
   eventsBound = true
 
-  // Back button
   document
     .getElementById('raidPickerBack')
     ?.addEventListener('click', hideRaidPicker)
 
-  // Search input
   document.getElementById('raidSearchInput')?.addEventListener('input', (e) => {
-    searchQuery = e.target.value
+    searchQuery = (e.target as HTMLInputElement).value
     renderRaidList()
   })
 
-  // Section tabs
-  document.querySelectorAll('.raid-section-tab').forEach((tab) => {
+  document.querySelectorAll<HTMLElement>('.raid-section-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
-      selectedSection = parseInt(tab.dataset.section)
+      selectedSection = parseInt(tab.dataset.section ?? '0')
       updateSectionTabs()
       renderRaidList()
     })
   })
 
-  // Sort button
   document.getElementById('raidSortBtn')?.addEventListener('click', () => {
     sortAscending = !sortAscending
     updateSortButton()
     renderRaidList()
   })
 
-  // Refresh button
   document
     .getElementById('raidRefreshBtn')
     ?.addEventListener('click', async () => {
       const btn = document.getElementById('raidRefreshBtn')
-      btn.classList.add('loading')
+      btn?.classList.add('loading')
 
       const response = await chrome.runtime.sendMessage({
         action: 'fetchRaidGroups',
@@ -315,25 +319,26 @@ function bindEvents() {
       if (response.error) {
         console.error('Failed to refresh raid groups:', response.error)
       } else {
-        raidGroups = response.data || []
+        raidGroups = response.data ?? []
         renderRaidList()
       }
 
-      btn.classList.remove('loading')
+      btn?.classList.remove('loading')
     })
 
-  // Raid item clicks (delegated)
   document
     .getElementById('raidPickerContent')
     ?.addEventListener('click', (e) => {
-      const raidItem = e.target.closest('.raid-item')
+      const raidItem = (e.target as HTMLElement).closest<HTMLElement>(
+        '.raid-item'
+      )
       if (!raidItem) return
 
       const raidId = raidItem.dataset.raidId
+      if (!raidId) return
       const raid = findRaidById(raidId)
       if (!raid) return
 
-      // Toggle: clicking selected raid unselects it
       if (selectedRaid && selectedRaid.id === raid.id) {
         selectedRaid = null
       } else {
@@ -345,9 +350,9 @@ function bindEvents() {
     })
 }
 
-function findRaidById(id) {
+function findRaidById(id: string): Raid | null {
   for (const group of raidGroups) {
-    const raid = (group.raids || []).find((r) => r.id === id)
+    const raid = (group.raids ?? []).find((r) => r.id === id)
     if (raid) return { ...raid, group }
   }
   return null
