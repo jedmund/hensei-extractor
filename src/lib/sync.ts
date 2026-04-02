@@ -1,30 +1,50 @@
 /**
- * @fileoverview Sync functionality for the Granblue Fantasy Chrome extension.
+ * Sync functionality for the Granblue Fantasy Chrome extension.
  * Handles the full sync flow: preview deletions, show confirmation modal, execute sync.
  */
 
 import { getImageUrl } from './constants.js'
 import { t, tError } from './i18n.js'
 
-// Internal state for pending sync operations
-let pendingSyncData = null
+interface SyncPreviewItem {
+  name?: string
+  granblue_id?: string
+}
 
-/**
- * Handle sync button click - fetch preview then show modal
- * @param {string} currentDetailDataType - The current detail data type
- * @param {Function} showToast - Toast notification function
- */
-export async function handleDetailSync(currentDetailDataType, showToast) {
+interface SyncPreview {
+  count: number
+  willDelete: SyncPreviewItem[]
+}
+
+interface SyncReconciliation {
+  deleted: number
+  orphaned_grid_items?: unknown[]
+}
+
+interface SyncUploadResponse {
+  error?: string
+  created: number
+  updated: number
+  reconciliation?: SyncReconciliation
+}
+
+let pendingSyncData: unknown = null
+
+export async function handleDetailSync(
+  currentDetailDataType: string | null,
+  showToast: (msg: string) => void
+): Promise<void> {
   if (!currentDetailDataType) return
 
-  const syncBtn = document.getElementById('detailSync')
+  const syncBtn = document.getElementById(
+    'detailSync'
+  ) as HTMLButtonElement | null
   if (syncBtn) {
     syncBtn.disabled = true
     syncBtn.textContent = t('action_checking')
   }
 
   try {
-    // Get cached data (all pages)
     const response = await chrome.runtime.sendMessage({
       action: 'getCachedData',
       dataType: currentDetailDataType
@@ -37,7 +57,6 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
 
     pendingSyncData = response.data
 
-    // Call preview endpoint to see what will be deleted
     const previewResponse = await chrome.runtime.sendMessage({
       action: 'previewSyncDeletions',
       data: response.data,
@@ -51,11 +70,13 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
       return
     }
 
-    // Update modal content with preview
-    updateSyncModalContent(previewResponse, currentDetailDataType)
+    updateSyncModalContent(
+      previewResponse as SyncPreview,
+      currentDetailDataType
+    )
     showSyncModal()
   } catch (error) {
-    showToast(t('toast_sync_failed', { error: error.message }))
+    showToast(t('toast_sync_failed', { error: (error as Error).message }))
   } finally {
     if (syncBtn) {
       syncBtn.disabled = false
@@ -64,22 +85,20 @@ export async function handleDetailSync(currentDetailDataType, showToast) {
   }
 }
 
-/**
- * Update sync modal content based on preview
- */
-function updateSyncModalContent(preview, currentDetailDataType) {
+function updateSyncModalContent(
+  preview: SyncPreview,
+  currentDetailDataType: string
+): void {
   const warningDiv = document.getElementById('syncWarning')
   const deleteListDiv = document.getElementById('syncDeleteList')
 
   if (preview.count > 0) {
-    // Show warning and grid of items to delete
-    warningDiv.classList.remove('hidden')
+    warningDiv?.classList.remove('hidden')
 
-    // Build the grid of items with images
     const itemsHtml = preview.willDelete
       .slice(0, 12)
       .map((item) => {
-        const name = item.name || `Unknown`
+        const name = item.name ?? 'Unknown'
         const imageUrl = getSyncPreviewImageUrl(
           item.granblue_id,
           currentDetailDataType
@@ -111,8 +130,7 @@ function updateSyncModalContent(preview, currentDetailDataType) {
       deleteListDiv.classList.remove('hidden')
     }
   } else {
-    // No deletions, hide warning
-    warningDiv.classList.add('hidden')
+    warningDiv?.classList.add('hidden')
     if (deleteListDiv) {
       deleteListDiv.innerHTML = `<p class="no-deletions">${t('sync_no_deletions')}</p>`
       deleteListDiv.classList.remove('hidden')
@@ -120,81 +138,72 @@ function updateSyncModalContent(preview, currentDetailDataType) {
   }
 }
 
-/**
- * Get image URL for sync preview based on current data type
- */
-function getSyncPreviewImageUrl(granblueId, currentDetailDataType) {
+function getSyncPreviewImageUrl(
+  granblueId: string | undefined,
+  currentDetailDataType: string
+): string {
   if (!granblueId) return ''
 
-  if (currentDetailDataType?.includes('weapon')) {
+  if (currentDetailDataType.includes('weapon')) {
     return getImageUrl(`weapon-square/${granblueId}.jpg`)
   }
-  if (currentDetailDataType?.includes('summon')) {
+  if (currentDetailDataType.includes('summon')) {
     return getImageUrl(`summon-square/${granblueId}.jpg`)
   }
-  if (currentDetailDataType?.includes('artifact')) {
+  if (currentDetailDataType.includes('artifact')) {
     return getImageUrl(`artifact-square/${granblueId}.jpg`)
   }
   if (
-    currentDetailDataType?.includes('npc') ||
-    currentDetailDataType?.includes('character')
+    currentDetailDataType.includes('npc') ||
+    currentDetailDataType.includes('character')
   ) {
     return getImageUrl(`character-square/${granblueId}_01.jpg`)
   }
   return ''
 }
 
-/**
- * Show sync confirmation modal
- */
-function showSyncModal() {
+function showSyncModal(): void {
   const modal = document.getElementById('syncModal')
   modal?.classList.remove('hidden')
 }
 
-/**
- * Hide sync confirmation modal and clear pending data
- */
-export function hideSyncModal() {
+export function hideSyncModal(): void {
   const modal = document.getElementById('syncModal')
   modal?.classList.add('hidden')
   pendingSyncData = null
 }
 
-/**
- * Confirm and execute full sync with reconciliation
- * @param {string} currentDetailDataType - The current detail data type
- * @param {Function} showToast - Toast notification function
- */
-export async function confirmSync(currentDetailDataType, showToast) {
-  // Save references before hiding modal (which clears pending data)
+export async function confirmSync(
+  currentDetailDataType: string | null,
+  showToast: (msg: string) => void
+): Promise<void> {
   const dataType = currentDetailDataType
   const data = pendingSyncData
   hideSyncModal()
 
   if (!dataType || !data) return
 
-  const syncBtn = document.getElementById('detailSync')
+  const syncBtn = document.getElementById(
+    'detailSync'
+  ) as HTMLButtonElement | null
   if (syncBtn) {
     syncBtn.disabled = true
     syncBtn.textContent = t('action_syncing')
   }
 
   try {
-    // Upload with full sync options (update existing + reconcile deletions)
-    const uploadResponse = await chrome.runtime.sendMessage({
+    const uploadResponse = (await chrome.runtime.sendMessage({
       action: 'uploadCollectionData',
-      data: data,
-      dataType: dataType,
+      data,
+      dataType,
       updateExisting: true,
       isFullInventory: true,
       reconcileDeletions: true
-    })
+    })) as SyncUploadResponse
 
     if (uploadResponse.error) {
       showToast(tError(uploadResponse.error))
     } else {
-      // Show sync results
       const total = uploadResponse.created + uploadResponse.updated
       let msg = t('sync_result', { total })
 
@@ -203,7 +212,7 @@ export async function confirmSync(currentDetailDataType, showToast) {
         if (deleted > 0) {
           msg += t('sync_removed', { count: deleted })
         }
-        if (orphaned_grid_items?.length > 0) {
+        if (orphaned_grid_items && orphaned_grid_items.length > 0) {
           msg += t('sync_orphaned', { count: orphaned_grid_items.length })
         }
       }
@@ -216,7 +225,7 @@ export async function confirmSync(currentDetailDataType, showToast) {
       }
     }
   } catch (error) {
-    showToast(t('toast_sync_failed', { error: error.message }))
+    showToast(t('toast_sync_failed', { error: (error as Error).message }))
   } finally {
     if (syncBtn && !syncBtn.classList.contains('synced')) {
       syncBtn.disabled = false
