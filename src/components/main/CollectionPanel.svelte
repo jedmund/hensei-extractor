@@ -19,8 +19,8 @@
     const all = [...staticTypes, ...stashTypes]
 
     all.sort((a, b) => {
-      const aTime = (app.cachedStatus[a] as any)?.lastUpdated || 0
-      const bTime = (app.cachedStatus[b] as any)?.lastUpdated || 0
+      const aTime = app.cachedStatus[a]?.timestamp || 0
+      const bTime = app.cachedStatus[b]?.timestamp || 0
       return bTime - aTime
     })
 

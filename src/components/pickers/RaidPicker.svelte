@@ -107,10 +107,10 @@
   })
 
   function selectRaid(raid: Raid, group: RaidGroup) {
-    if (app.selectedRaid && (app.selectedRaid as any).id === raid.id) {
+    if (app.selectedRaid && app.selectedRaid.id === raid.id) {
       app.selectedRaid = null
     } else {
-      app.selectedRaid = { ...raid, group } as any
+      app.selectedRaid = { ...raid, group }
     }
     close()
   }
@@ -162,7 +162,7 @@
             </div>
             <div class="raid-group-raids">
               {#each group.raids ?? [] as raid}
-                {@const isSelected = app.selectedRaid !== null && (app.selectedRaid as any).id === raid.id}
+                {@const isSelected = app.selectedRaid !== null && app.selectedRaid.id === raid.id}
                 <button type="button" class="raid-item" class:selected={isSelected} onclick={() => selectRaid(raid, group)}>
                   {#if getRaidImageUrl(raid)}
                     <img src={getRaidImageUrl(raid)} alt="" class="raid-item-icon" onerror={(e: Event) => { (e.target as HTMLElement).style.display = 'none' }} />

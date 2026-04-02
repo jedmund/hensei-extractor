@@ -13,6 +13,9 @@
   } from '../../lib/detail-helpers.js'
   import { getCachedData, fetchRaidGroups } from '../../lib/services/chrome-messages.js'
 
+  import type { RawGameItem } from '../../lib/detail-helpers.js'
+  import type { RaidGroup } from '../../lib/types/messages.js'
+
   import DetailHeader from './DetailHeader.svelte'
   import DetailFilter from './DetailFilter.svelte'
   import ItemGrid from './items/ItemGrid.svelte'
@@ -30,19 +33,50 @@
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
 
+  interface SummonSearchResult {
+    granblue_id?: string
+    imageSuffix?: string
+    name?: { en?: string; ja?: string }
+  }
+
+  interface WeaponStatModifier {
+    nameEn?: string
+    nameJp?: string
+    suffix?: string
+    [key: string]: unknown
+  }
+
+  interface PartyDeckData {
+    deck?: {
+      pc?: {
+        weapons?: Record<string, unknown>
+        summons?: Record<string, unknown>
+        sub_summons?: Record<string, unknown>
+        damage_info?: { summon_name?: string }
+        set_action?: Array<{ name: string }>
+        [key: string]: unknown
+      }
+      npc?: Record<string, unknown>
+      name?: string
+      [key: string]: unknown
+    }
+    bullet_info?: { set_bullets?: Record<string, unknown> }
+    [key: string]: unknown
+  }
+
   // Supplementary data for parties
-  let friendSummon = $state<any>(null)
+  let friendSummon = $state<SummonSearchResult | null>(null)
   let weaponKeyMap = $state<Record<string, string> | null>(null)
   let jobSkillSlugs = $state<Record<string, string>>({})
-  let weaponStatModifiers = $state<Record<string, any> | null>(null)
+  let weaponStatModifiers = $state<Record<string, WeaponStatModifier> | null>(null)
   let simplePortraits = $state(false)
 
   // Filtered items for collection views
   let filteredItems = $derived.by(() => {
     if (!app.detailData || isParty || isDatabase || isCharStats) return []
-    const allItems = extractItems(dataType, app.detailData)
+    const allItems = extractItems(dataType, app.detailData as Record<string, unknown>)
     return allItems
-      .map((item: any, index: number) => ({ item, originalIndex: index }))
+      .map((item: RawGameItem, index: number) => ({ item, originalIndex: index }))
       .filter(({ item, originalIndex }) => {
         if (app.brokenImageIndices.has(originalIndex)) return false
         if (isWeaponOrSummonCollection(dataType)) {
@@ -84,13 +118,14 @@
   let itemCountText = $derived.by(() => {
     if (isParty || !app.detailData) return ''
     if (isCharStats) {
-      const count = Object.keys(app.detailData as any).length
+      const count = Object.keys(app.detailData as Record<string, unknown>).length
       return count === 1 ? m.count_character({ count }) : m.count_characters({ count })
     }
     if (isDatabase) {
-      return (app.detailData as any)?.name || (app.detailData as any)?.master?.name || ''
+      const detail = app.detailData as RawGameItem
+      return detail?.name || detail?.master?.name || ''
     }
-    const count = status?.totalItems || countItems(dataType, app.detailData)
+    const count = status?.totalItems || countItems(dataType, app.detailData as Record<string, unknown>)
     return count === 1 ? m.count_item({ count }) : m.count_items({ count })
   })
 
@@ -161,7 +196,7 @@
     simplePortraits = gbAuth?.simplePortraits || false
 
     if (dt.startsWith('party_')) {
-      await loadPartySupplementary(response.data)
+      await loadPartySupplementary(response.data as PartyDeckData)
     }
 
     if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
@@ -170,21 +205,22 @@
 
     // Auto-suggest raid for parties
     if (dt.startsWith('party_')) {
-      const deck = response.data?.deck || {}
-      const pc = deck.pc || {}
-      const chars = toArray(deck.npc).filter(Boolean).length
-      const wpns = toArray(pc.weapons).filter(Boolean).length
-      app.partyName = deck.name || ''
+      const partyData = response.data as PartyDeckData | undefined
+      const deck = partyData?.deck
+      const pc = deck?.pc
+      const chars = toArray(deck?.npc).filter(Boolean).length
+      const wpns = toArray(pc?.weapons).filter(Boolean).length
+      app.partyName = deck?.name || ''
       await autoSuggestRaid(wpns, chars)
     }
 
     app.detailViewActive = true
   }
 
-  async function loadPartySupplementary(data: any) {
+  async function loadPartySupplementary(data: PartyDeckData) {
     const summonName = data?.deck?.pc?.damage_info?.summon_name
     const setAction = data?.deck?.pc?.set_action || []
-    const skillNames = setAction.map((s: any) => s.name).filter(Boolean)
+    const skillNames = setAction.map((s) => s.name).filter(Boolean)
 
     const [summonResult, keyMap, skillSlugs, statMods] = await Promise.all([
       summonName ? searchSummonByName(summonName) : Promise.resolve(null),
@@ -216,7 +252,7 @@
       if (!response.ok) return null
       const json = await response.json()
       const results = json.results || []
-      return results.find((s: any) => s.name?.en === name || s.name?.ja === name) || null
+      return results.find((s: SummonSearchResult) => s.name?.en === name || s.name?.ja === name) || null
     } catch {
       return null
     }
@@ -236,15 +272,15 @@
     }
   }
 
-  let _weaponStatModCache: Record<string, any> | null = null
+  let _weaponStatModCache: Record<string, WeaponStatModifier> | null = null
   async function fetchWeaponStatModifiers() {
     if (_weaponStatModCache) return _weaponStatModCache
     try {
       const apiUrl = await getApiUrl('/weapon_stat_modifiers')
       const response = await fetch(apiUrl)
       if (!response.ok) return null
-      const modifiers = await response.json()
-      _weaponStatModCache = {} as Record<string, any>
+      const modifiers = await response.json() as Array<{ slug: string; name_en: string; name_jp: string; suffix?: string }>
+      _weaponStatModCache = {} as Record<string, WeaponStatModifier>
       for (const mod of modifiers) {
         _weaponStatModCache[mod.slug] = {
           nameEn: mod.name_en,
@@ -284,7 +320,7 @@
   async function autoSuggestRaid(weaponCount: number, characterCount: number) {
     const response = await fetchRaidGroups()
     if (response.error || !response.data) return
-    const groups = response.data as any[]
+    const groups = response.data as RaidGroup[]
     let suggested = null
 
     if (weaponCount === 13 && characterCount === 8) {
@@ -300,9 +336,9 @@
     }
   }
 
-  function findRaidBySlug(groups: any[], slug: string) {
+  function findRaidBySlug(groups: RaidGroup[], slug: string) {
     for (const group of groups) {
-      const raid = (group.raids || []).find((r: any) => r.slug === slug)
+      const raid = (group.raids || []).find((r) => r.slug === slug)
       if (raid) return { ...raid, group }
     }
     return null
@@ -340,7 +376,7 @@
     {#if app.detailData}
       {#if isParty}
         <PartyDetail
-          data={app.detailData}
+          data={app.detailData as Record<string, unknown>}
           {friendSummon}
           {weaponKeyMap}
           {jobSkillSlugs}
@@ -348,9 +384,9 @@
           {simplePortraits}
         />
       {:else if isDatabase}
-        <DatabaseDetail dataType={dataType} data={app.detailData} />
+        <DatabaseDetail dataType={dataType} data={app.detailData as Record<string, unknown>} />
       {:else if isCharStats}
-        <CharacterStatsList data={app.detailData as Record<string, any>} />
+        <CharacterStatsList data={app.detailData as Record<string, Record<string, unknown>>} />
       {:else if hasNames}
         <ItemList
           items={filteredItems}

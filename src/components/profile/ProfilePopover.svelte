@@ -16,15 +16,15 @@
   let isPopupWindow = $state(false)
 
   const avatarUrl = $derived(
-    (app.auth as any)?.avatar?.picture
-      ? getImageUrl(`profile/${(app.auth as any).avatar.picture}@2x.png`)
+    app.auth?.avatar?.picture
+      ? getImageUrl(`profile/${app.auth.avatar.picture}@2x.png`)
       : getImageUrl('profile/npc@2x.png')
   )
 
   const username = $derived(
-    (app.auth as any)?.displayName ||
+    app.auth?.displayName ||
       app.auth?.username ||
-      (app.auth as any)?.user?.username ||
+      app.auth?.user?.username ||
       'User'
   )
 
@@ -33,7 +33,7 @@
 
   onMount(async () => {
     const siteUrl = await getSiteBaseUrl()
-    const user = (app.auth as any)?.user?.username
+    const user = app.auth?.user?.username
     if (user) profileUrl = `${siteUrl}/${user}`
 
     chrome.windows.getCurrent((win) => {

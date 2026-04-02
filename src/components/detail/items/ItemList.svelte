@@ -4,9 +4,10 @@
   import { getCollectionIds } from '../../../lib/services/chrome-messages.js'
   import * as m from '../../../paraglide/messages.js'
   import { onMount } from 'svelte'
+  import type { RawGameItem } from '../../../lib/detail-helpers.js'
 
   interface Props {
-    items: Array<{ item: any; originalIndex: number }>
+    items: Array<{ item: RawGameItem; originalIndex: number }>
     dataType: string
     isCollection: boolean
     simplePortraits?: boolean
@@ -21,7 +22,7 @@
 
   const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
 
-  function getOwnershipId(item: any): string {
+  function getOwnershipId(item: RawGameItem): string {
     if (isCharacterType) return item.master?.id?.toString() || ''
     if (isArtifactType) return item.id?.toString() || ''
     return item.param?.id?.toString() || ''
@@ -41,7 +42,7 @@
     app.manuallyUnchecked = unchecked
   }
 
-  function isOwned(item: any): boolean {
+  function isOwned(item: RawGameItem): boolean {
     const id = getOwnershipId(item)
     return id ? ownedIds.has(id) : false
   }
@@ -51,15 +52,14 @@
     try {
       const response = await getCollectionIds()
       if (response.error) return
-      const data = response.data as any
       if (dataType.includes('weapon') || dataType.startsWith('stash_weapon')) {
-        ownedIds = new Set(data?.weapons || [])
+        ownedIds = new Set(response.weapons || [])
       } else if (dataType.includes('summon') || dataType.startsWith('stash_summon')) {
-        ownedIds = new Set(data?.summons || [])
+        ownedIds = new Set(response.summons || [])
       } else if (isArtifactType) {
-        ownedIds = new Set(data?.artifacts || [])
+        ownedIds = new Set(response.artifacts || [])
       } else if (isCharacterType) {
-        ownedIds = new Set(data?.characters || [])
+        ownedIds = new Set(response.characters || [])
       }
 
       if (ownedIds.size > 0) {
