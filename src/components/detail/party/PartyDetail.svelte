@@ -5,7 +5,8 @@
     getWeaponModifiers,
     resolveAwakeningIcon,
     resolveAugmentIcon,
-    buildAxTooltip
+    buildAxTooltip,
+    type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
   import {
@@ -34,13 +35,6 @@
     granblue_id?: string
     imageSuffix?: string
     name?: { en?: string; ja?: string }
-  }
-
-  interface WeaponStatModifier {
-    nameEn?: string
-    nameJp?: string
-    suffix?: string
-    [key: string]: unknown
   }
 
   interface BulletEntry {
@@ -217,8 +211,8 @@
         {#if mainWeapon}
           {@const mainId = mainWeapon.master?.id || mainWeapon.param?.id || mainWeapon.id}
           {@const mainSuffix = getImageSuffix(mainWeapon)}
+          {@const mainMods = getWeaponModifiers(mainWeapon, weaponKeyMap)}
           <div class="weapon-mainhand">
-            {@const mainMods = getWeaponModifiers(mainWeapon, weaponKeyMap)}
             {#if mainMods.awakening || mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
               <div class="weapon-modifiers">
                 {#if mainMods.awakening}
@@ -248,8 +242,8 @@
           {#each gridWeapons as item}
             {@const id = item.master?.id || item.param?.id || item.id}
             {@const suffix = getImageSuffix(item)}
+            {@const wMods = getWeaponModifiers(item, weaponKeyMap)}
             <div class="grid-item">
-              {@const wMods = getWeaponModifiers(item, weaponKeyMap)}
               {#if wMods.awakening || wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
                 <div class="weapon-modifiers">
                   {#if wMods.awakening}

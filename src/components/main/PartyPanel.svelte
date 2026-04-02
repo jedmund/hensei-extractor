@@ -28,7 +28,7 @@
     {:else}
       {#each partyTypes as dataType (dataType)}
         <CacheItemRow
-          status={app.cachedStatus[dataType]}
+          status={app.cachedStatus[dataType]!}
           {dataType}
           onclick={() => openDetail(dataType)}
         />

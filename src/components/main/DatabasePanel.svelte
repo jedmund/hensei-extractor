@@ -36,7 +36,7 @@
     {:else}
       {#each databaseTypes as dataType (dataType)}
         <CacheItemRow
-          status={app.cachedStatus[dataType]}
+          status={app.cachedStatus[dataType]!}
           {dataType}
           onclick={() => openDetail(dataType)}
         />

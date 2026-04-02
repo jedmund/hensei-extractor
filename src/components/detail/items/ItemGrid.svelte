@@ -1,19 +1,12 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getItemImageUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, isWeaponOrSummonCollection, resolveAwakeningIcon, resolveAugmentIcon, buildAxTooltip } from '../../../lib/detail-helpers.js'
+  import { getItemImageUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, isWeaponOrSummonCollection, resolveAwakeningIcon, resolveAugmentIcon, buildAxTooltip, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
   import { getImageUrl } from '../../../lib/constants.js'
   import { getLocale } from '../../../lib/i18n.js'
   import { getCollectionIds } from '../../../lib/services/chrome-messages.js'
   import * as m from '../../../paraglide/messages.js'
   import { onMount } from 'svelte'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
-
-  interface WeaponStatModifier {
-    nameEn?: string
-    nameJp?: string
-    suffix?: string
-    [key: string]: unknown
-  }
 
   interface Props {
     items: Array<{ item: RawGameItem; originalIndex: number }>

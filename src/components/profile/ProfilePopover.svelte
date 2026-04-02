@@ -36,7 +36,7 @@
     const user = app.auth?.user?.username
     if (user) profileUrl = `${siteUrl}/${user}`
 
-    chrome.windows.getCurrent((win) => {
+    chrome.windows.getCurrent((win: chrome.windows.Window) => {
       isPopupWindow = win.type === 'popup'
     })
   })
@@ -59,12 +59,13 @@
     app.cachedStatus = await getCacheStatus()
 
     // Persist to server
-    const { gbAuth } = await chrome.storage.local.get('gbAuth')
+    const result = await chrome.storage.local.get('gbAuth')
+    const gbAuth = result.gbAuth as Record<string, unknown> | undefined
     if (gbAuth?.access_token) {
       gbAuth.language = lang
       await chrome.storage.local.set({ gbAuth })
       try {
-        await updateUserLanguage(gbAuth.access_token, lang)
+        await updateUserLanguage(gbAuth.access_token as string, lang)
       } catch {
         // Silently fail -- local preference is saved anyway
       }

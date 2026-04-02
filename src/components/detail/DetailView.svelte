@@ -192,8 +192,9 @@
     app.detailData = response.data
 
     // Get auth for simplePortraits
-    const { gbAuth } = await chrome.storage.local.get('gbAuth')
-    simplePortraits = gbAuth?.simplePortraits || false
+    const authResult = await chrome.storage.local.get('gbAuth')
+    const gbAuth = authResult.gbAuth as Record<string, unknown> | undefined
+    simplePortraits = (gbAuth?.simplePortraits as boolean) || false
 
     if (dt.startsWith('party_')) {
       await loadPartySupplementary(response.data as PartyDeckData)

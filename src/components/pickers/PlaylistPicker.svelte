@@ -34,7 +34,9 @@
 
   async function loadPlaylists() {
     const res = await fetchUserPlaylists()
-    if (!res.error) playlists = res.data?.results ?? res.data ?? []
+    if (!res.error && res.data) {
+      playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+    }
   }
 
   function close() {
@@ -99,7 +101,7 @@
       return
     }
 
-    const newPlaylist = res.data?.playlist ?? res.data
+    const newPlaylist = res.data
     if (newPlaylist) {
       if (!newPlaylist.title) newPlaylist.title = createTitle.trim()
       app.selectedPlaylists = [...app.selectedPlaylists, { id: String(newPlaylist.id), title: newPlaylist.title }]
