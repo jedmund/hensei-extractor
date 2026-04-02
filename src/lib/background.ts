@@ -1,5 +1,5 @@
 /**
- * @fileoverview Background service worker for the Granblue Fantasy Chrome extension.
+ * Background service worker for the Granblue Fantasy Chrome extension.
  * Uses Chrome DevTools Debugger Protocol for network interception - completely
  * invisible to the page with no modified globals or injected scripts.
  *
@@ -16,7 +16,12 @@ import {
   RAID_GROUPS_CACHE_TTL_MS,
   resolveCacheKey
 } from './constants.js'
-import { initDebugger, isAttached, getAttachedTabs } from './debugger.js'
+import {
+  initDebugger,
+  isAttached,
+  getAttachedTabs,
+  type InterceptMetadata
+} from './debugger.js'
 import {
   OVER_MASTERY_TYPE_ID,
   lookupAetherialTypeId,
@@ -25,28 +30,96 @@ import {
 } from './mastery.js'
 
 // ==========================================
+// TYPES
+// ==========================================
+
+interface AuthToken {
+  access_token: string
+  user: { id: string; username: string }
+  expires_at?: number
+  language?: string
+}
+
+interface CachedListData {
+  pages: Record<number, PageData>
+  lastUpdated: number | null
+  stashName?: string
+  totalPages?: number
+  totalItems?: number
+  pageCount?: number
+  isComplete?: boolean
+}
+
+interface PageData {
+  list?: unknown[]
+  option?: { total_page?: number; filter?: Record<string, string> }
+  options?: { filter?: Record<string, string> }
+  current?: number
+}
+
+interface CharacterStatsEntry {
+  masterId: string
+  masterName?: string
+  timestamp?: number
+  element?: string | number
+  uncapLevel?: number
+  transcendenceStep?: number
+  awakening?: {
+    type: unknown
+    typeName?: string
+    level: number
+  }
+  perpetuity?: boolean
+  rings?: MasteryMod[]
+  earring?: MasteryMod | null
+  perpetuityBonuses?: MasteryMod[]
+  rawData?: Record<string, unknown>
+}
+
+interface MasteryMod {
+  modifier: number
+  strength: number
+  typeName?: string
+  slot?: number
+}
+
+interface ParsedMasteryData {
+  rings: MasteryMod[]
+  earring: MasteryMod | null
+  masterName: string | null
+  perpetuityBonuses: MasteryMod[]
+}
+
+interface GameFilter {
+  elements: number[] | null
+  proficiencies: number[] | null
+}
+
+interface UploadCollectionOptions {
+  updateExisting?: boolean
+  isFullInventory?: boolean
+  reconcileDeletions?: boolean
+  conflictResolutions?: unknown
+}
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 
-// Initialize debugger interception
 initDebugger(handleInterceptedData)
 
-// In-memory cache for collection ownership IDs
-let collectionIdsCache = null
+let collectionIdsCache: unknown = null
 let collectionIdsCacheTime = 0
 const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000
 
-// Track standalone pop-out window
-let popOutWindowId = null
+let popOutWindowId: number | null = null
 
-/**
- * Open side panel when extension icon is clicked
- */
 chrome.action.onClicked.addListener((tab) => {
-  chrome.sidePanel.open({ windowId: tab.windowId })
+  if (tab.windowId != null) {
+    chrome.sidePanel.open({ windowId: tab.windowId })
+  }
 })
 
-// Clean up pop-out window tracking when the window is closed
 chrome.windows.onRemoved.addListener((windowId) => {
   if (windowId === popOutWindowId) {
     popOutWindowId = null
@@ -57,15 +130,13 @@ chrome.windows.onRemoved.addListener((windowId) => {
 // DATA INTERCEPTION HANDLER
 // ==========================================
 
-/**
- * Handle data intercepted by the debugger
- * @param {string} url - The request URL
- * @param {Object} data - The JSON response data
- * @param {string} dataType - The detected data type
- * @param {Object} metadata - Additional metadata (pageNumber, partyId, masterId)
- * @param {number} timestamp - When the data was intercepted
- */
-async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
+async function handleInterceptedData(
+  url: string,
+  data: unknown,
+  dataType: string,
+  metadata: InterceptMetadata,
+  timestamp: number
+): Promise<void> {
   if (!data || !dataType || dataType === 'unknown') {
     return
   }
@@ -76,37 +147,48 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
     let actualDataType = dataType
 
     if (dataType === 'party' && partyId) {
-      await cacheParty(partyId, data, timestamp, url)
+      await cacheParty(partyId, data as Record<string, unknown>, timestamp, url)
       actualDataType = `party_${partyId}`
     } else if (dataType === 'character_detail' || dataType === 'zenith_npc') {
-      await cacheCharacterStats(dataType, data, masterId, timestamp, url)
+      await cacheCharacterStats(
+        dataType,
+        data as Record<string, unknown>,
+        masterId,
+        timestamp,
+        url
+      )
       actualDataType = 'character_stats'
     } else if (dataType.startsWith('stash_')) {
-      const stashNum = metadata.stashNumber || '1'
+      const stashNum = metadata.stashNumber ?? '1'
       const prefix = CACHE_PREFIXES[dataType]
       await cacheListPage(
         dataType,
         pageNumber,
-        data,
+        data as PageData,
         timestamp,
-        prefix + stashNum,
-        metadata.stashName
+        prefix ? prefix + stashNum : undefined,
+        metadata.stashName ?? undefined
       )
       actualDataType = `${dataType}_${stashNum}`
     } else if (
       dataType.startsWith('list_') ||
       dataType.startsWith('collection_')
     ) {
-      await cacheListPage(dataType, pageNumber, data, timestamp)
+      await cacheListPage(dataType, pageNumber, data as PageData, timestamp)
     } else if (dataType.startsWith('detail_')) {
-      const result = await cacheDetailItem(dataType, data, timestamp, url)
+      const result = await cacheDetailItem(
+        dataType,
+        data as Record<string, unknown>,
+        timestamp,
+        url
+      )
       actualDataType = result.dataType
-      // Also update character stats cache with uncap data from character detail pages
       if (dataType === 'detail_npc') {
+        const d = data as Record<string, unknown>
         await cacheCharacterStats(
           'character_detail',
-          data,
-          data?.master?.id,
+          d,
+          (d.master as Record<string, unknown>)?.id as string | undefined,
           timestamp,
           url
         )
@@ -115,17 +197,14 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
       await cacheSingleItem(dataType, data, timestamp, url)
     }
 
-    // Notify popup that new data is available
     chrome.runtime
       .sendMessage({
         action: 'dataCaptured',
         dataType: actualDataType,
-        pageNumber: pageNumber,
-        timestamp: timestamp
+        pageNumber,
+        timestamp
       })
-      .catch(() => {
-        // Popup might not be open, ignore
-      })
+      .catch(() => {})
   } catch (error) {
     console.error('[Background] Error caching data:', error)
   }
@@ -135,28 +214,29 @@ async function handleInterceptedData(url, data, dataType, metadata, timestamp) {
 // CACHING FUNCTIONS
 // ==========================================
 
-/**
- * Cache a single item (non-detail, non-party)
- */
-async function cacheSingleItem(dataType, data, timestamp, url) {
+async function cacheSingleItem(
+  dataType: string,
+  data: unknown,
+  timestamp: number,
+  url: string
+): Promise<void> {
   const cacheKey = CACHE_KEYS[dataType]
   if (!cacheKey) return
 
   await chrome.storage.local.set({
-    [cacheKey]: {
-      data: data,
-      timestamp: timestamp,
-      url: url
-    }
+    [cacheKey]: { data, timestamp, url }
   })
 }
 
-/**
- * Cache a database detail item with a per-item key
- */
-async function cacheDetailItem(dataType, data, timestamp, url) {
-  const granblueId = data.id || data.master?.id
-  const name = data.name || data.master?.name || 'Unknown'
+async function cacheDetailItem(
+  dataType: string,
+  data: Record<string, unknown>,
+  timestamp: number,
+  url: string
+): Promise<{ dataType: string }> {
+  const master = data.master as Record<string, unknown> | undefined
+  const granblueId = (data.id as string) ?? master?.id
+  const name = (data.name as string) ?? master?.name ?? 'Unknown'
 
   const prefix = CACHE_PREFIXES[dataType]
   if (!prefix) {
@@ -167,10 +247,10 @@ async function cacheDetailItem(dataType, data, timestamp, url) {
 
   await chrome.storage.local.set({
     [cacheKey]: {
-      data: data,
-      timestamp: timestamp,
-      url: url,
-      granblueId: granblueId,
+      data,
+      timestamp,
+      url,
+      granblueId,
       itemName: name
     }
   })
@@ -178,70 +258,65 @@ async function cacheDetailItem(dataType, data, timestamp, url) {
   return { dataType: `${dataType}_${granblueId}` }
 }
 
-/**
- * Cache a party with its unique ID
- */
-async function cacheParty(partyId, data, timestamp, url) {
+async function cacheParty(
+  partyId: string,
+  data: Record<string, unknown>,
+  timestamp: number,
+  url: string
+): Promise<void> {
   const cacheKey = CACHE_PREFIXES.party + partyId
-  const partyName = data.deck?.name || `Party ${partyId.replace('_', '-')}`
+  const deck = data.deck as Record<string, unknown> | undefined
+  const partyName =
+    (deck?.name as string) ?? `Party ${partyId.replace('_', '-')}`
 
   await chrome.storage.local.set({
-    [cacheKey]: {
-      data: data,
-      timestamp: timestamp,
-      url: url,
-      partyId: partyId,
-      partyName: partyName
-    }
+    [cacheKey]: { data, timestamp, url, partyId, partyName }
   })
 }
 
-/**
- * Cache a page of list data, accumulating with existing pages
- */
 async function cacheListPage(
-  dataType,
-  pageNumber,
-  data,
-  timestamp,
-  cacheKeyOverride,
-  stashName
-) {
-  const cacheKey = cacheKeyOverride || CACHE_KEYS[dataType]
+  dataType: string,
+  pageNumber: number | null,
+  data: PageData,
+  timestamp: number,
+  cacheKeyOverride?: string,
+  stashName?: string
+): Promise<void> {
+  const cacheKey = cacheKeyOverride ?? CACHE_KEYS[dataType]
   if (!cacheKey) return
 
   const result = await chrome.storage.local.get(cacheKey)
-  const existing = result[cacheKey] || { pages: {}, lastUpdated: null }
+  const existing: CachedListData = result[cacheKey] ?? {
+    pages: {},
+    lastUpdated: null
+  }
 
   if (stashName) {
     existing.stashName = stashName
   }
 
-  // Clear stale data
   if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.pages = {}
   }
 
-  existing.pages[pageNumber] = data
+  if (pageNumber != null) {
+    existing.pages[pageNumber] = data
+  }
   existing.lastUpdated = timestamp
 
-  // Extract total pages from game response if available
-  // Game responses include option.total_page for paginated lists
   if (data.option?.total_page) {
     existing.totalPages = data.option.total_page
   }
 
-  // Calculate total items
   let totalItems = 0
   for (const page of Object.values(existing.pages)) {
-    if (page.list && Array.isArray(page.list)) {
-      totalItems += page.list.length
+    if ((page as PageData).list && Array.isArray((page as PageData).list)) {
+      totalItems += (page as PageData).list!.length
     }
   }
   existing.totalItems = totalItems
   existing.pageCount = Object.keys(existing.pages).length
 
-  // Track if we have captured all pages (for full sync functionality)
   existing.isComplete = existing.totalPages
     ? existing.pageCount >= existing.totalPages
     : false
@@ -249,94 +324,97 @@ async function cacheListPage(
   await chrome.storage.local.set({ [cacheKey]: existing })
 }
 
-/**
- * Cache character stats data (awakening + mastery bonuses)
- */
-async function cacheCharacterStats(dataType, data, masterId, timestamp, _url) {
+async function cacheCharacterStats(
+  dataType: string,
+  data: Record<string, unknown>,
+  masterId: string | null,
+  timestamp: number,
+  _url: string
+): Promise<void> {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
-  const existing = result[CACHE_KEYS.character_stats] || {
+  const existing: {
+    lastUpdated: number | null
+    updates: Record<string, CharacterStatsEntry>
+    characterCount?: number
+  } = result[CACHE_KEYS.character_stats!] ?? {
     lastUpdated: null,
     updates: {}
   }
 
-  // Clear stale data
   if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.updates = {}
   }
 
-  const resolvedMasterId = data?.master?.id || masterId
+  const master = data.master as Record<string, unknown> | undefined
+  const resolvedMasterId = (master?.id as string) ?? masterId
   if (!resolvedMasterId) {
     console.warn('[Background] No master_id found for character stats')
     return
   }
 
-  const current = existing.updates[resolvedMasterId] || {
+  const current: CharacterStatsEntry = existing.updates[resolvedMasterId] ?? {
     masterId: resolvedMasterId
   }
 
-  // Store relevant raw game fields for debugging (copy button uses this)
   if (!current.rawData) current.rawData = {}
   if (dataType === 'character_detail') {
     current.rawData.character_detail = {
       master: {
-        id: data?.master?.id,
-        name: data?.master?.name,
-        attribute: data?.master?.attribute
+        id: master?.id,
+        name: master?.name,
+        attribute: master?.attribute
       },
-      param: data?.param,
-      npc_arousal_form: data?.npc_arousal_form,
-      npc_arousal_form_text: data?.npc_arousal_form_text,
-      npc_arousal_level: data?.npc_arousal_level,
-      has_npcaugment_constant: data?.has_npcaugment_constant,
-      attribute: data?.attribute,
-      element: data?.element
+      param: data.param,
+      npc_arousal_form: data.npc_arousal_form,
+      npc_arousal_form_text: data.npc_arousal_form_text,
+      npc_arousal_level: data.npc_arousal_level,
+      has_npcaugment_constant: data.has_npcaugment_constant,
+      attribute: data.attribute,
+      element: data.element
     }
   } else if (dataType === 'zenith_npc') {
-    // Only store/overwrite if npcaugment is present (avoid second request wiping data)
-    const npcaugment = data?.option?.npcaugment
+    const option = data.option as Record<string, unknown> | undefined
+    const npcaugment = option?.npcaugment as Record<string, unknown> | undefined
     if (npcaugment) {
       current.rawData.zenith_npc = {
-        param_data: npcaugment.param_data || null,
-        constant_data_list: npcaugment.constant_data_list || null
+        param_data: npcaugment.param_data ?? null,
+        constant_data_list: npcaugment.constant_data_list ?? null
       }
     }
   }
 
   if (dataType === 'character_detail') {
-    current.masterName = data?.master?.name || current.masterName
+    current.masterName = (master?.name as string) ?? current.masterName
     current.timestamp = timestamp
 
     const element =
-      data?.attribute ||
-      data?.element ||
-      data?.master?.attribute ||
-      data?.master?.element
+      data.attribute ?? data.element ?? master?.attribute ?? master?.element
     if (element) {
-      current.element = element
+      current.element = element as string | number
     }
 
-    // Uncap level (evolution) and transcendence (phase)
-    const evolution = data?.param?.evolution
-    if (evolution !== undefined && evolution !== null) {
-      current.uncapLevel = parseInt(evolution, 10)
+    const param = data.param as Record<string, unknown> | undefined
+    const evolution = param?.evolution
+    if (evolution != null) {
+      current.uncapLevel = parseInt(String(evolution), 10)
     }
-    const phase = data?.param?.phase
-    if (phase !== undefined && phase !== null) {
-      const transcendence = parseInt(phase, 10)
+    const phase = param?.phase
+    if (phase != null) {
+      const transcendence = parseInt(String(phase), 10)
       if (transcendence > 0) {
         current.transcendenceStep = transcendence
       }
     }
 
-    if (data?.npc_arousal_form) {
+    if (data.npc_arousal_form) {
       current.awakening = {
         type: data.npc_arousal_form,
-        typeName: data.npc_arousal_form_text,
-        level: data.npc_arousal_level || 1
+        typeName: data.npc_arousal_form_text as string | undefined,
+        level: (data.npc_arousal_level as number) ?? 1
       }
     }
 
-    if (data?.has_npcaugment_constant !== undefined) {
+    if (data.has_npcaugment_constant !== undefined) {
       current.perpetuity = !!data.has_npcaugment_constant
     }
   } else if (dataType === 'zenith_npc') {
@@ -348,16 +426,13 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, _url) {
       current.masterName = masteryData.masterName
     }
 
-    if (masteryData.rings && masteryData.rings.length > 0) {
+    if (masteryData.rings.length > 0) {
       current.rings = masteryData.rings
     }
     if (masteryData.earring) {
       current.earring = masteryData.earring
     }
-    if (
-      masteryData.perpetuityBonuses &&
-      masteryData.perpetuityBonuses.length > 0
-    ) {
+    if (masteryData.perpetuityBonuses.length > 0) {
       current.perpetuityBonuses = masteryData.perpetuityBonuses
     }
   }
@@ -366,92 +441,98 @@ async function cacheCharacterStats(dataType, data, masterId, timestamp, _url) {
   existing.lastUpdated = timestamp
   existing.characterCount = Object.keys(existing.updates).length
 
-  await chrome.storage.local.set({ [CACHE_KEYS.character_stats]: existing })
+  await chrome.storage.local.set({
+    [CACHE_KEYS.character_stats!]: existing
+  })
 }
 
 // ==========================================
 // MASTERY DATA PARSING
 // ==========================================
 
-function parseZenithMasteryData(data) {
-  const result = {
+function parseZenithMasteryData(
+  data: Record<string, unknown>
+): ParsedMasteryData {
+  const result: ParsedMasteryData = {
     rings: [],
     earring: null,
     masterName: null,
     perpetuityBonuses: []
   }
 
-  if (data?.option?.character?.name) {
-    result.masterName = data.option.character.name
+  const option = data.option as Record<string, unknown> | undefined
+  const character = option?.character as Record<string, unknown> | undefined
+  if (character?.name) {
+    result.masterName = character.name as string
   }
 
-  const paramData = data?.option?.npcaugment?.param_data
+  const npcaugment = option?.npcaugment as Record<string, unknown> | undefined
+  const paramData = npcaugment?.param_data
   if (Array.isArray(paramData)) {
     for (const bonus of paramData) {
-      if (!bonus || !bonus.type || !bonus.param) continue
+      if (!bonus?.type?.id || !bonus?.param) continue
 
-      const typeId = bonus.type.id
-      const typeName = bonus.type.name
-      const slotNum = bonus.slot_number
+      const typeId = bonus.type.id as number
+      const typeName = bonus.type.name as string
+      const slotNum = bonus.slot_number as number
       const strength = parseDisplayValue(bonus.param.disp_total_param)
 
       if (strength === 0) continue
 
-      // Slot 1: Primary (ATK/HP) — share type id 10001, split by split_key
       if (slotNum === 1) {
-        const modifierId = bonus.type.split_key === 0 ? 1 : 2 // ATK=1, HP=2
+        const modifierId = bonus.type.split_key === 0 ? 1 : 2
         result.rings.push({
           modifier: modifierId,
-          strength: strength,
-          typeName: typeName,
+          strength,
+          typeName,
           slot: slotNum
         })
         continue
       }
 
       if (slotNum === 5) {
-        continue // Perpetuity bonuses come from constant_data_list, not param_data
+        continue
       }
 
       if (slotNum === 4) {
         const modifierId = lookupAetherialTypeId(typeId)
         if (modifierId) {
-          result.earring = {
-            modifier: modifierId,
-            strength: strength,
-            typeName: typeName
-          }
+          result.earring = { modifier: modifierId, strength, typeName }
         }
         continue
       }
 
-      // Slots 2-3: Secondary/Tertiary rings
       const modifierId = OVER_MASTERY_TYPE_ID[typeId]
       if (modifierId) {
         result.rings.push({
           modifier: modifierId,
-          strength: strength,
-          typeName: typeName,
+          strength,
+          typeName,
           slot: slotNum
         })
       }
     }
   }
 
-  // Parse perpetuity bonuses from constant_data_list
-  const constantData = data?.option?.npcaugment?.constant_data_list
+  const constantData = npcaugment?.constant_data_list as
+    | Record<string, unknown[]>
+    | undefined
   if (constantData) {
-    // constant_data_list is keyed by constant_id (e.g., "10")
     for (const bonuses of Object.values(constantData)) {
       if (!Array.isArray(bonuses)) continue
       for (const bonus of bonuses) {
-        if (!bonus?.type?.id || !bonus?.param) continue
-        const perpetuityId = PERPETUITY_TYPE_ID[bonus.type.id]
+        const b = bonus as Record<string, unknown>
+        const bType = b.type as Record<string, unknown> | undefined
+        const bParam = b.param as Record<string, unknown> | undefined
+        if (!bType?.id || !bParam) continue
+        const perpetuityId = PERPETUITY_TYPE_ID[bType.id as number]
         if (perpetuityId) {
           result.perpetuityBonuses.push({
             modifier: perpetuityId,
-            strength: parseDisplayValue(bonus.param.disp_total_param),
-            typeName: bonus.type.name
+            strength: parseDisplayValue(
+              bParam.disp_total_param as string | undefined
+            ),
+            typeName: bType.name as string
           })
         }
       }
@@ -465,13 +546,19 @@ function parseZenithMasteryData(data) {
 // VERSION CHECK
 // ==========================================
 
-async function checkExtensionVersion() {
+async function checkExtensionVersion(): Promise<{
+  isOutdated: boolean
+  current: string
+  latest: string
+} | null> {
   try {
     const apiUrl = await getApiUrl('/version')
     const response = await fetch(apiUrl)
     if (!response.ok) return null
 
-    const data = await response.json()
+    const data = (await response.json()) as {
+      extension?: { version?: string }
+    }
     if (!data.extension?.version) return null
 
     const current = chrome.runtime.getManifest().version
@@ -484,13 +571,13 @@ async function checkExtensionVersion() {
   }
 }
 
-function compareVersions(a, b) {
+function compareVersions(a: string, b: string): number {
   const pa = a.split('.').map(Number)
   const pb = b.split('.').map(Number)
   const len = Math.max(pa.length, pb.length)
   for (let i = 0; i < len; i++) {
-    const na = pa[i] || 0
-    const nb = pb[i] || 0
+    const na = pa[i] ?? 0
+    const nb = pb[i] ?? 0
     if (na < nb) return -1
     if (na > nb) return 1
   }
@@ -501,128 +588,168 @@ function compareVersions(a, b) {
 // MESSAGE HANDLING
 // ==========================================
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.action) {
-    case 'checkExtensionVersion':
-      checkExtensionVersion().then(sendResponse)
-      return true
+chrome.runtime.onMessage.addListener(
+  (
+    message: Record<string, unknown>,
+    _sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: unknown) => void
+  ) => {
+    switch (message.action) {
+      case 'checkExtensionVersion':
+        checkExtensionVersion().then(sendResponse)
+        return true
 
-    case 'getCacheStatus':
-      handleGetCacheStatus().then(sendResponse)
-      return true
+      case 'getCacheStatus':
+        handleGetCacheStatus().then(sendResponse)
+        return true
 
-    case 'getCachedData':
-      handleGetCachedData(message.dataType).then(sendResponse)
-      return true
+      case 'getCachedData':
+        handleGetCachedData(message.dataType as string).then(sendResponse)
+        return true
 
-    case 'clearCache':
-      handleClearCache(message.dataType).then(sendResponse)
-      return true
-
-    case 'getDebuggerStatus':
-      sendResponse({
-        attached: isAttached(),
-        tabs: getAttachedTabs()
-      })
-      return false
-
-    case 'popOutWindow':
-      if (popOutWindowId) {
-        chrome.windows.update(popOutWindowId, { focused: true })
-        sendResponse({ windowId: popOutWindowId, alreadyOpen: true })
-      } else {
-        chrome.windows.create(
-          {
-            url: 'popup.html',
-            type: 'popup',
-            width: 420,
-            height: 700
-          },
-          (win) => {
-            popOutWindowId = win.id
-            sendResponse({ windowId: win.id, alreadyOpen: false })
-          }
+      case 'clearCache':
+        handleClearCache(message.dataType as string | undefined).then(
+          sendResponse
         )
         return true
-      }
-      return false
 
-    case 'fetchRaidGroups':
-      fetchRaidGroups(message.forceRefresh).then(sendResponse)
-      return true
+      case 'getDebuggerStatus':
+        sendResponse({
+          attached: isAttached(),
+          tabs: getAttachedTabs()
+        })
+        return false
 
-    case 'fetchUserPlaylists':
-      fetchUserPlaylists().then(sendResponse)
-      return true
+      case 'popOutWindow':
+        if (popOutWindowId) {
+          chrome.windows.update(popOutWindowId, { focused: true })
+          sendResponse({ windowId: popOutWindowId, alreadyOpen: true })
+        } else {
+          chrome.windows.create(
+            {
+              url: 'popup.html',
+              type: 'popup',
+              width: 420,
+              height: 700
+            },
+            (win) => {
+              popOutWindowId = win?.id ?? null
+              sendResponse({ windowId: win?.id, alreadyOpen: false })
+            }
+          )
+          return true
+        }
+        return false
 
-    case 'createPlaylist':
-      createPlaylist(message.data).then(sendResponse)
-      return true
+      case 'fetchRaidGroups':
+        fetchRaidGroups(message.forceRefresh as boolean | undefined).then(
+          sendResponse
+        )
+        return true
 
-    case 'uploadPartyData':
-      uploadPartyData(
-        message.data,
-        message.raidId,
-        message.playlistIds,
-        message.name,
-        message.visibility,
-        message.shareWithCrew
-      ).then(sendResponse)
-      return true
+      case 'fetchUserPlaylists':
+        fetchUserPlaylists().then(sendResponse)
+        return true
 
-    case 'uploadDetailData':
-      uploadDetailData(message.data, message.dataType).then(sendResponse)
-      return true
+      case 'createPlaylist':
+        createPlaylist(
+          message.data as {
+            title: string
+            description: string
+            visibility: number
+          }
+        ).then(sendResponse)
+        return true
 
-    case 'getCollectionIds':
-      getCollectionIds().then(sendResponse)
-      return true
+      case 'uploadPartyData':
+        uploadPartyData(
+          message.data,
+          message.raidId as string | undefined,
+          message.playlistIds as string[] | undefined,
+          message.name as string | undefined,
+          message.visibility as number | undefined,
+          message.shareWithCrew as boolean | undefined
+        ).then(sendResponse)
+        return true
 
-    case 'checkConflicts':
-      checkConflicts(message.data, message.dataType).then(sendResponse)
-      return true
+      case 'uploadDetailData':
+        uploadDetailData(
+          message.data as Record<string, unknown>,
+          message.dataType as string
+        ).then(sendResponse)
+        return true
 
-    case 'uploadCollectionData':
-      uploadCollectionData(message.data, message.dataType, {
-        updateExisting: message.updateExisting,
-        isFullInventory: message.isFullInventory,
-        reconcileDeletions: message.reconcileDeletions,
-        conflictResolutions: message.conflictResolutions
-      }).then(sendResponse)
-      return true
+      case 'getCollectionIds':
+        getCollectionIds().then(sendResponse)
+        return true
 
-    case 'previewSyncDeletions':
-      previewSyncDeletions(message.data, message.dataType).then(sendResponse)
-      return true
+      case 'checkConflicts':
+        checkConflicts(
+          message.data as Record<number, PageData>,
+          message.dataType as string
+        ).then(sendResponse)
+        return true
 
-    case 'uploadCharacterStats':
-      uploadCharacterStats(message.data).then(sendResponse)
-      return true
+      case 'uploadCollectionData':
+        uploadCollectionData(
+          message.data as Record<number, PageData>,
+          message.dataType as string,
+          {
+            updateExisting: message.updateExisting as boolean | undefined,
+            isFullInventory: message.isFullInventory as boolean | undefined,
+            reconcileDeletions: message.reconcileDeletions as
+              | boolean
+              | undefined,
+            conflictResolutions: message.conflictResolutions
+          }
+        ).then(sendResponse)
+        return true
 
-    case 'dataCaptured':
-      // Forward to popup if it's listening
-      chrome.runtime.sendMessage(message).catch(() => {})
-      return false
+      case 'previewSyncDeletions':
+        previewSyncDeletions(
+          message.data as Record<number, PageData>,
+          message.dataType as string
+        ).then(sendResponse)
+        return true
 
-    default:
-      return false
+      case 'uploadCharacterStats':
+        uploadCharacterStats(
+          message.data as Record<string, CharacterStatsEntry>
+        ).then(sendResponse)
+        return true
+
+      case 'dataCaptured':
+        chrome.runtime.sendMessage(message).catch(() => {})
+        return false
+
+      default:
+        return false
+    }
   }
-})
+)
 
 // ==========================================
 // CACHE STATUS HANDLERS
 // ==========================================
 
-async function handleGetCachedData(dataType) {
+async function handleGetCachedData(
+  dataType: string
+): Promise<Record<string, unknown>> {
   if (dataType === 'character_stats') {
     const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
-    const cached = result[CACHE_KEYS.character_stats]
+    const cached = result[CACHE_KEYS.character_stats!] as
+      | {
+          updates?: Record<string, unknown>
+          lastUpdated?: number
+          characterCount?: number
+        }
+      | undefined
 
-    if (!cached || Object.keys(cached.updates || {}).length === 0) {
+    if (!cached || Object.keys(cached.updates ?? {}).length === 0) {
       return { error: 'no_character_stats' }
     }
 
-    const age = Date.now() - cached.lastUpdated
+    const age = Date.now() - cached.lastUpdated!
     if (age > CACHE_TTL_MS) {
       return { error: 'stale_data' }
     }
@@ -630,10 +757,10 @@ async function handleGetCachedData(dataType) {
     return {
       data: cached.updates,
       timestamp: cached.lastUpdated,
-      age: age,
-      dataType: dataType,
+      age,
+      dataType,
       characterCount:
-        cached.characterCount || Object.keys(cached.updates).length
+        cached.characterCount ?? Object.keys(cached.updates!).length
     }
   }
 
@@ -643,13 +770,14 @@ async function handleGetCachedData(dataType) {
   }
 
   const result = await chrome.storage.local.get(cacheKey)
-  const cached = result[cacheKey]
+  const cached = result[cacheKey] as Record<string, unknown> | undefined
 
   if (!cached) {
     return { error: 'no_cached_data' }
   }
 
-  const timestamp = cached.timestamp || cached.lastUpdated
+  const timestamp =
+    (cached.timestamp as number) ?? (cached.lastUpdated as number)
   const age = Date.now() - timestamp
 
   if (age > CACHE_TTL_MS) {
@@ -664,8 +792,8 @@ async function handleGetCachedData(dataType) {
     return {
       data: cached.pages,
       timestamp: cached.lastUpdated,
-      age: age,
-      dataType: dataType,
+      age,
+      dataType,
       pageCount: cached.pageCount,
       totalItems: cached.totalItems
     }
@@ -674,36 +802,36 @@ async function handleGetCachedData(dataType) {
   return {
     data: cached.data,
     timestamp: cached.timestamp,
-    age: age,
-    dataType: dataType
+    age,
+    dataType
   }
 }
 
-async function handleGetCacheStatus() {
+async function handleGetCacheStatus(): Promise<Record<string, unknown>> {
   const allStorage = await chrome.storage.local.get(null)
-  const status = {}
+  const status: Record<string, unknown> = {}
   const now = Date.now()
 
-  // Add debugger status
   status._debugger = {
     attached: isAttached(),
     tabs: getAttachedTabs()
   }
 
-  // Process standard (static) cache keys
   for (const [type, key] of Object.entries(CACHE_KEYS)) {
-    const cached = allStorage[key]
+    const cached = allStorage[key] as Record<string, unknown> | undefined
     if (!cached) {
       status[type] = { available: false }
       continue
     }
 
-    const timestamp = cached.timestamp || cached.lastUpdated
+    const timestamp =
+      (cached.timestamp as number) ?? (cached.lastUpdated as number)
     const age = now - timestamp
     const stale = age > CACHE_TTL_MS
 
     if (type === 'character_stats') {
-      const characterCount = Object.keys(cached.updates || {}).length
+      const updates = (cached.updates ?? {}) as Record<string, unknown>
+      const characterCount = Object.keys(updates).length
       if (characterCount > 0) {
         status[type] = {
           available: !stale,
@@ -715,14 +843,14 @@ async function handleGetCacheStatus() {
       }
     } else if (type.startsWith('list_') || type.startsWith('collection_')) {
       status[type] = {
-        available: !stale && cached.pageCount > 0,
-        pageCount: cached.pageCount || 0,
-        totalPages: cached.totalPages || null,
-        totalItems: cached.totalItems || 0,
+        available: !stale && (cached.pageCount as number) > 0,
+        pageCount: cached.pageCount ?? 0,
+        totalPages: cached.totalPages ?? null,
+        totalItems: cached.totalItems ?? 0,
         lastUpdated: timestamp,
         age,
         isStale: stale,
-        isComplete: cached.isComplete || false
+        isComplete: cached.isComplete ?? false
       }
     } else {
       status[type] = {
@@ -734,13 +862,12 @@ async function handleGetCacheStatus() {
     }
   }
 
-  // Process dynamic cache keys (parties, stashes, detail items)
   for (const [key, cached] of Object.entries(allStorage)) {
     if (!cached) continue
+    const c = cached as Record<string, unknown>
 
-    // Find which prefix this key belongs to
-    let matchedPrefix = null
-    let suffix = null
+    let matchedPrefix: string | null = null
+    let suffix: string | null = null
     for (const [prefixName, cachePrefix] of Object.entries(CACHE_PREFIXES)) {
       if (key.startsWith(cachePrefix)) {
         matchedPrefix = prefixName
@@ -748,40 +875,41 @@ async function handleGetCacheStatus() {
         break
       }
     }
-    if (!matchedPrefix) continue
+    if (!matchedPrefix || !suffix) continue
 
-    const dataType = `${matchedPrefix}_${suffix}`
-    const timestamp = cached.timestamp || cached.lastUpdated
+    const dt = `${matchedPrefix}_${suffix}`
+    const timestamp = (c.timestamp as number) ?? (c.lastUpdated as number)
     const age = now - timestamp
     const stale = age > CACHE_TTL_MS
 
     if (matchedPrefix === 'party') {
-      status[dataType] = {
+      status[dt] = {
         available: !stale,
         lastUpdated: timestamp,
         age,
         isStale: stale,
         partyId: suffix,
-        partyName: cached.partyName || `Party ${suffix.replace('_', '-')}`
+        partyName:
+          (c.partyName as string) ?? `Party ${suffix.replace('_', '-')}`
       }
     } else if (matchedPrefix.startsWith('stash_')) {
-      status[dataType] = {
-        available: !stale && cached.pageCount > 0,
-        pageCount: cached.pageCount || 0,
-        totalItems: cached.totalItems || 0,
+      status[dt] = {
+        available: !stale && (c.pageCount as number) > 0,
+        pageCount: c.pageCount ?? 0,
+        totalItems: c.totalItems ?? 0,
         lastUpdated: timestamp,
         age,
         isStale: stale,
-        stashName: cached.stashName || null
+        stashName: c.stashName ?? null
       }
     } else if (matchedPrefix.startsWith('detail_')) {
-      status[dataType] = {
+      status[dt] = {
         available: !stale,
         lastUpdated: timestamp,
         age,
         isStale: stale,
         granblueId: suffix,
-        itemName: cached.itemName || 'Unknown'
+        itemName: (c.itemName as string) ?? 'Unknown'
       }
     }
   }
@@ -789,14 +917,15 @@ async function handleGetCacheStatus() {
   return status
 }
 
-async function handleClearCache(dataType) {
+async function handleClearCache(
+  dataType?: string
+): Promise<{ success: boolean }> {
   if (dataType) {
     const cacheKey = resolveCacheKey(dataType)
     if (cacheKey) {
       await chrome.storage.local.remove(cacheKey)
     }
   } else {
-    // Clear all cache keys (static + dynamic)
     const allStorage = await chrome.storage.local.get(null)
     const prefixValues = Object.values(CACHE_PREFIXES)
     const keysToRemove = [
@@ -814,11 +943,8 @@ async function handleClearCache(dataType) {
 // DATA UPLOAD (to granblue.team only)
 // ==========================================
 
-/**
- * Collect all items from paginated data into a flat array
- */
-function collectPageItems(pagesData) {
-  const items = []
+function collectPageItems(pagesData: Record<number, PageData>): unknown[] {
+  const items: unknown[] = []
   for (const pageData of Object.values(pagesData)) {
     if (pageData?.list && Array.isArray(pageData.list)) {
       items.push(...pageData.list)
@@ -827,8 +953,7 @@ function collectPageItems(pagesData) {
   return items
 }
 
-/** Data type to API endpoint mapping */
-const ENDPOINT_MAP = {
+const ENDPOINT_MAP: Record<string, string> = {
   detail_npc: 'characters',
   detail_weapon: 'weapons',
   detail_summon: 'summons',
@@ -841,19 +966,16 @@ const ENDPOINT_MAP = {
   list_summon: 'summons'
 }
 
-function resolveEndpoint(dataType) {
-  if (ENDPOINT_MAP[dataType]) return ENDPOINT_MAP[dataType]
+function resolveEndpoint(dataType: string): string | null {
+  if (ENDPOINT_MAP[dataType]) return ENDPOINT_MAP[dataType]!
   if (dataType.startsWith('stash_weapon')) return 'weapons'
   if (dataType.startsWith('stash_summon')) return 'summons'
   return null
 }
 
-/**
- * Parse an error response into a user-friendly message.
- */
-async function parseErrorResponse(response) {
+async function parseErrorResponse(response: Response): Promise<string> {
   try {
-    const json = await response.json()
+    const json = (await response.json()) as { error?: string }
     if (json.error) return json.error
   } catch {
     /* not JSON */
@@ -861,11 +983,14 @@ async function parseErrorResponse(response) {
   return 'server_error'
 }
 
-/**
- * Make an authenticated POST request to the API.
- * @returns {{ error?: string, data?: any, auth?: Object }}
- */
-async function authenticatedPost(endpoint, body) {
+async function authenticatedPost(
+  endpoint: string,
+  body: unknown
+): Promise<{
+  error?: string
+  data?: Record<string, unknown>
+  auth?: AuthToken
+}> {
   const auth = await getAuthToken()
   if (!auth) return { error: 'not_logged_in' }
 
@@ -884,52 +1009,54 @@ async function authenticatedPost(endpoint, body) {
       return { error: await parseErrorResponse(response) }
     }
 
-    return { data: await response.json(), auth }
+    return { data: (await response.json()) as Record<string, unknown>, auth }
   } catch {
     return { error: 'request_failed' }
   }
 }
 
 async function uploadPartyData(
-  data,
-  raidId,
-  playlistIds,
-  name,
-  visibility,
-  shareWithCrew
-) {
-  const body = { import: data }
+  data: unknown,
+  raidId?: string,
+  playlistIds?: string[],
+  name?: string,
+  visibility?: number,
+  shareWithCrew?: boolean
+): Promise<Record<string, unknown>> {
+  const body: Record<string, unknown> = { import: data }
   if (raidId) body.raid_id = raidId
-  if (playlistIds?.length > 0) body.playlist_ids = playlistIds
+  if (playlistIds && playlistIds.length > 0) body.playlist_ids = playlistIds
   if (name) body.name = name
   if (visibility) body.visibility = visibility
 
   const result = await authenticatedPost('/import', body)
   if (result.error) return result
 
-  // Share with crew if requested
   if (shareWithCrew && result.data?.party_id) {
     await authenticatedPost(
       `/parties/${result.data.party_id}/shares`,
       {}
-    ).catch(() => {}) // Don't fail the import if sharing fails
+    ).catch(() => {})
   }
 
   const siteUrl = await getSiteBaseUrl()
   return {
     success: true,
-    shortcode: result.data.shortcode,
-    url: `${siteUrl}/teams/${result.data.shortcode}`
+    shortcode: result.data!.shortcode,
+    url: `${siteUrl}/teams/${result.data!.shortcode}`
   }
 }
 
-async function uploadDetailData(data, dataType) {
+async function uploadDetailData(
+  data: Record<string, unknown>,
+  dataType: string
+): Promise<Record<string, unknown>> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: `Unknown data type: ${dataType}` }
 
   const auth = await getAuthToken()
   let lang = 'en'
-  if (data.cjs && data.cjs.includes('_jp/')) {
+  if (data.cjs && (data.cjs as string).includes('_jp/')) {
     lang = 'jp'
   } else if (auth?.language === 'ja') {
     lang = 'jp'
@@ -943,72 +1070,59 @@ async function uploadDetailData(data, dataType) {
   return { success: true, ...result.data }
 }
 
-/**
- * Parse game filter options to extract active element/proficiency filters
- * Filter field "6" = element (6 chars: Fire, Water, Earth, Wind, Light, Dark)
- * Filter field "8" = proficiency (10 chars for weapon types)
- * A "1" in position means that value is selected, "0" means not selected
- * If all zeros or value is 0/null, means "all" (no filter)
- */
-function parseGameFilter(options) {
-  const filter = options?.filter
+function parseGameFilter(options: Record<string, unknown>): GameFilter | null {
+  const filter = options.filter as Record<string, string> | undefined
   if (!filter) return null
 
-  const result = { elements: null, proficiencies: null }
+  const result: GameFilter = { elements: null, proficiencies: null }
 
-  // Parse element filter (field "6")
-  // Positions: 0=Fire, 1=Water, 2=Earth, 3=Wind, 4=Light, 5=Dark
-  // Maps to Granblue element IDs: Fire=1, Water=2, Earth=3, Wind=4, Light=5, Dark=6
   const elementStr = filter['6']
   if (elementStr && typeof elementStr === 'string' && elementStr !== '000000') {
     result.elements = []
+    const elementMap = [2, 3, 4, 1, 6, 5]
     for (let i = 0; i < elementStr.length; i++) {
       if (elementStr[i] === '1') {
-        // Position maps to element ID (position + 1, but reordered)
-        // GBF filter order: Fire(0), Water(1), Earth(2), Wind(3), Light(4), Dark(5)
-        // GBF element IDs: Fire=2, Water=3, Earth=4, Wind=1, Light=6, Dark=5
-        const elementMap = [2, 3, 4, 1, 6, 5] // filter position -> element ID
-        result.elements.push(elementMap[i])
+        result.elements.push(elementMap[i]!)
       }
     }
     if (result.elements.length === 0) result.elements = null
   }
 
-  // Parse proficiency filter (field "8")
-  // Positions: 0=Saber, 1=Dagger, 2=Spear, 3=Axe, 4=Staff, 5=Gun, 6=Melee, 7=Bow, 8=Harp, 9=Katana
-  // Maps to our API proficiency IDs: 1=Sabre, 2=Dagger, 3=Axe, 4=Spear, 5=Bow, 6=Staff, 7=Melee, 8=Harp, 9=Gun, 10=Katana
-  const profMap = [1, 2, 4, 3, 6, 9, 7, 5, 8, 10] // filter position -> API proficiency ID
+  const profMap = [1, 2, 4, 3, 6, 9, 7, 5, 8, 10]
   const profStr = filter['8']
   if (profStr && typeof profStr === 'string' && profStr !== '0000000000') {
     result.proficiencies = []
     for (let i = 0; i < profStr.length; i++) {
       if (profStr[i] === '1') {
-        result.proficiencies.push(profMap[i])
+        result.proficiencies.push(profMap[i]!)
       }
     }
     if (result.proficiencies.length === 0) result.proficiencies = null
   }
 
-  // Return null if no filters active
   if (!result.elements && !result.proficiencies) return null
   return result
 }
 
-/**
- * Check if any meaningful filter is active in the cached pages
- */
-function extractFilterFromPages(pagesData) {
-  // Check the first page for filter options (all pages should have same filter)
+function extractFilterFromPages(
+  pagesData: Record<number, PageData>
+): GameFilter | null {
   for (const pageData of Object.values(pagesData)) {
     if (pageData?.options?.filter || pageData?.option?.filter) {
-      const options = pageData.options || pageData.option
+      const options = (pageData.options ?? pageData.option) as Record<
+        string,
+        unknown
+      >
       return parseGameFilter(options)
     }
   }
   return null
 }
 
-async function previewSyncDeletions(pagesData, dataType) {
+async function previewSyncDeletions(
+  pagesData: Record<number, PageData>,
+  dataType: string
+): Promise<Record<string, unknown>> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -1025,12 +1139,15 @@ async function previewSyncDeletions(pagesData, dataType) {
   )
   if (result.error) return result
   return {
-    willDelete: result.data.will_delete || [],
-    count: result.data.count || 0
+    willDelete: result.data!.will_delete ?? [],
+    count: result.data!.count ?? 0
   }
 }
 
-async function checkConflicts(pagesData, dataType) {
+async function checkConflicts(
+  pagesData: Record<number, PageData>,
+  dataType: string
+): Promise<Record<string, unknown>> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -1039,15 +1156,17 @@ async function checkConflicts(pagesData, dataType) {
 
   const result = await authenticatedPost(
     `/collection/${endpoint}/check_conflicts`,
-    {
-      data: { list: allItems }
-    }
+    { data: { list: allItems } }
   )
   if (result.error) return result
-  return { conflicts: result.data.conflicts || [] }
+  return { conflicts: result.data!.conflicts ?? [] }
 }
 
-async function uploadCollectionData(pagesData, dataType, options = {}) {
+async function uploadCollectionData(
+  pagesData: Record<number, PageData>,
+  dataType: string,
+  options: UploadCollectionOptions = {}
+): Promise<Record<string, unknown>> {
   const {
     updateExisting = false,
     isFullInventory = false,
@@ -1062,7 +1181,7 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
   if (allItems.length === 0) return { error: 'no_items' }
 
   const activeFilter = extractFilterFromPages(pagesData)
-  const body = {
+  const body: Record<string, unknown> = {
     data: { list: allItems },
     update_existing: updateExisting,
     is_full_inventory: isFullInventory,
@@ -1077,22 +1196,23 @@ async function uploadCollectionData(pagesData, dataType, options = {}) {
   const result = await authenticatedPost(`/collection/${endpoint}/import`, body)
   if (result.error) return result
 
-  // Invalidate collection IDs cache so dimming updates
   collectionIdsCache = null
 
   return {
-    success: result.data.success,
-    created: result.data.created || 0,
-    updated: result.data.updated || 0,
-    skipped: result.data.skipped || 0,
-    errors: result.data.errors || [],
-    reconciliation: result.data.reconciliation || null
+    success: result.data!.success,
+    created: result.data!.created ?? 0,
+    updated: result.data!.updated ?? 0,
+    skipped: result.data!.skipped ?? 0,
+    errors: result.data!.errors ?? [],
+    reconciliation: result.data!.reconciliation ?? null
   }
 }
 
-async function uploadCharacterStats(statsData) {
+async function uploadCharacterStats(
+  statsData: Record<string, CharacterStatsEntry>
+): Promise<Record<string, unknown>> {
   const items = Object.values(statsData).map((char) => {
-    const item = { granblue_id: char.masterId }
+    const item: Record<string, unknown> = { granblue_id: char.masterId }
 
     if (char.uncapLevel !== undefined) {
       item.uncap_level = char.uncapLevel
@@ -1108,7 +1228,7 @@ async function uploadCharacterStats(statsData) {
 
     if (char.rings && char.rings.length > 0) {
       char.rings.forEach((ring, i) => {
-        if (ring && ring.modifier) {
+        if (ring?.modifier) {
           item[`ring${i + 1}`] = {
             modifier: ring.modifier,
             strength: ring.strength
@@ -1117,7 +1237,7 @@ async function uploadCharacterStats(statsData) {
       })
     }
 
-    if (char.earring && char.earring.modifier) {
+    if (char.earring?.modifier) {
       item.earring = {
         modifier: char.earring.modifier,
         strength: char.earring.strength
@@ -1144,19 +1264,21 @@ async function uploadCharacterStats(statsData) {
   collectionIdsCache = null
 
   return {
-    success: result.data.success,
-    created: result.data.created || 0,
-    updated: result.data.updated || 0,
-    skipped: result.data.skipped || 0,
-    errors: result.data.errors || []
+    success: result.data!.success,
+    created: result.data!.created ?? 0,
+    updated: result.data!.updated ?? 0,
+    skipped: result.data!.skipped ?? 0,
+    errors: result.data!.errors ?? []
   }
 }
 
-async function fetchUserPlaylists() {
+async function fetchUserPlaylists(): Promise<Record<string, unknown>> {
   try {
     const auth = await getAuthToken()
+    if (!auth) return { error: 'not_logged_in' }
+
     const response = await fetch(
-      `${await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`)}`,
+      await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`),
       {
         headers: { Authorization: `Bearer ${auth.access_token}` }
       }
@@ -1170,7 +1292,15 @@ async function fetchUserPlaylists() {
   }
 }
 
-async function createPlaylist({ title, description, visibility }) {
+async function createPlaylist({
+  title,
+  description,
+  visibility
+}: {
+  title: string
+  description: string
+  visibility: number
+}): Promise<Record<string, unknown>> {
   try {
     const result = await authenticatedPost('/playlists', {
       playlist: { title, description, visibility: visibility || 3 }
@@ -1182,15 +1312,18 @@ async function createPlaylist({ title, description, visibility }) {
   }
 }
 
-async function fetchRaidGroups(forceRefresh = false) {
-  const cacheKey = CACHE_KEYS.raid_groups
+async function fetchRaidGroups(
+  forceRefresh = false
+): Promise<Record<string, unknown>> {
+  const cacheKey = CACHE_KEYS.raid_groups!
   const result = await chrome.storage.local.get(cacheKey)
-  const cached = result[cacheKey]
+  const cached = result[cacheKey] as
+    | { timestamp: number; data: unknown }
+    | undefined
 
   if (
     !forceRefresh &&
-    cached &&
-    cached.timestamp &&
+    cached?.timestamp &&
     Date.now() - cached.timestamp < RAID_GROUPS_CACHE_TTL_MS
   ) {
     return { data: cached.data }
@@ -1215,10 +1348,7 @@ async function fetchRaidGroups(forceRefresh = false) {
     const data = await response.json()
 
     await chrome.storage.local.set({
-      [cacheKey]: {
-        data: data,
-        timestamp: Date.now()
-      }
+      [cacheKey]: { data, timestamp: Date.now() }
     })
 
     return { data }
@@ -1227,7 +1357,7 @@ async function fetchRaidGroups(forceRefresh = false) {
   }
 }
 
-async function getCollectionIds() {
+async function getCollectionIds(): Promise<unknown> {
   const now = Date.now()
   if (
     collectionIdsCache &&
@@ -1262,11 +1392,11 @@ async function getCollectionIds() {
   }
 }
 
-async function getAuthToken() {
+async function getAuthToken(): Promise<AuthToken | null> {
   const result = await chrome.storage.local.get('gbAuth')
-  const auth = result.gbAuth
+  const auth = result.gbAuth as AuthToken | undefined
 
-  if (!auth || !auth.access_token) {
+  if (!auth?.access_token) {
     return null
   }
 
