@@ -18,13 +18,12 @@ export type Locale = 'en' | 'ja'
 
 // Build a lookup from string keys to Paraglide message functions.
 // This allows the existing t(key) API to delegate to Paraglide.
-type MessageFn = ((params?: Record<string, unknown>) => string) &
-  Record<string, unknown>
+type MessageFn = (params?: Record<string, unknown>) => string
 
 const registry: Record<string, MessageFn> = {}
 for (const [key, fn] of Object.entries(m)) {
   if (typeof fn === 'function' && key !== 'm') {
-    registry[key] = fn as MessageFn
+    registry[key] = fn as unknown as MessageFn
   }
 }
 

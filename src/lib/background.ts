@@ -188,7 +188,7 @@ async function handleInterceptedData(
         await cacheCharacterStats(
           'character_detail',
           d,
-          (d.master as Record<string, unknown>)?.id as string | undefined,
+          ((d.master as Record<string, unknown>)?.id as string) ?? null,
           timestamp,
           url
         )
@@ -286,7 +286,7 @@ async function cacheListPage(
   if (!cacheKey) return
 
   const result = await chrome.storage.local.get(cacheKey)
-  const existing: CachedListData = result[cacheKey] ?? {
+  const existing: CachedListData = (result[cacheKey] as CachedListData) ?? {
     pages: {},
     lastUpdated: null
   }
@@ -336,7 +336,11 @@ async function cacheCharacterStats(
     lastUpdated: number | null
     updates: Record<string, CharacterStatsEntry>
     characterCount?: number
-  } = result[CACHE_KEYS.character_stats!] ?? {
+  } = (result[CACHE_KEYS.character_stats!] as {
+    lastUpdated: number | null
+    updates: Record<string, CharacterStatsEntry>
+    characterCount?: number
+  }) ?? {
     lastUpdated: null,
     updates: {}
   }

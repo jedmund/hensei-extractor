@@ -405,7 +405,7 @@ export function resolveAwakeningIcon(formName: string): string {
 }
 
 /** Modifier name entry used for AX skill tooltip lookup */
-interface WeaponStatModifier {
+export interface WeaponStatModifier {
   nameEn?: string
   nameJp?: string
   [key: string]: unknown
