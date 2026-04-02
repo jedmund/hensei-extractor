@@ -1,25 +1,32 @@
 /**
- * @fileoverview Conflict resolution for null game_id items.
+ * Conflict resolution for null game_id items.
  * Shows a carousel-style modal letting users Import or Skip each conflicting item.
  */
 
 import { getImageUrl } from './constants.js'
 import { t } from './i18n.js'
 
-// Internal state
-let conflictItems = []
-let decisions = new Map()
-let currentIndex = 0
-let currentDataType = null
-let onResolveCallback = null
+export type ConflictDecision = 'import' | 'skip'
 
-/**
- * Show the conflict resolution modal
- * @param {Array} conflicts - Array of conflict objects from the API
- * @param {string} dataType - The current data type (e.g., 'collection_weapon')
- * @param {Function} onResolve - Callback with Map of game_id → 'import' | 'skip'
- */
-export function showConflictModal(conflicts, dataType, onResolve) {
+interface ConflictItem {
+  game_id: string
+  granblue_id?: string
+  name: string
+}
+
+let conflictItems: ConflictItem[] = []
+let decisions = new Map<string, ConflictDecision>()
+let currentIndex = 0
+let currentDataType: string | null = null
+let onResolveCallback:
+  | ((result: Map<string, ConflictDecision>) => void)
+  | null = null
+
+export function showConflictModal(
+  conflicts: ConflictItem[],
+  dataType: string,
+  onResolve: (result: Map<string, ConflictDecision>) => void
+): void {
   conflictItems = conflicts
   currentDataType = dataType
   onResolveCallback = onResolve
@@ -33,10 +40,7 @@ export function showConflictModal(conflicts, dataType, onResolve) {
   modal?.classList.remove('hidden')
 }
 
-/**
- * Hide the conflict modal and clear state
- */
-export function hideConflictModal() {
+export function hideConflictModal(): void {
   const modal = document.getElementById('conflictModal')
   modal?.classList.add('hidden')
   conflictItems = []
@@ -45,17 +49,11 @@ export function hideConflictModal() {
   onResolveCallback = null
 }
 
-/**
- * Get the number of pending conflicts
- */
-export function getConflictCount() {
+export function getConflictCount(): number {
   return conflictItems.length
 }
 
-/**
- * Initialize event listeners for the conflict modal
- */
-export function initConflictListeners() {
+export function initConflictListeners(): void {
   document
     .getElementById('conflictPrev')
     ?.addEventListener('click', () => navigateConflict(-1))
@@ -76,7 +74,6 @@ export function initConflictListeners() {
     .getElementById('conflictFinish')
     ?.addEventListener('click', finishReview)
 
-  // Close on backdrop click
   document
     .querySelector('#conflictModal .modal-backdrop')
     ?.addEventListener('click', hideConflictModal)
@@ -86,11 +83,11 @@ export function initConflictListeners() {
 // INTERNAL FUNCTIONS
 // ==========================================
 
-function renderCurrentItem() {
+function renderCurrentItem(): void {
   const display = document.getElementById('conflictItemDisplay')
   if (!display || conflictItems.length === 0) return
 
-  const item = conflictItems[currentIndex]
+  const item = conflictItems[currentIndex]!
   const imageUrl = getConflictImageUrl(item.granblue_id)
   const decision = decisions.get(item.game_id)
 
@@ -111,13 +108,11 @@ function renderCurrentItem() {
     </div>
   `
 
-  // Update counter
   const counter = document.getElementById('conflictCounter')
   if (counter) {
     counter.textContent = `${currentIndex + 1} / ${conflictItems.length}`
   }
 
-  // Update per-item button states
   const skipBtn = document.getElementById('conflictSkip')
   const importBtn = document.getElementById('conflictImport')
   if (skipBtn) {
@@ -130,7 +125,7 @@ function renderCurrentItem() {
   updateFinishButton()
 }
 
-function navigateConflict(direction) {
+function navigateConflict(direction: number): void {
   const newIndex = currentIndex + direction
   if (newIndex < 0 || newIndex >= conflictItems.length) return
   currentIndex = newIndex
@@ -138,19 +133,22 @@ function navigateConflict(direction) {
   updateNavState()
 }
 
-function updateNavState() {
-  const prevBtn = document.getElementById('conflictPrev')
-  const nextBtn = document.getElementById('conflictNext')
+function updateNavState(): void {
+  const prevBtn = document.getElementById(
+    'conflictPrev'
+  ) as HTMLButtonElement | null
+  const nextBtn = document.getElementById(
+    'conflictNext'
+  ) as HTMLButtonElement | null
   if (prevBtn) prevBtn.disabled = currentIndex === 0
   if (nextBtn) nextBtn.disabled = currentIndex === conflictItems.length - 1
 }
 
-function decideItem(decision) {
-  const item = conflictItems[currentIndex]
+function decideItem(decision: ConflictDecision): void {
+  const item = conflictItems[currentIndex]!
   decisions.set(item.game_id, decision)
   renderCurrentItem()
 
-  // Auto-advance to next undecided item
   const nextUndecided = findNextUndecided(currentIndex)
   if (nextUndecided !== -1) {
     currentIndex = nextUndecided
@@ -159,19 +157,17 @@ function decideItem(decision) {
   }
 }
 
-function findNextUndecided(fromIndex) {
-  // Search forward from current position
+function findNextUndecided(fromIndex: number): number {
   for (let i = fromIndex + 1; i < conflictItems.length; i++) {
-    if (!decisions.has(conflictItems[i].game_id)) return i
+    if (!decisions.has(conflictItems[i]!.game_id)) return i
   }
-  // Wrap around
   for (let i = 0; i < fromIndex; i++) {
-    if (!decisions.has(conflictItems[i].game_id)) return i
+    if (!decisions.has(conflictItems[i]!.game_id)) return i
   }
   return -1
 }
 
-function importAll() {
+function importAll(): void {
   for (const item of conflictItems) {
     decisions.set(item.game_id, 'import')
   }
@@ -179,7 +175,7 @@ function importAll() {
   updateFinishButton()
 }
 
-function skipAll() {
+function skipAll(): void {
   for (const item of conflictItems) {
     decisions.set(item.game_id, 'skip')
   }
@@ -187,8 +183,10 @@ function skipAll() {
   updateFinishButton()
 }
 
-function updateFinishButton() {
-  const finishBtn = document.getElementById('conflictFinish')
+function updateFinishButton(): void {
+  const finishBtn = document.getElementById(
+    'conflictFinish'
+  ) as HTMLButtonElement | null
   if (!finishBtn) return
 
   const allDecided = conflictItems.every((item) => decisions.has(item.game_id))
@@ -203,7 +201,7 @@ function updateFinishButton() {
       })
 }
 
-function finishReview() {
+function finishReview(): void {
   const allDecided = conflictItems.every((item) => decisions.has(item.game_id))
   if (!allDecided) return
 
@@ -216,7 +214,7 @@ function finishReview() {
   }
 }
 
-function getConflictImageUrl(granblueId) {
+function getConflictImageUrl(granblueId: string | undefined): string {
   if (!granblueId) return ''
 
   if (currentDataType?.includes('weapon')) {
