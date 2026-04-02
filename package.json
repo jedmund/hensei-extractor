@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/chrome": "^0.1.38",
     "@wxt-dev/module-svelte": "latest",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",

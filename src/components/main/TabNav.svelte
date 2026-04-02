@@ -4,8 +4,8 @@
   import { getImageUrl } from '../../lib/constants.js'
 
   const avatarUrl = $derived(
-    (app.auth as any)?.avatar?.picture
-      ? getImageUrl(`profile/${(app.auth as any).avatar.picture}@2x.png`)
+    app.auth?.avatar?.picture
+      ? getImageUrl(`profile/${app.auth.avatar.picture}@2x.png`)
       : getImageUrl('profile/npc@2x.png')
   )
 

@@ -122,7 +122,7 @@ async function attachToExistingTabs(): Promise<void> {
 
 function handleTabUpdated(
   tabId: number,
-  changeInfo: chrome.tabs.TabChangeInfo,
+  changeInfo: chrome.tabs.OnUpdatedInfo,
   tab: chrome.tabs.Tab
 ): void {
   if (

@@ -1,21 +1,40 @@
 import { formatCacheStatus } from '../cache.js'
-import type { FormattedCacheStatus } from '../types/cache.js'
+import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
+import type {
+  CachedDataResponse,
+  UploadPartyResponse,
+  UploadDetailResponse,
+  UploadCollectionResponse,
+  CheckConflictsResponse,
+  PreviewSyncDeletionsResponse,
+  FetchRaidGroupsResponse,
+  FetchPlaylistsResponse,
+  CreatePlaylistResponse,
+  CollectionIdsResponse,
+  CheckVersionResponse
+} from '../types/messages.js'
 
-function send(message: Record<string, unknown>): Promise<any> {
+function send(message: Record<string, unknown>): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
 }
 
 export async function getCacheStatus(): Promise<
   Record<string, FormattedCacheStatus>
 > {
-  const raw = await send({ action: 'getCacheStatus' })
+  const raw = (await send({ action: 'getCacheStatus' })) as Record<
+    string,
+    CacheStatusInfo
+  >
   return formatCacheStatus(raw || {})
 }
 
 export async function getCachedData(
   dataType: string
-): Promise<{ data?: any; error?: string }> {
-  return send({ action: 'getCachedData', dataType })
+): Promise<CachedDataResponse> {
+  return send({
+    action: 'getCachedData',
+    dataType
+  }) as Promise<CachedDataResponse>
 }
 
 export async function uploadPartyData(options: {
@@ -25,7 +44,7 @@ export async function uploadPartyData(options: {
   visibility?: number
   shareWithCrew?: boolean
   playlists?: Array<{ id: string }>
-}): Promise<{ data?: any; error?: string }> {
+}): Promise<UploadPartyResponse> {
   return send({
     action: 'uploadPartyData',
     dataType: options.dataType,
@@ -34,78 +53,89 @@ export async function uploadPartyData(options: {
     visibility: options.visibility,
     shareWithCrew: options.shareWithCrew,
     playlistIds: options.playlists?.map((p) => p.id)
-  })
+  }) as Promise<UploadPartyResponse>
 }
 
 export async function uploadCollectionData(
   dataType: string,
   selectedIndices: number[],
   conflictResolutions?: Record<string, 'import' | 'skip'> | null
-): Promise<{ data?: any; error?: string }> {
+): Promise<UploadCollectionResponse> {
   return send({
     action: 'uploadCollectionData',
     dataType,
     selectedIndices,
     conflictResolutions
-  })
+  }) as Promise<UploadCollectionResponse>
 }
 
 export async function uploadDetailData(
   dataType: string
-): Promise<{ data?: any; error?: string }> {
-  return send({ action: 'uploadDetailData', dataType })
+): Promise<UploadDetailResponse> {
+  return send({
+    action: 'uploadDetailData',
+    dataType
+  }) as Promise<UploadDetailResponse>
 }
 
 export async function uploadCharacterStats(
   selectedIndices: number[]
-): Promise<{ data?: any; error?: string }> {
-  return send({ action: 'uploadCharacterStats', selectedIndices })
+): Promise<UploadCollectionResponse> {
+  return send({
+    action: 'uploadCharacterStats',
+    selectedIndices
+  }) as Promise<UploadCollectionResponse>
 }
 
 export async function checkConflicts(
   dataType: string,
   selectedIndices: number[]
-): Promise<{ data?: { conflicts?: unknown[] }; error?: string }> {
-  return send({ action: 'checkConflicts', dataType, selectedIndices })
+): Promise<CheckConflictsResponse> {
+  return send({
+    action: 'checkConflicts',
+    dataType,
+    selectedIndices
+  }) as Promise<CheckConflictsResponse>
 }
 
 export async function fetchRaidGroups(
   forceRefresh = false
-): Promise<{ data?: unknown[]; error?: string }> {
-  return send({ action: 'fetchRaidGroups', forceRefresh })
+): Promise<FetchRaidGroupsResponse> {
+  return send({
+    action: 'fetchRaidGroups',
+    forceRefresh
+  }) as Promise<FetchRaidGroupsResponse>
 }
 
-export async function fetchUserPlaylists(): Promise<{
-  data?: any
-  error?: string
-}> {
-  return send({ action: 'fetchUserPlaylists' })
+export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {
+  return send({
+    action: 'fetchUserPlaylists'
+  }) as Promise<FetchPlaylistsResponse>
 }
 
 export async function createPlaylist(data: {
   title: string
   description?: string
   visibility?: number
-}): Promise<{ data?: any; error?: string }> {
-  return send({ action: 'createPlaylist', data })
+}): Promise<CreatePlaylistResponse> {
+  return send({
+    action: 'createPlaylist',
+    data
+  }) as Promise<CreatePlaylistResponse>
 }
 
-export async function getCollectionIds(): Promise<{
-  data?: Record<string, Set<string>>
-  error?: string
-}> {
-  return send({ action: 'getCollectionIds' })
+export async function getCollectionIds(): Promise<CollectionIdsResponse> {
+  return send({ action: 'getCollectionIds' }) as Promise<CollectionIdsResponse>
 }
 
 export async function clearCache(): Promise<void> {
   await send({ action: 'clearCache' })
 }
 
-export async function checkExtensionVersion(): Promise<{
-  data?: { latest?: string }
-  error?: string
-}> {
-  return send({ action: 'checkExtensionVersion' })
+export async function checkExtensionVersion(): Promise<CheckVersionResponse | null> {
+  return send({
+    action: 'checkExtensionVersion'
+  }) as Promise<CheckVersionResponse | null>
 }
 
 export async function popOutWindow(): Promise<void> {
@@ -114,19 +144,22 @@ export async function popOutWindow(): Promise<void> {
 
 export async function previewSyncDeletions(
   dataType: string
-): Promise<{ data?: any; error?: string }> {
-  return send({ action: 'previewSyncDeletions', dataType })
+): Promise<PreviewSyncDeletionsResponse> {
+  return send({
+    action: 'previewSyncDeletions',
+    dataType
+  }) as Promise<PreviewSyncDeletionsResponse>
 }
 
 export async function syncCollection(
   dataType: string,
   selectedIndices: number[],
   deletionIds: string[]
-): Promise<{ data?: any; error?: string }> {
+): Promise<UploadCollectionResponse> {
   return send({
     action: 'syncCollection',
     dataType,
     selectedIndices,
     deletionIds
-  })
+  }) as Promise<UploadCollectionResponse>
 }

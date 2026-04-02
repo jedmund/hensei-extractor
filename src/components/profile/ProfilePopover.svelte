@@ -16,15 +16,15 @@
   let isPopupWindow = $state(false)
 
   const avatarUrl = $derived(
-    (app.auth as any)?.avatar?.picture
-      ? getImageUrl(`profile/${(app.auth as any).avatar.picture}@2x.png`)
+    app.auth?.avatar?.picture
+      ? getImageUrl(`profile/${app.auth.avatar.picture}@2x.png`)
       : getImageUrl('profile/npc@2x.png')
   )
 
   const username = $derived(
-    (app.auth as any)?.displayName ||
+    app.auth?.displayName ||
       app.auth?.username ||
-      (app.auth as any)?.user?.username ||
+      app.auth?.user?.username ||
       'User'
   )
 
@@ -33,10 +33,10 @@
 
   onMount(async () => {
     const siteUrl = await getSiteBaseUrl()
-    const user = (app.auth as any)?.user?.username
+    const user = app.auth?.user?.username
     if (user) profileUrl = `${siteUrl}/${user}`
 
-    chrome.windows.getCurrent((win) => {
+    chrome.windows.getCurrent((win: chrome.windows.Window) => {
       isPopupWindow = win.type === 'popup'
     })
   })
@@ -59,12 +59,13 @@
     app.cachedStatus = await getCacheStatus()
 
     // Persist to server
-    const { gbAuth } = await chrome.storage.local.get('gbAuth')
+    const result = await chrome.storage.local.get('gbAuth')
+    const gbAuth = result.gbAuth as Record<string, unknown> | undefined
     if (gbAuth?.access_token) {
       gbAuth.language = lang
       await chrome.storage.local.set({ gbAuth })
       try {
-        await updateUserLanguage(gbAuth.access_token, lang)
+        await updateUserLanguage(gbAuth.access_token as string, lang)
       } catch {
         // Silently fail -- local preference is saved anyway
       }

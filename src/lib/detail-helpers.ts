@@ -18,6 +18,118 @@ import {
 import { t, tPlural, translateSeries, getLocale } from './i18n.js'
 
 // ==========================================
+// RAW API ITEM SHAPES
+// ==========================================
+
+/** Fields accessed on master sub-objects across item types */
+interface RawMaster {
+  id?: string
+  name?: string
+  series_id?: string | number
+  kind?: string | number
+  attribute?: string | number
+  rarity?: string | number
+  element?: string | number
+  specialty_weapon?: Array<string | number>
+  comment?: string
+  default_hp?: string | number
+  default_attack?: string | number
+  max_hp?: string | number
+  max_attack?: string | number
+  max_level?: string | number
+}
+
+/** AX / befoulment skill entry as returned by the API */
+interface RawAugmentSkillEntry {
+  image?: string
+  show_value?: string
+  [key: string]: unknown
+}
+
+/** Awakening (arousal) data nested in param */
+interface RawArousal {
+  form_id?: number
+  form_name?: string
+  level?: number
+  is_arousal_weapon?: boolean
+}
+
+/** Befoulment (odiant) data nested in param */
+interface RawOdiant {
+  is_odiant_weapon?: boolean
+  exorcision_level?: number
+  max_exorcision_level?: number
+}
+
+/** Fields accessed on param sub-objects across item types */
+interface RawParam {
+  id?: string
+  evolution?: number
+  phase?: number
+  style?: string
+  image_id?: string
+  level?: string | number
+  hp?: string | number
+  attack?: string | number
+  has_npcaugment_constant?: boolean
+  arousal?: RawArousal
+  odiant?: RawOdiant
+  augment_skill_info?: Array<Record<string, RawAugmentSkillEntry>>
+  augment_skill_icon_image?: string[]
+}
+
+/** Weapon skill reference on top-level item */
+interface RawWeaponSkillRef {
+  id?: string
+  [key: string]: unknown
+}
+
+/** A raw game item as received from the API, covering characters, weapons, summons */
+export interface RawGameItem {
+  id?: string
+  master?: RawMaster
+  param?: RawParam
+  skill1?: RawWeaponSkillRef
+  skill2?: RawWeaponSkillRef
+  skill3?: RawWeaponSkillRef
+  artifact_id?: string
+  attribute?: string | number
+  element?: string | number
+  kind?: string | number
+  weapon_kind?: string | number
+  series_id?: string | number
+  default_hp?: string | number
+  default_attack?: string | number
+  max_hp?: string | number
+  max_attack?: string | number
+  max_attack_2?: string | number
+  comment?: string
+  sub_skill?: { name?: string }
+  [key: string]: unknown
+}
+
+/** Page shape within collection/list/stash responses */
+interface CollectionPage {
+  list?: RawGameItem[]
+  [key: string]: unknown
+}
+
+/** Party data shape */
+interface PartyData {
+  deck?: {
+    pc?: {
+      weapons?: Record<string, RawGameItem | null> | RawGameItem[]
+      summons?: Record<string, RawGameItem | null> | RawGameItem[]
+      sub_summons?: Record<string, RawGameItem | null> | RawGameItem[]
+      [key: string]: unknown
+    }
+    npc?: Record<string, RawGameItem | null> | RawGameItem[]
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+// ==========================================
 // DATA TYPE HELPERS
 // ==========================================
 
@@ -49,35 +161,44 @@ export function isWeaponOrSummonCollection(dataType: string): boolean {
 // DATA EXTRACTION
 // ==========================================
 
-export function toArray(data: any): any[] {
+export function toArray(data: unknown): unknown[] {
   if (!data) return []
   if (Array.isArray(data)) return data
-  return Object.values(data)
+  if (typeof data === 'object')
+    return Object.values(data as Record<string, unknown>)
+  return []
 }
 
-export function extractItems(dataType: string, data: any): any[] {
+export function extractItems(
+  dataType: string,
+  data: Record<string, CollectionPage> | PartyData | RawGameItem
+): RawGameItem[] {
   if (
     dataType.startsWith('collection_') ||
     dataType.startsWith('list_') ||
     dataType.startsWith('stash_')
   ) {
-    const pages = Object.values(data) as any[]
+    const pages = Object.values(data as Record<string, CollectionPage>)
     return pages.flatMap((page) => page.list || [])
   }
   if (dataType.startsWith('party_')) {
-    const deck = data.deck || {}
+    const partyData = data as PartyData
+    const deck = partyData.deck || {}
     const pc = deck.pc || {}
     return [
       ...toArray(deck.npc),
       ...toArray(pc.weapons),
       ...toArray(pc.summons),
       ...toArray(pc.sub_summons)
-    ].filter(Boolean)
+    ].filter(Boolean) as RawGameItem[]
   }
-  return [data]
+  return [data as RawGameItem]
 }
 
-export function countItems(dataType: string, data: any): number {
+export function countItems(
+  dataType: string,
+  data: Record<string, CollectionPage> | PartyData | RawGameItem
+): number {
   return extractItems(dataType, data).length
 }
 
@@ -96,14 +217,17 @@ function getCharacterPose(
   return '_01'
 }
 
-function getCharacterImageSuffix(item: any, simplePortraits: boolean): string {
+function getCharacterImageSuffix(
+  item: RawGameItem,
+  simplePortraits: boolean
+): string {
   if (item.param?.style === '2') return '_01_style'
   const evolution = item.param?.evolution
   const phase = item.param?.phase
   return getCharacterPose(evolution, phase, simplePortraits)
 }
 
-function getImageSuffix(item: any): string {
+function getImageSuffix(item: RawGameItem): string {
   const imageId = item.param?.image_id
   if (!imageId) return ''
 
@@ -115,7 +239,7 @@ function getImageSuffix(item: any): string {
 
 export function getItemImageUrl(
   dataType: string,
-  item: any,
+  item: RawGameItem,
   simplePortraits: boolean
 ): string {
   const granblueId = item.master?.id || item.param?.id || item.id
@@ -130,7 +254,7 @@ export function getItemImageUrl(
   }
   if (dataType.includes('summon')) {
     const suffix = getImageSuffix(item)
-    const resolvedId = resolveForgedSummonId(granblueId)
+    const resolvedId = resolveForgedSummonId(granblueId ?? '')
     return getImageUrl(`summon-square/${resolvedId}${suffix}.jpg`)
   }
   if (dataType.includes('artifact')) {
@@ -140,7 +264,7 @@ export function getItemImageUrl(
   return ''
 }
 
-export function getArtifactLabels(item: any): string {
+export function getArtifactLabels(item: RawGameItem): string {
   const element = item.attribute || item.element
   const proficiency = item.kind || item.weapon_kind
 
@@ -153,8 +277,8 @@ export function getArtifactLabels(item: any): string {
     html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}.png`)}" alt="">`
   }
 
-  if (proficiency && GAME_PROFICIENCY_NAMES[proficiency]) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[proficiency]}.png`)}" alt="">`
+  if (proficiency && GAME_PROFICIENCY_NAMES[Number(proficiency)]) {
+    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[Number(proficiency)]}.png`)}" alt="">`
   }
 
   html += '</div>'
@@ -178,7 +302,7 @@ export interface CharacterModifiers {
   perpetuity: boolean
 }
 
-export function getCharacterModifiers(item: any): CharacterModifiers {
+export function getCharacterModifiers(item: RawGameItem): CharacterModifiers {
   const param = item.param || {}
   return {
     perpetuity: !!param.has_npcaugment_constant
@@ -191,9 +315,12 @@ export interface WeaponModifiers {
     level: number
     is_arousal_weapon: boolean
   } | null
-  axSkill: { skill: any; iconImage: string | null } | null
+  axSkill: {
+    skill: Record<string, RawAugmentSkillEntry>
+    iconImage: string | null
+  } | null
   befoulment: {
-    skill: any
+    skill: Record<string, RawAugmentSkillEntry> | null
     exorcismLevel: number
     maxExorcismLevel: number
     iconImage: string | null
@@ -202,20 +329,21 @@ export interface WeaponModifiers {
 }
 
 export function getWeaponModifiers(
-  item: any,
+  item: RawGameItem,
   weaponKeyMap: Record<string, string> | null = null
 ): WeaponModifiers {
-  const param = item.param || {}
-  const odiant = param.odiant || {}
+  const param = item.param ?? ({} as RawParam)
+  const odiant = param.odiant ?? ({} as RawOdiant)
   const isOdiant = odiant.is_odiant_weapon === true
 
   const weaponKeys: string[] = []
   if (weaponKeyMap) {
-    const seriesId = parseInt(item.master?.series_id)
+    const seriesId = parseInt(String(item.master?.series_id))
     if (WEAPON_KEY_SERIES.has(seriesId)) {
-      const weaponProficiency = parseInt(item.master?.kind) || null
-      for (const skillKey of ['skill1', 'skill2', 'skill3']) {
-        const skillId = item[skillKey]?.id
+      const weaponProficiency = parseInt(String(item.master?.kind)) || null
+      for (const skillKey of ['skill1', 'skill2', 'skill3'] as const) {
+        const skillRef = item[skillKey] as RawWeaponSkillRef | undefined
+        const skillId = skillRef?.id
         if (skillId && weaponKeyMap[skillId]) {
           const slug = weaponKeyMap[skillId]
           const GAUPH_SLOT0 = [
@@ -238,18 +366,25 @@ export function getWeaponModifiers(
       param.arousal?.is_arousal_weapon &&
       param.arousal?.form_name &&
       param.arousal?.level
-        ? param.arousal
+        ? {
+            form_name: param.arousal.form_name,
+            level: param.arousal.level,
+            is_arousal_weapon: param.arousal.is_arousal_weapon!
+          }
         : null,
     axSkill:
       !isOdiant && param.augment_skill_info?.[0]
         ? {
-            skill: param.augment_skill_info[0],
+            skill: param.augment_skill_info[0]!,
             iconImage: param.augment_skill_icon_image?.[0] || null
           }
         : null,
     befoulment: isOdiant
       ? {
-          skill: param.augment_skill_info?.[0]?.[0] || null,
+          skill:
+            (param.augment_skill_info?.[0] as
+              | Record<string, RawAugmentSkillEntry>
+              | undefined) ?? null,
           exorcismLevel: odiant.exorcision_level || 0,
           maxExorcismLevel: odiant.max_exorcision_level || 5,
           iconImage: param.augment_skill_icon_image?.[0] || null
@@ -269,18 +404,25 @@ export function resolveAwakeningIcon(formName: string): string {
   return WEAPON_AWAKENING_ICONS[formName] || 'weapon-atk'
 }
 
+/** Modifier name entry used for AX skill tooltip lookup */
+export interface WeaponStatModifier {
+  nameEn?: string
+  nameJp?: string
+  [key: string]: unknown
+}
+
 /** Build an AX skill tooltip from skill entries */
 export function buildAxTooltip(
-  skill: any,
+  skill: Record<string, RawAugmentSkillEntry> | null,
   iconImage: string | null,
-  weaponStatModifiers: Record<string, any> | null,
+  weaponStatModifiers: Record<string, WeaponStatModifier> | null,
   locale: string
 ): string {
   const iconSlug = iconImage || 'ex_skill_atk'
   const axEntries = Object.values(skill || {})
   if (axEntries.length === 0) return t('stat_ax_skills')
   return axEntries
-    .map((s: any) => {
+    .map((s: RawAugmentSkillEntry) => {
       const entryIconSlug = s.image || iconSlug
       const entryFile = AUGMENT_ICON_MAP[entryIconSlug] || entryIconSlug
       const mod = weaponStatModifiers?.[entryFile]
@@ -352,7 +494,7 @@ function renderBaseStats({
   proficiencies,
   type
 }: {
-  data: any
+  data: RawGameItem
   name: string
   id: string
   seriesMap?: Record<number, string>
@@ -360,8 +502,8 @@ function renderBaseStats({
   proficiencies?: Array<string | number>
   type: 'weapon' | 'summon' | 'character'
 }) {
-  const master = data.master || data
-  const param = data.param || {}
+  const master = data.master ?? data
+  const param = data.param ?? ({} as RawParam)
 
   const minHp = master.default_hp || data.default_hp
   const maxHp = param.hp || master.max_hp || data.max_hp
@@ -373,11 +515,11 @@ function renderBaseStats({
   html += statRow(t('stat_name'), name)
   if (id) html += statRow(t('stat_id'), id)
 
-  const seriesId = data.series_id || master.series_id
+  const seriesId = Number(data.series_id || master.series_id)
   if (seriesId && seriesMap?.[seriesId]) {
     html += statRow(
       t('stat_series'),
-      translateSeries(seriesMap[seriesId], type)
+      translateSeries(seriesMap[seriesId]!, type)
     )
   }
 
@@ -402,19 +544,23 @@ function renderBaseStats({
     if (profIcons) html += statRow(t('stat_proficiency'), profIcons)
   }
 
-  if (level) html += statRow(t('stat_uncap'), renderStars(level, type))
+  if (level) html += statRow(t('stat_uncap'), renderStars(Number(level), type))
   if (minHp) html += statRow(t('stat_min_hp'), Number(minHp).toLocaleString())
   if (maxHp) html += statRow(t('stat_max_hp'), Number(maxHp).toLocaleString())
   if (minAtk)
     html += statRow(t('stat_min_atk'), Number(minAtk).toLocaleString())
   if (maxAtk)
     html += statRow(t('stat_max_atk'), Number(maxAtk).toLocaleString())
-  if (level) html += statRow(t('stat_max_level'), level)
+  if (level) html += statRow(t('stat_max_level'), String(level))
 
   return { html, master, param }
 }
 
-function closeStats(html: string, data: any, master: any): string {
+function closeStats(
+  html: string,
+  data: RawGameItem,
+  master: RawMaster | RawGameItem
+): string {
   const comment = data.comment || master.comment
   if (comment) {
     html += `<div class="stat-row stat-comment"><span class="stat-value">${comment}</span></div>`
@@ -423,7 +569,7 @@ function closeStats(html: string, data: any, master: any): string {
 }
 
 export function renderCharacterStats(
-  data: any,
+  data: RawGameItem,
   name: string,
   id: string,
   element: string | number | undefined,
@@ -452,7 +598,7 @@ export function renderCharacterStats(
 }
 
 export function renderWeaponStats(
-  data: any,
+  data: RawGameItem,
   name: string,
   id: string,
   element: string | number | undefined,
@@ -483,7 +629,10 @@ export function renderWeaponStats(
 
   const odiant = param.odiant
   if (odiant?.is_odiant_weapon) {
-    const befoulSkill = param.augment_skill_info?.[0]?.[0]
+    const befoulSkillMap = param.augment_skill_info?.[0]
+    const befoulSkill = befoulSkillMap
+      ? Object.values(befoulSkillMap)[0]
+      : undefined
     html += statRow(t('stat_befoulment'), befoulSkill?.show_value || 'Active')
     html += statRow(
       t('stat_exorcism'),
@@ -504,7 +653,7 @@ export function renderWeaponStats(
 }
 
 export function renderSummonStats(
-  data: any,
+  data: RawGameItem,
   name: string,
   id: string,
   element: string | number | undefined

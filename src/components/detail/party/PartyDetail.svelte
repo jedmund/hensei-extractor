@@ -5,7 +5,8 @@
     getWeaponModifiers,
     resolveAwakeningIcon,
     resolveAugmentIcon,
-    buildAxTooltip
+    buildAxTooltip,
+    type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
   import {
@@ -14,17 +15,67 @@
   } from '../../../lib/game-data.js'
   import * as m from '../../../paraglide/messages.js'
 
+  interface RawPartyItem {
+    id?: string
+    master?: { id?: string; name?: string; image?: string; [key: string]: unknown }
+    param?: {
+      id?: string
+      evolution?: number
+      phase?: number
+      style?: string
+      image_id?: string
+      has_npcaugment_constant?: boolean
+      npc_arousal_form?: string
+      [key: string]: unknown
+    }
+    [key: string]: unknown
+  }
+
+  interface SummonSearchResult {
+    granblue_id?: string
+    imageSuffix?: string
+    name?: { en?: string; ja?: string }
+  }
+
+  interface BulletEntry {
+    bullet_id?: string
+    name?: string
+    [key: string]: unknown
+  }
+
+  interface PartyData {
+    deck?: {
+      pc?: {
+        job?: { master?: { id?: string; name?: string; image?: string } }
+        weapons?: Record<string, RawPartyItem | null>
+        summons?: Record<string, RawPartyItem | null>
+        sub_summons?: Record<string, RawPartyItem | null>
+        damage_info?: { summon_name?: string }
+        set_action?: Array<{ name: string }>
+        familiar_id?: string
+        shield_id?: string
+        quick_user_summon_id?: string
+        [key: string]: unknown
+      }
+      npc?: Record<string, RawPartyItem | null>
+      name?: string
+      [key: string]: unknown
+    }
+    bullet_info?: { set_bullets?: Record<string, BulletEntry> }
+    [key: string]: unknown
+  }
+
   interface Props {
-    data: any
-    friendSummon?: any
+    data: Record<string, unknown>
+    friendSummon?: SummonSearchResult | null
     weaponKeyMap?: Record<string, string> | null
     jobSkillSlugs?: Record<string, string>
-    weaponStatModifiers?: Record<string, any> | null
+    weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
   }
 
   let {
-    data,
+    data: rawData,
     friendSummon = null,
     weaponKeyMap = null,
     jobSkillSlugs = {},
@@ -32,16 +83,17 @@
     simplePortraits = false
   }: Props = $props()
 
-  let deck = $derived(data?.deck || {})
-  let pc = $derived(deck.pc || {})
-  let job = $derived(pc.job)
-  let characters = $derived(toArray(deck.npc).filter(Boolean))
-  let weapons = $derived(toArray(pc.weapons).filter(Boolean))
-  let summons = $derived(toArray(pc.summons).filter(Boolean))
-  let subSummons = $derived(toArray(pc.sub_summons).filter(Boolean))
-  let accessoryIds = $derived([pc.familiar_id, pc.shield_id].filter(Boolean))
-  let quickSummonId = $derived(pc.quick_user_summon_id)
-  let setAction = $derived(pc.set_action || [])
+  let data = $derived(rawData as PartyData)
+  let deck = $derived(data?.deck)
+  let pc = $derived(deck?.pc)
+  let job = $derived(pc?.job)
+  let characters = $derived(toArray(deck?.npc).filter(Boolean) as RawPartyItem[])
+  let weapons = $derived(toArray(pc?.weapons).filter(Boolean) as RawPartyItem[])
+  let summons = $derived(toArray(pc?.summons).filter(Boolean) as RawPartyItem[])
+  let subSummons = $derived(toArray(pc?.sub_summons).filter(Boolean) as RawPartyItem[])
+  let accessoryIds = $derived([pc?.familiar_id, pc?.shield_id].filter(Boolean) as string[])
+  let quickSummonId = $derived(pc?.quick_user_summon_id)
+  let setAction = $derived(pc?.set_action || [])
 
   let mainWeapon = $derived(weapons[0])
   let gridWeapons = $derived(weapons.slice(1))
@@ -49,15 +101,15 @@
   let allSubSummons = $derived([...summons.slice(1), ...subSummons])
 
   let bulletInfo = $derived(data?.bullet_info?.set_bullets)
-  let bullets = $derived.by(() => {
+  let bullets = $derived.by((): BulletEntry[] => {
     if (!bulletInfo) return []
     return Object.entries(bulletInfo)
       .filter(([key]) => key.startsWith('bullet_'))
-      .map(([, bullet]) => bullet as any)
-      .filter((b) => b && b.bullet_id)
+      .map(([, bullet]) => bullet)
+      .filter((b): b is BulletEntry => !!b && !!b.bullet_id)
   })
 
-  function getCharImageSuffix(item: any): string {
+  function getCharImageSuffix(item: RawPartyItem): string {
     if (item.param?.style === '2') return '_01_style'
     const evolution = item.param?.evolution
     const phase = item.param?.phase
@@ -67,7 +119,7 @@
     return '_01'
   }
 
-  function getImageSuffix(item: any): string {
+  function getImageSuffix(item: RawPartyItem): string {
     const imageId = item.param?.image_id
     if (!imageId) return ''
     const id = item.master?.id || item.param?.id || item.id
@@ -75,9 +127,9 @@
     return imageId.slice(String(id).length)
   }
 
-  function getCharModifiers(item: any): { awakening: string | null; perpetuity: boolean } {
+  function getCharModifiers(item: RawPartyItem): { awakening: string | null; perpetuity: boolean } {
     const arousalForm = item.param?.npc_arousal_form
-    const awakeningSlug = arousalForm ? CHARACTER_AWAKENING_MAPPING[arousalForm] : null
+    const awakeningSlug = arousalForm ? CHARACTER_AWAKENING_MAPPING[Number(arousalForm)] : null
     const hasPerpetuit = !!item.param?.has_npcaugment_constant
     return {
       awakening: awakeningSlug && awakeningSlug !== 'character-balanced' ? awakeningSlug : null,
@@ -85,8 +137,8 @@
     }
   }
 
-  function resolveSummonId(item: any): string {
-    return resolveForgedSummonId(item.master?.id || item.param?.id || item.id)
+  function resolveSummonId(item: RawPartyItem): string {
+    return resolveForgedSummonId(item.master?.id || item.param?.id || item.id || '')
   }
 </script>
 
@@ -159,8 +211,8 @@
         {#if mainWeapon}
           {@const mainId = mainWeapon.master?.id || mainWeapon.param?.id || mainWeapon.id}
           {@const mainSuffix = getImageSuffix(mainWeapon)}
+          {@const mainMods = getWeaponModifiers(mainWeapon, weaponKeyMap)}
           <div class="weapon-mainhand">
-            {@const mainMods = getWeaponModifiers(mainWeapon, weaponKeyMap)}
             {#if mainMods.awakening || mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
               <div class="weapon-modifiers">
                 {#if mainMods.awakening}
@@ -190,8 +242,8 @@
           {#each gridWeapons as item}
             {@const id = item.master?.id || item.param?.id || item.id}
             {@const suffix = getImageSuffix(item)}
+            {@const wMods = getWeaponModifiers(item, weaponKeyMap)}
             <div class="grid-item">
-              {@const wMods = getWeaponModifiers(item, weaponKeyMap)}
               {#if wMods.awakening || wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
                 <div class="weapon-modifiers">
                   {#if wMods.awakening}

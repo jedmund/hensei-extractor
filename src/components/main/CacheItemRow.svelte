@@ -12,7 +12,7 @@
 
   const isStash = $derived(dataType.startsWith('stash_'))
   const displayName = $derived(
-    (status as any).partyName || status.displayName
+    status.partyName || status.displayName
   )
 </script>
 

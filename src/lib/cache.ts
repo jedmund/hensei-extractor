@@ -60,8 +60,8 @@ export function formatCacheStatus(
         type.startsWith('stash_')
       ) {
         subtitle = t('count_items_pages', {
-          items: info.totalItems,
-          pages: info.pageCount
+          items: info.totalItems ?? 0,
+          pages: info.pageCount ?? 0
         })
       }
 

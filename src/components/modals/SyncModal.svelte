@@ -40,7 +40,7 @@
     if (res.error) {
       app.showToast(res.error)
     } else {
-      app.showToast(m.sync_result({ total: (res.data?.created ?? 0) + (res.data?.updated ?? 0) }))
+      app.showToast(m.sync_result({ total: (res.created ?? 0) + (res.updated ?? 0) }))
     }
   }
 </script>
