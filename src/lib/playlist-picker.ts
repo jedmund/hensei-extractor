@@ -1,21 +1,39 @@
 /**
- * @fileoverview Playlist picker view for selecting playlists before party import.
+ * Playlist picker view for selecting playlists before party import.
  * Mirrors the raid-picker pattern with multi-select, search, and sheet-based creation.
  */
 
 import { t, tPlural } from './i18n.js'
 
 // ==========================================
+// TYPES
+// ==========================================
+
+interface Playlist {
+  id: string | number
+  title?: string
+  description?: string
+  party_count?: number
+  parties_count?: number
+  visibility?: number
+}
+
+interface ShowPlaylistPickerOptions {
+  currentPlaylists?: Playlist[]
+  onSelect: (playlists: Playlist[]) => void
+}
+
+// ==========================================
 // STATE
 // ==========================================
 
-let playlists = []
-let selectedPlaylists = []
+let playlists: Playlist[] = []
+let selectedPlaylists: Playlist[] = []
 let searchQuery = ''
-let onSelectCallback = null
+let onSelectCallback: ((playlists: Playlist[]) => void) | null = null
 let playlistVisibility = 3
 
-const PLAYLIST_VISIBILITY_LABELS = {
+const PLAYLIST_VISIBILITY_LABELS: Record<number, string> = {
   1: 'playlist_public',
   2: 'playlist_unlisted',
   3: 'playlist_private'
@@ -25,17 +43,13 @@ const PLAYLIST_VISIBILITY_LABELS = {
 // PUBLIC API
 // ==========================================
 
-/**
- * Show the playlist picker view
- * @param {Object} options
- * @param {Array} options.currentPlaylists - Currently selected playlists (if any)
- * @param {Function} options.onSelect - Callback when done: (playlists) => void
- */
-export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
+export async function showPlaylistPicker({
+  currentPlaylists = [],
+  onSelect
+}: ShowPlaylistPickerOptions): Promise<void> {
   selectedPlaylists = [...currentPlaylists]
   onSelectCallback = onSelect
 
-  // Fetch playlists
   const response = await chrome.runtime.sendMessage({
     action: 'fetchUserPlaylists'
   })
@@ -44,45 +58,30 @@ export async function showPlaylistPicker({ currentPlaylists = [], onSelect }) {
     return
   }
 
-  playlists = response.data?.results || response.data || []
+  playlists = response.data?.results ?? response.data ?? []
 
   renderPicker()
   bindEvents()
 
-  // Slide in
-  document.getElementById('playlistPickerView').classList.add('active')
+  document.getElementById('playlistPickerView')?.classList.add('active')
 }
 
-/**
- * Hide the playlist picker view
- */
-export function hidePlaylistPicker() {
+export function hidePlaylistPicker(): void {
   if (onSelectCallback) onSelectCallback(selectedPlaylists)
   hidePlaylistCreateView()
-  document.getElementById('playlistPickerView').classList.remove('active')
+  document.getElementById('playlistPickerView')?.classList.remove('active')
   searchQuery = ''
 }
 
-/**
- * Get the currently selected playlists
- * @returns {Array}
- */
-export function getSelectedPlaylists() {
+export function getSelectedPlaylists(): Playlist[] {
   return selectedPlaylists
 }
 
-/**
- * Set the selected playlists programmatically
- * @param {Array} items
- */
-export function setSelectedPlaylists(items) {
+export function setSelectedPlaylists(items: Playlist[]): void {
   selectedPlaylists = [...items]
 }
 
-/**
- * Clear the selected playlists
- */
-export function clearSelectedPlaylists() {
+export function clearSelectedPlaylists(): void {
   selectedPlaylists = []
 }
 
@@ -90,20 +89,20 @@ export function clearSelectedPlaylists() {
 // RENDERING
 // ==========================================
 
-function renderPicker() {
+function renderPicker(): void {
   const container = document.getElementById('playlistPickerContent')
   if (!container) return
 
-  // Reset search input
-  const searchInput = document.getElementById('playlistSearchInput')
+  const searchInput = document.getElementById(
+    'playlistSearchInput'
+  ) as HTMLInputElement | null
   if (searchInput) searchInput.value = ''
   searchQuery = ''
 
-  // Render playlist list
   renderPlaylistList()
 }
 
-function renderPlaylistList() {
+function renderPlaylistList(): void {
   const container = document.getElementById('playlistPickerContent')
   if (!container) return
 
@@ -133,24 +132,24 @@ function renderPlaylistList() {
     .join('')
 }
 
-function getFilteredPlaylists() {
+function getFilteredPlaylists(): Playlist[] {
   const query = searchQuery.toLowerCase().trim()
 
   if (!query) return playlists
 
   return playlists.filter((playlist) => {
-    const title = (playlist.title || '').toLowerCase()
-    const description = (playlist.description || '').toLowerCase()
+    const title = (playlist.title ?? '').toLowerCase()
+    const description = (playlist.description ?? '').toLowerCase()
     return title.includes(query) || description.includes(query)
   })
 }
 
-function renderPlaylistItem(playlist) {
+function renderPlaylistItem(playlist: Playlist): string {
   const isSelected = selectedPlaylists.some(
     (p) => String(p.id) === String(playlist.id)
   )
-  const title = playlist.title || t('playlist_untitled')
-  const partyCount = playlist.party_count || playlist.parties_count || 0
+  const title = playlist.title ?? t('playlist_untitled')
+  const partyCount = playlist.party_count ?? playlist.parties_count ?? 0
   const countText = tPlural('count_party', 'count_parties', partyCount)
 
   return `
@@ -164,23 +163,28 @@ function renderPlaylistItem(playlist) {
   `
 }
 
-function showPlaylistCreateView(prefillTitle) {
+function showPlaylistCreateView(prefillTitle?: string): void {
   if (prefillTitle) {
-    const titleInput = document.getElementById('playlistCreateTitle')
+    const titleInput = document.getElementById(
+      'playlistCreateTitle'
+    ) as HTMLInputElement | null
     if (titleInput) titleInput.value = prefillTitle
   }
   document.getElementById('playlistCreateView')?.classList.add('active')
   updateCreateSubmitState()
 }
 
-function hidePlaylistCreateView() {
+function hidePlaylistCreateView(): void {
   const view = document.getElementById('playlistCreateView')
   if (!view) return
   view.classList.remove('active')
 
-  // Clear form fields
-  const titleInput = view.querySelector('#playlistCreateTitle')
-  const descInput = view.querySelector('#playlistCreateDescription')
+  const titleInput = view.querySelector(
+    '#playlistCreateTitle'
+  ) as HTMLInputElement | null
+  const descInput = view.querySelector(
+    '#playlistCreateDescription'
+  ) as HTMLInputElement | null
   const errorEl = view.querySelector('.playlist-create-error')
   if (titleInput) titleInput.value = ''
   if (descInput) descInput.value = ''
@@ -197,39 +201,33 @@ function hidePlaylistCreateView() {
 
 let eventsBound = false
 
-function bindEvents() {
+function bindEvents(): void {
   if (eventsBound) return
   eventsBound = true
 
-  // Back button
   document
     .getElementById('playlistPickerBack')
     ?.addEventListener('click', hidePlaylistPicker)
 
-  // Search input
   document
     .getElementById('playlistSearchInput')
     ?.addEventListener('input', (e) => {
-      searchQuery = e.target.value
+      searchQuery = (e.target as HTMLInputElement).value
       renderPlaylistList()
     })
 
-  // Create button (show create view)
   document
     .getElementById('playlistCreateBtn')
     ?.addEventListener('click', () => showPlaylistCreateView())
 
-  // Validate create form on title input
   document
     .getElementById('playlistCreateTitle')
     ?.addEventListener('input', updateCreateSubmitState)
 
-  // Create view back button
   document
     .getElementById('playlistCreateBack')
     ?.addEventListener('click', hidePlaylistCreateView)
 
-  // Playlist visibility selector
   const plVisBtn = document.getElementById('playlistVisibilityButton')
   const plVisDrop = document.getElementById('playlistVisibilityDropdown')
 
@@ -238,49 +236,52 @@ function bindEvents() {
     plVisDrop?.classList.toggle('hidden')
   })
 
-  plVisDrop?.querySelectorAll('.visibility-option').forEach((option) => {
-    option.addEventListener('click', () => {
-      playlistVisibility = parseInt(option.dataset.value, 10)
-      updatePlaylistVisibilityLabel()
-      updatePlaylistVisibilitySelection()
-      plVisDrop.classList.add('hidden')
+  plVisDrop
+    ?.querySelectorAll<HTMLElement>('.visibility-option')
+    .forEach((option) => {
+      option.addEventListener('click', () => {
+        playlistVisibility = parseInt(option.dataset.value ?? '3', 10)
+        updatePlaylistVisibilityLabel()
+        updatePlaylistVisibilitySelection()
+        plVisDrop.classList.add('hidden')
+      })
     })
-  })
 
   document.addEventListener('click', (e) => {
     if (
       plVisBtn &&
       plVisDrop &&
-      !plVisBtn.contains(e.target) &&
-      !plVisDrop.contains(e.target)
+      !plVisBtn.contains(e.target as Node) &&
+      !plVisDrop.contains(e.target as Node)
     ) {
       plVisDrop.classList.add('hidden')
     }
   })
 
-  // Submit create form
   document
     .getElementById('playlistCreateSubmit')
     ?.addEventListener('click', handleCreatePlaylist)
 
-  // Playlist item clicks (delegated)
   document
     .getElementById('playlistPickerContent')
     ?.addEventListener('click', (e) => {
-      const createPrompt = e.target.closest('.playlist-create-prompt')
+      const createPrompt = (e.target as HTMLElement).closest<HTMLElement>(
+        '.playlist-create-prompt'
+      )
       if (createPrompt) {
         showPlaylistCreateView(createPrompt.dataset.prefill)
         return
       }
 
-      const playlistItem = e.target.closest('.playlist-item')
+      const playlistItem = (e.target as HTMLElement).closest<HTMLElement>(
+        '.playlist-item'
+      )
       if (!playlistItem) return
 
       const playlistId = playlistItem.dataset.playlistId
       const playlist = playlists.find((p) => String(p.id) === playlistId)
       if (!playlist) return
 
-      // Toggle: clicking toggles selection
       const existingIndex = selectedPlaylists.findIndex(
         (p) => String(p.id) === String(playlist.id)
       )
@@ -293,17 +294,22 @@ function bindEvents() {
       renderPlaylistList()
     })
 
-  // Done button
   document
     .getElementById('playlistPickerDone')
     ?.addEventListener('click', hidePlaylistPicker)
 }
 
-async function handleCreatePlaylist() {
-  const titleInput = document.getElementById('playlistCreateTitle')
-  const descInput = document.getElementById('playlistCreateDescription')
+async function handleCreatePlaylist(): Promise<void> {
+  const titleInput = document.getElementById(
+    'playlistCreateTitle'
+  ) as HTMLInputElement | null
+  const descInput = document.getElementById(
+    'playlistCreateDescription'
+  ) as HTMLInputElement | null
   const errorEl = document.querySelector('.playlist-create-error')
-  const submitBtn = document.getElementById('playlistCreateSubmit')
+  const submitBtn = document.getElementById(
+    'playlistCreateSubmit'
+  ) as HTMLButtonElement | null
 
   const title = titleInput?.value?.trim()
   if (!title) {
@@ -321,7 +327,7 @@ async function handleCreatePlaylist() {
     action: 'createPlaylist',
     data: {
       title,
-      description: descInput?.value?.trim() || '',
+      description: descInput?.value?.trim() ?? '',
       visibility: playlistVisibility
     }
   })
@@ -336,50 +342,57 @@ async function handleCreatePlaylist() {
     return
   }
 
-  // Auto-select the new playlist
-  const responseData = response.data || response
-  const newPlaylist = responseData.playlist || responseData
+  const responseData = response.data ?? response
+  const newPlaylist = responseData.playlist ?? responseData
   if (!newPlaylist.title) newPlaylist.title = title
   selectedPlaylists.push(newPlaylist)
 
-  // Re-fetch playlists, clear search, and go back
   const refreshResponse = await chrome.runtime.sendMessage({
     action: 'fetchUserPlaylists'
   })
-  playlists = refreshResponse.data?.results || refreshResponse.data || []
+  playlists = refreshResponse.data?.results ?? refreshResponse.data ?? []
 
-  // Reconcile selected playlists with fresh data
   selectedPlaylists = selectedPlaylists.map(
-    (s) => playlists.find((p) => String(p.id) === String(s.id)) || s
+    (s) => playlists.find((p) => String(p.id) === String(s.id)) ?? s
   )
 
   searchQuery = ''
-  const searchInput = document.getElementById('playlistSearchInput')
+  const searchInput = document.getElementById(
+    'playlistSearchInput'
+  ) as HTMLInputElement | null
   if (searchInput) searchInput.value = ''
 
   hidePlaylistCreateView()
   renderPlaylistList()
 }
 
-function updatePlaylistVisibilityLabel() {
+function updatePlaylistVisibilityLabel(): void {
   const label = document.getElementById('playlistVisibilityLabel')
   if (label)
-    label.textContent = t(PLAYLIST_VISIBILITY_LABELS[playlistVisibility])
+    label.textContent = t(
+      PLAYLIST_VISIBILITY_LABELS[playlistVisibility] ?? 'playlist_private'
+    )
 }
 
-function updateCreateSubmitState() {
-  const title = document.getElementById('playlistCreateTitle')?.value?.trim()
-  const btn = document.getElementById('playlistCreateSubmit')
+function updateCreateSubmitState(): void {
+  const title = (
+    document.getElementById('playlistCreateTitle') as HTMLInputElement | null
+  )?.value?.trim()
+  const btn = document.getElementById(
+    'playlistCreateSubmit'
+  ) as HTMLButtonElement | null
   if (btn) btn.disabled = !title
 }
 
-function updatePlaylistVisibilitySelection() {
+function updatePlaylistVisibilitySelection(): void {
   const dropdown = document.getElementById('playlistVisibilityDropdown')
   if (!dropdown) return
-  dropdown.querySelectorAll('.visibility-option').forEach((opt) => {
-    opt.classList.toggle(
-      'selected',
-      parseInt(opt.dataset.value, 10) === playlistVisibility
-    )
-  })
+  dropdown
+    .querySelectorAll<HTMLElement>('.visibility-option')
+    .forEach((opt) => {
+      opt.classList.toggle(
+        'selected',
+        parseInt(opt.dataset.value ?? '0', 10) === playlistVisibility
+      )
+    })
 }
