@@ -810,8 +810,7 @@ export function getPreferredLocale(gbAuth: AuthWithLanguage | null): Locale {
   if (gbAuth?.language === 'ja') return 'ja'
   if (gbAuth?.language === 'en') return 'en'
   try {
-    const uiLang =
-      chrome.i18n?.getUILanguage?.() ?? navigator.language ?? 'en'
+    const uiLang = chrome.i18n?.getUILanguage?.() ?? navigator.language ?? 'en'
     return uiLang.startsWith('ja') ? 'ja' : 'en'
   } catch {
     return 'en'

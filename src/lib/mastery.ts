@@ -195,7 +195,9 @@ export function formatPerpetuityBonus(
   return `${displayName} +${value}`
 }
 
-export function parseDisplayValue(dispParam: string | null | undefined): number {
+export function parseDisplayValue(
+  dispParam: string | null | undefined
+): number {
   if (!dispParam) return 0
   const str = String(dispParam).replace(/^\+/, '')
   return parseInt(str, 10) || 0

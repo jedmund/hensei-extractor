@@ -9,7 +9,12 @@ export type ExtensionMessage =
   | { action: 'clearCache' }
   | { action: 'importItems'; data: unknown; dataType: string }
   | { action: 'previewSyncDeletions'; data: unknown; dataType: string }
-  | { action: 'confirmSync'; data: unknown; dataType: string; deletions: unknown }
+  | {
+      action: 'confirmSync'
+      data: unknown
+      dataType: string
+      deletions: unknown
+    }
   | { action: 'popOutWindow' }
   | { action: 'fetchRaidGroups' }
 
