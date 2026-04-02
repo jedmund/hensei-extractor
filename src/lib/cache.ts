@@ -1,17 +1,13 @@
 /**
- * @fileoverview Cache utility functions for the Granblue Fantasy Chrome extension.
+ * Cache utility functions for the Granblue Fantasy Chrome extension.
  * Provides helper functions for formatting cache status and managing cache data.
  */
 
 import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
 import { t } from './i18n.js'
+import type { CacheStatusInfo, FormattedCacheStatus } from './types/cache.js'
 
-/**
- * Format a timestamp age into a human-readable string
- * @param {number} ageMs - Age in milliseconds
- * @returns {string} Formatted age string
- */
-export function formatAge(ageMs) {
+export function formatAge(ageMs: number): string {
   const seconds = Math.floor(ageMs / 1000)
   if (seconds < 60) return t('time_seconds_ago', { count: seconds })
 
@@ -22,22 +18,14 @@ export function formatAge(ageMs) {
   return t('time_hours_ago', { count: hours })
 }
 
-/**
- * Check if cached data is stale
- * @param {number} timestamp - Cache timestamp
- * @returns {boolean} True if stale
- */
-export function isStale(timestamp) {
+export function isStale(timestamp: number): boolean {
   return Date.now() - timestamp > CACHE_TTL_MS
 }
 
-/**
- * Format cache status for display
- * @param {object} status - Cache status object from content script
- * @returns {object} Formatted status with display strings
- */
-export function formatCacheStatus(status) {
-  const formatted = {}
+export function formatCacheStatus(
+  status: Record<string, CacheStatusInfo>
+): Record<string, FormattedCacheStatus> {
+  const formatted: Record<string, FormattedCacheStatus> = {}
 
   for (const [type, info] of Object.entries(status)) {
     const stashDisplayName =
@@ -63,7 +51,7 @@ export function formatCacheStatus(status) {
       }
     } else {
       const ageText = formatAge(info.age)
-      let subtitle = null
+      let subtitle: string | null = null
       let displayName = stashDisplayName
 
       if (
@@ -77,13 +65,12 @@ export function formatCacheStatus(status) {
         })
       }
 
-      // Handle per-item detail types (use item name as display name)
       if (type.startsWith('detail_npc_')) {
-        displayName = info.itemName || t('type_character')
+        displayName = info.itemName ?? t('type_character')
       } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName || t('type_weapon')
+        displayName = info.itemName ?? t('type_weapon')
       } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName || t('type_summon')
+        displayName = info.itemName ?? t('type_summon')
       }
 
       formatted[type] = {
