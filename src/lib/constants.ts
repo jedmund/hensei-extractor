@@ -1,5 +1,5 @@
 /**
- * @fileoverview Shared constants for the Granblue Fantasy Chrome extension.
+ * Shared constants for the Granblue Fantasy Chrome extension.
  * Centralizes all configuration values, URLs, and data type definitions.
  */
 
@@ -10,7 +10,13 @@ import { t } from './i18n.js'
 // API CONFIGURATION
 // ==========================================
 
-export const ENVIRONMENTS = {
+interface EnvironmentConfig {
+  apiUrl: string
+  siteUrl: string
+  apiPath: string
+}
+
+export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   production: {
     apiUrl: 'https://api.granblue.team',
     siteUrl: 'https://granblue.team',
@@ -25,43 +31,26 @@ export const ENVIRONMENTS = {
 
 export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
 
-/**
- * Get full image URL for a path
- * @param {string} path - Image path (e.g., 'port-breeze.jpg', 'profile/npc@2x.png')
- * @returns {string} Full image URL
- */
-export function getImageUrl(path) {
+export function getImageUrl(path: string): string {
   return `${IMG_URL}/${path}`
 }
 
-/** Default environment */
 export const DEFAULT_ENV = 'development'
 
-/**
- * Get environment config from storage
- * @returns {Promise<Object>} Environment configuration
- */
-export async function getEnvConfig() {
-  const { appEnv } = await safeGet('appEnv')
-  const env = appEnv || DEFAULT_ENV
-  return { env, ...ENVIRONMENTS[env] }
+export async function getEnvConfig(): Promise<
+  EnvironmentConfig & { env: string }
+> {
+  const { appEnv } = await safeGet<{ appEnv?: string }>('appEnv')
+  const env = appEnv ?? DEFAULT_ENV
+  return { env, ...ENVIRONMENTS[env]! }
 }
 
-/**
- * Get the full API URL with path prefix
- * @param {string} endpoint - API endpoint (e.g., '/import', '/collection/artifacts/import')
- * @returns {Promise<string>} Full API URL
- */
-export async function getApiUrl(endpoint) {
+export async function getApiUrl(endpoint: string): Promise<string> {
   const config = await getEnvConfig()
   return `${config.apiUrl}${config.apiPath}${endpoint}`
 }
 
-/**
- * Get the site base URL (for party links, etc.)
- * @returns {Promise<string>} The site base URL
- */
-export async function getSiteBaseUrl() {
+export async function getSiteBaseUrl(): Promise<string> {
   const config = await getEnvConfig()
   return config.siteUrl
 }
@@ -81,7 +70,7 @@ export const GBF_CDN =
   'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets'
 
 /** Cache storage keys for static (non-dynamic) data types */
-export const CACHE_KEYS = {
+export const CACHE_KEYS: Record<string, string> = {
   list_npc: 'gbf_cache_list_npc',
   list_weapon: 'gbf_cache_list_weapon',
   list_summon: 'gbf_cache_list_summon',
@@ -94,7 +83,7 @@ export const CACHE_KEYS = {
 }
 
 /** Cache key prefixes for dynamic data types (appended with ID/number) */
-export const CACHE_PREFIXES = {
+export const CACHE_PREFIXES: Record<string, string> = {
   party: 'gbf_cache_party_',
   stash_weapon: 'gbf_cache_stash_weapon_',
   stash_summon: 'gbf_cache_stash_summon_',
@@ -103,17 +92,9 @@ export const CACHE_PREFIXES = {
   detail_summon: 'gbf_cache_detail_summon_'
 }
 
-/**
- * Resolve a dataType string to its chrome.storage cache key.
- * Handles both static types (e.g., 'list_npc') and dynamic types (e.g., 'party_1_2', 'detail_npc_123').
- * @param {string} dataType - The data type identifier
- * @returns {string|null} The cache storage key, or null if unknown
- */
-export function resolveCacheKey(dataType) {
-  // Exact match for static keys
-  if (CACHE_KEYS[dataType]) return CACHE_KEYS[dataType]
+export function resolveCacheKey(dataType: string): string | null {
+  if (CACHE_KEYS[dataType]) return CACHE_KEYS[dataType]!
 
-  // Dynamic prefix match: find the longest matching prefix
   for (const [prefix, cachePrefix] of Object.entries(CACHE_PREFIXES)) {
     if (dataType.startsWith(prefix + '_')) {
       const suffix = dataType.slice(prefix.length + 1)
@@ -133,14 +114,13 @@ export const RAID_SECTIONS = {
   RAID: 1,
   EVENT: 2,
   SOLO: 3
-}
+} as const
 
 // ==========================================
 // DATA TYPE DEFINITIONS
 // ==========================================
 
-/** i18n keys for data type names */
-const DATA_TYPE_I18N_KEYS = {
+const DATA_TYPE_I18N_KEYS: Record<string, string> = {
   party: 'type_party',
   detail_npc: 'type_character',
   detail_weapon: 'type_weapon',
@@ -155,12 +135,7 @@ const DATA_TYPE_I18N_KEYS = {
   character_stats: 'type_character_stats'
 }
 
-/**
- * Get display name for a data type
- * @param {string} dataType - The data type key
- * @returns {string} Human-readable name
- */
-export function getDataTypeName(dataType) {
+export function getDataTypeName(dataType: string): string {
   const key = DATA_TYPE_I18N_KEYS[dataType]
   if (key) return t(key)
   if (dataType.startsWith('stash_weapon_')) {
@@ -172,7 +147,6 @@ export function getDataTypeName(dataType) {
   return dataType
 }
 
-/** Display order for data types in UI */
 export const DATA_TYPE_ORDER = [
   'detail_npc',
   'detail_weapon',
@@ -184,13 +158,12 @@ export const DATA_TYPE_ORDER = [
   'list_npc',
   'list_weapon',
   'list_summon'
-]
+] as const
 
-/** Data types grouped by tab (party and database types are discovered dynamically) */
-export const TAB_DATA_TYPES = {
-  party: [], // Parties are dynamic - populated from cache status
+export const TAB_DATA_TYPES: Record<string, string[]> = {
+  party: [],
   collection: [
-    'character_stats', // Character extended stats (awakening, mastery bonuses)
+    'character_stats',
     'collection_npc',
     'collection_weapon',
     'collection_summon',
@@ -199,7 +172,7 @@ export const TAB_DATA_TYPES = {
     'list_weapon',
     'list_summon'
   ],
-  database: [] // Database items are dynamic - populated from cache status (like parties)
+  database: []
 }
 
 // ==========================================
@@ -207,14 +180,9 @@ export const TAB_DATA_TYPES = {
 // ==========================================
 
 export const TIMEOUTS = {
-  /** How long to show status messages */
   statusMessage: 2000,
-  /** Delay after successful login before closing pane */
   loginSuccess: 1500,
-  /** Duration of shake animation */
   shakeAnimation: 600,
-  /** Base delay for script initialization retries */
   scriptInitBase: 50,
-  /** Max attempts for script initialization */
   scriptInitMaxAttempts: 10
-}
+} as const
