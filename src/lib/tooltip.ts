@@ -1,13 +1,13 @@
 /**
- * @fileoverview Portal tooltip system.
+ * Portal tooltip system.
  * A single fixed-position div renders above all content,
  * avoiding overflow clipping and z-index issues.
  */
 
-let tooltipEl = null
-let activeTarget = null
+let tooltipEl: HTMLElement | null = null
+let activeTarget: HTMLElement | null = null
 
-export function initTooltip() {
+export function initTooltip(): void {
   tooltipEl = document.getElementById('tooltip')
   if (!tooltipEl) return
 
@@ -18,29 +18,30 @@ export function initTooltip() {
   document.addEventListener('scroll', hide, true)
 }
 
-function onMouseOver(e) {
-  const target = e.target.closest('[data-tooltip]')
-  if (!target || !target.dataset.tooltip) return
+function onMouseOver(e: MouseEvent): void {
+  const target = (e.target as HTMLElement).closest<HTMLElement>(
+    '[data-tooltip]'
+  )
+  if (!target?.dataset.tooltip) return
 
   activeTarget = target
   show(target)
 }
 
-function onMouseOut(e) {
-  const related = e.relatedTarget
-  if (
-    related &&
-    related.closest &&
-    related.closest('[data-tooltip]') === activeTarget
+function onMouseOut(e: MouseEvent): void {
+  const related = e.relatedTarget as HTMLElement | null
+  if (related?.closest?.('[data-tooltip]') === activeTarget) return
+  const target = (e.target as HTMLElement).closest<HTMLElement>(
+    '[data-tooltip]'
   )
-    return
-  const target = e.target.closest('[data-tooltip]')
   if (!target) return
   if (target === activeTarget) hide()
 }
 
-function show(target) {
-  tooltipEl.innerHTML = target.dataset.tooltip
+function show(target: HTMLElement): void {
+  if (!tooltipEl) return
+
+  tooltipEl.innerHTML = target.dataset.tooltip!
 
   // Position off-screen to measure
   tooltipEl.style.left = '-9999px'
@@ -69,7 +70,7 @@ function show(target) {
   tooltipEl.dataset.placement = placement
 }
 
-function hide() {
+function hide(): void {
   if (!tooltipEl) return
   tooltipEl.classList.remove('visible')
   activeTarget = null
