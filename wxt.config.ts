@@ -1,8 +1,19 @@
 import { defineConfig } from 'wxt'
+import { paraglideVitePlugin } from '@inlang/paraglide-js'
 
 export default defineConfig({
   modules: ['@wxt-dev/module-svelte'],
   srcDir: 'src',
+  vite: () => ({
+    plugins: [
+      paraglideVitePlugin({
+        project: './project.inlang',
+        outdir: './src/paraglide',
+        strategy: ['globalVariable', 'baseLocale'],
+        disableAsyncLocalStorage: true
+      })
+    ]
+  }),
   manifest: {
     name: 'granblue.team',
     description:
