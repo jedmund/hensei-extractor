@@ -1,19 +1,17 @@
 /**
- * @fileoverview Game data constants for Granblue Fantasy.
+ * Game data constants for Granblue Fantasy.
  * Maps game IDs to human-readable names for elements, proficiencies, series, etc.
  */
 
-// ==========================================
-// RARITY
-// ==========================================
+import type { GameElementId, GameRarityId } from './types/game.js'
 
-export const RARITY_LABELS = { 4: 'SSR', 3: 'SR', 2: 'R' }
+export const RARITY_LABELS: Record<GameRarityId, string> = {
+  4: 'SSR',
+  3: 'SR',
+  2: 'R'
+}
 
-// ==========================================
-// ELEMENTS & PROFICIENCIES
-// ==========================================
-
-export const GAME_ELEMENT_NAMES = {
+export const GAME_ELEMENT_NAMES: Record<GameElementId, string> = {
   1: 'Fire',
   2: 'Water',
   3: 'Earth',
@@ -22,7 +20,7 @@ export const GAME_ELEMENT_NAMES = {
   6: 'Dark'
 }
 
-export const GAME_PROFICIENCY_NAMES = {
+export const GAME_PROFICIENCY_NAMES: Record<number, string> = {
   1: 'Sabre',
   2: 'Dagger',
   3: 'Spear',
@@ -35,11 +33,7 @@ export const GAME_PROFICIENCY_NAMES = {
   10: 'Katana'
 }
 
-// ==========================================
-// WEAPON AWAKENING ICONS
-// ==========================================
-
-export const WEAPON_AWAKENING_ICONS = {
+export const WEAPON_AWAKENING_ICONS: Record<string, string> = {
   Attack: 'weapon-atk',
   Defense: 'weapon-def',
   Multiattack: 'weapon-multi',
@@ -49,11 +43,7 @@ export const WEAPON_AWAKENING_ICONS = {
   Special: 'weapon-special'
 }
 
-// ==========================================
-// AUGMENT ICON MAPPING (game API slug → S3 filename without extension)
-// ==========================================
-
-export const AUGMENT_ICON_MAP = {
+export const AUGMENT_ICON_MAP: Record<string, string> = {
   // AX skills
   ex_skill_atk: 'ax_atk',
   ex_skill_hp: 'ax_hp',
@@ -80,28 +70,16 @@ export const AUGMENT_ICON_MAP = {
   ex_skill_ailment_enhance_down: 'befoul_debuff_down'
 }
 
-// ==========================================
-// SPECIAL WEAPON SERIES (series with weapon keys)
-// ==========================================
-
 export const WEAPON_KEY_SERIES = new Set([3, 13, 17, 19, 27, 40, 44])
 
-// ==========================================
-// CHARACTER AWAKENING ICONS
-// ==========================================
-
-export const CHARACTER_AWAKENING_MAPPING = {
+export const CHARACTER_AWAKENING_MAPPING: Record<number, string> = {
   1: 'character-balanced',
   2: 'character-atk',
   3: 'character-def',
   4: 'character-multi'
 }
 
-// ==========================================
-// SERIES NAMES
-// ==========================================
-
-export const GAME_CHARACTER_SERIES_NAMES = {
+export const GAME_CHARACTER_SERIES_NAMES: Record<number, string> = {
   1: 'Summer',
   2: 'Yukata',
   3: 'Valentine',
@@ -117,7 +95,7 @@ export const GAME_CHARACTER_SERIES_NAMES = {
   13: 'Formal'
 }
 
-export const GAME_WEAPON_SERIES_NAMES = {
+export const GAME_WEAPON_SERIES_NAMES: Record<number, string> = {
   1: 'Seraphic',
   2: 'Grand',
   3: 'Dark Opus',
@@ -164,30 +142,24 @@ export const GAME_WEAPON_SERIES_NAMES = {
   44: 'Destroyer'
 }
 
-// ==========================================
-// FORGED ARCARUM SUMMON ID MAPPING
-// Forged Arcarum summons use different master IDs in-game.
-// Maps forged (evolved) IDs → base SSR IDs stored in the database.
-// ==========================================
-
-export const FORGED_ARCARUM_SUMMON_IDS = {
-  2040313000: '2040236000', // Justice
-  2040314000: '2040237000', // The Hanged Man
-  2040315000: '2040238000', // Death
-  2040316000: '2040239000', // Temperance
-  2040317000: '2040240000', // The Devil
-  2040318000: '2040241000', // The Tower
-  2040319000: '2040242000', // The Star
-  2040320000: '2040243000', // The Moon
-  2040321000: '2040244000', // The Sun
-  2040322000: '2040245000' // Judgement
+export const FORGED_ARCARUM_SUMMON_IDS: Record<string, string> = {
+  '2040313000': '2040236000', // Justice
+  '2040314000': '2040237000', // The Hanged Man
+  '2040315000': '2040238000', // Death
+  '2040316000': '2040239000', // Temperance
+  '2040317000': '2040240000', // The Devil
+  '2040318000': '2040241000', // The Tower
+  '2040319000': '2040242000', // The Star
+  '2040320000': '2040243000', // The Moon
+  '2040321000': '2040244000', // The Sun
+  '2040322000': '2040245000' // Judgement
 }
 
-export function resolveForgedSummonId(id) {
-  return FORGED_ARCARUM_SUMMON_IDS[String(id)] || id
+export function resolveForgedSummonId(id: string | number): string {
+  return FORGED_ARCARUM_SUMMON_IDS[String(id)] ?? String(id)
 }
 
-export const GAME_SUMMON_SERIES_NAMES = {
+export const GAME_SUMMON_SERIES_NAMES: Record<number, string> = {
   1: 'Providence',
   2: 'Genesis',
   3: 'Magna',
