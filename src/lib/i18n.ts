@@ -1,20 +1,26 @@
 /**
- * @fileoverview Internationalization module for the Chrome extension.
+ * Internationalization module for the Chrome extension.
  * Provides translation functions with Japanese/English support.
- * Translations sourced from granblue.team frontend (montreal/messages/ja.json).
  */
+
+export type Locale = 'en' | 'ja'
+
+interface TranslationEntry {
+  en: string
+  ja: string
+}
 
 // ==========================================
 // STATE
 // ==========================================
 
-let currentLocale = 'en'
+let currentLocale: Locale = 'en'
 
 // ==========================================
 // TRANSLATION STRINGS
 // ==========================================
 
-const strings = {
+const strings: Record<string, TranslationEntry> = {
   // Navigation tabs
   nav_party: { en: 'Party', ja: 'パーティ' },
   nav_collection: { en: 'Collection', ja: 'コレクション' },
@@ -43,7 +49,7 @@ const strings = {
     ja: 'メールアドレスまたはパスワードが正しくありません'
   },
 
-  // Error codes (from background.js)
+  // Error codes
   error_not_logged_in: {
     en: 'Please log in first',
     ja: 'ログインしてください'
@@ -107,7 +113,10 @@ const strings = {
   action_select_all: { en: 'Select all', ja: 'すべて選択' },
   action_deselect_all: { en: 'Deselect all', ja: 'すべて解除' },
   action_select_count: { en: 'Select {count} items', ja: '{count}件を選択' },
-  action_select_count_one: { en: 'Select {count} item', ja: '{count}件を選択' },
+  action_select_count_one: {
+    en: 'Select {count} item',
+    ja: '{count}件を選択'
+  },
   action_deselect_count: {
     en: 'Deselect {count} items',
     ja: '{count}件を解除'
@@ -138,7 +147,6 @@ const strings = {
   filter_sr: { en: 'SR', ja: 'SR' },
   filter_r: { en: 'R', ja: 'R' },
   filter_exclude_lv1: { en: 'Exclude Lv1', ja: 'Lv1を除外' },
-
   filter_exclude_lv1_desc: {
     en: 'Hide weapons and summons that are Level 1',
     ja: 'レベル1の武器と召喚石を非表示'
@@ -204,12 +212,18 @@ const strings = {
     en: 'Character Collection',
     ja: 'キャラクターコレクション'
   },
-  type_summon_collection: { en: 'Summon Collection', ja: '召喚石コレクション' },
+  type_summon_collection: {
+    en: 'Summon Collection',
+    ja: '召喚石コレクション'
+  },
   type_artifact_collection: {
     en: 'Artifact Collection',
     ja: 'アーティファクトコレクション'
   },
-  type_character_stats: { en: 'Character Stats', ja: 'キャラクターステータス' },
+  type_character_stats: {
+    en: 'Character Stats',
+    ja: 'キャラクターステータス'
+  },
   type_weapon_stash: { en: 'Weapon Stash', ja: '武器倉庫' },
   type_summon_stash: { en: 'Summon Stash', ja: '召喚石倉庫' },
   tag_stash: { en: 'Stash', ja: '倉庫' },
@@ -258,7 +272,10 @@ const strings = {
     ja: 'ステータスがキャプチャされていません'
   },
   char_over_mastery: { en: 'Over Mastery', ja: 'EXリミットボーナス' },
-  char_aetherial_mastery: { en: 'Aetherial Mastery', ja: 'エーテリアルプラス' },
+  char_aetherial_mastery: {
+    en: 'Aetherial Mastery',
+    ja: 'エーテリアルプラス'
+  },
   char_perpetuity_bonuses: {
     en: 'Perpetuity Bonuses',
     ja: '久遠の指輪ボーナス'
@@ -282,9 +299,15 @@ const strings = {
     en: 'Create "{name}"',
     ja: '「{name}」を作成'
   },
-  playlist_search: { en: 'Search playlists...', ja: 'プレイリストを検索...' },
+  playlist_search: {
+    en: 'Search playlists...',
+    ja: 'プレイリストを検索...'
+  },
   playlist_title_field: { en: 'Playlist title', ja: 'プレイリストタイトル' },
-  playlist_desc_field: { en: 'Description (optional)', ja: '説明（任意）' },
+  playlist_desc_field: {
+    en: 'Description (optional)',
+    ja: '説明（任意）'
+  },
   playlist_private: { en: 'Private', ja: 'プライベート' },
   playlist_unlisted: { en: 'Unlisted', ja: '限定公開' },
   playlist_public: { en: 'Public', ja: '公開' },
@@ -353,7 +376,10 @@ const strings = {
     ja: '{count}件のアイテムが削除されます：'
   },
   sync_more_items: { en: '...and {count} more', ja: '...他{count}件' },
-  sync_result: { en: 'Synced {total} items', ja: '{total}件をシンクしました' },
+  sync_result: {
+    en: 'Synced {total} items',
+    ja: '{total}件をシンクしました'
+  },
   sync_removed: { en: ', removed {count}', ja: '、{count}件を削除' },
   sync_orphaned: { en: ', {count} orphaned', ja: '、{count}件が孤立' },
 
@@ -382,8 +408,14 @@ const strings = {
     ja: '{count}件をコピーしました'
   },
   toast_save_failed: { en: 'Failed to save', ja: '保存に失敗しました' },
-  toast_saved_file: { en: 'Saved {filename}', ja: '{filename}を保存しました' },
-  toast_import_failed: { en: 'Import failed', ja: 'インポートに失敗しました' },
+  toast_saved_file: {
+    en: 'Saved {filename}',
+    ja: '{filename}を保存しました'
+  },
+  toast_import_failed: {
+    en: 'Import failed',
+    ja: 'インポートに失敗しました'
+  },
   toast_import_not_supported: {
     en: 'Import not supported',
     ja: 'インポートは対応していません'
@@ -409,7 +441,10 @@ const strings = {
     en: '{count} item needs review',
     ja: '{count}件のアイテムの確認が必要です'
   },
-  toast_sync_failed: { en: 'Sync failed: {error}', ja: 'シンク失敗: {error}' },
+  toast_sync_failed: {
+    en: 'Sync failed: {error}',
+    ja: 'シンク失敗: {error}'
+  },
   toast_preview_failed: {
     en: 'Preview failed: {error}',
     ja: 'プレビュー失敗: {error}'
@@ -575,10 +610,9 @@ const strings = {
 
 // ==========================================
 // SERIES NAME LOOKUP MAPS
-// (keyed by English name → i18n key)
 // ==========================================
 
-const WEAPON_SERIES_I18N = {
+const WEAPON_SERIES_I18N: Record<string, string> = {
   Seraphic: 'series_seraphic',
   Grand: 'series_grand',
   'Dark Opus': 'series_dark_opus',
@@ -625,7 +659,7 @@ const WEAPON_SERIES_I18N = {
   Destroyer: 'series_destroyer'
 }
 
-const SUMMON_SERIES_I18N = {
+const SUMMON_SERIES_I18N: Record<string, string> = {
   Providence: 'series_providence',
   Genesis: 'series_genesis',
   Magna: 'series_magna',
@@ -647,7 +681,7 @@ const SUMMON_SERIES_I18N = {
   Robur: 'series_robur'
 }
 
-const CHARACTER_SERIES_I18N = {
+const CHARACTER_SERIES_I18N: Record<string, string> = {
   Summer: 'series_summer',
   Yukata: 'series_yukata',
   Valentine: 'series_valentine',
@@ -667,75 +701,53 @@ const CHARACTER_SERIES_I18N = {
 // PUBLIC API
 // ==========================================
 
-/**
- * Set the active locale
- * @param {'en'|'ja'} lang
- */
-export function setLocale(lang) {
+export function setLocale(lang: string): void {
   currentLocale = lang === 'ja' ? 'ja' : 'en'
 }
 
-/**
- * Get the active locale
- * @returns {'en'|'ja'}
- */
-export function getLocale() {
+export function getLocale(): Locale {
   return currentLocale
 }
 
-/**
- * Translate a key with optional parameter substitution
- * @param {string} key - Translation key
- * @param {Object} [params] - Parameters to substitute (e.g., { count: 5 })
- * @returns {string} Translated string, or English fallback, or key itself
- */
-export function t(key, params) {
+export function t(
+  key: string,
+  params?: Record<string, string | number>
+): string {
   const entry = strings[key]
   let str = entry?.[currentLocale] ?? entry?.en ?? key
 
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v)
+      str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
     }
   }
 
   return str
 }
 
-/**
- * Translate a background.js error code to a user-friendly message.
- * @param {string} code - Error code from background.js (e.g. 'not_logged_in')
- * @returns {string} Translated error message, or a generic fallback
- */
-/**
- * Translate with automatic pluralization.
- * Uses singular key when count is 1, plural key otherwise.
- * @param {string} singular - Singular translation key (e.g., 'count_item')
- * @param {string} plural - Plural translation key (e.g., 'count_items')
- * @param {number} count - The count value
- * @param {Object} [params] - Additional params beyond { count }
- */
-export function tPlural(singular, plural, count, params = {}) {
+export function tPlural(
+  singular: string,
+  plural: string,
+  count: number,
+  params: Record<string, string | number> = {}
+): string {
   const key = count === 1 ? singular : plural
   return t(key, { count, ...params })
 }
 
-export function tError(code) {
+export function tError(code: string): string {
   return t(`error_${code}`) !== `error_${code}`
     ? t(`error_${code}`)
     : t('error_request_failed')
 }
 
-/**
- * Translate a series name for display
- * @param {string} englishName - English series name from game-data.js
- * @param {'weapon'|'summon'|'character'} type - Entity type
- * @returns {string} Translated name
- */
-export function translateSeries(englishName, type) {
+export function translateSeries(
+  englishName: string,
+  type: 'weapon' | 'summon' | 'character'
+): string {
   if (currentLocale === 'en') return englishName
 
-  let map
+  let map: Record<string, string>
   if (type === 'weapon') map = WEAPON_SERIES_I18N
   else if (type === 'summon') map = SUMMON_SERIES_I18N
   else if (type === 'character') map = CHARACTER_SERIES_I18N
@@ -747,50 +759,42 @@ export function translateSeries(englishName, type) {
   return strings[key]?.ja ?? englishName
 }
 
-/**
- * Translate an element name for display
- * @param {string} englishName - English element name (e.g., 'Fire')
- * @returns {string} Translated name
- */
-export function translateElement(englishName) {
+export function translateElement(englishName: string): string {
   if (currentLocale === 'en') return englishName
   const key = `element_${englishName.toLowerCase()}`
   return strings[key]?.ja ?? englishName
 }
 
-/**
- * Translate a proficiency name for display
- * @param {string} englishName - English proficiency name (e.g., 'Sabre')
- * @returns {string} Translated name
- */
-export function translateProficiency(englishName) {
+export function translateProficiency(englishName: string): string {
   if (currentLocale === 'en') return englishName
   const key = `proficiency_${englishName.toLowerCase()}`
   return strings[key]?.ja ?? englishName
 }
 
-/**
- * Apply translations to all elements with data-i18n and data-i18n-placeholder attributes
- */
-export function translatePage() {
-  document.querySelectorAll('[data-i18n]').forEach((el) => {
+export function translatePage(): void {
+  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     const key = el.dataset.i18n
+    if (!key) return
     const translated = t(key)
     if (translated !== key) {
       el.textContent = translated
     }
   })
 
-  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
-    const key = el.dataset.i18nPlaceholder
-    const translated = t(key)
-    if (translated !== key) {
-      el.placeholder = translated
-    }
-  })
+  document
+    .querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]')
+    .forEach((el) => {
+      const key = el.dataset.i18nPlaceholder
+      if (!key) return
+      const translated = t(key)
+      if (translated !== key) {
+        el.placeholder = translated
+      }
+    })
 
-  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+  document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((el) => {
     const key = el.dataset.i18nTitle
+    if (!key) return
     const translated = t(key)
     if (translated !== key) {
       el.title = translated
@@ -798,17 +802,16 @@ export function translatePage() {
   })
 }
 
-/**
- * Get the preferred locale from auth or browser
- * @param {Object|null} gbAuth - Auth object with language field
- * @returns {'en'|'ja'}
- */
-export function getPreferredLocale(gbAuth) {
+interface AuthWithLanguage {
+  language?: string
+}
+
+export function getPreferredLocale(gbAuth: AuthWithLanguage | null): Locale {
   if (gbAuth?.language === 'ja') return 'ja'
   if (gbAuth?.language === 'en') return 'en'
-  // Fallback to browser locale
   try {
-    const uiLang = chrome.i18n?.getUILanguage?.() || navigator.language || 'en'
+    const uiLang =
+      chrome.i18n?.getUILanguage?.() ?? navigator.language ?? 'en'
     return uiLang.startsWith('ja') ? 'ja' : 'en'
   } catch {
     return 'en'
