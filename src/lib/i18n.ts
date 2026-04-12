@@ -42,6 +42,26 @@ export function getPreferredLocale(gbAuth: AuthWithLanguage | null): Locale {
 }
 
 // ==========================================
+// ERROR CODE TRANSLATION
+// ==========================================
+
+const ERROR_MESSAGES: Record<string, () => string> = {
+  not_logged_in: m.error_not_logged_in,
+  no_cached_data: m.error_no_cached_data,
+  stale_data: m.error_stale_data,
+  no_character_stats: m.error_no_character_stats,
+  no_items: m.error_no_items,
+  unknown_type: m.error_unknown_type,
+  request_failed: m.error_request_failed,
+  server_error: m.error_server_error
+}
+
+export function translateError(code: string): string {
+  const fn = ERROR_MESSAGES[code]
+  return fn ? fn() : m.error_request_failed()
+}
+
+// ==========================================
 // SERIES NAME TRANSLATION
 // ==========================================
 

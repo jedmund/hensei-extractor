@@ -2,6 +2,7 @@
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
   import { fetchUserPlaylists, createPlaylist } from '../../lib/services/chrome-messages.js'
+  import { translateError } from '../../lib/i18n.js'
 
   interface Playlist {
     id: string | number
@@ -97,7 +98,7 @@
     creating = false
 
     if (res.error) {
-      createError = res.error
+      createError = translateError(res.error)
       return
     }
 

@@ -3,6 +3,7 @@
   import * as m from '../../paraglide/messages.js'
   import { getImageUrl } from '../../lib/constants.js'
   import { previewSyncDeletions, syncCollection } from '../../lib/services/chrome-messages.js'
+  import { translateError } from '../../lib/i18n.js'
 
   function getSyncPreviewImageUrl(granblueId: string | undefined): string {
     if (!granblueId) return ''
@@ -38,7 +39,7 @@
     app.syncPreview = null
 
     if (res.error) {
-      app.showToast(res.error)
+      app.showToast(translateError(res.error))
     } else {
       app.showToast(m.sync_result({ total: (res.created ?? 0) + (res.updated ?? 0) }))
     }

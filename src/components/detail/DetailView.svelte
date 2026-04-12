@@ -12,6 +12,7 @@
     toArray
   } from '../../lib/detail-helpers.js'
   import { getCachedData, fetchRaidGroups } from '../../lib/services/chrome-messages.js'
+  import { translateError } from '../../lib/i18n.js'
 
   import type { RawGameItem } from '../../lib/detail-helpers.js'
   import type { RaidGroup } from '../../lib/types/messages.js'
@@ -185,7 +186,7 @@
   async function loadDetailData(dt: string) {
     const response = await getCachedData(dt)
     if (response.error) {
-      app.showToast(response.error)
+      app.showToast(translateError(response.error))
       return
     }
 
