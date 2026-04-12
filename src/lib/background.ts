@@ -102,13 +102,109 @@ interface UploadCollectionOptions {
   conflictResolutions?: unknown
 }
 
+// --- API response types ---
+
+interface ApiResult<T = Record<string, unknown>> {
+  error?: string
+  data?: T
+  auth?: AuthToken
+}
+
+interface UploadPartyResult {
+  success?: boolean
+  shortcode?: string
+  url?: string
+  error?: string
+}
+
+interface UploadDetailResult {
+  success?: boolean
+  error?: string
+  [key: string]: unknown
+}
+
+interface UploadCollectionResult {
+  success?: boolean
+  created?: number
+  updated?: number
+  skipped?: number
+  errors?: unknown[]
+  reconciliation?: unknown
+  error?: string
+}
+
+interface ConflictCheckResult {
+  conflicts?: unknown[]
+  error?: string
+}
+
+interface SyncPreviewResult {
+  willDelete?: unknown[]
+  count?: number
+  error?: string
+}
+
+interface CachedDataResult {
+  data?: Record<string, unknown> | Record<number, unknown>
+  error?: string
+  timestamp?: number
+  age?: number
+  dataType?: string
+  pageCount?: number
+  totalItems?: number
+  characterCount?: number
+}
+
+interface CacheStatusEntry {
+  available: boolean
+  lastUpdated?: number
+  age?: number
+  isStale?: boolean
+  pageCount?: number
+  totalPages?: number | null
+  totalItems?: number
+  isComplete?: boolean
+  characterCount?: number
+  partyId?: string
+  partyName?: string
+  stashName?: string | null
+  granblueId?: string
+  itemName?: string
+}
+
+interface CacheStatusResult {
+  _debugger: { attached: boolean; tabs: number[] }
+  [key: string]: CacheStatusEntry | { attached: boolean; tabs: number[] }
+}
+
+interface FetchPlaylistsResult {
+  data?: unknown
+  error?: string
+}
+
+interface FetchRaidGroupsResult {
+  data?: unknown
+  error?: string
+}
+
+interface CreatePlaylistResult {
+  data?: Record<string, unknown>
+  error?: string
+}
+
+interface VersionCheckResult {
+  isOutdated: boolean
+  current: string
+  latest: string
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
 
 initDebugger(handleInterceptedData)
 
-let collectionIdsCache: unknown = null
+let collectionIdsCache: { weapons?: string[]; summons?: string[]; characters?: string[]; artifacts?: string[] } | null = null
 let collectionIdsCacheTime = 0
 const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000
 
@@ -550,11 +646,7 @@ function parseZenithMasteryData(
 // VERSION CHECK
 // ==========================================
 
-async function checkExtensionVersion(): Promise<{
-  isOutdated: boolean
-  current: string
-  latest: string
-} | null> {
+async function checkExtensionVersion(): Promise<VersionCheckResult | null> {
   try {
     const apiUrl = await getApiUrl('/version')
     const response = await fetch(apiUrl)
@@ -592,9 +684,25 @@ function compareVersions(a: string, b: string): number {
 // MESSAGE HANDLING
 // ==========================================
 
+interface BackgroundMessage {
+  action: string
+  dataType?: string
+  data?: unknown
+  raidId?: string
+  playlistIds?: string[]
+  name?: string
+  visibility?: number
+  shareWithCrew?: boolean
+  updateExisting?: boolean
+  isFullInventory?: boolean
+  reconcileDeletions?: boolean
+  conflictResolutions?: unknown
+  forceRefresh?: boolean
+}
+
 chrome.runtime.onMessage.addListener(
   (
-    message: Record<string, unknown>,
+    message: BackgroundMessage,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void
   ) => {
@@ -608,11 +716,11 @@ chrome.runtime.onMessage.addListener(
         return true
 
       case 'getCachedData':
-        handleGetCachedData(message.dataType as string).then(sendResponse)
+        handleGetCachedData(message.dataType!).then(sendResponse)
         return true
 
       case 'clearCache':
-        handleClearCache(message.dataType as string | undefined).then(
+        handleClearCache(message.dataType).then(
           sendResponse
         )
         return true
@@ -646,7 +754,7 @@ chrome.runtime.onMessage.addListener(
         return false
 
       case 'fetchRaidGroups':
-        fetchRaidGroups(message.forceRefresh as boolean | undefined).then(
+        fetchRaidGroups(message.forceRefresh).then(
           sendResponse
         )
         return true
@@ -657,29 +765,25 @@ chrome.runtime.onMessage.addListener(
 
       case 'createPlaylist':
         createPlaylist(
-          message.data as {
-            title: string
-            description: string
-            visibility: number
-          }
+          message.data as { title: string; description: string; visibility: number }
         ).then(sendResponse)
         return true
 
       case 'uploadPartyData':
         uploadPartyData(
           message.data,
-          message.raidId as string | undefined,
-          message.playlistIds as string[] | undefined,
-          message.name as string | undefined,
-          message.visibility as number | undefined,
-          message.shareWithCrew as boolean | undefined
+          message.raidId,
+          message.playlistIds,
+          message.name,
+          message.visibility,
+          message.shareWithCrew
         ).then(sendResponse)
         return true
 
       case 'uploadDetailData':
         uploadDetailData(
           message.data as Record<string, unknown>,
-          message.dataType as string
+          message.dataType!
         ).then(sendResponse)
         return true
 
@@ -690,20 +794,18 @@ chrome.runtime.onMessage.addListener(
       case 'checkConflicts':
         checkConflicts(
           message.data as Record<number, PageData>,
-          message.dataType as string
+          message.dataType!
         ).then(sendResponse)
         return true
 
       case 'uploadCollectionData':
         uploadCollectionData(
           message.data as Record<number, PageData>,
-          message.dataType as string,
+          message.dataType!,
           {
-            updateExisting: message.updateExisting as boolean | undefined,
-            isFullInventory: message.isFullInventory as boolean | undefined,
-            reconcileDeletions: message.reconcileDeletions as
-              | boolean
-              | undefined,
+            updateExisting: message.updateExisting,
+            isFullInventory: message.isFullInventory,
+            reconcileDeletions: message.reconcileDeletions,
             conflictResolutions: message.conflictResolutions
           }
         ).then(sendResponse)
@@ -712,7 +814,7 @@ chrome.runtime.onMessage.addListener(
       case 'previewSyncDeletions':
         previewSyncDeletions(
           message.data as Record<number, PageData>,
-          message.dataType as string
+          message.dataType!
         ).then(sendResponse)
         return true
 
@@ -738,7 +840,7 @@ chrome.runtime.onMessage.addListener(
 
 async function handleGetCachedData(
   dataType: string
-): Promise<Record<string, unknown>> {
+): Promise<CachedDataResult> {
   if (dataType === 'character_stats') {
     const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
     const cached = result[CACHE_KEYS.character_stats!] as
@@ -811,9 +913,9 @@ async function handleGetCachedData(
   }
 }
 
-async function handleGetCacheStatus(): Promise<Record<string, unknown>> {
+async function handleGetCacheStatus(): Promise<CacheStatusResult> {
   const allStorage = await chrome.storage.local.get(null)
-  const status: Record<string, unknown> = {}
+  const status: Record<string, CacheStatusEntry | { attached: boolean; tabs: number[] }> = {}
   const now = Date.now()
 
   status._debugger = {
@@ -918,7 +1020,7 @@ async function handleGetCacheStatus(): Promise<Record<string, unknown>> {
     }
   }
 
-  return status
+  return status as CacheStatusResult
 }
 
 async function handleClearCache(
@@ -990,11 +1092,7 @@ async function parseErrorResponse(response: Response): Promise<string> {
 async function authenticatedPost(
   endpoint: string,
   body: unknown
-): Promise<{
-  error?: string
-  data?: Record<string, unknown>
-  auth?: AuthToken
-}> {
+): Promise<ApiResult> {
   const auth = await getAuthToken()
   if (!auth) return { error: 'not_logged_in' }
 
@@ -1026,7 +1124,7 @@ async function uploadPartyData(
   name?: string,
   visibility?: number,
   shareWithCrew?: boolean
-): Promise<Record<string, unknown>> {
+): Promise<UploadPartyResult> {
   const body: Record<string, unknown> = { import: data }
   if (raidId) body.raid_id = raidId
   if (playlistIds && playlistIds.length > 0) body.playlist_ids = playlistIds
@@ -1054,7 +1152,7 @@ async function uploadPartyData(
 async function uploadDetailData(
   data: Record<string, unknown>,
   dataType: string
-): Promise<Record<string, unknown>> {
+): Promise<UploadDetailResult> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: `Unknown data type: ${dataType}` }
 
@@ -1126,7 +1224,7 @@ function extractFilterFromPages(
 async function previewSyncDeletions(
   pagesData: Record<number, PageData>,
   dataType: string
-): Promise<Record<string, unknown>> {
+): Promise<SyncPreviewResult> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -1141,17 +1239,17 @@ async function previewSyncDeletions(
       filter: activeFilter
     }
   )
-  if (result.error) return result
+  if (result.error) return { error: result.error }
   return {
-    willDelete: result.data!.will_delete ?? [],
-    count: result.data!.count ?? 0
+    willDelete: (result.data!.will_delete as unknown[]) ?? [],
+    count: (result.data!.count as number) ?? 0
   }
 }
 
 async function checkConflicts(
   pagesData: Record<number, PageData>,
   dataType: string
-): Promise<Record<string, unknown>> {
+): Promise<ConflictCheckResult> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -1162,15 +1260,15 @@ async function checkConflicts(
     `/collection/${endpoint}/check_conflicts`,
     { data: { list: allItems } }
   )
-  if (result.error) return result
-  return { conflicts: result.data!.conflicts ?? [] }
+  if (result.error) return { error: result.error }
+  return { conflicts: (result.data!.conflicts as unknown[]) ?? [] }
 }
 
 async function uploadCollectionData(
   pagesData: Record<number, PageData>,
   dataType: string,
   options: UploadCollectionOptions = {}
-): Promise<Record<string, unknown>> {
+): Promise<UploadCollectionResult> {
   const {
     updateExisting = false,
     isFullInventory = false,
@@ -1198,23 +1296,23 @@ async function uploadCollectionData(
   }
 
   const result = await authenticatedPost(`/collection/${endpoint}/import`, body)
-  if (result.error) return result
+  if (result.error) return { error: result.error }
 
   collectionIdsCache = null
 
   return {
-    success: result.data!.success,
-    created: result.data!.created ?? 0,
-    updated: result.data!.updated ?? 0,
-    skipped: result.data!.skipped ?? 0,
-    errors: result.data!.errors ?? [],
+    success: result.data!.success as boolean,
+    created: (result.data!.created as number) ?? 0,
+    updated: (result.data!.updated as number) ?? 0,
+    skipped: (result.data!.skipped as number) ?? 0,
+    errors: (result.data!.errors as unknown[]) ?? [],
     reconciliation: result.data!.reconciliation ?? null
   }
 }
 
 async function uploadCharacterStats(
   statsData: Record<string, CharacterStatsEntry>
-): Promise<Record<string, unknown>> {
+): Promise<UploadCollectionResult> {
   const items = Object.values(statsData).map((char) => {
     const item: Record<string, unknown> = { granblue_id: char.masterId }
 
@@ -1263,20 +1361,20 @@ async function uploadCharacterStats(
     data: { list: items },
     update_existing: true
   })
-  if (result.error) return result
+  if (result.error) return { error: result.error }
 
   collectionIdsCache = null
 
   return {
-    success: result.data!.success,
-    created: result.data!.created ?? 0,
-    updated: result.data!.updated ?? 0,
-    skipped: result.data!.skipped ?? 0,
-    errors: result.data!.errors ?? []
+    success: result.data!.success as boolean,
+    created: (result.data!.created as number) ?? 0,
+    updated: (result.data!.updated as number) ?? 0,
+    skipped: (result.data!.skipped as number) ?? 0,
+    errors: (result.data!.errors as unknown[]) ?? []
   }
 }
 
-async function fetchUserPlaylists(): Promise<Record<string, unknown>> {
+async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
   try {
     const auth = await getAuthToken()
     if (!auth) return { error: 'not_logged_in' }
@@ -1304,7 +1402,7 @@ async function createPlaylist({
   title: string
   description: string
   visibility: number
-}): Promise<Record<string, unknown>> {
+}): Promise<CreatePlaylistResult> {
   try {
     const result = await authenticatedPost('/playlists', {
       playlist: { title, description, visibility: visibility || 3 }
@@ -1318,7 +1416,7 @@ async function createPlaylist({
 
 async function fetchRaidGroups(
   forceRefresh = false
-): Promise<Record<string, unknown>> {
+): Promise<FetchRaidGroupsResult> {
   const cacheKey = CACHE_KEYS.raid_groups!
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey] as
@@ -1361,7 +1459,7 @@ async function fetchRaidGroups(
   }
 }
 
-async function getCollectionIds(): Promise<unknown> {
+async function getCollectionIds(): Promise<{ error?: string; weapons?: string[]; summons?: string[]; characters?: string[]; artifacts?: string[] }> {
   const now = Date.now()
   if (
     collectionIdsCache &&
