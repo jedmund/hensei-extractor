@@ -15,7 +15,8 @@ import {
   AUGMENT_ICON_MAP,
   resolveForgedSummonId
 } from './game-data.js'
-import { t, tPlural, translateSeries, getLocale } from './i18n.js'
+import * as m from '../paraglide/messages.js'
+import { translateSeries, getLocale } from './i18n.js'
 
 // ==========================================
 // RAW API ITEM SHAPES
@@ -420,7 +421,7 @@ export function buildAxTooltip(
 ): string {
   const iconSlug = iconImage || 'ex_skill_atk'
   const axEntries = Object.values(skill || {})
-  if (axEntries.length === 0) return t('stat_ax_skills')
+  if (axEntries.length === 0) return m.stat_ax_skills()
   return axEntries
     .map((s: RawAugmentSkillEntry) => {
       const entryIconSlug = s.image || iconSlug
@@ -512,13 +513,13 @@ function renderBaseStats({
   const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
-  html += statRow(t('stat_name'), name)
-  if (id) html += statRow(t('stat_id'), id)
+  html += statRow(m.stat_name(), name)
+  if (id) html += statRow(m.stat_id(), id)
 
   const seriesId = Number(data.series_id || master.series_id)
   if (seriesId && seriesMap?.[seriesId]) {
     html += statRow(
-      t('stat_series'),
+      m.stat_series(),
       translateSeries(seriesMap[seriesId]!, type)
     )
   }
@@ -528,7 +529,7 @@ function renderBaseStats({
     GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]
   ) {
     html += statRow(
-      t('stat_element'),
+      m.stat_element(),
       `<img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}.png`)}" alt="${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}">`
     )
   }
@@ -541,17 +542,17 @@ function renderBaseStats({
           `<img class="stat-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[p as number]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[p as number]}">`
       )
       .join('')
-    if (profIcons) html += statRow(t('stat_proficiency'), profIcons)
+    if (profIcons) html += statRow(m.stat_proficiency(), profIcons)
   }
 
-  if (level) html += statRow(t('stat_uncap'), renderStars(Number(level), type))
-  if (minHp) html += statRow(t('stat_min_hp'), Number(minHp).toLocaleString())
-  if (maxHp) html += statRow(t('stat_max_hp'), Number(maxHp).toLocaleString())
+  if (level) html += statRow(m.stat_uncap(), renderStars(Number(level), type))
+  if (minHp) html += statRow(m.stat_min_hp(), Number(minHp).toLocaleString())
+  if (maxHp) html += statRow(m.stat_max_hp(), Number(maxHp).toLocaleString())
   if (minAtk)
-    html += statRow(t('stat_min_atk'), Number(minAtk).toLocaleString())
+    html += statRow(m.stat_min_atk(), Number(minAtk).toLocaleString())
   if (maxAtk)
-    html += statRow(t('stat_max_atk'), Number(maxAtk).toLocaleString())
-  if (level) html += statRow(t('stat_max_level'), String(level))
+    html += statRow(m.stat_max_atk(), Number(maxAtk).toLocaleString())
+  if (level) html += statRow(m.stat_max_level(), String(level))
 
   return { html, master, param }
 }
@@ -591,7 +592,7 @@ export function renderCharacterStats(
   let html = base
 
   if (param.has_npcaugment_constant) {
-    html += statRow(t('stat_perpetuity_ring'), '\u2713')
+    html += statRow(m.stat_perpetuity_ring(), '\u2713')
   }
 
   return closeStats(html, data, master)
@@ -622,7 +623,7 @@ export function renderWeaponStats(
   const arousal = param.arousal
   if (arousal?.is_arousal_weapon) {
     html += statRow(
-      t('stat_awakening'),
+      m.stat_awakening(),
       `${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}`
     )
   }
@@ -633,9 +634,9 @@ export function renderWeaponStats(
     const befoulSkill = befoulSkillMap
       ? Object.values(befoulSkillMap)[0]
       : undefined
-    html += statRow(t('stat_befoulment'), befoulSkill?.show_value || 'Active')
+    html += statRow(m.stat_befoulment(), befoulSkill?.show_value || 'Active')
     html += statRow(
-      t('stat_exorcism'),
+      m.stat_exorcism(),
       `${odiant.exorcision_level || 0}/${odiant.max_exorcision_level || 5}`
     )
   } else {
@@ -643,7 +644,7 @@ export function renderWeaponStats(
     if (axSkills && Object.keys(axSkills).length > 0) {
       const axCount = Object.keys(axSkills).length
       html += statRow(
-        t('stat_ax_skills'),
+        m.stat_ax_skills(),
         `${axCount} skill${axCount > 1 ? 's' : ''}`
       )
     }
@@ -670,7 +671,7 @@ export function renderSummonStats(
 
   const subAura = data.sub_skill?.name
   if (subAura) {
-    html += statRow(t('stat_sub_aura'), subAura)
+    html += statRow(m.stat_sub_aura(), subAura)
   }
 
   return closeStats(html, data, master)
