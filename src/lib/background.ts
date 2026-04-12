@@ -896,18 +896,18 @@ async function handleGetCachedData(
     dataType.startsWith('stash_')
   ) {
     return {
-      data: cached.pages,
-      timestamp: cached.lastUpdated,
+      data: cached.pages as Record<string, unknown>,
+      timestamp: cached.lastUpdated as number,
       age,
       dataType,
-      pageCount: cached.pageCount,
-      totalItems: cached.totalItems
+      pageCount: cached.pageCount as number,
+      totalItems: cached.totalItems as number
     }
   }
 
   return {
-    data: cached.data,
-    timestamp: cached.timestamp,
+    data: cached.data as Record<string, unknown>,
+    timestamp: cached.timestamp as number,
     age,
     dataType
   }
@@ -950,13 +950,13 @@ async function handleGetCacheStatus(): Promise<CacheStatusResult> {
     } else if (type.startsWith('list_') || type.startsWith('collection_')) {
       status[type] = {
         available: !stale && (cached.pageCount as number) > 0,
-        pageCount: cached.pageCount ?? 0,
-        totalPages: cached.totalPages ?? null,
-        totalItems: cached.totalItems ?? 0,
+        pageCount: (cached.pageCount as number) ?? 0,
+        totalPages: (cached.totalPages as number | null) ?? null,
+        totalItems: (cached.totalItems as number) ?? 0,
         lastUpdated: timestamp,
         age,
         isStale: stale,
-        isComplete: cached.isComplete ?? false
+        isComplete: (cached.isComplete as boolean) ?? false
       }
     } else {
       status[type] = {
@@ -1001,12 +1001,12 @@ async function handleGetCacheStatus(): Promise<CacheStatusResult> {
     } else if (matchedPrefix.startsWith('stash_')) {
       status[dt] = {
         available: !stale && (c.pageCount as number) > 0,
-        pageCount: c.pageCount ?? 0,
-        totalItems: c.totalItems ?? 0,
+        pageCount: (c.pageCount as number) ?? 0,
+        totalItems: (c.totalItems as number) ?? 0,
         lastUpdated: timestamp,
         age,
         isStale: stale,
-        stashName: c.stashName ?? null
+        stashName: (c.stashName as string | null) ?? null
       }
     } else if (matchedPrefix.startsWith('detail_')) {
       status[dt] = {
@@ -1144,7 +1144,7 @@ async function uploadPartyData(
   const siteUrl = await getSiteBaseUrl()
   return {
     success: true,
-    shortcode: result.data!.shortcode,
+    shortcode: result.data!.shortcode as string,
     url: `${siteUrl}/teams/${result.data!.shortcode}`
   }
 }
@@ -1168,7 +1168,7 @@ async function uploadDetailData(
     `/import/${endpoint}?lang=${lang}`,
     data
   )
-  if (result.error) return result
+  if (result.error) return { error: result.error }
   return { success: true, ...result.data }
 }
 

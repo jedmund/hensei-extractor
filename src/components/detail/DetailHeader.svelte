@@ -145,11 +145,8 @@
   }
 
   function handleReview() {
-    // Review is handled by parent/modal system
-    // For now, mark as reviewed
     if (!app.pendingConflicts || app.pendingConflicts.length === 0) return
-    // TODO: open conflict resolution modal
-    app.importState = 'review'
+    app.conflictModalOpen = true
   }
 </script>
 

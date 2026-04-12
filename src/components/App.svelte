@@ -6,6 +6,8 @@
   import { getImageUrl } from '../lib/constants.js'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
+  import WarningCard from './login/WarningCard.svelte'
+  import ConflictModal from './modals/ConflictModal.svelte'
   import Toast from './shared/Toast.svelte'
 
   onMount(async () => {
@@ -60,4 +62,11 @@
   <LoginView />
 {/if}
 
+{#if app.showingDisclaimer}
+  <div class="disclaimer-overlay">
+    <WarningCard />
+  </div>
+{/if}
+
+<ConflictModal />
 <Toast />

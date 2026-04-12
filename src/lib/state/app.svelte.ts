@@ -71,6 +71,7 @@ class AppState {
   conflictResolutions = $state<Record<string, 'import' | 'skip'> | null>(null)
 
   // UI state
+  showingDisclaimer = $state(false)
   profilePopoverOpen = $state(false)
   toastMessage = $state('')
   toastVisible = $state(false)

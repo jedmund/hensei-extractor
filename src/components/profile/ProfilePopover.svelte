@@ -98,9 +98,7 @@
 
   function handleShowDisclaimer() {
     app.profilePopoverOpen = false
-    // TODO: Requires App.svelte to check a showingDisclaimer flag
-    // so the warning can overlay without logging the user out.
-    app.noticeAcknowledged = false
+    app.showingDisclaimer = true
   }
 
   function handlePopOut() {
