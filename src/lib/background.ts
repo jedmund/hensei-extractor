@@ -204,7 +204,12 @@ interface VersionCheckResult {
 
 initDebugger(handleInterceptedData)
 
-let collectionIdsCache: { weapons?: string[]; summons?: string[]; characters?: string[]; artifacts?: string[] } | null = null
+let collectionIdsCache: {
+  weapons?: string[]
+  summons?: string[]
+  characters?: string[]
+  artifacts?: string[]
+} | null = null
 let collectionIdsCacheTime = 0
 const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000
 
@@ -720,9 +725,7 @@ chrome.runtime.onMessage.addListener(
         return true
 
       case 'clearCache':
-        handleClearCache(message.dataType).then(
-          sendResponse
-        )
+        handleClearCache(message.dataType).then(sendResponse)
         return true
 
       case 'getDebuggerStatus':
@@ -754,9 +757,7 @@ chrome.runtime.onMessage.addListener(
         return false
 
       case 'fetchRaidGroups':
-        fetchRaidGroups(message.forceRefresh).then(
-          sendResponse
-        )
+        fetchRaidGroups(message.forceRefresh).then(sendResponse)
         return true
 
       case 'fetchUserPlaylists':
@@ -765,7 +766,11 @@ chrome.runtime.onMessage.addListener(
 
       case 'createPlaylist':
         createPlaylist(
-          message.data as { title: string; description: string; visibility: number }
+          message.data as {
+            title: string
+            description: string
+            visibility: number
+          }
         ).then(sendResponse)
         return true
 
@@ -915,7 +920,10 @@ async function handleGetCachedData(
 
 async function handleGetCacheStatus(): Promise<CacheStatusResult> {
   const allStorage = await chrome.storage.local.get(null)
-  const status: Record<string, CacheStatusEntry | { attached: boolean; tabs: number[] }> = {}
+  const status: Record<
+    string,
+    CacheStatusEntry | { attached: boolean; tabs: number[] }
+  > = {}
   const now = Date.now()
 
   status._debugger = {
@@ -1459,7 +1467,13 @@ async function fetchRaidGroups(
   }
 }
 
-async function getCollectionIds(): Promise<{ error?: string; weapons?: string[]; summons?: string[]; characters?: string[]; artifacts?: string[] }> {
+async function getCollectionIds(): Promise<{
+  error?: string
+  weapons?: string[]
+  summons?: string[]
+  characters?: string[]
+  artifacts?: string[]
+}> {
   const now = Date.now()
   if (
     collectionIdsCache &&

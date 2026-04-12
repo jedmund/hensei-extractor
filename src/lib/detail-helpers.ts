@@ -548,10 +548,8 @@ function renderBaseStats({
   if (level) html += statRow(m.stat_uncap(), renderStars(Number(level), type))
   if (minHp) html += statRow(m.stat_min_hp(), Number(minHp).toLocaleString())
   if (maxHp) html += statRow(m.stat_max_hp(), Number(maxHp).toLocaleString())
-  if (minAtk)
-    html += statRow(m.stat_min_atk(), Number(minAtk).toLocaleString())
-  if (maxAtk)
-    html += statRow(m.stat_max_atk(), Number(maxAtk).toLocaleString())
+  if (minAtk) html += statRow(m.stat_min_atk(), Number(minAtk).toLocaleString())
+  if (maxAtk) html += statRow(m.stat_max_atk(), Number(maxAtk).toLocaleString())
   if (level) html += statRow(m.stat_max_level(), String(level))
 
   return { html, master, param }
