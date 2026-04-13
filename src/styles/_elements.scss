@@ -1,0 +1,44 @@
+/* Element-specific colors applied to body */
+body.fire {
+  --element-bg: #ffcdcd;
+  --element-bg-hover: #fa6d6d;
+  --element-text: #6e0000;
+  --element-button-bg: #ec5c5c;
+  --element-button-bg-hover: #f07272;
+}
+body.water {
+  --element-bg: #cdedff;
+  --element-bg-hover: #6cc9ff;
+  --element-text: #004b77;
+  --element-button-bg: #5cb7ec;
+  --element-button-bg-hover: #74c3ef;
+}
+body.earth {
+  --element-bg: #ffe2cd;
+  --element-bg-hover: #fd9f5b;
+  --element-text: #863504;
+  --element-button-bg: #8e3c0b;
+  --element-button-bg-hover: #a34e1d;
+}
+body.wind {
+  --element-bg: #cdffed;
+  --element-bg-hover: #3ee489;
+  --element-text: #006a45;
+  --element-button-bg: #1dc688;
+  --element-button-bg-hover: #38d196;
+}
+body.light {
+  --element-bg: #fffacd;
+  --element-bg-hover: #e8d633;
+  --element-text: #715100;
+  --element-button-bg: #c59c0c;
+  --element-button-bg-hover: #d4ab1e;
+  --element-button-text: #3d3700;
+}
+body.dark {
+  --element-bg: #f2cdff;
+  --element-bg-hover: #de7bff;
+  --element-text: #560075;
+  --element-button-bg: #c65cec;
+  --element-button-bg-hover: #ce72ef;
+}

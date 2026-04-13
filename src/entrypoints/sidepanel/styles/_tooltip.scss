@@ -1,0 +1,19 @@
+.tooltip {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  padding: 6px 10px;
+  background: #333;
+  color: white;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+
+  &.visible {
+    opacity: 1;
+  }
+}

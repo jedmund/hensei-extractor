@@ -3,7 +3,8 @@
  * Shared between background.ts (parsing game data) and popup.js (display).
  */
 
-import { t, getLocale } from './i18n.js'
+import * as m from '../paraglide/messages.js'
+import { getLocale } from './i18n.js'
 
 // ==========================================
 // CANONICAL ID → NAME MAPPINGS
@@ -51,35 +52,35 @@ export const PERPETUITY_NAMES: Record<number, string> = {
 // DISPLAY NAME MAPPING (English → i18n key)
 // ==========================================
 
-const MASTERY_I18N_KEYS: Record<string, string> = {
-  ATK: 'mastery_atk',
-  HP: 'mastery_hp',
-  'Debuff Success': 'mastery_debuff_success',
-  'Skill DMG Cap': 'mastery_skill_dmg_cap',
-  'C.A. DMG': 'mastery_ca_dmg',
-  'C.A. DMG Cap': 'mastery_ca_dmg_cap',
-  Stamina: 'mastery_stamina',
-  Enmity: 'mastery_enmity',
-  'Critical Hit': 'mastery_critical_hit',
-  'Double Attack': 'mastery_double_attack',
-  'Triple Attack': 'mastery_triple_attack',
-  DEF: 'mastery_def',
-  Healing: 'mastery_healing',
-  'Debuff Resistance': 'mastery_debuff_resistance',
-  Dodge: 'mastery_dodge',
-  'Element ATK': 'mastery_element_atk',
-  'Element Resistance': 'mastery_element_resistance',
-  'Supplemental DMG': 'mastery_supplemental_dmg',
-  'Counters on Dodge': 'mastery_counters_dodge',
-  'Counters on DMG': 'mastery_counters_dmg',
-  'EM Star Cap': 'mastery_em_star_cap',
-  'DMG Cap': 'mastery_dmg_cap'
+const MASTERY_NAMES: Record<string, () => string> = {
+  ATK: m.mastery_atk,
+  HP: m.mastery_hp,
+  'Debuff Success': m.mastery_debuff_success,
+  'Skill DMG Cap': m.mastery_skill_dmg_cap,
+  'C.A. DMG': m.mastery_ca_dmg,
+  'C.A. DMG Cap': m.mastery_ca_dmg_cap,
+  Stamina: m.mastery_stamina,
+  Enmity: m.mastery_enmity,
+  'Critical Hit': m.mastery_critical_hit,
+  'Double Attack': m.mastery_double_attack,
+  'Triple Attack': m.mastery_triple_attack,
+  DEF: m.mastery_def,
+  Healing: m.mastery_healing,
+  'Debuff Resistance': m.mastery_debuff_resistance,
+  Dodge: m.mastery_dodge,
+  'Element ATK': m.mastery_element_atk,
+  'Element Resistance': m.mastery_element_resistance,
+  'Supplemental DMG': m.mastery_supplemental_dmg,
+  'Counters on Dodge': m.mastery_counters_dodge,
+  'Counters on DMG': m.mastery_counters_dmg,
+  'EM Star Cap': m.mastery_em_star_cap,
+  'DMG Cap': m.mastery_dmg_cap
 }
 
 function getDisplayName(englishName: string): string {
   if (getLocale() === 'en') return englishName
-  const key = MASTERY_I18N_KEYS[englishName]
-  if (key) return t(key)
+  const fn = MASTERY_NAMES[englishName]
+  if (fn) return fn()
   return englishName
 }
 

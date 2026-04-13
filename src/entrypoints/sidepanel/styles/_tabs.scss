@@ -1,0 +1,116 @@
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding: 8px;
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg) var(--spacing-sm);
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+
+  &:hover {
+    color: var(--color-text);
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  /* Default/null element active state */
+  &.active {
+    color: #444;
+    background: #efefef;
+  }
+
+  &.hidden {
+    display: none;
+  }
+}
+
+/* Element-based active tab colors */
+body.fire .tab.active {
+  color: #6e0000;
+  background: #ffcdcd;
+}
+
+body.water .tab.active {
+  color: #004b77;
+  background: #cdedff;
+}
+
+body.earth .tab.active {
+  color: #863504;
+  background: #ffe2cd;
+}
+
+body.wind .tab.active {
+  color: #006a45;
+  background: #cdffed;
+}
+
+body.light .tab.active {
+  color: #715100;
+  background: #fffacd;
+}
+
+body.dark .tab.active {
+  color: #560075;
+  background: #f2cdff;
+}
+
+.tab-profile {
+  flex: 0;
+  padding: var(--spacing-sm);
+}
+
+.tab-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: #efefef;
+  display: block;
+}
+
+/* Tab Content / Panels */
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--spacing-sm);
+  gap: var(--spacing-sm);
+  overflow-y: auto;
+
+  &.active {
+    display: flex;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+
+  .button {
+    flex: 1;
+  }
+}

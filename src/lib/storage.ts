@@ -10,7 +10,9 @@ export async function safeGet<T = Record<string, unknown>>(
   keys: string | string[]
 ): Promise<T> {
   try {
-    return (await chrome.storage.local.get(keys)) as T
+    return (await (chrome.storage.local.get(keys) as Promise<
+      Record<string, unknown>
+    >)) as T
   } catch (error) {
     console.error('Storage get failed:', error)
     return {} as T

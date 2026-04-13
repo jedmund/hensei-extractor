@@ -15,6 +15,8 @@ export interface CacheStatusInfo {
   pageCount?: number
   itemName?: string
   stashName?: string
+  partyName?: string
+  partyId?: string
 }
 
 /** Formatted cache status for display in the UI */
