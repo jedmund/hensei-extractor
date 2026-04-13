@@ -1,8 +1,23 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
+  import { slideRight } from '../../lib/transitions.js'
+  import NavigationBar from '../shared/NavigationBar.svelte'
+  import Icon from '../shared/Icon.svelte'
+  import Button from '../shared/Button.svelte'
+  import Input from '../shared/Input.svelte'
+  import Select from '../shared/Select.svelte'
   import * as m from '../../paraglide/messages.js'
   import { fetchUserPlaylists, createPlaylist } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
+
+  interface Props {
+    title?: string
+    onBack?: () => void
+    navRight?: Snippet
+  }
+
+  let { title = '', onBack, navRight }: Props = $props()
 
   interface Playlist {
     id: string | number
@@ -15,19 +30,18 @@
 
   let playlists = $state<Playlist[]>([])
   let searchQuery = $state('')
-  let showCreateForm = $state(false)
+  let showCreateForm = $derived(app.playlistCreateFormOpen)
   let createTitle = $state('')
   let createDescription = $state('')
   let createVisibility = $state(3)
   let creating = $state(false)
   let createError = $state('')
-  let dropdownOpen = $state(false)
 
-  const VISIBILITY_LABELS: Record<number, () => string> = {
-    1: () => m.playlist_public(),
-    2: () => m.playlist_unlisted(),
-    3: () => m.playlist_private(),
-  }
+  const visibilityOptions = $derived([
+    { value: 1, label: m.playlist_public() },
+    { value: 2, label: m.playlist_unlisted() },
+    { value: 3, label: m.playlist_private() },
+  ])
 
   $effect(() => {
     if (app.playlistPickerOpen) loadPlaylists()
@@ -68,18 +82,33 @@
   })
 
   function showCreateFormWithPrefill(prefill?: string) {
-    showCreateForm = true
+    app.playlistCreateFormOpen = true
     if (prefill) createTitle = prefill
   }
 
   function hideCreateForm() {
-    showCreateForm = false
-    createTitle = ''
-    createDescription = ''
-    createVisibility = 3
-    createError = ''
-    dropdownOpen = false
+    app.playlistCreateFormOpen = false
   }
+
+  $effect(() => {
+    app.playlistCreateReady = !!createTitle.trim() && !creating
+  })
+
+  $effect(() => {
+    if (!app.playlistCreateFormOpen) {
+      createTitle = ''
+      createDescription = ''
+      createVisibility = 3
+      createError = ''
+    }
+  })
+
+  $effect(() => {
+    if (app.playlistCreateSubmit) {
+      app.playlistCreateSubmit = false
+      handleCreate()
+    }
+  })
 
   async function handleCreate() {
     if (!createTitle.trim()) {
@@ -115,59 +144,24 @@
 </script>
 
 {#if app.playlistPickerOpen}
-<div class="picker-view playlist-picker-view active">
-  <header class="picker-header">
-    <button type="button" class="picker-back" onclick={close}>{m.action_back()}</button>
-    <h2 class="picker-title">{m.playlist_select()}</h2>
-    <button type="button" class="picker-action" onclick={close}>{m.action_done()}</button>
-  </header>
+<div class="playlist-picker-view" id="playlistPickerView" transition:slideRight>
+  <NavigationBar {title}>
+    {#snippet left()}
+      <button class="detail-back" onclick={onBack}>
+        <Icon name="chevron-left" size={14} />
+        <span>{m.action_back()}</span>
+      </button>
+    {/snippet}
+    {#snippet right()}
+      {#if navRight}{@render navRight()}{/if}
+    {/snippet}
+  </NavigationBar>
 
-  <div class="picker-search">
-    <input type="text" class="playlist-search-input" placeholder={m.playlist_search()} bind:value={searchQuery} />
+  <div class="playlist-picker-search">
+    <Input type="text" contained id="playlistSearchInput" placeholder={m.playlist_search()} bind:value={searchQuery} />
   </div>
 
-  <div class="picker-content playlist-picker-content">
-    {#if !showCreateForm}
-      <button type="button" class="playlist-item playlist-create-btn" onclick={() => showCreateFormWithPrefill()}>
-        <div class="playlist-item-info">
-          <span class="playlist-item-title">{m.playlist_new()}</span>
-        </div>
-      </button>
-    {/if}
-
-    {#if showCreateForm}
-      <div class="playlist-create-form">
-        <div class="playlist-create-fields">
-          <input type="text" class="playlist-create-title" placeholder={m.playlist_title_field()} bind:value={createTitle} />
-          <input type="text" class="playlist-create-description" placeholder={m.playlist_desc_field()} bind:value={createDescription} />
-          <div class="playlist-visibility">
-            <button type="button" class="playlist-visibility-button" onclick={(e: MouseEvent) => { e.stopPropagation(); dropdownOpen = !dropdownOpen }}>
-              {VISIBILITY_LABELS[createVisibility]?.() ?? m.playlist_private()}
-            </button>
-            {#if dropdownOpen}
-              <div class="playlist-visibility-dropdown">
-                {#each [1, 2, 3] as val}
-                  <button
-                    type="button"
-                    class="visibility-option"
-                    class:selected={createVisibility === val}
-                    onclick={() => { createVisibility = val; dropdownOpen = false }}
-                  >{VISIBILITY_LABELS[val]?.() ?? ''}</button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        </div>
-        {#if createError}<p class="playlist-create-error">{createError}</p>{/if}
-        <div class="playlist-create-actions">
-          <button type="button" class="playlist-create-back" onclick={hideCreateForm}>{m.action_cancel()}</button>
-          <button type="button" class="playlist-create-submit" disabled={!createTitle.trim() || creating} onclick={handleCreate}>
-            {creating ? m.action_creating() : m.action_create()}
-          </button>
-        </div>
-      </div>
-    {/if}
-
+  <div class="playlist-picker-content" id="playlistPickerContent">
     {#if filteredPlaylists.length === 0 && searchQuery.trim()}
       <button type="button" class="playlist-item playlist-create-prompt" onclick={() => showCreateFormWithPrefill(searchQuery.trim())}>
         <div class="playlist-item-info">
@@ -185,11 +179,29 @@
             <span class="playlist-item-count">{partyCount === 1 ? m.count_party({ count: partyCount }) : m.count_parties({ count: partyCount })}</span>
           </div>
           {#if isSelected(playlist)}
-            <svg class="playlist-item-check" viewBox="0 0 14 14" fill="currentColor" width="14" height="14"><path d="M11.53 3.47a.75.75 0 0 1 .073.976l-.073.084-5.5 5.5a.75.75 0 0 1-.976.073l-.084-.073-2.5-2.5a.75.75 0 0 1 .976-1.133l.084.073L5.5 8.44l4.97-4.97a.75.75 0 0 1 1.06 0z"/></svg>
+            <Icon name="check" size={14} class="playlist-item-check" />
           {/if}
         </button>
       {/each}
     {/if}
   </div>
+
+  <div class="playlist-picker-footer">
+    <Button variant="primary" fullWidth id="playlistPickerDone" onclick={close}>{m.action_done()}</Button>
+  </div>
+
+  {#if showCreateForm}
+    <div class="playlist-create-view" transition:slideRight>
+      <div class="playlist-create-form">
+        <Input type="text" contained id="playlistCreateTitle" placeholder={m.playlist_title_field()} bind:value={createTitle} />
+        <textarea class="contained" id="playlistCreateDescription" rows="3" placeholder={m.playlist_desc_field()} bind:value={createDescription}></textarea>
+        <Select options={visibilityOptions} bind:value={createVisibility} contained />
+        {#if createError}<p class="playlist-create-error">{createError}</p>{/if}
+        <Button variant="primary" fullWidth id="playlistCreateSubmit" disabled={!createTitle.trim() || creating} onclick={handleCreate}>
+          {creating ? m.action_creating() : m.action_create()}
+        </Button>
+      </div>
+    </div>
+  {/if}
 </div>
 {/if}

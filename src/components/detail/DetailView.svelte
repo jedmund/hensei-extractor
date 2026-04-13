@@ -1,6 +1,8 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
+  import { slideRight } from '../../lib/transitions.js'
   import { getDataTypeName } from '../../lib/constants.js'
   import { getApiUrl } from '../../lib/constants.js'
   import {
@@ -12,12 +14,13 @@
     toArray
   } from '../../lib/detail-helpers.js'
   import { getCachedData, fetchRaidGroups } from '../../lib/services/chrome-messages.js'
-  import { translateError } from '../../lib/i18n.js'
+  import { translateError, getLocale } from '../../lib/i18n.js'
 
   import type { RawGameItem } from '../../lib/detail-helpers.js'
   import type { RaidGroup } from '../../lib/types/messages.js'
 
-  import DetailHeader from './DetailHeader.svelte'
+  import NavigationBar from '../shared/NavigationBar.svelte'
+  import Icon from '../shared/Icon.svelte'
   import DetailFilter from './DetailFilter.svelte'
   import ItemGrid from './items/ItemGrid.svelte'
   import ItemList from './items/ItemList.svelte'
@@ -25,6 +28,14 @@
   import PartyMeta from './party/PartyMeta.svelte'
   import DatabaseDetail from './database/DatabaseDetail.svelte'
   import CharacterStatsList from './character-stats/CharacterStatsList.svelte'
+
+  interface Props {
+    title?: string
+    onBack?: () => void
+    navRight?: Snippet
+  }
+
+  let { title = '', onBack, navRight }: Props = $props()
 
   let dataType = $derived(app.currentDetailDataType ?? '')
   let isParty = $derived(dataType.startsWith('party_'))
@@ -67,7 +78,7 @@
 
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
-  let weaponKeyMap = $state<Record<string, string> | null>(null)
+  let weaponKeyMap = $state<Record<string, { slug: string; name: string }> | null>(null)
   let jobSkillSlugs = $state<Record<string, string>>({})
   let weaponStatModifiers = $state<Record<string, WeaponStatModifier> | null>(null)
   let simplePortraits = $state(false)
@@ -260,14 +271,30 @@
     }
   }
 
-  let _weaponKeyMapCache: Record<string, string> | null = null
+  let _weaponKeyMapCache: Record<string, { slug: string; name: string }> | null = null
   async function fetchWeaponKeyMap() {
     if (_weaponKeyMapCache) return _weaponKeyMapCache
     try {
-      const apiUrl = await getApiUrl('/weapon_keys/skill_map')
-      const response = await fetch(apiUrl)
-      if (!response.ok) return null
-      _weaponKeyMapCache = await response.json()
+      const locale = getLocale()
+      const [skillMapRes, weaponKeysRes] = await Promise.all([
+        fetch(await getApiUrl('/weapon_keys/skill_map')),
+        fetch(await getApiUrl('/weapon_keys'))
+      ])
+      if (!skillMapRes.ok || !weaponKeysRes.ok) return null
+      const skillMap: Record<string, string> = await skillMapRes.json()
+      const weaponKeys: Array<{ slug: string; name: Record<string, string> }> = await weaponKeysRes.json()
+
+      const slugToName: Record<string, string> = {}
+      for (const key of weaponKeys) {
+        slugToName[key.slug] = key.name[locale] || key.name.en || key.slug
+      }
+
+      const result: Record<string, { slug: string; name: string }> = {}
+      for (const [skillId, slug] of Object.entries(skillMap)) {
+        result[skillId] = { slug, name: slugToName[slug] || slug }
+      }
+
+      _weaponKeyMapCache = result
       return _weaponKeyMapCache
     } catch {
       return null
@@ -347,32 +374,54 @@
   }
 </script>
 
-<div class="detail-view" class:active={app.detailViewActive}>
-  <DetailHeader />
-
+{#if app.detailViewActive}
+<div class="detail-view" transition:slideRight>
+  <NavigationBar {title}>
+    {#snippet left()}
+      <button class="detail-back" onclick={onBack}>
+        <Icon name="chevron-left" size={14} />
+        <span>{m.action_back()}</span>
+      </button>
+    {/snippet}
+    {#snippet right()}
+      {#if navRight}{@render navRight()}{/if}
+    {/snippet}
+  </NavigationBar>
   {#if !isParty}
     <div class="detail-meta">
-      {#if isCollection}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class="select-all-toggle"
-          id="selectAllToggle"
-          data-state={selectAllState}
-          class:disabled={totalCheckboxes === 0}
-          onclick={toggleSelectAll}
-        >
-          <span id="selectAllLabel">{selectAllLabel}</span>
-        </div>
-      {:else}
-        <span class="detail-item-count" id="detailItemCount">{itemCountText}</span>
-      {/if}
+      <div class="detail-meta-left">
+        {#if isCollection}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <label
+            class="select-all-toggle"
+            id="selectAllToggle"
+            data-state={selectAllState}
+            class:disabled={totalCheckboxes === 0}
+            onclick={toggleSelectAll}
+          >
+            <span class="select-all-checkbox" id="selectAllCheckbox">
+              <span class="select-all-check"><Icon name="check" size={14} /></span>
+              <span class="select-all-dash"><Icon name="minus" size={14} /></span>
+            </span>
+            <span class="select-all-label" id="selectAllLabel">{selectAllLabel}</span>
+          </label>
+        {:else}
+          <span class="detail-item-count-standalone" id="detailItemCount">{itemCountText}</span>
+        {/if}
+      </div>
 
-      <span class="detail-stash-name" id="detailStashName">{stashLabel}</span>
+      <span class="detail-meta-center" id="detailStashName">{stashLabel}</span>
+
+      <div class="detail-meta-right">
+        <DetailFilter />
+      </div>
     </div>
   {/if}
 
-  <DetailFilter />
+  {#if isParty}
+    <PartyMeta />
+  {/if}
 
   <div class="detail-items" id="detailItems">
     {#if app.detailData}
@@ -407,8 +456,5 @@
       {/if}
     {/if}
   </div>
-
-  {#if isParty}
-    <PartyMeta />
-  {/if}
 </div>
+{/if}
