@@ -1,0 +1,20 @@
+@use 'spacing';
+
+// Navigation and header heights
+$nav-height: 81px; // Matches actual navigation height with avatar
+$nav-height-mobile: 60px;
+
+// Scale factors
+$scale-wide: scale(1.05, 1.05);
+$scale-tall: scale(1.012, 1.012);
+
+// Border radius
+$full-corner: 500px;
+$page-corner: spacing.$unit-2x;
+$card-corner: spacing.$unit * 1.5;
+$input-corner: spacing.$unit;
+$item-corner: spacing.$unit;
+$item-corner-small: spacing.$unit-half * 1.5;
+
+$bubble-menu-corner: spacing.$unit;
+$bubble-menu-item-corner: spacing.$unit-half * 1.5;

@@ -1,0 +1,24 @@
+// Fonts
+// Font files are loaded from static/fonts locally or AWS S3 in production
+// The @font-face declarations are in src/lib/styles/fonts.css which is
+// generated/loaded based on environment (see app.html and hooks)
+
+// Font-weight (AGrot: 400, 500, 700, 900)
+// $medium uses a CSS custom property so it can be overridden per locale
+// (Japanese fonts lack a visible 500 weight, so ja maps medium → bold)
+$normal: 400;
+$medium: var(--font-weight-medium, 500);
+$bold: 700;
+
+// Font size (in rems based on 10px base = 62.5% of 16px)
+$font-tiny: 1.2rem; // 12px (1.2 × 10px)
+$font-small: 1.4rem; // 14px (1.4 × 10px)
+$font-body: 1.4rem; // 14px (1.4 × 10px)
+$font-button: 1.5rem; // 15px (1.5 × 10px)
+// Alias for $font-button
+$font-name: 1.5rem; // 15px (1.5 × 10px)
+$font-regular: 1.6rem; // 16px (1.6 × 10px)
+$font-medium: 1.8rem; // 18px (1.8 × 10px)
+$font-large: 2.1rem; // 21px (2.1 × 10px)
+$font-xlarge: 2.4rem; // 24px (2.4 × 10px)
+$font-xxlarge: 2.8rem; // 28px (2.8 × 10px)

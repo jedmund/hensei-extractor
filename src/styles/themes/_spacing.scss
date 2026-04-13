@@ -1,0 +1,40 @@
+// Breakpoints
+$breakpoints: (
+	small: 320px,
+	medium: 800px,
+	large: 1024px
+);
+
+$desktop: 1920px;
+$laptop: 1280px;
+$tablet: 768px;
+$phone: 375px;
+$grid-width: 780px;
+
+$character-rep-height: 111px;
+$summon-rep-height: 117px;
+$weapon-rep-height: 109.75px;
+
+// Legacy
+$medium-screen: 768px;
+
+// Sizing
+$unit: 8px;
+
+$unit-fourth: calc($unit / 4);
+$unit-quarter: calc($unit / 4); // 2px - alias for unit-fourth
+$unit-half: calc($unit / 2);
+$unit-three-quarter: calc($unit * 0.75); // 6px - common gap/small spacing
+$unit-three-fourth: calc($unit / 4) * 3;
+$unit-2x: $unit * 2;
+$unit-3x: $unit * 3;
+$unit-4x: $unit * 4;
+$unit-5x: $unit * 5;
+$unit-6x: $unit * 6;
+$unit-7x: $unit * 7; // 56px
+$unit-8x: $unit * 8;
+$unit-9x: $unit * 9; // 72px
+$unit-10x: $unit * 10;
+$unit-12x: $unit * 12;
+$unit-14x: $unit * 14;
+$unit-20x: $unit * 20;

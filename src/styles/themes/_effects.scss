@@ -1,0 +1,138 @@
+@use 'sass:list';
+
+// Borders
+$page-border: 0.5px solid rgba(0, 0, 0, 0.18);
+$dialog-border: 0.5px solid rgba(0, 0, 0, 0.18);
+$card-border: 0.5px solid rgba(0, 0, 0, 0.18);
+
+// Elevation
+$page-elevation: 0 0 4px rgba(0, 0, 0, 0.06);
+$dialog-elevation: 0 0 12px rgba(0, 0, 0, 0.16);
+$card-elevation: 0 0 4px rgba(0, 0, 0, 0.12);
+$card-elevation-hover: 0 0 8px rgba(0, 0, 0, 0.12);
+
+// Shadows
+$hover-stroke: 1px solid rgba(0, 0, 0, 0.1);
+$hover-shadow: rgba(0, 0, 0, 0.08) 0px 0px 14px;
+
+// Elevation shadows
+$shadow-xs-light: 0 1px 2px rgba(0, 0, 0, 0.06);
+$shadow-xs-dark: 0 1px 2px rgba(0, 0, 0, 0.4);
+$shadow-sm-light:
+	0 1px 3px rgba(0, 0, 0, 0.12),
+	0 0 1px rgba(0, 0, 0, 0.08);
+$shadow-sm-dark:
+	0 1px 3px rgba(0, 0, 0, 0.5),
+	0 0 1px rgba(0, 0, 0, 0.3);
+$shadow-md-light: 0 2px 8px rgba(0, 0, 0, 0.14);
+$shadow-md-dark: 0 2px 8px rgba(0, 0, 0, 0.5);
+$shadow-lg-light: 0 4px 12px rgba(0, 0, 0, 0.16);
+$shadow-lg-dark: 0 4px 12px rgba(0, 0, 0, 0.55);
+$shadow-xl-light:
+	0 10px 20px rgba(0, 0, 0, 0.12),
+	0 0 1px rgba(0, 0, 0, 0.05);
+$shadow-xl-dark:
+	0 10px 20px rgba(0, 0, 0, 0.5),
+	0 0 1px rgba(0, 0, 0, 0.3);
+$shadow-inset-light:
+	inset 0 1px 0 rgba(255, 255, 255, 0.25),
+	0 1px 2px rgba(0, 0, 0, 0.18);
+$shadow-inset-dark:
+	inset 0 1px 0 rgba(255, 255, 255, 0.1),
+	0 1px 2px rgba(0, 0, 0, 0.5);
+
+// Z-index layers
+$z-base: 0;
+$z-raised: 1;
+$z-badge: 2;
+$z-sticky: 10;
+$z-overlay: 20;
+$z-dropdown: 30;
+$z-tooltip: 40;
+$z-popover: 50;
+$z-modal: 100;
+$z-notification: 999;
+$z-toast: 2147483647;
+
+// Durations
+$duration-modal-open: 0.48s;
+$duration-color-fade: 0.24s;
+$duration-zoom: 0.18s;
+$duration-opacity-fade: 0.12s;
+$duration-instant: 100ms; // For immediate feedback (switch toggle)
+$duration-quick: 0.15s; // For quick transitions (dropdowns, menus)
+$duration-standard: 0.2s; // For standard animations (modals, segments)
+$duration-slide: 0.3s; // For sliding panels and sidebars
+
+// Gradients
+$hero--gradient--light:
+	linear-gradient(
+		90deg,
+		rgba(245, 245, 245, 1) 5%,
+		rgba(245, 245, 245, 0.2) 50%,
+		rgba(245, 245, 245, 0.2) 70%,
+		rgba(245, 245, 245, 1) 95%
+	),
+	linear-gradient(
+		rgba(245, 245, 245, 1) 5%,
+		rgba(245, 245, 245, 0.4) 40%,
+		rgba(245, 245, 245, 0.4) 78%,
+		rgba(245, 245, 245, 1) 95%
+	);
+$hero--gradient--light--overlay:
+	linear-gradient(
+		90deg,
+		rgba(245, 245, 245, 1) 0%,
+		rgba(245, 245, 245, 0) 50%,
+		rgba(245, 245, 245, 0) 70%,
+		rgba(245, 245, 245, 1) 95%
+	),
+	linear-gradient(
+		rgba(245, 245, 245, 1) 0%,
+		rgba(245, 245, 245, 0) 40%,
+		rgba(245, 245, 245, 0) 78%,
+		rgba(245, 245, 245, 1) 95%
+	);
+
+$hero--gradient--dark:
+	linear-gradient(
+		90deg,
+		rgba(25, 25, 25, 1) 5%,
+		rgba(25, 25, 25, 0.2) 50%,
+		rgba(25, 25, 25, 0.2) 70%,
+		rgba(25, 25, 25, 1) 95%
+	),
+	linear-gradient(
+		rgba(25, 25, 25, 1) 5%,
+		rgba(25, 25, 25, 0.4) 40%,
+		rgba(25, 25, 25, 0.4) 78%,
+		rgba(25, 25, 25, 1) 95%
+	);
+
+$hero--gradient--dark--overlay:
+	linear-gradient(
+		90deg,
+		rgba(25, 25, 25, 1) 0%,
+		rgba(25, 25, 25, 0) 50%,
+		rgba(25, 25, 25, 0) 70%,
+		rgba(25, 25, 25, 1) 95%
+	),
+	linear-gradient(
+		rgba(25, 25, 25, 1) 0%,
+		rgba(25, 25, 25, 0) 40%,
+		rgba(25, 25, 25, 0) 78%,
+		rgba(25, 25, 25, 1) 95%
+	);
+
+// Smooth transition helper mixin
+@mixin smooth-transition($duration: $duration-zoom, $properties...) {
+	@if list.length($properties) == 0 {
+		transition: $duration all ease-out;
+	} @else {
+		$transitions: ();
+		@each $prop in $properties {
+			$transitions: list.append($transitions, $duration #{$prop} ease-out, comma);
+		}
+		transition: $transitions;
+	}
+}
