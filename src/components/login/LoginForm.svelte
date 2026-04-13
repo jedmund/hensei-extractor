@@ -47,7 +47,7 @@
 </script>
 
 <div class="auth-card">
-  <h1>{m.auth_title()}</h1>
+  <h1 class="auth-title">{m.auth_title()}</h1>
   <div class="auth-form">
     <input
       type="email"
