@@ -326,18 +326,18 @@ export interface WeaponModifiers {
     maxExorcismLevel: number
     iconImage: string | null
   } | null
-  weaponKeys: string[]
+  weaponKeys: { slug: string; name: string }[]
 }
 
 export function getWeaponModifiers(
   item: RawGameItem,
-  weaponKeyMap: Record<string, string> | null = null
+  weaponKeyMap: Record<string, { slug: string; name: string }> | null = null
 ): WeaponModifiers {
   const param = item.param ?? ({} as RawParam)
   const odiant = param.odiant ?? ({} as RawOdiant)
   const isOdiant = odiant.is_odiant_weapon === true
 
-  const weaponKeys: string[] = []
+  const weaponKeys: { slug: string; name: string }[] = []
   if (weaponKeyMap) {
     const seriesId = parseInt(String(item.master?.series_id))
     if (WEAPON_KEY_SERIES.has(seriesId)) {
@@ -346,7 +346,7 @@ export function getWeaponModifiers(
         const skillRef = item[skillKey] as RawWeaponSkillRef | undefined
         const skillId = skillRef?.id
         if (skillId && weaponKeyMap[skillId]) {
-          const slug = weaponKeyMap[skillId]
+          const entry = weaponKeyMap[skillId]
           const GAUPH_SLOT0 = [
             'gauph-courage',
             'gauph-strength',
@@ -355,8 +355,11 @@ export function getWeaponModifiers(
             'gauph-will',
             'gauph-zeal'
           ]
-          const needsSuffix = GAUPH_SLOT0.includes(slug) && weaponProficiency
-          weaponKeys.push(needsSuffix ? `${slug}-${weaponProficiency}` : slug)
+          const needsSuffix = GAUPH_SLOT0.includes(entry.slug) && weaponProficiency
+          weaponKeys.push({
+            slug: needsSuffix ? `${entry.slug}-${weaponProficiency}` : entry.slug,
+            name: entry.name
+          })
         }
       }
     }
@@ -395,6 +398,7 @@ export function getWeaponModifiers(
   }
 }
 
+
 /** Resolve the AX skill icon filename from AUGMENT_ICON_MAP */
 export function resolveAugmentIcon(slug: string): string {
   return AUGMENT_ICON_MAP[slug] || slug
@@ -413,15 +417,15 @@ export interface WeaponStatModifier {
 }
 
 /** Build an AX skill tooltip from skill entries */
-export function buildAxTooltip(
+export function buildAxTooltipLines(
   skill: Record<string, RawAugmentSkillEntry> | null,
   iconImage: string | null,
   weaponStatModifiers: Record<string, WeaponStatModifier> | null,
   locale: string
-): string {
+): string[] {
   const iconSlug = iconImage || 'ex_skill_atk'
   const axEntries = Object.values(skill || {})
-  if (axEntries.length === 0) return m.stat_ax_skills()
+  if (axEntries.length === 0) return [m.stat_ax_skills()]
   return axEntries
     .map((s: RawAugmentSkillEntry) => {
       const entryIconSlug = s.image || iconSlug
@@ -431,9 +435,7 @@ export function buildAxTooltip(
       const value = s.show_value || ''
       return name && value ? `${name} ${value}` : name || value
     })
-    .filter(Boolean)
-    .map((l: string) => `<div>${l}</div>`)
-    .join('')
+    .filter((l): l is string => !!l)
 }
 
 // ==========================================

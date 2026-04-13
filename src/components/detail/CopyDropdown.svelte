@@ -1,6 +1,8 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
+  import Button from '../shared/Button.svelte'
+  import Icon from '../shared/Icon.svelte'
   import { getCachedData } from '../../lib/services/chrome-messages.js'
 
   let open = $state(false)
@@ -64,13 +66,9 @@
 <div class="copy-dropdown">
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <button class="copy-dropdown-button" onclick={toggle}>
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="8" cy="3" r="1.5" />
-      <circle cx="8" cy="8" r="1.5" />
-      <circle cx="8" cy="13" r="1.5" />
-    </svg>
-  </button>
+  <Button size="small" iconOnly id="copyDropdownToggle" onclick={toggle}>
+    <Icon name="more-vertical" size={16} />
+  </Button>
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="copy-dropdown-menu" class:open onclick={(e) => e.stopPropagation()}>

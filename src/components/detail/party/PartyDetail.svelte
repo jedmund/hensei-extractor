@@ -5,7 +5,7 @@
     getWeaponModifiers,
     resolveAwakeningIcon,
     resolveAugmentIcon,
-    buildAxTooltip,
+    buildAxTooltipLines,
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
@@ -14,6 +14,8 @@
     resolveForgedSummonId
   } from '../../../lib/game-data.js'
   import * as m from '../../../paraglide/messages.js'
+  import Tooltip from '../../shared/Tooltip.svelte'
+  import RichTooltip from '../../shared/RichTooltip.svelte'
 
   interface RawPartyItem {
     id?: string
@@ -68,7 +70,7 @@
   interface Props {
     data: Record<string, unknown>
     friendSummon?: SummonSearchResult | null
-    weaponKeyMap?: Record<string, string> | null
+    weaponKeyMap?: Record<string, { slug: string; name: string }> | null
     jobSkillSlugs?: Record<string, string>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
@@ -150,9 +152,11 @@
       <h3 class="party-section-title">{m.party_section_job()}</h3>
       <div class="job-row">
         {#if job?.master?.id}
-          <div class="wide-item">
-            <img src={getImageUrl(`job-wide/${job.master.id}_a.jpg`)} alt={job.master.name || m.party_section_job()}>
-          </div>
+          <Tooltip content={job.master.name || m.party_section_job()}>
+            <div class="wide-item">
+              <img src={getImageUrl(`job-wide/${job.master.id}_a.jpg`)} alt={job.master.name || m.party_section_job()}>
+            </div>
+          </Tooltip>
         {/if}
         {#each accessoryIds as id}
           <div class="grid-item">
@@ -164,13 +168,13 @@
         <div class="job-skills-list">
           {#each setAction as skill}
             {@const slug = jobSkillSlugs[skill.name]}
-            <div class="job-skill-item">
+            <div class="job-skill-item" class:empty={!skill.name}>
               {#if slug}
                 <img src={getImageUrl(`job-skills/${slug}.png`)} alt={skill.name}>
               {:else}
                 <div class="job-skill-placeholder"></div>
               {/if}
-              <span>{skill.name}</span>
+              <span>{skill.name || m.job_skill_empty()}</span>
             </div>
           {/each}
         </div>
@@ -190,10 +194,10 @@
             {#if mods.awakening || mods.perpetuity}
               <div class="char-modifiers">
                 {#if mods.perpetuity}
-                  <img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt={m.stat_perpetuity_ring()} data-tooltip={m.stat_perpetuity_ring()}>
+                  <Tooltip content={m.stat_perpetuity_ring()}><img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt={m.stat_perpetuity_ring()}></Tooltip>
                 {/if}
                 {#if mods.awakening}
-                  <img class="awakening-icon" src={getImageUrl(`awakening/${mods.awakening}.jpg`)} alt={m.stat_awakening()} data-tooltip={m.stat_awakening()}>
+                  <Tooltip content={m.stat_awakening()}><img class="awakening-icon" src={getImageUrl(`awakening/${mods.awakening}.jpg`)} alt={m.stat_awakening()}></Tooltip>
                 {/if}
               </div>
             {/if}
@@ -216,20 +220,26 @@
             {#if mainMods.awakening || mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
               <div class="weapon-modifiers">
                 {#if mainMods.awakening}
-                  <img class="awakening-icon" src={getImageUrl(`awakening/${resolveAwakeningIcon(mainMods.awakening.form_name)}.png`)} alt={m.stat_awakening()} data-tooltip="{mainMods.awakening.form_name} Lv.{mainMods.awakening.level}">
+                  <Tooltip content="{mainMods.awakening.form_name} Lv.{mainMods.awakening.level}"><img class="awakening-icon" src={getImageUrl(`awakening/${resolveAwakeningIcon(mainMods.awakening.form_name)}.png`)} alt={m.stat_awakening()}></Tooltip>
                 {/if}
                 {#if mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
                   <div class="weapon-skills">
                     {#if mainMods.axSkill}
                       {@const axIcon = resolveAugmentIcon(mainMods.axSkill.iconImage || 'ex_skill_atk')}
-                      <img class="ax-skill-icon" src={getImageUrl(`ax/${axIcon}.png`)} alt={m.stat_ax_skills()} data-tooltip={buildAxTooltip(mainMods.axSkill.skill, mainMods.axSkill.iconImage, weaponStatModifiers, getLocale())}>
+                      <RichTooltip>
+                        {#snippet content()}{#each buildAxTooltipLines(mainMods.axSkill!.skill, mainMods.axSkill!.iconImage, weaponStatModifiers, getLocale()) as line}<div>{line}</div>{/each}{/snippet}
+                        <img class="ax-skill-icon" src={getImageUrl(`ax/${axIcon}.png`)} alt={m.stat_ax_skills()}>
+                      </RichTooltip>
                     {/if}
                     {#if mainMods.befoulment}
                       {@const befoulIcon = resolveAugmentIcon(mainMods.befoulment.iconImage || 'ex_skill_def_down')}
-                      <img class="befoulment-icon" src={getImageUrl(`ax/${befoulIcon}.png`)} alt={m.stat_befoulment()} data-tooltip="<div>{m.stat_befoulment()}: {mainMods.befoulment.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {mainMods.befoulment.exorcismLevel}/{mainMods.befoulment.maxExorcismLevel}</div>">
+                      <RichTooltip>
+                        {#snippet content()}<div>{m.stat_befoulment()}: {mainMods.befoulment!.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {mainMods.befoulment!.exorcismLevel}/{mainMods.befoulment!.maxExorcismLevel}</div>{/snippet}
+                        <img class="befoulment-icon" src={getImageUrl(`ax/${befoulIcon}.png`)} alt={m.stat_befoulment()}>
+                      </RichTooltip>
                     {/if}
-                    {#each mainMods.weaponKeys as slug}
-                      <img class="weapon-key-icon" src={getImageUrl(`weapon-keys/${slug}.png`)} alt={slug} data-tooltip={slug}>
+                    {#each mainMods.weaponKeys as key}
+                      <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`weapon-keys/${key.slug}.png`)} alt={key.name}></Tooltip>
                     {/each}
                   </div>
                 {/if}
@@ -247,20 +257,26 @@
               {#if wMods.awakening || wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
                 <div class="weapon-modifiers">
                   {#if wMods.awakening}
-                    <img class="awakening-icon" src={getImageUrl(`awakening/${resolveAwakeningIcon(wMods.awakening.form_name)}.png`)} alt={m.stat_awakening()} data-tooltip="{wMods.awakening.form_name} Lv.{wMods.awakening.level}">
+                    <Tooltip content="{wMods.awakening.form_name} Lv.{wMods.awakening.level}"><img class="awakening-icon" src={getImageUrl(`awakening/${resolveAwakeningIcon(wMods.awakening.form_name)}.png`)} alt={m.stat_awakening()}></Tooltip>
                   {/if}
                   {#if wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
                     <div class="weapon-skills">
                       {#if wMods.axSkill}
                         {@const axIcon = resolveAugmentIcon(wMods.axSkill.iconImage || 'ex_skill_atk')}
-                        <img class="ax-skill-icon" src={getImageUrl(`ax/${axIcon}.png`)} alt={m.stat_ax_skills()} data-tooltip={buildAxTooltip(wMods.axSkill.skill, wMods.axSkill.iconImage, weaponStatModifiers, getLocale())}>
+                        <RichTooltip>
+                          {#snippet content()}{#each buildAxTooltipLines(wMods.axSkill!.skill, wMods.axSkill!.iconImage, weaponStatModifiers, getLocale()) as line}<div>{line}</div>{/each}{/snippet}
+                          <img class="ax-skill-icon" src={getImageUrl(`ax/${axIcon}.png`)} alt={m.stat_ax_skills()}>
+                        </RichTooltip>
                       {/if}
                       {#if wMods.befoulment}
                         {@const befoulIcon = resolveAugmentIcon(wMods.befoulment.iconImage || 'ex_skill_def_down')}
-                        <img class="befoulment-icon" src={getImageUrl(`ax/${befoulIcon}.png`)} alt={m.stat_befoulment()} data-tooltip="<div>{m.stat_befoulment()}: {wMods.befoulment.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {wMods.befoulment.exorcismLevel}/{wMods.befoulment.maxExorcismLevel}</div>">
+                        <RichTooltip>
+                          {#snippet content()}<div>{m.stat_befoulment()}: {wMods.befoulment!.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {wMods.befoulment!.exorcismLevel}/{wMods.befoulment!.maxExorcismLevel}</div>{/snippet}
+                          <img class="befoulment-icon" src={getImageUrl(`ax/${befoulIcon}.png`)} alt={m.stat_befoulment()}>
+                        </RichTooltip>
                       {/if}
-                      {#each wMods.weaponKeys as slug}
-                        <img class="weapon-key-icon" src={getImageUrl(`weapon-keys/${slug}.png`)} alt={slug} data-tooltip={slug}>
+                      {#each wMods.weaponKeys as key}
+                        <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`weapon-keys/${key.slug}.png`)} alt={key.name}></Tooltip>
                       {/each}
                     </div>
                   {/if}
@@ -293,7 +309,7 @@
             <div class="grid-item">
               {#if isQuick}
                 <div class="summon-modifiers">
-                  <img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()} data-tooltip={m.stat_quick_summon()}>
+                  <Tooltip content={m.stat_quick_summon()}><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()}></Tooltip>
                 </div>
               {/if}
               <img src={getImageUrl(`summon-grid/${id}${suffix}.jpg`)} alt="">
@@ -314,9 +330,11 @@
       <h3 class="party-section-title">{m.count_bullets({ count: bullets.length })}</h3>
       <div class="item-grid bullets">
         {#each bullets as bullet}
-          <div class="grid-item" data-tooltip={bullet.name || ''}>
+          <Tooltip content={bullet.name || ''} disabled={!bullet.name}>
+          <div class="grid-item">
             <img src={getImageUrl(`bullet-square/${bullet.bullet_id}.jpg`)} alt={bullet.name || ''}>
           </div>
+          </Tooltip>
         {/each}
       </div>
     </div>
