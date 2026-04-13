@@ -80,6 +80,18 @@
   }
 }
 
+.disclaimer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
 .login-language-switch {
   display: block;
   margin-top: 24px;

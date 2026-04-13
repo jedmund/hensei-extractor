@@ -3,8 +3,8 @@
  * Centralizes all configuration values, URLs, and data type definitions.
  */
 
+import * as m from '../paraglide/messages.js'
 import { safeGet } from './storage.js'
-import { t } from './i18n.js'
 
 // ==========================================
 // API CONFIGURATION
@@ -120,29 +120,29 @@ export const RAID_SECTIONS = {
 // DATA TYPE DEFINITIONS
 // ==========================================
 
-const DATA_TYPE_I18N_KEYS: Record<string, string> = {
-  party: 'type_party',
-  detail_npc: 'type_character',
-  detail_weapon: 'type_weapon',
-  detail_summon: 'type_summon',
-  list_npc: 'type_character_list',
-  list_weapon: 'type_weapon_list',
-  list_summon: 'type_summon_list',
-  collection_weapon: 'type_weapon_collection',
-  collection_npc: 'type_character_collection',
-  collection_summon: 'type_summon_collection',
-  collection_artifact: 'type_artifact_collection',
-  character_stats: 'type_character_stats'
+const DATA_TYPE_NAMES: Record<string, () => string> = {
+  party: m.type_party,
+  detail_npc: m.type_character,
+  detail_weapon: m.type_weapon,
+  detail_summon: m.type_summon,
+  list_npc: m.type_character_list,
+  list_weapon: m.type_weapon_list,
+  list_summon: m.type_summon_list,
+  collection_weapon: m.type_weapon_collection,
+  collection_npc: m.type_character_collection,
+  collection_summon: m.type_summon_collection,
+  collection_artifact: m.type_artifact_collection,
+  character_stats: m.type_character_stats
 }
 
 export function getDataTypeName(dataType: string): string {
-  const key = DATA_TYPE_I18N_KEYS[dataType]
-  if (key) return t(key)
+  const fn = DATA_TYPE_NAMES[dataType]
+  if (fn) return fn()
   if (dataType.startsWith('stash_weapon_')) {
-    return t('type_weapon_stash')
+    return m.type_weapon_stash()
   }
   if (dataType.startsWith('stash_summon_')) {
-    return t('type_summon_stash')
+    return m.type_summon_stash()
   }
   return dataType
 }

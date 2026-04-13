@@ -1,6 +1,7 @@
 /**
  * Internationalization module for the Chrome extension.
- * Wraps Paraglide message functions to maintain backward-compatible API.
+ * Thin wrapper around Paraglide runtime for locale management
+ * and series/element/proficiency name translation.
  */
 
 import * as m from '../paraglide/messages.js'
@@ -13,112 +14,7 @@ import {
 export type Locale = 'en' | 'ja'
 
 // ==========================================
-// MESSAGE REGISTRY
-// ==========================================
-
-// Build a lookup from string keys to Paraglide message functions.
-// This allows the existing t(key) API to delegate to Paraglide.
-type MessageFn = ((params?: Record<string, unknown>) => string) &
-  Record<string, unknown>
-
-const registry: Record<string, MessageFn> = {}
-for (const [key, fn] of Object.entries(m)) {
-  if (typeof fn === 'function' && key !== 'm') {
-    registry[key] = fn as MessageFn
-  }
-}
-
-// ==========================================
-// SERIES NAME LOOKUP MAPS
-// ==========================================
-
-const WEAPON_SERIES_I18N: Record<string, string> = {
-  Seraphic: 'series_seraphic',
-  Grand: 'series_grand',
-  'Dark Opus': 'series_dark_opus',
-  Revenant: 'series_revenant',
-  Primal: 'series_primal',
-  Beast: 'series_beast',
-  Regalia: 'series_regalia',
-  Omega: 'series_omega',
-  'Olden Primal': 'series_olden_primal',
-  Hollowsky: 'series_hollowsky',
-  Xeno: 'series_xeno',
-  Rose: 'series_rose',
-  Ultima: 'series_ultima',
-  Bahamut: 'series_bahamut',
-  Epic: 'series_epic',
-  Cosmos: 'series_cosmos',
-  Superlative: 'series_superlative',
-  Vintage: 'series_vintage',
-  'Class Champion': 'series_class_champion',
-  Replica: 'series_replica',
-  Relic: 'series_relic',
-  Rusted: 'series_rusted',
-  Sephira: 'series_sephira',
-  Vyrmament: 'series_vyrmament',
-  Upgrader: 'series_upgrader',
-  Astral: 'series_astral',
-  Draconic: 'series_draconic',
-  'Eternal Splendor': 'series_eternal_splendor',
-  Ancestral: 'series_ancestral',
-  'New World Foundation': 'series_new_world',
-  Ennead: 'series_ennead',
-  Militis: 'series_militis',
-  Malice: 'series_malice',
-  Menace: 'series_menace',
-  Illustrious: 'series_illustrious',
-  Proven: 'series_proven',
-  Revans: 'series_revans',
-  World: 'series_world',
-  Exo: 'series_exo',
-  'Draconic Providence': 'series_draconic_providence',
-  Celestial: 'series_celestial',
-  'Omega Rebirth': 'series_omega_rebirth',
-  Collab: 'series_collab',
-  Destroyer: 'series_destroyer'
-}
-
-const SUMMON_SERIES_I18N: Record<string, string> = {
-  Providence: 'series_providence',
-  Genesis: 'series_genesis',
-  Magna: 'series_magna',
-  Optimus: 'series_optimus',
-  'Demi Optimus': 'series_demi_optimus',
-  Archangel: 'series_archangel',
-  Arcarum: 'series_arcarum',
-  Epic: 'series_epic',
-  Carbuncle: 'series_carbuncle',
-  Dynamis: 'series_dynamis',
-  Cryptid: 'series_cryptid',
-  'Six Dragons': 'series_six_dragons',
-  Summer: 'series_summer',
-  Yukata: 'series_yukata',
-  Holiday: 'series_holiday',
-  Collab: 'series_collab',
-  Bellum: 'series_bellum',
-  Crest: 'series_crest',
-  Robur: 'series_robur'
-}
-
-const CHARACTER_SERIES_I18N: Record<string, string> = {
-  Summer: 'series_summer',
-  Yukata: 'series_yukata',
-  Valentine: 'series_valentine',
-  Halloween: 'series_halloween',
-  Holiday: 'series_holiday',
-  Zodiac: 'series_zodiac',
-  Grand: 'series_grand',
-  Fantasy: 'series_fantasy',
-  Collab: 'series_collab',
-  Eternal: 'series_eternal',
-  Evoker: 'series_evoker',
-  Saint: 'series_saint',
-  Formal: 'series_formal'
-}
-
-// ==========================================
-// PUBLIC API
+// LOCALE MANAGEMENT
 // ==========================================
 
 export function setLocale(lang: string): void {
@@ -128,91 +24,6 @@ export function setLocale(lang: string): void {
 
 export function getLocale(): Locale {
   return paraglideGetLocale() as Locale
-}
-
-export function t(
-  key: string,
-  params?: Record<string, string | number>
-): string {
-  const fn = registry[key]
-  if (!fn) return key
-  return fn(params)
-}
-
-export function tPlural(
-  singular: string,
-  plural: string,
-  count: number,
-  params: Record<string, string | number> = {}
-): string {
-  const key = count === 1 ? singular : plural
-  return t(key, { count, ...params })
-}
-
-export function tError(code: string): string {
-  const key = `error_${code}`
-  return registry[key] ? t(key) : t('error_request_failed')
-}
-
-export function translateSeries(
-  englishName: string,
-  type: 'weapon' | 'summon' | 'character'
-): string {
-  if (getLocale() === 'en') return englishName
-
-  let map: Record<string, string>
-  if (type === 'weapon') map = WEAPON_SERIES_I18N
-  else if (type === 'summon') map = SUMMON_SERIES_I18N
-  else if (type === 'character') map = CHARACTER_SERIES_I18N
-  else return englishName
-
-  const key = map[englishName]
-  if (!key) return englishName
-
-  return registry[key] ? t(key) : englishName
-}
-
-export function translateElement(englishName: string): string {
-  if (getLocale() === 'en') return englishName
-  const key = `element_${englishName.toLowerCase()}`
-  return registry[key] ? t(key) : englishName
-}
-
-export function translateProficiency(englishName: string): string {
-  if (getLocale() === 'en') return englishName
-  const key = `proficiency_${englishName.toLowerCase()}`
-  return registry[key] ? t(key) : englishName
-}
-
-export function translatePage(): void {
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
-    const key = el.dataset.i18n
-    if (!key) return
-    const translated = t(key)
-    if (translated !== key) {
-      el.textContent = translated
-    }
-  })
-
-  document
-    .querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]')
-    .forEach((el) => {
-      const key = el.dataset.i18nPlaceholder
-      if (!key) return
-      const translated = t(key)
-      if (translated !== key) {
-        el.placeholder = translated
-      }
-    })
-
-  document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((el) => {
-    const key = el.dataset.i18nTitle
-    if (!key) return
-    const translated = t(key)
-    if (translated !== key) {
-      el.title = translated
-    }
-  })
 }
 
 interface AuthWithLanguage {
@@ -228,4 +39,163 @@ export function getPreferredLocale(gbAuth: AuthWithLanguage | null): Locale {
   } catch {
     return 'en'
   }
+}
+
+// ==========================================
+// ERROR CODE TRANSLATION
+// ==========================================
+
+const ERROR_MESSAGES: Record<string, () => string> = {
+  not_logged_in: m.error_not_logged_in,
+  no_cached_data: m.error_no_cached_data,
+  stale_data: m.error_stale_data,
+  no_character_stats: m.error_no_character_stats,
+  no_items: m.error_no_items,
+  unknown_type: m.error_unknown_type,
+  request_failed: m.error_request_failed,
+  server_error: m.error_server_error
+}
+
+export function translateError(code: string): string {
+  const fn = ERROR_MESSAGES[code]
+  return fn ? fn() : m.error_request_failed()
+}
+
+// ==========================================
+// SERIES NAME TRANSLATION
+// ==========================================
+
+const WEAPON_SERIES: Record<string, () => string> = {
+  Seraphic: m.series_seraphic,
+  Grand: m.series_grand,
+  'Dark Opus': m.series_dark_opus,
+  Revenant: m.series_revenant,
+  Primal: m.series_primal,
+  Beast: m.series_beast,
+  Regalia: m.series_regalia,
+  Omega: m.series_omega,
+  'Olden Primal': m.series_olden_primal,
+  Hollowsky: m.series_hollowsky,
+  Xeno: m.series_xeno,
+  Rose: m.series_rose,
+  Ultima: m.series_ultima,
+  Bahamut: m.series_bahamut,
+  Epic: m.series_epic,
+  Cosmos: m.series_cosmos,
+  Superlative: m.series_superlative,
+  Vintage: m.series_vintage,
+  'Class Champion': m.series_class_champion,
+  Replica: m.series_replica,
+  Relic: m.series_relic,
+  Rusted: m.series_rusted,
+  Sephira: m.series_sephira,
+  Vyrmament: m.series_vyrmament,
+  Upgrader: m.series_upgrader,
+  Astral: m.series_astral,
+  Draconic: m.series_draconic,
+  'Eternal Splendor': m.series_eternal_splendor,
+  Ancestral: m.series_ancestral,
+  'New World Foundation': m.series_new_world,
+  Ennead: m.series_ennead,
+  Militis: m.series_militis,
+  Malice: m.series_malice,
+  Menace: m.series_menace,
+  Illustrious: m.series_illustrious,
+  Proven: m.series_proven,
+  Revans: m.series_revans,
+  World: m.series_world,
+  Exo: m.series_exo,
+  'Draconic Providence': m.series_draconic_providence,
+  Celestial: m.series_celestial,
+  'Omega Rebirth': m.series_omega_rebirth,
+  Collab: m.series_collab,
+  Destroyer: m.series_destroyer
+}
+
+const SUMMON_SERIES: Record<string, () => string> = {
+  Providence: m.series_providence,
+  Genesis: m.series_genesis,
+  Magna: m.series_magna,
+  Optimus: m.series_optimus,
+  'Demi Optimus': m.series_demi_optimus,
+  Archangel: m.series_archangel,
+  Arcarum: m.series_arcarum,
+  Epic: m.series_epic,
+  Carbuncle: m.series_carbuncle,
+  Dynamis: m.series_dynamis,
+  Cryptid: m.series_cryptid,
+  'Six Dragons': m.series_six_dragons,
+  Summer: m.series_summer,
+  Yukata: m.series_yukata,
+  Holiday: m.series_holiday,
+  Collab: m.series_collab,
+  Bellum: m.series_bellum,
+  Crest: m.series_crest,
+  Robur: m.series_robur
+}
+
+const CHARACTER_SERIES: Record<string, () => string> = {
+  Summer: m.series_summer,
+  Yukata: m.series_yukata,
+  Valentine: m.series_valentine,
+  Halloween: m.series_halloween,
+  Holiday: m.series_holiday,
+  Zodiac: m.series_zodiac,
+  Grand: m.series_grand,
+  Fantasy: m.series_fantasy,
+  Collab: m.series_collab,
+  Eternal: m.series_eternal,
+  Evoker: m.series_evoker,
+  Saint: m.series_saint,
+  Formal: m.series_formal
+}
+
+const ELEMENT_NAMES: Record<string, () => string> = {
+  fire: m.element_fire,
+  water: m.element_water,
+  earth: m.element_earth,
+  wind: m.element_wind,
+  light: m.element_light,
+  dark: m.element_dark
+}
+
+const PROFICIENCY_NAMES: Record<string, () => string> = {
+  sabre: m.proficiency_sabre,
+  dagger: m.proficiency_dagger,
+  axe: m.proficiency_axe,
+  spear: m.proficiency_spear,
+  bow: m.proficiency_bow,
+  staff: m.proficiency_staff,
+  melee: m.proficiency_melee,
+  harp: m.proficiency_harp,
+  gun: m.proficiency_gun,
+  katana: m.proficiency_katana
+}
+
+export function translateSeries(
+  englishName: string,
+  type: 'weapon' | 'summon' | 'character'
+): string {
+  if (getLocale() === 'en') return englishName
+
+  let map: Record<string, () => string>
+  if (type === 'weapon') map = WEAPON_SERIES
+  else if (type === 'summon') map = SUMMON_SERIES
+  else if (type === 'character') map = CHARACTER_SERIES
+  else return englishName
+
+  const fn = map[englishName]
+  return fn ? fn() : englishName
+}
+
+export function translateElement(englishName: string): string {
+  if (getLocale() === 'en') return englishName
+  const fn = ELEMENT_NAMES[englishName.toLowerCase()]
+  return fn ? fn() : englishName
+}
+
+export function translateProficiency(englishName: string): string {
+  if (getLocale() === 'en') return englishName
+  const fn = PROFICIENCY_NAMES[englishName.toLowerCase()]
+  return fn ? fn() : englishName
 }
