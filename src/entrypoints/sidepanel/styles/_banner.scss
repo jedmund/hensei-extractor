@@ -1,0 +1,37 @@
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  bottom: var(--spacing-sm);
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm)
+    var(--spacing-md);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-xl);
+  font-size: 14px;
+  color: var(--color-primary);
+  z-index: 100;
+
+  .update-link {
+    color: var(--color-primary);
+    background-color: transparent;
+
+    &:hover:not(:disabled) {
+      color: var(--color-primary);
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+.update-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.update-banner-subtitle {
+  font-size: 12px;
+  opacity: 0.7;
+}

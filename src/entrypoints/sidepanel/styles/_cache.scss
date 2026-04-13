@@ -1,0 +1,125 @@
+.cache-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cache-empty,
+.cache-error {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.cache-error {
+  color: var(--color-error);
+}
+
+.cache-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  background: transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+
+  &:hover {
+    background: var(--element-bg);
+    color: var(--element-text);
+
+    .cache-name {
+      color: inherit;
+    }
+
+    .stash-tag {
+      background: var(--element-button-bg);
+      color: white;
+    }
+
+    .cache-subtitle {
+      color: inherit;
+      opacity: 0.7;
+    }
+
+    .cache-age {
+      color: inherit;
+      opacity: 0.7;
+    }
+  }
+
+  &.stale {
+    cursor: not-allowed;
+    color: var(--text-secondary);
+
+    .cache-name,
+    .cache-age,
+    .cache-subtitle,
+    .icon-chevron {
+      color: var(--text-secondary);
+    }
+
+    .stash-tag {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    &:hover {
+      background: transparent;
+
+      .stash-tag {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+      }
+    }
+  }
+}
+
+.cache-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.cache-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cache-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.stash-tag {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--element-bg);
+  color: var(--element-text);
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.cache-subtitle {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.cache-age {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}

@@ -3,19 +3,19 @@
  * Provides helper functions for formatting cache status and managing cache data.
  */
 
+import * as m from '../paraglide/messages.js'
 import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
-import { t } from './i18n.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from './types/cache.js'
 
 export function formatAge(ageMs: number): string {
   const seconds = Math.floor(ageMs / 1000)
-  if (seconds < 60) return t('time_seconds_ago', { count: seconds })
+  if (seconds < 60) return m.time_seconds_ago({ count: seconds })
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return t('time_minutes_ago', { count: minutes })
+  if (minutes < 60) return m.time_minutes_ago({ count: minutes })
 
   const hours = Math.floor(minutes / 60)
-  return t('time_hours_ago', { count: hours })
+  return m.time_hours_ago({ count: hours })
 }
 
 export function isStale(timestamp: number): boolean {
@@ -38,7 +38,7 @@ export function formatCacheStatus(
         ...info,
         displayName: stashDisplayName,
         subtitle: null,
-        ageText: t('cache_no_data'),
+        ageText: m.cache_no_data(),
         statusClass: 'unavailable'
       }
     } else if (info.isStale) {
@@ -46,7 +46,7 @@ export function formatCacheStatus(
         ...info,
         displayName: stashDisplayName,
         subtitle: null,
-        ageText: t('cache_stale'),
+        ageText: m.cache_stale(),
         statusClass: 'stale'
       }
     } else {
@@ -59,18 +59,18 @@ export function formatCacheStatus(
         type.startsWith('collection_') ||
         type.startsWith('stash_')
       ) {
-        subtitle = t('count_items_pages', {
-          items: info.totalItems,
-          pages: info.pageCount
+        subtitle = m.count_items_pages({
+          items: info.totalItems ?? 0,
+          pages: info.pageCount ?? 0
         })
       }
 
       if (type.startsWith('detail_npc_')) {
-        displayName = info.itemName ?? t('type_character')
+        displayName = info.itemName ?? m.type_character()
       } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName ?? t('type_weapon')
+        displayName = info.itemName ?? m.type_weapon()
       } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName ?? t('type_summon')
+        displayName = info.itemName ?? m.type_summon()
       }
 
       formatted[type] = {

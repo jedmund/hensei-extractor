@@ -1,5 +1,5 @@
 /**
- * @fileoverview Network interception using Chrome DevTools Debugger Protocol.
+ * Network interception using Chrome DevTools Debugger Protocol.
  * This approach is completely invisible to the page - no modified globals,
  * no injected scripts. We intercept at the browser level.
  *
@@ -42,76 +42,64 @@ const INTERCEPT_PATTERNS = [
 // STATE TRACKING
 // ==========================================
 
-// Track attached tabs
-const attachedTabs = new Set()
+const attachedTabs = new Set<number>()
 
-// Most recently seen stash name, extracted from container/content/list HTML.
-// Since the user browses one stash at a time, we just track the latest.
-let lastStashName = null
+let lastStashName: string | null = null
 
-// Track pending requests waiting for response body
-// Map<requestId, { url, tabId }>
-const pendingRequests = new Map()
+interface PendingRequest {
+  url: string
+  tabId: number
+  timestamp: number
+}
 
-// Callback for when data is intercepted
-let onDataIntercepted = null
+const pendingRequests = new Map<string, PendingRequest>()
+
+export interface InterceptMetadata {
+  pageNumber: number | null
+  partyId: string | null
+  masterId: string | null
+  stashNumber: string | null
+  stashName: string | null
+}
+
+type OnDataInterceptedCallback = (
+  url: string,
+  data: unknown,
+  dataType: string,
+  metadata: InterceptMetadata,
+  timestamp: number
+) => void
+
+let onDataIntercepted: OnDataInterceptedCallback | null = null
 
 // ==========================================
 // PUBLIC API
 // ==========================================
 
-/**
- * Initialize the debugger interception system
- * @param {Function} callback - Called with (url, data, dataType, metadata) when data is intercepted
- */
-export function initDebugger(callback) {
+export function initDebugger(callback: OnDataInterceptedCallback): void {
   onDataIntercepted = callback
 
-  // Listen for debugger events
   chrome.debugger.onEvent.addListener(handleDebuggerEvent)
-
-  // Handle debugger detachment (user clicked cancel, tab closed, etc.)
   chrome.debugger.onDetach.addListener(handleDebuggerDetach)
-
-  // Auto-attach when GBF tabs are opened/navigated
   chrome.tabs.onUpdated.addListener(handleTabUpdated)
-
-  // Clean up when tabs are closed
   chrome.tabs.onRemoved.addListener(handleTabRemoved)
 
-  // Attach to any existing GBF tabs
   attachToExistingTabs()
 }
 
-/**
- * Check if we're attached to a GBF tab
- * @returns {boolean}
- */
-export function isAttached() {
+export function isAttached(): boolean {
   return attachedTabs.size > 0
 }
 
-/**
- * Get list of attached tab IDs
- * @returns {number[]}
- */
-export function getAttachedTabs() {
+export function getAttachedTabs(): number[] {
   return Array.from(attachedTabs)
 }
 
-/**
- * Manually attach to a tab
- * @param {number} tabId
- */
-export async function attachToTab(tabId) {
+export async function attachToTab(tabId: number): Promise<void> {
   await doAttach(tabId)
 }
 
-/**
- * Manually detach from a tab
- * @param {number} tabId
- */
-export async function detachFromTab(tabId) {
+export async function detachFromTab(tabId: number): Promise<void> {
   await doDetach(tabId)
 }
 
@@ -119,26 +107,24 @@ export async function detachFromTab(tabId) {
 // INTERNAL: TAB MANAGEMENT
 // ==========================================
 
-/**
- * Attach to any existing GBF tabs on startup
- */
-async function attachToExistingTabs() {
+async function attachToExistingTabs(): Promise<void> {
   try {
     const tabs = await chrome.tabs.query({
       url: GBF_DOMAINS.map((d) => `https://${d}/*`)
     })
     for (const tab of tabs) {
-      await doAttach(tab.id)
+      if (tab.id != null) await doAttach(tab.id)
     }
   } catch (e) {
     console.error('[Debugger] Error attaching to existing tabs:', e)
   }
 }
 
-/**
- * Handle tab updates - attach when GBF is loaded
- */
-function handleTabUpdated(tabId, changeInfo, tab) {
+function handleTabUpdated(
+  tabId: number,
+  changeInfo: chrome.tabs.OnUpdatedInfo,
+  tab: chrome.tabs.Tab
+): void {
   if (
     GBF_DOMAINS.some((d) => tab.url?.includes(d)) &&
     changeInfo.status === 'complete'
@@ -147,12 +133,8 @@ function handleTabUpdated(tabId, changeInfo, tab) {
   }
 }
 
-/**
- * Handle tab removal - clean up
- */
-function handleTabRemoved(tabId) {
+function handleTabRemoved(tabId: number): void {
   attachedTabs.delete(tabId)
-  // Clean up any pending requests for this tab
   for (const [requestId, info] of pendingRequests) {
     if (info.tabId === tabId) {
       pendingRequests.delete(requestId)
@@ -160,33 +142,27 @@ function handleTabRemoved(tabId) {
   }
 }
 
-/**
- * Attach debugger to a tab
- */
-async function doAttach(tabId) {
+async function doAttach(tabId: number): Promise<void> {
   if (attachedTabs.has(tabId)) return
 
   try {
-    // Attach debugger with protocol version 1.3
     await chrome.debugger.attach({ tabId }, '1.3')
-
-    // Enable network tracking
     await chrome.debugger.sendCommand({ tabId }, 'Network.enable')
-
     attachedTabs.add(tabId)
     console.log(`[Debugger] Attached to tab ${tabId}`)
   } catch (e) {
-    // Common errors: already attached, tab doesn't exist, user denied
-    if (!e.message?.includes('Another debugger is already attached')) {
-      console.error(`[Debugger] Failed to attach to tab ${tabId}:`, e.message)
+    if (
+      !(e as Error).message?.includes('Another debugger is already attached')
+    ) {
+      console.error(
+        `[Debugger] Failed to attach to tab ${tabId}:`,
+        (e as Error).message
+      )
     }
   }
 }
 
-/**
- * Detach debugger from a tab
- */
-async function doDetach(tabId) {
+async function doDetach(tabId: number): Promise<void> {
   if (!attachedTabs.has(tabId)) return
 
   try {
@@ -194,44 +170,57 @@ async function doDetach(tabId) {
     attachedTabs.delete(tabId)
     console.log(`[Debugger] Detached from tab ${tabId}`)
   } catch {
-    // Tab might already be closed
     attachedTabs.delete(tabId)
   }
 }
 
-/**
- * Handle debugger detachment events
- */
-function handleDebuggerDetach(source, reason) {
-  attachedTabs.delete(source.tabId)
-  console.log(`[Debugger] Detached from tab ${source.tabId}: ${reason}`)
+function handleDebuggerDetach(
+  source: chrome.debugger.Debuggee,
+  reason: string
+): void {
+  if (source.tabId != null) {
+    attachedTabs.delete(source.tabId)
+    console.log(`[Debugger] Detached from tab ${source.tabId}: ${reason}`)
+  }
 }
 
 // ==========================================
 // INTERNAL: NETWORK INTERCEPTION
 // ==========================================
 
-/**
- * Handle debugger protocol events
- */
-function handleDebuggerEvent(source, method, params) {
+function handleDebuggerEvent(
+  source: chrome.debugger.Debuggee,
+  method: string,
+  params?: unknown
+): void {
   const { tabId } = source
+  if (tabId == null) return
 
   if (method === 'Network.responseReceived') {
-    handleResponseReceived(tabId, params)
+    handleResponseReceived(tabId, params as ResponseReceivedParams)
   } else if (method === 'Network.loadingFinished') {
-    handleLoadingFinished(tabId, params).catch(() => {})
+    handleLoadingFinished(tabId, params as LoadingFinishedParams).catch(
+      () => {}
+    )
   }
 }
 
-/**
- * Handle Network.responseReceived - track requests we want to capture
- */
-function handleResponseReceived(tabId, params) {
+interface ResponseReceivedParams {
+  requestId: string
+  response: { url: string }
+}
+
+interface LoadingFinishedParams {
+  requestId: string
+}
+
+function handleResponseReceived(
+  tabId: number,
+  params: ResponseReceivedParams
+): void {
   const { requestId, response } = params
   const url = response.url
 
-  // Only track requests matching our patterns
   if (shouldIntercept(url)) {
     pendingRequests.set(requestId, {
       url,
@@ -241,10 +230,10 @@ function handleResponseReceived(tabId, params) {
   }
 }
 
-/**
- * Handle Network.loadingFinished - get response body and process
- */
-async function handleLoadingFinished(tabId, params) {
+async function handleLoadingFinished(
+  tabId: number,
+  params: LoadingFinishedParams
+): Promise<void> {
   const { requestId } = params
   const pending = pendingRequests.get(requestId)
 
@@ -253,33 +242,26 @@ async function handleLoadingFinished(tabId, params) {
   pendingRequests.delete(requestId)
 
   try {
-    // Get the response body
-    const result = await chrome.debugger.sendCommand(
+    const result = (await chrome.debugger.sendCommand(
       { tabId: pending.tabId },
       'Network.getResponseBody',
       { requestId }
-    )
+    )) as { body: string; base64Encoded: boolean }
 
-    // Decode body if base64 encoded
     let bodyText = result.body
     if (result.base64Encoded) {
       bodyText = atob(result.body)
     }
 
-    // Parse as JSON
-    const data = JSON.parse(bodyText)
+    const data: unknown = JSON.parse(bodyText)
 
-    // Process the intercepted data
     processInterceptedData(pending.url, data, pending.timestamp)
   } catch {
     // Response might not be JSON, or request might have failed
   }
 }
 
-/**
- * Check if a URL matches our intercept patterns
- */
-function shouldIntercept(url) {
+function shouldIntercept(url: string): boolean {
   if (!url) return false
   return INTERCEPT_PATTERNS.some((pattern) => url.includes(pattern))
 }
@@ -288,14 +270,14 @@ function shouldIntercept(url) {
 // INTERNAL: DATA PROCESSING
 // ==========================================
 
-/**
- * Process intercepted data and notify callback
- */
-function processInterceptedData(url, data, timestamp) {
-  // Extract and cache stash names from container content pages
+function processInterceptedData(
+  url: string,
+  data: unknown,
+  timestamp: number
+): void {
   if (url.includes('/container/content/list/')) {
-    extractStashName(url, data)
-    return // Not a data type we forward
+    extractStashName(url, data as { data?: string })
+    return
   }
 
   if (!onDataIntercepted) return
@@ -304,10 +286,10 @@ function processInterceptedData(url, data, timestamp) {
 
   let pageNumber = getPageNumber(url)
   if (dataType.startsWith('stash_')) {
-    pageNumber = data?.current || 1
+    pageNumber = (data as { current?: number })?.current ?? 1
   }
 
-  const metadata = {
+  const metadata: InterceptMetadata = {
     pageNumber,
     partyId: dataType === 'party' ? getPartyId(url, data) : null,
     masterId: getMasterId(url, data, dataType),
@@ -318,10 +300,7 @@ function processInterceptedData(url, data, timestamp) {
   onDataIntercepted(url, data, dataType, metadata, timestamp)
 }
 
-/**
- * Determine the data type from the URL
- */
-function getDataType(url) {
+function getDataType(url: string): string {
   if (url.includes('/party/deck')) return 'party'
   if (url.includes('/archive/npc_detail')) return 'detail_npc'
   if (url.includes('/archive/weapon_detail')) return 'detail_weapon'
@@ -341,65 +320,43 @@ function getDataType(url) {
   return 'unknown'
 }
 
-/**
- * Extract page number from list URL
- */
-function getPageNumber(url) {
+function getPageNumber(url: string): number | null {
   const match = url.match(/\/list\/(\d+)/)
-  return match ? parseInt(match[1], 10) : null
+  return match ? parseInt(match[1]!, 10) : null
 }
 
-/**
- * Extract stash number from URL.
- * URL pattern: /{type}/container_list/{containerId}/{stashNumber}
- * Page N adds: /{pageNumber}/list
- * Page number comes from the response data's `current` field.
- */
-function getStashNumber(url) {
+function getStashNumber(url: string): string {
   const match = url.match(/\/(?:weapon|summon)\/container_list\/\d+\/(\d+)/)
-  return match ? match[1] : '1'
+  return match ? match[1]! : '1'
 }
 
-/**
- * Extract stash name from container/content/list HTML response.
- * The response has a `data` field with URL-encoded HTML containing
- * <div class="prt-container-name">StashName</div>
- */
-function extractStashName(url, data) {
+function extractStashName(_url: string, data: { data?: string }): void {
   if (!data?.data) return
 
   const html = decodeURIComponent(data.data)
   const nameMatch = html.match(/class="prt-container-name">([^<]+)</)
   if (nameMatch) {
-    lastStashName = nameMatch[1].trim()
+    lastStashName = nameMatch[1]!.trim()
   }
 }
 
-/**
- * Get the most recently extracted stash name and clear it.
- */
-function getStashName() {
-  const name = lastStashName
-  return name || null
+function getStashName(): string | null {
+  return lastStashName ?? null
 }
 
-/**
- * Extract party ID from URL or data
- */
-function getPartyId(url, data) {
-  // Try URL pattern first: /party/deck/{group}/{slot}
+function getPartyId(url: string, data: unknown): string | null {
   const urlMatch = url.match(/\/party\/deck\/(\d+)\/(\d+)/)
   if (urlMatch) {
     return `${urlMatch[1]}_${urlMatch[2]}`
   }
 
-  // Fall back to data
-  if (data?.deck) {
-    if (data.deck.priority !== undefined) {
-      return `deck_${data.deck.priority}`
+  const deckData = data as { deck?: { priority?: number; name?: string } }
+  if (deckData?.deck) {
+    if (deckData.deck.priority !== undefined) {
+      return `deck_${deckData.deck.priority}`
     }
-    if (data.deck.name) {
-      return data.deck.name
+    if (deckData.deck.name) {
+      return deckData.deck.name
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '_')
         .substring(0, 20)
@@ -409,20 +366,19 @@ function getPartyId(url, data) {
   return null
 }
 
-/**
- * Extract master ID for character stats data
- */
-function getMasterId(url, data, dataType) {
+function getMasterId(
+  url: string,
+  data: unknown,
+  dataType: string
+): string | null {
   if (dataType === 'zenith_npc') {
-    // Try bonus_list pattern
     let match = url.match(/\/npczenith\/bonus_list\/(\d+)/)
-    if (match) return match[1]
+    if (match) return match[1]!
 
-    // Try content/index pattern
     match = url.match(/\/npczenith\/content\/index\/(\d+)/)
-    if (match) return match[1]
+    if (match) return match[1]!
   } else if (dataType === 'character_detail') {
-    return data?.master?.id || null
+    return (data as { master?: { id?: string } })?.master?.id ?? null
   }
 
   return null
