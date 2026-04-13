@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "extension_version": "Extension v{version}",
   "nav_party": "Party",
   "nav_collection": "Collection",
   "nav_database": "Database",

@@ -130,7 +130,7 @@
 <div class="view main-view">
   <NavigationBar title="granblue.team">
     {#snippet center()}
-      <Tooltip content="v{chrome.runtime.getManifest().version}">
+      <Tooltip content={m.extension_version({ version: chrome.runtime.getManifest().version })}>
         <span>granblue.team</span>
       </Tooltip>
     {/snippet}
