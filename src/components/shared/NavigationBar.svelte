@@ -6,18 +6,21 @@
   interface Props {
     title?: string
     left?: Snippet
+    center?: Snippet
     right?: Snippet
     class?: string
   }
 
-  let { title, left, right, class: className }: Props = $props()
+  let { title, left, center, right, class: className }: Props = $props()
 </script>
 
 <header class="navigation-bar {className || ''}">
   <div class="navigation-bar-left">
     {#if left}{@render left()}{/if}
   </div>
-  <span class="navigation-bar-title">{title ?? ''}</span>
+  <span class="navigation-bar-title">
+    {#if center}{@render center()}{:else}{title ?? ''}{/if}
+  </span>
   <div class="navigation-bar-right">
     {#if right}{@render right()}{/if}
   </div>
@@ -60,5 +63,9 @@
     color: var(--color-text);
     white-space: nowrap;
     pointer-events: none;
+
+    :global(> *) {
+      pointer-events: auto;
+    }
   }
 </style>

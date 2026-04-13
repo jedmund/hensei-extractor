@@ -129,6 +129,11 @@
 
 <div class="view main-view">
   <NavigationBar title="granblue.team">
+    {#snippet center()}
+      <Tooltip content="v{chrome.runtime.getManifest().version}">
+        <span>granblue.team</span>
+      </Tooltip>
+    {/snippet}
     {#snippet right()}
       <button
         class="tab-profile"
