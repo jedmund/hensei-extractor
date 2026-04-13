@@ -9,8 +9,8 @@
         (type) => type.startsWith('party_') && app.cachedStatus[type]?.available
       )
       .sort((a, b) => {
-        const aTime = (app.cachedStatus[a] as any)?.lastUpdated || 0
-        const bTime = (app.cachedStatus[b] as any)?.lastUpdated || 0
+        const aTime = app.cachedStatus[a]?.timestamp || 0
+        const bTime = app.cachedStatus[b]?.timestamp || 0
         return bTime - aTime
       })
   )
@@ -28,7 +28,7 @@
     {:else}
       {#each partyTypes as dataType (dataType)}
         <CacheItemRow
-          status={app.cachedStatus[dataType]}
+          status={app.cachedStatus[dataType]!}
           {dataType}
           onclick={() => openDetail(dataType)}
         />

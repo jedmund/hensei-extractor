@@ -6,14 +6,33 @@
     renderSummonStats
   } from '../../../lib/detail-helpers.js'
 
-  interface Props {
-    dataType: string
-    data: any
+  interface DatabaseItemData {
+    id?: string
+    name?: string
+    attribute?: string | number
+    element?: string | number
+    specialty_weapon?: Array<string | number>
+    master?: {
+      id?: string
+      name?: string
+      attribute?: string | number
+      element?: string | number
+      specialty_weapon?: Array<string | number>
+      [key: string]: unknown
+    }
+    param?: Record<string, unknown>
+    [key: string]: unknown
   }
 
-  let { dataType, data }: Props = $props()
+  interface Props {
+    dataType: string
+    data: Record<string, unknown>
+  }
 
-  let id = $derived(data?.id || data?.master?.id)
+  let { dataType, data: rawData }: Props = $props()
+
+  let data = $derived(rawData as DatabaseItemData)
+  let id = $derived(data?.id || data?.master?.id || '')
   let name = $derived(data?.name || data?.master?.name || 'Unknown')
   let element = $derived(
     data?.attribute || data?.element || data?.master?.attribute || data?.master?.element
@@ -42,14 +61,15 @@
   })
 
   let statsHtml = $derived.by(() => {
+    const item = data as import('../../../lib/detail-helpers.js').RawGameItem
     if (dataType.startsWith('detail_npc')) {
-      return renderCharacterStats(data, name, id, element, proficiencies)
+      return renderCharacterStats(item, name, id, element, proficiencies)
     }
     if (dataType.startsWith('detail_weapon')) {
-      return renderWeaponStats(data, name, id, element, proficiencies[0])
+      return renderWeaponStats(item, name, id, element, proficiencies[0])
     }
     if (dataType.startsWith('detail_summon')) {
-      return renderSummonStats(data, name, id, element)
+      return renderSummonStats(item, name, id, element)
     }
     return ''
   })

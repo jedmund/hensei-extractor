@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { app } from '../lib/state/app.svelte.js'
+  import { app, type AuthData } from '../lib/state/app.svelte.js'
   import { setLocale, getPreferredLocale } from '../lib/i18n.js'
   import { getCacheStatus } from '../lib/services/chrome-messages.js'
   import { getImageUrl } from '../lib/constants.js'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
+  import WarningCard from './login/WarningCard.svelte'
+  import ConflictModal from './modals/ConflictModal.svelte'
   import Toast from './shared/Toast.svelte'
 
   onMount(async () => {
@@ -14,16 +16,18 @@
       `url('${getImageUrl('port-breeze.jpg')}')`
     )
 
-    const { gbAuth, noticeAcknowledged } = await chrome.storage.local.get([
+    const result = await chrome.storage.local.get([
       'gbAuth',
       'noticeAcknowledged'
     ])
+    const gbAuth = result.gbAuth as AuthData | undefined
+    const noticeAcknowledged = result.noticeAcknowledged as boolean | undefined
 
-    setLocale(getPreferredLocale(gbAuth))
+    setLocale(getPreferredLocale(gbAuth ?? null))
     app.auth = gbAuth ?? null
     app.noticeAcknowledged = noticeAcknowledged ?? false
 
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener((message: { action: string; name?: string }) => {
       if (message.action === 'dataCaptured') {
         refreshCaches()
         app.showToast(
@@ -58,4 +62,11 @@
   <LoginView />
 {/if}
 
+{#if app.showingDisclaimer}
+  <div class="disclaimer-overlay">
+    <WarningCard />
+  </div>
+{/if}
+
+<ConflictModal />
 <Toast />

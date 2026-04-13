@@ -65,7 +65,7 @@
     app.importState = 'importing'
 
     try {
-      let response: any
+      let response: { error?: string; url?: string; created?: number; updated?: number } | undefined
 
       if (isParty) {
         response = await uploadPartyData({
@@ -93,7 +93,7 @@
         ) {
           app.importState = 'checking'
           const conflictResponse = await checkConflicts(dataType, selectedIndices)
-          const conflicts = (conflictResponse as any)?.conflicts || (conflictResponse as any)?.data?.conflicts
+          const conflicts = conflictResponse?.conflicts
           if (conflicts && conflicts.length > 0) {
             app.pendingConflicts = conflicts
             app.importState = 'idle'
@@ -145,11 +145,8 @@
   }
 
   function handleReview() {
-    // Review is handled by parent/modal system
-    // For now, mark as reviewed
     if (!app.pendingConflicts || app.pendingConflicts.length === 0) return
-    // TODO: open conflict resolution modal
-    app.importState = 'review'
+    app.conflictModalOpen = true
   }
 </script>
 

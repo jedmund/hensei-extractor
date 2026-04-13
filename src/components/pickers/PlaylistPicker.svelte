@@ -2,6 +2,7 @@
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
   import { fetchUserPlaylists, createPlaylist } from '../../lib/services/chrome-messages.js'
+  import { translateError } from '../../lib/i18n.js'
 
   interface Playlist {
     id: string | number
@@ -34,7 +35,9 @@
 
   async function loadPlaylists() {
     const res = await fetchUserPlaylists()
-    if (!res.error) playlists = res.data?.results ?? res.data ?? []
+    if (!res.error && res.data) {
+      playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+    }
   }
 
   function close() {
@@ -95,11 +98,11 @@
     creating = false
 
     if (res.error) {
-      createError = res.error
+      createError = translateError(res.error)
       return
     }
 
-    const newPlaylist = res.data?.playlist ?? res.data
+    const newPlaylist = res.data
     if (newPlaylist) {
       if (!newPlaylist.title) newPlaylist.title = createTitle.trim()
       app.selectedPlaylists = [...app.selectedPlaylists, { id: String(newPlaylist.id), title: newPlaylist.title }]

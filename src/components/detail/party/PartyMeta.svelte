@@ -9,7 +9,7 @@
     const name =
       typeof raid.name === 'string'
         ? raid.name
-        : (raid.name as any)?.en ?? 'Unknown'
+        : (raid.name as { en?: string })?.en ?? 'Unknown'
     const level = raid.level ? ` Lv. ${raid.level}` : ''
     return `${name}${level}`
   })
@@ -24,7 +24,7 @@
     const playlists = app.selectedPlaylists
     if (!playlists || playlists.length === 0) return m.playlist_label()
     if (playlists.length === 1) return playlists[0]!.title
-    return m.count_playlists({ count: playlists.length } as any)
+    return m.count_playlists({ count: playlists.length })
   })
 
   let visibilityLabel = $derived.by(() => {

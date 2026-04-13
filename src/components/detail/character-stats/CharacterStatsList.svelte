@@ -10,15 +10,33 @@
   } from '../../../lib/mastery.js'
   import * as m from '../../../paraglide/messages.js'
 
+  interface MasteryModifier {
+    modifier: number
+    strength: number | string
+    typeName?: string
+  }
+
+  interface CharacterStatsEntry {
+    masterId?: string
+    masterName?: string
+    element?: string
+    timestamp?: number
+    awakening?: { typeName?: string; level?: number } | null
+    perpetuity?: boolean
+    rings?: MasteryModifier[]
+    earring?: MasteryModifier | null
+    perpetuityBonuses?: MasteryModifier[]
+  }
+
   interface Props {
-    data: Record<string, any>
+    data: Record<string, CharacterStatsEntry>
   }
 
   let { data }: Props = $props()
 
   let characters = $derived.by(() => {
     const chars = Object.values(data)
-    return chars.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
+    return chars.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
   })
 
   const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
@@ -26,7 +44,7 @@
   // Initialize all items as selected
   $effect(() => {
     if (characters.length > 0 && app.selectedItems.size === 0) {
-      app.selectedItems = new Set(characters.map((_: any, i: number) => i))
+      app.selectedItems = new Set(characters.map((_, i) => i))
     }
   })
 
@@ -41,26 +59,26 @@
     app.selectedItems = next
   }
 
-  function getRingLines(char: any): string[] {
+  function getRingLines(char: CharacterStatsEntry): string[] {
     if (!char.rings || char.rings.length === 0) return []
     return char.rings
-      .map((ring: any) => formatModifier(ring, OVER_MASTERY_NAMES))
-      .filter(Boolean)
+      .map((ring) => formatModifier(ring, OVER_MASTERY_NAMES))
+      .filter((line): line is string => line !== null)
   }
 
-  function getEarringLine(char: any): string | null {
+  function getEarringLine(char: CharacterStatsEntry): string | null {
     if (!char.earring) return null
     return formatModifier(char.earring, AETHERIAL_NAMES)
   }
 
-  function getPerpetBonusLines(char: any): string[] {
+  function getPerpetBonusLines(char: CharacterStatsEntry): string[] {
     if (!char.perpetuityBonuses || char.perpetuityBonuses.length === 0) return []
     return char.perpetuityBonuses
-      .map((b: any) => formatPerpetuityBonus(b))
-      .filter(Boolean)
+      .map((b) => formatPerpetuityBonus(b))
+      .filter((line): line is string => line !== null)
   }
 
-  function hasStats(char: any): boolean {
+  function hasStats(char: CharacterStatsEntry): boolean {
     return !!(
       char.awakening ||
       char.perpetuity ||

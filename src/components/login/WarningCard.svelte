@@ -5,6 +5,7 @@
   function acknowledge() {
     chrome.storage.local.set({ noticeAcknowledged: true })
     app.noticeAcknowledged = true
+    app.showingDisclaimer = false
   }
 </script>
 
