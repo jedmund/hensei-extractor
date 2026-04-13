@@ -14,29 +14,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build manifest
-        run: node build-manifest.js
-        env:
-          UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
-          BUILD_NUMBER: ${{ github.run_number }}
+      - uses: pnpm/action-setup@v4
 
-      - name: Package extension
-        run: |
-          mkdir -p granblue-team-extension
-          cp manifest.json granblue-team-extension/
-          cp background.js granblue-team-extension/
-          cp popup.html popup.js popup.css granblue-team-extension/
-          cp auth.js cache.js conflict-resolution.js constants.js granblue-team-extension/
-          cp debugger.js dom.js game-data.js i18n.js mastery.js granblue-team-extension/
-          cp playlist-picker.js raid-picker.js render-detail.js storage.js sync.js tooltip.js granblue-team-extension/
-          cp icon16.png icon48.png icon128.png granblue-team-extension/
-          cp -r icons granblue-team-extension/
-          cd granblue-team-extension && zip -r ../granblue-team-extension.zip . && cd ..
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build extension
+        run: pnpm zip
+        env:
+          WXT_UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Build ${{ github.run_number }}
-          files: granblue-team-extension.zip
+          files: .output/*.zip
           generate_release_notes: true
