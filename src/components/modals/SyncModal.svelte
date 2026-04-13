@@ -1,6 +1,8 @@
 <script lang="ts">
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
+  import Button from '../shared/Button.svelte'
+  import Tooltip from '../shared/Tooltip.svelte'
   import { getImageUrl } from '../../lib/constants.js'
   import { previewSyncDeletions, syncCollection } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
@@ -47,11 +49,11 @@
 </script>
 
 {#if app.syncModalOpen}
-<div class="modal-overlay">
+<div class="modal">
   <div class="modal-backdrop" role="button" tabindex="-1" onclick={cancel} onkeydown={(e) => { if (e.key === 'Escape') cancel() }}></div>
-  <div class="modal sync-modal">
+  <div class="modal-content">
     <h3 class="modal-title">{m.sync_modal_title()}</h3>
-    <p class="modal-body">{m.sync_modal_body()}</p>
+    <div class="modal-body"><p>{m.sync_modal_body()}</p></div>
 
     {#if preview && preview.count > 0}
       <div class="sync-warning">
@@ -66,9 +68,11 @@
         </p>
         <div class="sync-delete-grid">
           {#each previewItems as item}
-            <div class="sync-delete-item" title={item.name ?? 'Unknown'}>
+            <Tooltip content={item.name ?? 'Unknown'}>
+            <div class="sync-delete-item">
               <img src={getSyncPreviewImageUrl(item.granblue_id)} alt={item.name ?? 'Unknown'} />
             </div>
+            </Tooltip>
           {/each}
         </div>
         {#if moreCount > 0}
@@ -82,8 +86,8 @@
     {/if}
 
     <div class="modal-actions">
-      <button type="button" class="modal-btn modal-btn-cancel" onclick={cancel}>{m.action_cancel()}</button>
-      <button type="button" class="modal-btn modal-btn-confirm" onclick={confirm}>{m.action_sync()}</button>
+      <Button onclick={cancel}>{m.action_cancel()}</Button>
+      <Button variant="primary" onclick={confirm}>{m.action_sync()}</Button>
     </div>
   </div>
 </div>

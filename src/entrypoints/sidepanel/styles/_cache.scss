@@ -8,7 +8,7 @@
 
 .cache-empty,
 .cache-error {
-  font-size: 14px;
+  font-size: 1.4rem;
   color: var(--color-text-tertiary);
   text-align: center;
   padding: var(--spacing-lg);
@@ -22,8 +22,9 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: 10px 12px;
+  padding: 1rem 1.2rem;
   background: transparent;
+  width: 100%;
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition:
@@ -84,26 +85,26 @@
 .cache-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.2rem;
   flex: 1;
 }
 
 .cache-name-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.6rem;
 }
 
 .cache-name {
-  font-size: 15px;
+  font-size: 1.5rem;
   font-weight: 500;
   color: var(--color-text);
 }
 
 .stash-tag {
-  font-size: 13px;
+  font-size: 1.3rem;
   font-weight: 500;
-  padding: 1px 8px;
+  padding: 1px 0.8rem;
   border-radius: 999px;
   background: var(--element-bg);
   color: var(--element-text);
@@ -114,12 +115,12 @@
 }
 
 .cache-subtitle {
-  font-size: 12px;
+  font-size: 1.2rem;
   color: var(--color-text-tertiary);
 }
 
 .cache-age {
-  font-size: 12px;
+  font-size: 1.2rem;
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }

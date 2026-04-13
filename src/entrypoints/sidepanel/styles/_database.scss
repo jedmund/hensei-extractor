@@ -17,7 +17,7 @@
   }
 
   &.character-main img {
-    width: 280px;
+    width: 28rem;
   }
 
   &.weapon-main img,
@@ -38,8 +38,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  font-size: 15px;
+  padding: 0.8rem 0;
+  font-size: 1.5rem;
 }
 
 .stat-label {
@@ -51,7 +51,7 @@
 }
 
 .stat-icon {
-  height: 24px;
+  height: 2.4rem;
   vertical-align: middle;
 }
 
@@ -69,13 +69,13 @@
 /* Star rating display */
 .stars {
   display: flex;
-  gap: 2px;
+  gap: 0.2rem;
   align-items: center;
 }
 
 .star {
-  width: 18px;
-  height: 18px;
+  width: 1.8rem;
+  height: 1.8rem;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

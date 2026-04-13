@@ -30,7 +30,7 @@
   class:active={app.activeTab === 'database'}
   id="databasePanel"
 >
-  <div class="panel-list" id="databaseItems">
+  <div class="cache-items" id="databaseItems">
     {#if databaseTypes.length === 0}
       <p class="cache-empty">{m.empty_database()}</p>
     {:else}

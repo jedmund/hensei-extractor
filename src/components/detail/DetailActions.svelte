@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
+  import Button from '../shared/Button.svelte'
   import {
     uploadPartyData,
     uploadCollectionData,
@@ -12,6 +13,7 @@
     isCollectionType,
     isWeaponOrSummonCollection
   } from '../../lib/detail-helpers.js'
+  import { previewSyncDeletions } from '../../lib/services/chrome-messages.js'
   import CopyDropdown from './CopyDropdown.svelte'
 
   let dataType = $derived(app.currentDetailDataType ?? '')
@@ -56,10 +58,6 @@
     )
   }
 
-  function goBack() {
-    app.resetDetailState()
-  }
-
   async function handleImport() {
     if (!dataType) return
     app.importState = 'importing'
@@ -79,13 +77,11 @@
       } else if (isDatabase) {
         response = await uploadDetailData(dataType)
       } else if (isCharStats) {
-        // Check conflicts first for weapon/summon collections
         const selectedIndices = Array.from(app.selectedItems)
         response = await uploadCharacterStats(selectedIndices)
       } else if (isCollection || dataType.startsWith('list_') || dataType.startsWith('stash_')) {
         const selectedIndices = Array.from(app.selectedItems)
 
-        // Check conflicts on first attempt for weapon/summon types
         if (
           supportsConflictCheck(dataType) &&
           !app.conflictResolutions &&
@@ -144,58 +140,59 @@
     }
   }
 
+  async function handleSync() {
+    if (!dataType) return
+    const res = await previewSyncDeletions(dataType)
+    if (res.error) {
+      app.showToast(res.error)
+      return
+    }
+    app.syncPreview = {
+      count: res.count ?? 0,
+      willDelete: (res.willDelete ?? []) as Array<{ name?: string; granblue_id?: string }>
+    }
+    app.syncModalOpen = true
+  }
+
   function handleReview() {
     if (!app.pendingConflicts || app.pendingConflicts.length === 0) return
     app.conflictModalOpen = true
   }
 </script>
 
-<div class="detail-header">
-  <button class="back-button" onclick={goBack}>
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M10.5 13L5.5 8L10.5 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-    </svg>
-    <span>{m.action_back()}</span>
-  </button>
+<div class="detail-actions">
+  <CopyDropdown />
 
-  <div class="detail-actions">
-    <CopyDropdown />
+  {#if showReviewButton}
+    <Button
+      size="small"
+      id="detailReview"
+      onclick={handleReview}
+    >
+      {m.action_review()} ({app.pendingConflicts?.length})
+    </Button>
+  {/if}
 
-    {#if showReviewButton}
-      <button
-        class="detail-action-button review-button"
-        class:imported={app.importState === 'review'}
-        id="detailReview"
-        onclick={handleReview}
-      >
-        {#if app.importState === 'review'}
-          {m.action_reviewed()}
-        {:else}
-          {m.action_review()} ({app.pendingConflicts?.length})
-        {/if}
-      </button>
-    {/if}
+  {#if showSyncButton}
+    <Button
+      size="small"
+      id="detailSync"
+      disabled={app.importState === 'importing'}
+      onclick={handleSync}
+    >
+      {m.action_full_sync()}
+    </Button>
+  {/if}
 
-    {#if showSyncButton}
-      <button
-        class="detail-action-button sync-button"
-        id="detailSync"
-        disabled={app.importState === 'importing'}
-      >
-        {m.action_full_sync()}
-      </button>
-    {/if}
-
-    {#if showImportButton}
-      <button
-        class="detail-action-button import-button"
-        class:imported={app.importState === 'imported'}
-        id="detailImport"
-        disabled={importDisabled}
-        onclick={handleImport}
-      >
-        {importLabel}
-      </button>
-    {/if}
-  </div>
+  {#if showImportButton}
+    <Button
+      size="small"
+      class={app.importState === 'imported' ? 'imported' : ''}
+      id="detailImport"
+      disabled={importDisabled}
+      onclick={handleImport}
+    >
+      {importLabel}
+    </Button>
+  {/if}
 </div>

@@ -9,6 +9,8 @@
     AETHERIAL_NAMES
   } from '../../../lib/mastery.js'
   import * as m from '../../../paraglide/messages.js'
+  import Icon from '../../shared/Icon.svelte'
+  import Tooltip from '../../shared/Tooltip.svelte'
 
   interface MasteryModifier {
     modifier: number
@@ -39,7 +41,6 @@
     return chars.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
   })
 
-  const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7139 4.04764C13.14 3.52854 13.0837 2.74594 12.5881 2.29964C12.0925 1.85335 11.3453 1.91237 10.9192 2.43147L5.28565 9.94404L3.02018 7.32366C2.55804 6.83959 1.80875 6.83959 1.34661 7.32366C0.884464 7.80772 0.884464 8.59255 1.34661 9.07662L4.50946 12.6369C4.9716 13.121 5.72089 13.121 6.18303 12.6369C6.2359 12.5816 6.28675 12.5271 6.33575 12.4674L12.7139 4.04764Z"/></svg>`
 
   // Initialize all items as selected
   $effect(() => {
@@ -112,7 +113,7 @@
             data-index={index}
             onclick={(e) => toggleItem(index, e)}
           >
-            <span class="checkbox-indicator">{@html CHECK_ICON}</span>
+            <span class="checkbox-indicator"><Icon name="check" size={14} /></span>
           </label>
           <div class="char-stats-name-row">
             <span class="char-stats-name">{char.masterName || `Character ${char.masterId}`}</span>
@@ -131,12 +132,11 @@
               alt=""
             />
             {#if char.perpetuity}
-              <img
+              <Tooltip content={m.stat_perpetuity_ring()}><img
                 class="char-stats-perpetuity"
                 src="icons/perpetuity/filled.svg"
                 alt={m.stat_perpetuity_ring()}
-                title={m.stat_perpetuity_ring()}
-              />
+              /></Tooltip>
             {/if}
           </div>
         </div>

@@ -2,6 +2,14 @@
   import * as m from '../../../paraglide/messages.js'
   import { app } from '../../../lib/state/app.svelte.js'
   import { getImageUrl } from '../../../lib/constants.js'
+  import Input from '../../shared/Input.svelte'
+  import Select from '../../shared/Select.svelte'
+  import Checkbox from '../../shared/Checkbox.svelte'
+  import Tooltip from '../../shared/Tooltip.svelte'
+  import Icon from '../../shared/Icon.svelte'
+
+  type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
+  let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
 
   let raidLabel = $derived.by(() => {
     const raid = app.selectedRaid
@@ -27,18 +35,11 @@
     return m.count_playlists({ count: playlists.length })
   })
 
-  let visibilityLabel = $derived.by(() => {
-    switch (app.selectedVisibility) {
-      case 1:
-        return m.visibility_anyone()
-      case 2:
-        return m.visibility_unlisted()
-      case 3:
-        return m.visibility_private()
-      default:
-        return m.visibility_private()
-    }
-  })
+  const visibilityOptions = $derived([
+    { value: 1, label: m.visibility_anyone() },
+    { value: 2, label: m.visibility_unlisted() },
+    { value: 3, label: m.visibility_private() },
+  ])
 
   function openRaidPicker() {
     app.raidPickerOpen = true
@@ -48,36 +49,27 @@
     app.playlistPickerOpen = true
   }
 
-  function cycleVisibility() {
-    // Cycle: 3 (private) -> 2 (unlisted) -> 1 (public) -> 3
-    app.selectedVisibility =
-      app.selectedVisibility === 3 ? 1 : app.selectedVisibility + 1
-  }
-
-  function toggleCrewShare() {
-    app.shareWithCrew = !app.shareWithCrew
-  }
-
   let raidImageError = $state(false)
 </script>
 
 <div class="party-meta" id="partyMeta">
-  <div class="party-meta-row">
-    <input
+  <div class="party-name-container" id="partyNameContainer">
+    <Input
       type="text"
-      class="party-name-input"
+      contained
       id="partyNameInput"
       placeholder={m.party_name_placeholder()}
       bind:value={app.partyName}
     />
   </div>
 
-  <div class="party-meta-row">
+  <div class="raid-selector" id="raidSelector">
     <button
-      class="selector-button raid-selector"
+      class="raid-selector-button"
       id="raidSelectorButton"
       onclick={openRaidPicker}
     >
+      <span class="raid-selector-label" id="raidSelectorLabel">{raidLabel}</span>
       {#if raidImageUrl && !raidImageError}
         <img
           class="raid-selector-image"
@@ -87,34 +79,31 @@
           onerror={() => (raidImageError = true)}
         />
       {/if}
-      <span id="raidSelectorLabel">{raidLabel}</span>
+      <Icon name="chevron-right" size={14} class="chevron" />
     </button>
   </div>
 
-  <div class="party-meta-row">
-    <button class="selector-button visibility-selector" onclick={cycleVisibility}>
-      <span>{visibilityLabel}</span>
-    </button>
+  <div class="visibility-row">
+    <Select options={visibilityOptions} bind:value={app.selectedVisibility} contained fullWidth />
 
     {#if app.auth?.hasCrew}
-      <button
-        class="crew-share-toggle"
-        id="crewShareToggle"
-        data-state={app.shareWithCrew ? 'checked' : 'unchecked'}
-        onclick={toggleCrewShare}
-      >
-        <span>{m.crew_label()}</span>
-      </button>
+      <Tooltip content={m.crew_share_tooltip()}>
+        <div class="crew-share-toggle" id="crewShareToggle">
+          <Checkbox checked={app.shareWithCrew} onCheckedChange={(c) => { app.shareWithCrew = c }} contained size="small" {element} />
+          <span class="crew-share-label">{m.crew_label()}</span>
+        </div>
+      </Tooltip>
     {/if}
   </div>
 
-  <div class="party-meta-row">
+  <div class="playlist-selector" id="playlistSelector">
     <button
-      class="selector-button playlist-selector"
+      class="playlist-selector-button"
       id="playlistSelectorButton"
       onclick={openPlaylistPicker}
     >
-      <span id="playlistSelectorLabel">{playlistLabel}</span>
+      <span class="playlist-selector-label" id="playlistSelectorLabel">{playlistLabel}</span>
+      <Icon name="chevron-right" size={14} class="chevron" />
     </button>
   </div>
 </div>
