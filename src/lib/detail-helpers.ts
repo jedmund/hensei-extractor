@@ -299,7 +299,8 @@ export function getOwnershipId(dataType: string, item: RawGameItem): string {
 }
 
 export function isLevel1(item: RawGameItem): boolean {
-  const level = item.param?.level || item.level || (item as Record<string, unknown>).lv
+  const level =
+    item.param?.level || item.level || (item as Record<string, unknown>).lv
   return level === 1 || level === '1'
 }
 
