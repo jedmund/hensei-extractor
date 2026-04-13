@@ -4,6 +4,7 @@
   import { setLocale, getPreferredLocale } from '../lib/i18n.js'
   import { getCacheStatus } from '../lib/services/chrome-messages.js'
   import { getImageUrl } from '../lib/constants.js'
+  import { Tooltip } from 'bits-ui'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
   import WarningCard from './login/WarningCard.svelte'
@@ -56,17 +57,21 @@
   })
 </script>
 
-{#if app.auth?.access_token}
-  <MainView />
-{:else}
-  <LoginView />
-{/if}
+<Tooltip.Provider>
+{#key app.locale}
+  {#if app.auth?.access_token}
+    <MainView />
+  {:else}
+    <LoginView />
+  {/if}
 
-{#if app.showingDisclaimer}
-  <div class="disclaimer-overlay">
-    <WarningCard />
-  </div>
-{/if}
+  {#if app.showingDisclaimer}
+    <div class="disclaimer-overlay">
+      <WarningCard />
+    </div>
+  {/if}
 
-<ConflictModal />
-<Toast />
+  <ConflictModal />
+  <Toast />
+{/key}
+</Tooltip.Provider>

@@ -4,7 +4,7 @@
   import { TAB_DATA_TYPES } from '../../lib/constants.js'
   import CacheItemRow from './CacheItemRow.svelte'
 
-  const collectionTypes = $derived(() => {
+  const collectionTypes = $derived.by(() => {
     const staticTypes = (TAB_DATA_TYPES.collection || []).filter(
       (type) => app.cachedStatus[type]?.available
     )
@@ -38,11 +38,11 @@
   class:active={app.activeTab === 'collection'}
   id="collectionPanel"
 >
-  <div class="panel-list" id="collectionItems">
-    {#if collectionTypes().length === 0}
+  <div class="cache-items" id="collectionItems">
+    {#if collectionTypes.length === 0}
       <p class="cache-empty">{m.empty_collection()}</p>
     {:else}
-      {#each collectionTypes() as dataType (dataType)}
+      {#each collectionTypes as dataType (dataType)}
         <CacheItemRow
           status={app.cachedStatus[dataType]!}
           {dataType}

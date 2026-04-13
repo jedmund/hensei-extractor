@@ -24,23 +24,25 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 360px;
+  max-width: 36rem;
 }
 
 /* Auth Card */
 .auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
   background: var(--color-bg-white);
   border-radius: var(--radius-xl);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  padding: 24px;
+  padding: 2.4rem;
   width: 100%;
 }
 
 .auth-title {
   color: var(--color-text);
-  font-size: 21px;
+  font-size: 2.1rem;
   font-weight: 600;
-  margin: 0 0 16px;
   text-align: center;
 }
 
@@ -48,10 +50,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  margin-bottom: 16px;
 
   p {
-    font-size: 14px;
+    font-size: 1.4rem;
     line-height: 1.5;
     color: var(--color-text-tertiary);
   }
@@ -64,15 +65,14 @@
 }
 
 .auth-footer {
-  margin-top: 16px;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: 1.4rem;
 
   a {
     color: var(--color-link);
     text-decoration: none;
-    margin-left: 4px;
+    padding-left: 0.4rem;
 
     &:hover {
       text-decoration: underline;
@@ -92,13 +92,18 @@
   backdrop-filter: blur(4px);
 }
 
+.auth-status {
+  font-size: 1.4rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
 .login-language-switch {
   display: block;
-  margin-top: 24px;
+  margin-top: 2.4rem;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 13px;
-  text-decoration: none;
+  font-size: 1.3rem;
 
   &:hover {
     text-decoration: underline;

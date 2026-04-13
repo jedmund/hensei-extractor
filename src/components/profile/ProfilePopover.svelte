@@ -3,10 +3,9 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { getImageUrl, getSiteBaseUrl } from '../../lib/constants.js'
-  import { updateUserLanguage } from '../../lib/auth.js'
-  import { setLocale, getLocale } from '../../lib/i18n.js'
+  import MenuItem from '../shared/MenuItem.svelte'
+  import LanguageToggle from '../shared/LanguageToggle.svelte'
   import {
-    getCacheStatus,
     clearCache,
     popOutWindow
   } from '../../lib/services/chrome-messages.js'
@@ -28,7 +27,6 @@
       'User'
   )
 
-  const isJapanese = $derived(getLocale() === 'ja')
   const version = chrome.runtime.getManifest().version
 
   onMount(async () => {
@@ -48,44 +46,6 @@
       !popoverEl.contains(e.target as Node)
     ) {
       app.profilePopoverOpen = false
-    }
-  }
-
-  async function handleLanguageToggle() {
-    const lang = isJapanese ? 'en' : 'ja'
-    setLocale(lang)
-
-    // Refresh cache display with translated names
-    app.cachedStatus = await getCacheStatus()
-
-    // Persist to server
-    const result = await chrome.storage.local.get('gbAuth')
-    const gbAuth = result.gbAuth as Record<string, unknown> | undefined
-    if (gbAuth?.access_token) {
-      gbAuth.language = lang
-      await chrome.storage.local.set({ gbAuth })
-      try {
-        await updateUserLanguage(gbAuth.access_token as string, lang)
-      } catch {
-        // Silently fail -- local preference is saved anyway
-      }
-    }
-
-    // Sync website locale cookie
-    if (lang === 'en') {
-      chrome.cookies.remove({
-        url: 'https://granblue.team',
-        name: 'PARAGLIDE_LOCALE'
-      })
-    } else {
-      chrome.cookies.set({
-        url: 'https://granblue.team',
-        name: 'PARAGLIDE_LOCALE',
-        value: lang,
-        path: '/',
-        sameSite: 'lax',
-        expirationDate: Math.floor(Date.now() / 1000) + 34560000
-      })
     }
   }
 
@@ -124,47 +84,36 @@
   bind:this={popoverEl}
   onclick={(e) => e.stopPropagation()}
 >
-  <div class="profile-header">
-    <img class="profile-avatar" id="profileAvatar" src={avatarUrl} alt="" />
-    <a class="profile-username" id="viewProfile" href={profileUrl} target="_blank">
-      {username}
-    </a>
-  </div>
-
   <div class="profile-actions">
-    <div class="profile-action" id="languageToggle">
-      <span class="profile-action-label">{m.profile_language()}</span>
-      <button
-        class="language-switch"
-        role="switch"
-        aria-checked={isJapanese}
-        onclick={handleLanguageToggle}
-      >
-        <span class="lang-label" class:active={!isJapanese}>EN</span>
-        <span class="lang-label" class:active={isJapanese}>JP</span>
-      </button>
-    </div>
+    <a class="profile-header" id="viewProfile" href={profileUrl} target="_blank">
+      <img class="avatar-large" id="profileAvatar" src={avatarUrl} alt="" />
+      <div class="profile-info">
+        <span class="profile-subheader">{m.profile_logged_in_as()}</span>
+        <span class="profile-username">{username}</span>
+      </div>
+      <img class="profile-link-icon" src="/icons/link.svg" alt="" />
+    </a>
 
-    <button class="profile-action" id="clearCacheButton" onclick={handleClearCache}>
+    <LanguageToggle />
+
+    <MenuItem onclick={handleClearCache}>
       {m.profile_clear_cache()}
-    </button>
+    </MenuItem>
 
-    <button class="profile-action" id="showWarning" onclick={handleShowDisclaimer}>
+    <MenuItem onclick={handleShowDisclaimer}>
       {m.profile_show_disclaimer()}
-    </button>
+    </MenuItem>
 
     {#if !isPopupWindow}
-      <button class="profile-action" id="popOutButton" onclick={handlePopOut}>
+      <MenuItem onclick={handlePopOut}>
         {m.profile_pop_out()}
-      </button>
+      </MenuItem>
     {/if}
 
-    <button class="profile-action" id="logoutButton" onclick={handleLogout}>
+    <MenuItem variant="destructive" onclick={handleLogout}>
       {m.profile_logout()}
-    </button>
-  </div>
+    </MenuItem>
 
-  <div class="profile-footer">
     <span class="version-label" id="versionLabel">v{version}</span>
   </div>
 </div>

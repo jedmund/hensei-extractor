@@ -19,32 +19,32 @@
 }
 
 .avatar-large {
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
+  width: 5.6rem;
+  height: 5.6rem;
+  border-radius: 2.8rem;
   background: #e0e0e0;
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.2rem;
 }
 
 .profile-subheader {
-  font-size: 12px;
+  font-size: 1.2rem;
   color: var(--color-text-tertiary);
 }
 
 .profile-username {
-  font-size: 15px;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-text);
 }
 
 .profile-link-icon {
-  width: 16px;
-  height: 16px;
+  width: 1.6rem;
+  height: 1.6rem;
   margin-left: auto;
   opacity: 0.4;
   transition: opacity var(--transition-fast);
@@ -53,9 +53,9 @@
 /* Profile Popover */
 .profile-popover {
   position: absolute;
-  top: 60px;
-  right: 8px;
-  width: 280px;
+  top: 6rem;
+  right: 0.8rem;
+  width: 28rem;
   background: white;
   border-radius: var(--radius-xl);
   box-shadow:
@@ -71,7 +71,7 @@
   }
 
   .profile-header {
-    padding: 10px 12px;
+    padding: 1rem 1.2rem;
     background: transparent;
     border-radius: var(--radius-lg);
 
@@ -81,9 +81,9 @@
   }
 
   .avatar-large {
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 2rem;
   }
 }
 
@@ -102,97 +102,14 @@
   display: flex;
   flex-direction: column;
   padding: var(--spacing-sm);
-
-  .button {
-    justify-content: flex-start;
-    background: transparent;
-    height: 40px;
-    padding-left: var(--spacing-sm);
-    padding-right: var(--spacing-sm);
-
-    &:hover {
-      background: var(--color-bg);
-    }
-  }
-
-  .btn-stroke-destructive:hover {
-    background: var(--color-error-light);
-  }
 }
 
 .version-label {
   display: block;
   text-align: center;
-  font-size: 11px;
+  font-size: 1.1rem;
   color: rgba(0, 0, 0, 0.4);
-  padding-top: 4px;
-}
-
-.language-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding-left: var(--spacing-sm);
-  padding-right: var(--spacing-sm);
-}
-
-.language-label {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--button-text);
-  user-select: none;
-}
-
-.language-switch {
-  background: var(--color-border);
-  border-radius: 12px;
-  border: none;
-  position: relative;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0;
-
-  &[aria-checked='true'] .language-thumb {
-    left: 23px;
-  }
-}
-
-.language-thumb {
-  background: var(--color-text-inverse, #fff);
-  border-radius: 50%;
-  display: block;
-  height: 18px;
-  width: 18px;
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  z-index: 3;
-  transition: left 0.15s;
-  pointer-events: none;
-}
-
-.track-label {
-  color: var(--color-text-inverse, #fff);
-  font-size: 10px;
-  font-weight: 700;
-  position: absolute;
-  z-index: 2;
-  user-select: none;
-  pointer-events: none;
-
-  &.left {
-    top: 6px;
-    left: 6px;
-  }
-
-  &.right {
-    top: 6px;
-    right: 5px;
-  }
+  padding-top: 0.4rem;
 }
 
 .profile-footer {

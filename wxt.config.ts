@@ -1,5 +1,6 @@
 import { defineConfig } from 'wxt'
 import { paraglideVitePlugin } from '@inlang/paraglide-js'
+import path from 'node:path'
 
 export default defineConfig({
   modules: ['@wxt-dev/module-svelte'],
@@ -12,15 +13,28 @@ export default defineConfig({
         strategy: ['globalVariable', 'baseLocale'],
         disableAsyncLocalStorage: true
       })
-    ]
+    ],
+    resolve: {
+      alias: {
+        $themes: path.resolve(__dirname, 'src/styles/themes')
+      }
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          loadPaths: [path.resolve(__dirname, 'src/styles')]
+        }
+      }
+    }
   }),
   manifest: {
     name: 'granblue.team',
     description:
       'Passively captures Granblue Fantasy data for export to granblue.team',
-    permissions: ['storage', 'debugger', 'tabs', 'sidePanel'],
+    permissions: ['storage', 'debugger', 'tabs', 'sidePanel', 'cookies'],
     host_permissions: [
       'https://game.granbluefantasy.jp/*',
+      'https://granblue.team/*',
       'https://api.granblue.team/*',
       'https://next-api.granblue.team/*'
     ],

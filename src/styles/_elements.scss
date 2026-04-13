@@ -4,41 +4,65 @@ body.fire {
   --element-bg-hover: #fa6d6d;
   --element-text: #6e0000;
   --element-button-bg: #ec5c5c;
-  --element-button-bg-hover: #f07272;
+  --element-button-bg-hover: #f08181;
+  --fire-button-bg: #ec5c5c;
+  --fire-button-bg-hover: #f08181;
+  --fire-nav-selected-bg: #ffcdcd;
+  --fire-nav-selected-text: #6e0000;
 }
 body.water {
   --element-bg: #cdedff;
   --element-bg-hover: #6cc9ff;
   --element-text: #004b77;
   --element-button-bg: #5cb7ec;
-  --element-button-bg-hover: #74c3ef;
+  --element-button-bg-hover: #81c7f0;
+  --water-button-bg: #5cb7ec;
+  --water-button-bg-hover: #81c7f0;
+  --water-nav-selected-bg: #cdedff;
+  --water-nav-selected-text: #004b77;
 }
 body.earth {
   --element-bg: #ffe2cd;
   --element-bg-hover: #fd9f5b;
   --element-text: #863504;
   --element-button-bg: #8e3c0b;
-  --element-button-bg-hover: #a34e1d;
+  --element-button-bg-hover: #b44c0e;
+  --earth-button-bg: #8e3c0b;
+  --earth-button-bg-hover: #b44c0e;
+  --earth-nav-selected-bg: #ffe2cd;
+  --earth-nav-selected-text: #863504;
 }
 body.wind {
   --element-bg: #cdffed;
   --element-bg-hover: #3ee489;
   --element-text: #006a45;
   --element-button-bg: #1dc688;
-  --element-button-bg-hover: #38d196;
+  --element-button-bg-hover: #2ce09e;
+  --wind-button-bg: #1dc688;
+  --wind-button-bg-hover: #2ce09e;
+  --wind-nav-selected-bg: #cdffed;
+  --wind-nav-selected-text: #006a45;
 }
 body.light {
   --element-bg: #fffacd;
   --element-bg-hover: #e8d633;
   --element-text: #715100;
-  --element-button-bg: #c59c0c;
-  --element-button-bg-hover: #d4ab1e;
+  --element-button-bg: #ebba0e;
+  --element-button-bg-hover: #f2c730;
   --element-button-text: #3d3700;
+  --light-button-bg: #ebba0e;
+  --light-button-bg-hover: #f2c730;
+  --light-nav-selected-bg: #fffacd;
+  --light-nav-selected-text: #715100;
 }
 body.dark {
   --element-bg: #f2cdff;
   --element-bg-hover: #de7bff;
   --element-text: #560075;
   --element-button-bg: #c65cec;
-  --element-button-bg-hover: #ce72ef;
+  --element-button-bg-hover: #d381f0;
+  --dark-button-bg: #c65cec;
+  --dark-button-bg-hover: #d381f0;
+  --dark-nav-selected-bg: #f2cdff;
+  --dark-nav-selected-text: #560075;
 }

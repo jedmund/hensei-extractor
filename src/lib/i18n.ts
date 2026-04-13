@@ -10,6 +10,7 @@ import {
   setLocale as paraglideSetLocale,
   type Locale as ParaglideLocale
 } from '../paraglide/runtime.js'
+import { app } from './state/app.svelte.js'
 
 export type Locale = 'en' | 'ja'
 
@@ -20,6 +21,7 @@ export type Locale = 'en' | 'ja'
 export function setLocale(lang: string): void {
   const locale = lang === 'ja' ? 'ja' : 'en'
   paraglideSetLocale(locale as ParaglideLocale, { reload: false })
+  app.locale = locale
 }
 
 export function getLocale(): Locale {

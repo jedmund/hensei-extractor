@@ -17,9 +17,9 @@
   position: relative;
   background: white;
   border-radius: var(--radius-xl);
-  padding: 20px;
-  width: calc(100% - 32px);
-  max-width: 340px;
+  padding: 2rem;
+  width: calc(100% - 3.2rem);
+  max-width: 34rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   animation: modal-in 0.2s ease-out;
 }
@@ -36,17 +36,17 @@
 }
 
 .modal-title {
-  margin: 0 0 12px;
-  font-size: 18px;
+  margin: 0 0 1.2rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: var(--color-text);
 }
 
 .modal-body {
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 
   p {
-    font-size: 14px;
+    font-size: 1.4rem;
     line-height: 1.5;
     color: var(--color-text-tertiary);
     margin: 0;
@@ -54,47 +54,47 @@
 }
 
 .sync-delete-list {
-  margin-top: 12px;
+  margin-top: 1.2rem;
 
   .delete-count {
-    font-size: 14px;
+    font-size: 1.4rem;
     font-weight: 500;
     color: var(--color-error);
-    margin-bottom: 8px;
+    margin-bottom: 0.8rem;
   }
 
   .delete-list {
     display: none; /* Legacy - now using grid */
     margin: 0;
-    padding: 0 0 0 20px;
-    max-height: 150px;
+    padding: 0 0 0 2rem;
+    max-height: 15rem;
     overflow-y: auto;
-    font-size: 14px;
+    font-size: 1.4rem;
     color: var(--color-text-tertiary);
 
     li {
-      margin-bottom: 4px;
+      margin-bottom: 0.4rem;
     }
   }
 
   .no-deletions {
-    font-size: 14px;
+    font-size: 1.4rem;
     color: var(--color-success);
   }
 
   .more-items {
-    font-size: 14px;
+    font-size: 1.4rem;
     font-style: italic;
     color: var(--color-text-secondary);
-    margin-top: 8px;
+    margin-top: 0.8rem;
   }
 }
 
 .sync-delete-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  margin-top: 8px;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
 }
 
 .sync-delete-item {
@@ -111,25 +111,25 @@
 }
 
 .sync-warning {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 1.2rem;
+  padding: 1.2rem;
   background: var(--color-warning);
   border: 1px solid var(--color-warning-border);
   border-radius: var(--radius-md);
 
   p {
     color: #6b4e00;
-    font-size: 14px;
+    font-size: 1.4rem;
   }
 }
 
 .modal-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.8rem;
   justify-content: flex-end;
 
   .button {
-    min-width: 80px;
+    min-width: 8rem;
   }
 }
 
@@ -156,14 +156,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
 }
 
 .conflict-item-image {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 8rem;
+  height: 8rem;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-background);
@@ -176,7 +176,7 @@
 }
 
 .conflict-item-name {
-  font-size: 14px;
+  font-size: 1.4rem;
   font-weight: 500;
   color: var(--color-text);
   margin: 0;
@@ -186,13 +186,13 @@
 /* Decision badge overlay */
 .conflict-badge {
   position: absolute;
-  bottom: 4px;
+  bottom: 0.4rem;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 1rem;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 3px;
+  padding: 1px 0.6rem;
+  border-radius: 0.3rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -210,7 +210,7 @@
 /* Message */
 .conflict-message {
   text-align: center;
-  margin-bottom: 12px !important;
+  margin-bottom: 1.2rem !important;
 }
 
 /* Navigation */
@@ -218,16 +218,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 1.6rem;
 }
 
 .conflict-nav-btn {
-  width: 32px;
-  height: 32px;
+  width: 3.2rem;
+  height: 3.2rem;
   border-radius: 50%;
   border: 1px solid var(--color-border);
   background: white;
-  font-size: 18px;
+  font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -246,16 +246,16 @@
 }
 
 #conflictCounter {
-  font-size: 14px;
+  font-size: 1.4rem;
   color: var(--color-text-secondary);
-  min-width: 50px;
+  min-width: 5rem;
   text-align: center;
 }
 
 /* Action layout */
 .conflict-actions {
   flex-direction: column;
-  gap: 8px;
+  gap: 0.8rem;
 
   #conflictFinish {
     width: 100%;
@@ -265,7 +265,7 @@
 .conflict-bulk,
 .conflict-item-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.8rem;
   justify-content: center;
 }
 

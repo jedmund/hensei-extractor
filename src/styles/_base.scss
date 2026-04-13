@@ -1,3 +1,7 @@
+html {
+  font-size: 62.5%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,6 +9,7 @@
 body {
   margin: 0;
   padding: 0;
+  font-size: 1.5rem;
   font-family:
     'AGrot',
     -apple-system,
@@ -17,14 +22,54 @@ body {
   overflow: hidden;
 }
 
-p {
+p,
+h1,
+h2,
+h3 {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+button {
+  border: none;
+  background: none;
   padding: 0;
   margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+input,
+textarea,
+select {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+}
+
+label {
+  cursor: inherit;
 }
 
 a {
   color: var(--color-link);
-  font-size: 14px;
+  font-size: 1.4rem;
   text-decoration: none;
   cursor: pointer;
 
@@ -33,9 +78,14 @@ a {
   }
 }
 
-h1 {
+img,
+svg {
+  display: block;
+}
+
+ul,
+ol {
   margin: 0;
-  font-size: 21px;
-  font-weight: 600;
-  color: var(--color-text);
+  padding: 0;
+  list-style: none;
 }

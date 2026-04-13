@@ -2,6 +2,7 @@
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
   import { getImageUrl } from '../../lib/constants.js'
+  import Button from '../shared/Button.svelte'
 
   type ConflictDecision = 'import' | 'skip'
   interface ConflictItem {
@@ -88,58 +89,55 @@
 </script>
 
 {#if app.conflictModalOpen && conflicts.length > 0}
-<div class="modal-overlay">
+<div class="modal">
   <div class="modal-backdrop" role="button" tabindex="-1" onclick={close} onkeydown={(e) => { if (e.key === 'Escape') close() }}></div>
-  <div class="modal conflict-modal">
+  <div class="modal-content">
     <h3 class="modal-title">{m.conflict_modal_title()}</h3>
-    <p class="modal-body">{m.conflict_modal_message()}</p>
-
-    {#if currentItem}
-      <div class="conflict-item-display">
-        <div class="conflict-item">
-          <div class="conflict-item-image">
-            {#if getConflictImageUrl(currentItem.granblue_id)}
-              <img src={getConflictImageUrl(currentItem.granblue_id)} alt={currentItem.name} />
-            {/if}
-            {#if currentDecision === 'import'}
-              <span class="conflict-badge conflict-badge-import">{m.action_import()}</span>
-            {:else if currentDecision === 'skip'}
-              <span class="conflict-badge conflict-badge-skip">{m.conflict_skip()}</span>
-            {/if}
+    <div class="modal-body">
+      <div id="conflictItemDisplay">
+        {#if currentItem}
+          <div class="conflict-item">
+            <div class="conflict-item-image">
+              {#if getConflictImageUrl(currentItem.granblue_id)}
+                <img src={getConflictImageUrl(currentItem.granblue_id)} alt={currentItem.name} />
+              {/if}
+              {#if currentDecision === 'import'}
+                <span class="conflict-badge conflict-badge-import">{m.action_import()}</span>
+              {:else if currentDecision === 'skip'}
+                <span class="conflict-badge conflict-badge-skip">{m.conflict_skip()}</span>
+              {/if}
+            </div>
+            <p class="conflict-item-name">{currentItem.name}</p>
           </div>
-          <p class="conflict-item-name">{currentItem.name}</p>
+        {/if}
+      </div>
+      <p class="conflict-message">{m.conflict_modal_message()}</p>
+      {#if currentItem}
+        <div class="conflict-nav">
+          <button type="button" class="conflict-nav-btn" aria-label="Previous" disabled={currentIndex === 0} onclick={() => navigate(-1)}>&lsaquo;</button>
+          <span id="conflictCounter">{currentIndex + 1} / {conflicts.length}</span>
+          <button type="button" class="conflict-nav-btn" aria-label="Next" disabled={currentIndex === conflicts.length - 1} onclick={() => navigate(1)}>&rsaquo;</button>
         </div>
-      </div>
-
-      <div class="conflict-nav">
-        <button type="button" class="conflict-prev" aria-label="Previous" disabled={currentIndex === 0} onclick={() => navigate(-1)}>
-          <svg viewBox="0 0 14 14" fill="currentColor" width="14" height="14"><path d="M9.53 2.47a.75.75 0 0 1 .073.976l-.073.084L5.06 8l4.47 4.47a.75.75 0 0 1-.976 1.133l-.084-.073-5-5a.75.75 0 0 1-.073-.976l.073-.084 5-5a.75.75 0 0 1 1.06 0z"/></svg>
-        </button>
-        <span class="conflict-counter">{currentIndex + 1} / {conflicts.length}</span>
-        <button type="button" class="conflict-next" aria-label="Next" disabled={currentIndex === conflicts.length - 1} onclick={() => navigate(1)}>
-          <svg viewBox="0 0 14 14" fill="currentColor" width="14" height="14"><path d="M4.47 2.47a.75.75 0 0 0-.073.976l.073.084L8.94 8l-4.47 4.47a.75.75 0 0 0 .976 1.133l.084-.073 5-5a.75.75 0 0 0 .073-.976l-.073-.084-5-5a.75.75 0 0 0-1.06 0z"/></svg>
-        </button>
-      </div>
-
-      <div class="conflict-actions">
-        <button type="button" class="conflict-btn conflict-skip-btn" class:active={currentDecision === 'skip'} onclick={() => decide('skip')}>
-          {m.conflict_skip()}
-        </button>
-        <button type="button" class="conflict-btn conflict-import-btn" class:active={currentDecision === 'import'} onclick={() => decide('import')}>
-          {m.action_import()}
-        </button>
-      </div>
-    {/if}
-
-    <div class="conflict-bulk-actions">
-      <button type="button" class="conflict-bulk-btn" onclick={skipAll}>{m.conflict_skip_all()}</button>
-      <button type="button" class="conflict-bulk-btn" onclick={importAll}>{m.conflict_import_all()}</button>
+      {/if}
     </div>
-
-    <div class="modal-actions">
-      <button type="button" class="modal-btn modal-btn-confirm conflict-finish" disabled={!allDecided} onclick={finish}>
+    <div class="modal-actions conflict-actions">
+      <div class="conflict-bulk">
+        <Button size="small" onclick={skipAll}>{m.conflict_skip_all()}</Button>
+        <Button size="small" onclick={importAll}>{m.conflict_import_all()}</Button>
+      </div>
+      {#if currentItem}
+        <div class="conflict-item-actions">
+          <Button size="small" active={currentDecision === 'skip'} onclick={() => decide('skip')}>
+            {m.conflict_skip()}
+          </Button>
+          <Button size="small" active={currentDecision === 'import'} onclick={() => decide('import')}>
+            {m.action_import()}
+          </Button>
+        </div>
+      {/if}
+      <Button variant="primary" size="small" id="conflictFinish" disabled={!allDecided} onclick={finish}>
         {allDecided ? m.action_done() : m.conflict_decided({ count: decisions.size, total: conflicts.length })}
-      </button>
+      </Button>
     </div>
   </div>
 </div>

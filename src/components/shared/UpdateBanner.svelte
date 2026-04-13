@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
+  import Button from './Button.svelte'
 
   interface Props {
     latestVersion: string | null
@@ -13,13 +14,13 @@
 </script>
 
 {#if latestVersion}
-  <div class="update-banner">
-    <span>
-      {m.update_available()} <strong>{latestVersion}</strong>
-      ({m.update_current()} {currentVersion})
-    </span>
-    <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+  <div class="update-banner update-banner-enter" id="updateBanner">
+    <div class="update-banner-text">
+      <span>{m.update_available({ version: latestVersion })}</span>
+      <span class="update-banner-subtitle">{m.update_current()} {currentVersion}</span>
+    </div>
+    <Button variant="element-ghost" element="water" size="small" class="update-link" onclick={() => window.open(storeUrl, '_blank')}>
       {m.update_link()}
-    </a>
+    </Button>
   </div>
 {/if}

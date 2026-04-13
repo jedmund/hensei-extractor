@@ -22,7 +22,7 @@
 </script>
 
 <div class="panel" class:active={app.activeTab === 'party'} id="partyPanel">
-  <div class="panel-list" id="partyItems">
+  <div class="cache-items" id="partyItems">
     {#if partyTypes.length === 0}
       <p class="cache-empty">{m.empty_party()}</p>
     {:else}
