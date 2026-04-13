@@ -34,6 +34,9 @@ interface PlaylistSelection {
 }
 
 class AppState {
+  // Locale (reactive mirror of paraglide locale)
+  locale = $state<'en' | 'ja'>('en')
+
   // Auth
   auth = $state<AuthData | null>(null)
   noticeAcknowledged = $state(false)
@@ -78,7 +81,11 @@ class AppState {
 
   // Picker visibility
   raidPickerOpen = $state(false)
+  raidRefresh = $state(false)
   playlistPickerOpen = $state(false)
+  playlistCreateFormOpen = $state(false)
+  playlistCreateSubmit = $state(false)
+  playlistCreateReady = $state(false)
 
   // Modal visibility
   syncModalOpen = $state(false)
