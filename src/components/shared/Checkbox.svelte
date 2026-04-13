@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Checkbox as CheckboxPrimitive } from 'bits-ui'
   import CheckIcon from '../../assets/icons/check.svg?raw'
+  import DashIcon from '../../assets/icons/dash.svg?raw'
 
   interface Props {
     checked?: boolean
@@ -58,7 +59,8 @@
   {#snippet children({ checked: isChecked, indeterminate: isIndeterminate })}
     <span class="indicator">
       {#if isIndeterminate}
-        <span class="icon indeterminate"></span>
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        <span class="icon">{@html DashIcon}</span>
       {:else if isChecked}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         <span class="icon">{@html CheckIcon}</span>
@@ -86,6 +88,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     @include smooth-transition($duration-zoom, all);
   }
 
@@ -232,13 +235,6 @@
       width: var(--cb-icon-size);
       height: var(--cb-icon-size);
       fill: currentColor;
-    }
-
-    &.indeterminate {
-      width: var(--cb-icon-size);
-      height: var(--cb-dash-height);
-      background-color: var(--cb-checked-fg);
-      border-radius: $unit-fourth;
     }
   }
 </style>
