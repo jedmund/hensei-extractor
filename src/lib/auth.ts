@@ -47,7 +47,7 @@ async function authenticatedFetch(
   const response = await fetch(apiUrl, {
     method: options.method ?? 'GET',
     headers,
-    ...(options.body && { body: JSON.stringify(options.body) })
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
   })
 
   if (!response.ok) {
