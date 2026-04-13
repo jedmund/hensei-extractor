@@ -781,7 +781,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'uploadPartyData':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           uploadPartyData(
             data,
             message.raidSlug || message.raidId,
@@ -795,7 +798,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'uploadDetailData':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           uploadDetailData(
             data as Record<string, unknown>,
             message.dataType!
@@ -809,7 +815,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'checkConflicts':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           checkConflicts(
             data as Record<number, PageData>,
             message.dataType!
@@ -819,7 +828,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'uploadCollectionData':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           uploadCollectionData(
             data as Record<number, PageData>,
             message.dataType!,
@@ -834,7 +846,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'syncCollection':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           uploadCollectionData(
             data as Record<number, PageData>,
             message.dataType!,
@@ -850,7 +865,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'previewSyncDeletions':
         loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           previewSyncDeletions(
             data as Record<number, PageData>,
             message.dataType!
@@ -860,7 +878,10 @@ chrome.runtime.onMessage.addListener(
 
       case 'uploadCharacterStats':
         loadCachedDataForUpload('character_stats').then((data) => {
-          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
           uploadCharacterStats(
             data as Record<string, CharacterStatsEntry>
           ).then(sendResponse)

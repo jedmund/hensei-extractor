@@ -355,9 +355,12 @@ export function getWeaponModifiers(
             'gauph-will',
             'gauph-zeal'
           ]
-          const needsSuffix = GAUPH_SLOT0.includes(entry.slug) && weaponProficiency
+          const needsSuffix =
+            GAUPH_SLOT0.includes(entry.slug) && weaponProficiency
           weaponKeys.push({
-            slug: needsSuffix ? `${entry.slug}-${weaponProficiency}` : entry.slug,
+            slug: needsSuffix
+              ? `${entry.slug}-${weaponProficiency}`
+              : entry.slug,
             name: entry.name
           })
         }
@@ -397,7 +400,6 @@ export function getWeaponModifiers(
     weaponKeys
   }
 }
-
 
 /** Resolve the AX skill icon filename from AUGMENT_ICON_MAP */
 export function resolveAugmentIcon(slug: string): string {
