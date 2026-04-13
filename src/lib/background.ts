@@ -100,6 +100,8 @@ interface UploadCollectionOptions {
   isFullInventory?: boolean
   reconcileDeletions?: boolean
   conflictResolutions?: unknown
+  selectedIndices?: number[]
+  deletionIds?: string[]
 }
 
 // --- API response types ---
@@ -693,15 +695,18 @@ interface BackgroundMessage {
   action: string
   dataType?: string
   data?: unknown
+  raidSlug?: string
   raidId?: string
   playlistIds?: string[]
   name?: string
   visibility?: number
   shareWithCrew?: boolean
+  selectedIndices?: number[]
   updateExisting?: boolean
   isFullInventory?: boolean
   reconcileDeletions?: boolean
   conflictResolutions?: unknown
+  deletionIds?: string[]
   forceRefresh?: boolean
 }
 
@@ -742,7 +747,7 @@ chrome.runtime.onMessage.addListener(
         } else {
           chrome.windows.create(
             {
-              url: 'popup.html',
+              url: 'sidepanel.html',
               type: 'popup',
               width: 420,
               height: 700
@@ -775,21 +780,27 @@ chrome.runtime.onMessage.addListener(
         return true
 
       case 'uploadPartyData':
-        uploadPartyData(
-          message.data,
-          message.raidId,
-          message.playlistIds,
-          message.name,
-          message.visibility,
-          message.shareWithCrew
-        ).then(sendResponse)
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          uploadPartyData(
+            data,
+            message.raidSlug || message.raidId,
+            message.playlistIds,
+            message.name,
+            message.visibility,
+            message.shareWithCrew
+          ).then(sendResponse)
+        })
         return true
 
       case 'uploadDetailData':
-        uploadDetailData(
-          message.data as Record<string, unknown>,
-          message.dataType!
-        ).then(sendResponse)
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          uploadDetailData(
+            data as Record<string, unknown>,
+            message.dataType!
+          ).then(sendResponse)
+        })
         return true
 
       case 'getCollectionIds':
@@ -797,41 +808,64 @@ chrome.runtime.onMessage.addListener(
         return true
 
       case 'checkConflicts':
-        checkConflicts(
-          message.data as Record<number, PageData>,
-          message.dataType!
-        ).then(sendResponse)
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          checkConflicts(
+            data as Record<number, PageData>,
+            message.dataType!
+          ).then(sendResponse)
+        })
         return true
 
       case 'uploadCollectionData':
-        uploadCollectionData(
-          message.data as Record<number, PageData>,
-          message.dataType!,
-          {
-            updateExisting: message.updateExisting,
-            isFullInventory: message.isFullInventory,
-            reconcileDeletions: message.reconcileDeletions,
-            conflictResolutions: message.conflictResolutions
-          }
-        ).then(sendResponse)
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          uploadCollectionData(
+            data as Record<number, PageData>,
+            message.dataType!,
+            {
+              selectedIndices: message.selectedIndices,
+              conflictResolutions: message.conflictResolutions,
+              deletionIds: message.deletionIds
+            }
+          ).then(sendResponse)
+        })
+        return true
+
+      case 'syncCollection':
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          uploadCollectionData(
+            data as Record<number, PageData>,
+            message.dataType!,
+            {
+              selectedIndices: message.selectedIndices,
+              isFullInventory: true,
+              reconcileDeletions: true,
+              deletionIds: message.deletionIds
+            }
+          ).then(sendResponse)
+        })
         return true
 
       case 'previewSyncDeletions':
-        previewSyncDeletions(
-          message.data as Record<number, PageData>,
-          message.dataType!
-        ).then(sendResponse)
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          previewSyncDeletions(
+            data as Record<number, PageData>,
+            message.dataType!
+          ).then(sendResponse)
+        })
         return true
 
       case 'uploadCharacterStats':
-        uploadCharacterStats(
-          message.data as Record<string, CharacterStatsEntry>
-        ).then(sendResponse)
+        loadCachedDataForUpload('character_stats').then((data) => {
+          if (!data) { sendResponse({ error: 'no_cached_data' }); return }
+          uploadCharacterStats(
+            data as Record<string, CharacterStatsEntry>
+          ).then(sendResponse)
+        })
         return true
-
-      case 'dataCaptured':
-        chrome.runtime.sendMessage(message).catch(() => {})
-        return false
 
       default:
         return false
@@ -842,6 +876,36 @@ chrome.runtime.onMessage.addListener(
 // ==========================================
 // CACHE STATUS HANDLERS
 // ==========================================
+
+async function loadCachedDataForUpload(
+  dataType: string
+): Promise<Record<string, unknown> | Record<number, unknown> | null> {
+  if (dataType === 'character_stats') {
+    const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
+    const cached = result[CACHE_KEYS.character_stats!] as
+      | { updates?: Record<string, unknown>; lastUpdated?: number }
+      | undefined
+    if (!cached || Object.keys(cached.updates ?? {}).length === 0) return null
+    return cached.updates!
+  }
+
+  const cacheKey = resolveCacheKey(dataType)
+  if (!cacheKey) return null
+
+  const result = await chrome.storage.local.get(cacheKey)
+  const cached = result[cacheKey] as Record<string, unknown> | undefined
+  if (!cached) return null
+
+  if (
+    dataType.startsWith('list_') ||
+    dataType.startsWith('collection_') ||
+    dataType.startsWith('stash_')
+  ) {
+    return (cached.pages as Record<number, unknown>) ?? null
+  }
+
+  return (cached.data as Record<string, unknown>) ?? null
+}
 
 async function handleGetCachedData(
   dataType: string
@@ -1281,14 +1345,22 @@ async function uploadCollectionData(
     updateExisting = false,
     isFullInventory = false,
     reconcileDeletions = false,
-    conflictResolutions = null
+    conflictResolutions = null,
+    selectedIndices,
+    deletionIds
   } = options
 
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
-  const allItems = collectPageItems(pagesData)
+  let allItems = collectPageItems(pagesData)
   if (allItems.length === 0) return { error: 'no_items' }
+
+  if (selectedIndices && selectedIndices.length > 0) {
+    allItems = selectedIndices
+      .filter((i) => i >= 0 && i < allItems.length)
+      .map((i) => allItems[i]!)
+  }
 
   const activeFilter = extractFilterFromPages(pagesData)
   const body: Record<string, unknown> = {
@@ -1301,6 +1373,9 @@ async function uploadCollectionData(
 
   if (conflictResolutions) {
     body.conflict_resolutions = conflictResolutions
+  }
+  if (deletionIds && deletionIds.length > 0) {
+    body.deletion_ids = deletionIds
   }
 
   const result = await authenticatedPost(`/collection/${endpoint}/import`, body)
