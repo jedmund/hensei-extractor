@@ -7,7 +7,14 @@ export interface SegmentedControlContext {
   variant: SegmentedControlVariant
   size: SegmentedControlSize
   grow: boolean
-  readonly element: 'wind' | 'fire' | 'water' | 'earth' | 'dark' | 'light' | null
+  readonly element:
+    | 'wind'
+    | 'fire'
+    | 'water'
+    | 'earth'
+    | 'dark'
+    | 'light'
+    | null
 }
 
 const SEGMENTED_CONTROL_KEY = Symbol('segmented-control')

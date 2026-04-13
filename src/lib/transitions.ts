@@ -3,7 +3,10 @@ import type { TransitionConfig } from 'svelte/transition'
 
 export function slideRight(
   _node: Element,
-  { duration = 300, easing = cubicOut }: { duration?: number; easing?: (t: number) => number } = {}
+  {
+    duration = 300,
+    easing = cubicOut
+  }: { duration?: number; easing?: (t: number) => number } = {}
 ): TransitionConfig {
   return {
     duration,
