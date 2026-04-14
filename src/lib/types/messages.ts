@@ -17,6 +17,10 @@ export type ExtensionMessage =
     }
   | { action: 'popOutWindow' }
   | { action: 'fetchRaidGroups' }
+  | { action: 'uploadUnfScores'; dataType: string; round: string }
+  | { action: 'createCrew'; name: string }
+  | { action: 'fetchLatestGwEvent' }
+  | { action: 'previewGwPhantoms'; dataType: string }
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean
@@ -132,6 +136,43 @@ export interface CollectionIdsResponse {
   summons?: string[]
   characters?: string[]
   artifacts?: string[]
+  error?: string
+}
+
+/** Response from uploadUnfScores */
+export interface UploadUnfScoresResponse {
+  success?: boolean
+  imported?: number
+  phantomsCreated?: number
+  errors?: unknown[]
+  error?: string
+}
+
+/** Response from createCrew */
+export interface CreateCrewResponse {
+  success?: boolean
+  crew?: unknown
+  error?: string
+}
+
+/** A GW event summary from the status endpoint */
+export interface GwEventSummary {
+  eventNumber: number
+  startDate: string
+  endDate: string
+}
+
+/** Response from fetchLatestGwEvent (GET /gw_events/status) */
+export interface FetchLatestGwEventResponse {
+  recent?: GwEventSummary | null
+  upcoming?: GwEventSummary | null
+  error?: string
+}
+
+/** Response from previewGwPhantoms */
+export interface PreviewGwPhantomsResponse {
+  existingPhantomIds?: string[]
+  newPhantomIds?: string[]
   error?: string
 }
 

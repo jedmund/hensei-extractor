@@ -79,7 +79,8 @@ export const CACHE_KEYS: Record<string, string> = {
   collection_summon: 'gbf_cache_collection_summon',
   collection_artifact: 'gbf_cache_collection_artifact',
   character_stats: 'gbf_cache_character_stats',
-  raid_groups: 'gbf_cache_raid_groups'
+  raid_groups: 'gbf_cache_raid_groups',
+  guild_info: 'gbf_cache_guild_info'
 }
 
 /** Cache key prefixes for dynamic data types (appended with ID/number) */
@@ -89,7 +90,9 @@ export const CACHE_PREFIXES: Record<string, string> = {
   stash_summon: 'gbf_cache_stash_summon_',
   detail_npc: 'gbf_cache_detail_npc_',
   detail_weapon: 'gbf_cache_detail_weapon_',
-  detail_summon: 'gbf_cache_detail_summon_'
+  detail_summon: 'gbf_cache_detail_summon_',
+  unf_scores: 'gbf_cache_unf_scores_',
+  unf_daily_scores: 'gbf_cache_unf_daily_scores_'
 }
 
 export function resolveCacheKey(dataType: string): string | null {
@@ -132,7 +135,9 @@ const DATA_TYPE_NAMES: Record<string, () => string> = {
   collection_npc: m.type_character_collection,
   collection_summon: m.type_summon_collection,
   collection_artifact: m.type_artifact_collection,
-  character_stats: m.type_character_stats
+  character_stats: m.type_character_stats,
+  unf_scores: m.type_unf_scores,
+  unf_daily_scores: m.type_unf_daily_scores
 }
 
 export function getDataTypeName(dataType: string): string {
@@ -143,6 +148,12 @@ export function getDataTypeName(dataType: string): string {
   }
   if (dataType.startsWith('stash_summon_')) {
     return m.type_summon_stash()
+  }
+  if (dataType.startsWith('unf_scores_')) {
+    return m.type_unf_scores()
+  }
+  if (dataType.startsWith('unf_daily_scores_')) {
+    return m.type_unf_daily_scores()
   }
   return dataType
 }
@@ -172,7 +183,8 @@ export const TAB_DATA_TYPES: Record<string, string[]> = {
     'list_weapon',
     'list_summon'
   ],
-  database: []
+  database: [],
+  crew: []
 }
 
 // ==========================================

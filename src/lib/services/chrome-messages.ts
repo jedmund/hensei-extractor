@@ -5,6 +5,10 @@ import type {
   UploadPartyResponse,
   UploadDetailResponse,
   UploadCollectionResponse,
+  UploadUnfScoresResponse,
+  CreateCrewResponse,
+  FetchLatestGwEventResponse,
+  PreviewGwPhantomsResponse,
   CheckConflictsResponse,
   PreviewSyncDeletionsResponse,
   FetchRaidGroupsResponse,
@@ -126,6 +130,39 @@ export async function createPlaylist(data: {
 
 export async function getCollectionIds(): Promise<CollectionIdsResponse> {
   return send({ action: 'getCollectionIds' }) as Promise<CollectionIdsResponse>
+}
+
+export async function uploadUnfScores(
+  dataType: string,
+  round: string
+): Promise<UploadUnfScoresResponse> {
+  return send({
+    action: 'uploadUnfScores',
+    dataType,
+    round
+  }) as Promise<UploadUnfScoresResponse>
+}
+
+export async function previewGwPhantoms(
+  dataType: string
+): Promise<PreviewGwPhantomsResponse> {
+  return send({
+    action: 'previewGwPhantoms',
+    dataType
+  }) as Promise<PreviewGwPhantomsResponse>
+}
+
+export async function fetchLatestGwEvent(): Promise<FetchLatestGwEventResponse> {
+  return send({
+    action: 'fetchLatestGwEvent'
+  }) as Promise<FetchLatestGwEventResponse>
+}
+
+export async function createCrew(name: string): Promise<CreateCrewResponse> {
+  return send({
+    action: 'createCrew',
+    name
+  }) as Promise<CreateCrewResponse>
 }
 
 export async function clearCache(): Promise<void> {

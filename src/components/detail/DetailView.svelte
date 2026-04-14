@@ -36,22 +36,37 @@
   import PartyMeta from './party/PartyMeta.svelte'
   import DatabaseDetail from './database/DatabaseDetail.svelte'
   import CharacterStatsList from './character-stats/CharacterStatsList.svelte'
+  import CrewScoreDetail from './CrewScoreDetail.svelte'
 
   interface Props {
     title?: string
+    subtitle?: string
     onBack?: () => void
     navRight?: Snippet
   }
 
-  let { title = '', onBack, navRight }: Props = $props()
+  let { title = '', subtitle, onBack, navRight }: Props = $props()
+
+  let scrolled = $state(false)
+
+  function handleScroll(e: Event) {
+    const target = e.target as HTMLElement
+    scrolled = target.scrollTop > 0
+  }
 
   let dataType = $derived(app.currentDetailDataType ?? '')
   let isParty = $derived(dataType.startsWith('party_'))
   let isDatabase = $derived(isDatabaseDetailType(dataType))
   let isCharStats = $derived(dataType === 'character_stats')
+  let isUnfScores = $derived(
+    dataType.startsWith('unf_scores_') ||
+    dataType.startsWith('unf_daily_scores_')
+  )
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
+  let isArtifact = $derived(dataType === 'collection_artifact')
+  let showFilter = $derived(isCollection && !isArtifact)
   let showSyncDeletions = $derived(
     isCollection && !isCharacterCollection(dataType)
   )
@@ -102,7 +117,7 @@
 
   // Filtered items for collection views (rarity only, no lv1 exclusion — that's a section now)
   let filteredItems = $derived.by(() => {
-    if (!app.detailData || isParty || isDatabase || isCharStats) return [] as ItemEntry[]
+    if (!app.detailData || isParty || isDatabase || isCharStats || isUnfScores) return [] as ItemEntry[]
     const allItems = extractItems(dataType, app.detailData as Record<string, unknown>)
     return allItems
       .map((item: RawGameItem, index: number) => ({ item, originalIndex: index }))
@@ -424,7 +439,7 @@
 
 {#if app.detailViewActive}
 <div class="detail-view" transition:slideRight>
-  <NavigationBar {title}>
+  <NavigationBar {title} {subtitle} {scrolled} bordered={isDatabase || isUnfScores}>
     {#snippet left()}
       <button class="detail-back" onclick={onBack}>
         <Icon name="chevron-left" size={14} />
@@ -435,19 +450,29 @@
       {#if navRight}{@render navRight()}{/if}
     {/snippet}
   </NavigationBar>
-  {#if !isParty && !isDatabase}
-    <div class="detail-meta">
+  {#if !isParty && !isDatabase && !isUnfScores}
+    <div class="detail-meta" class:scrolled={isCollection && scrolled}>
       <div class="detail-meta-left">
-        {#if isCollection}
+        {#if showFilter}
           <DetailFilter {element} />
+        {:else if isArtifact && showSyncDeletions}
+          <Tooltip content={m.filter_enable_sync_desc()}>
+            <button
+              class="sync-toggle contained"
+              class:active={app.enableFullSync}
+              onclick={() => { app.enableFullSync = !app.enableFullSync }}
+            >
+              {m.filter_enable_sync()}
+            </button>
+          </Tooltip>
         {:else}
           <span class="detail-item-count-standalone" id="detailItemCount">{itemCountText}</span>
         {/if}
       </div>
-      {#if showSyncDeletions}
+      {#if showSyncDeletions && !isArtifact}
         <Tooltip content={m.filter_enable_sync_desc()}>
           <button
-            class="sync-toggle"
+            class="sync-toggle contained"
             class:active={app.enableFullSync}
             onclick={() => { app.enableFullSync = !app.enableFullSync }}
           >
@@ -459,12 +484,14 @@
   {/if}
 
   {#if isParty}
-    <PartyMeta />
+    <PartyMeta {scrolled} />
   {/if}
 
-  <div class="detail-items" id="detailItems">
+  <div class="detail-items" id="detailItems" onscroll={handleScroll}>
     {#if app.detailData}
-      {#if isParty}
+      {#if isUnfScores}
+        <CrewScoreDetail data={app.detailData as { eventNumber: number; members: { id: string; name: string; contribution: number; rank: number; level: string }[]; totalPages: number; pageCount: number; isComplete: boolean }} />
+      {:else if isParty}
         <PartyDetail
           data={app.detailData as Record<string, unknown>}
           {friendSummon}

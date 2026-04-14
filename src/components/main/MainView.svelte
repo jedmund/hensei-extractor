@@ -14,6 +14,7 @@
   import PartyPanel from './PartyPanel.svelte'
   import CollectionPanel from './CollectionPanel.svelte'
   import DatabasePanel from './DatabasePanel.svelte'
+  import CrewPanel from './CrewPanel.svelte'
   import ProfilePopover from '../profile/ProfilePopover.svelte'
   import UpdateBanner from '../shared/UpdateBanner.svelte'
   import Hint from '../shared/Hint.svelte'
@@ -21,6 +22,7 @@
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import DetailActions from '../detail/DetailActions.svelte'
+  import CrewActions from '../detail/CrewActions.svelte'
   import RaidPicker from '../pickers/RaidPicker.svelte'
   import PlaylistPicker from '../pickers/PlaylistPicker.svelte'
 
@@ -84,6 +86,11 @@
       : getImageUrl('profile/npc@2x.png')
   )
 
+  const isCrewDetail = $derived(
+    app.currentDetailDataType?.startsWith('unf_scores_') ||
+    app.currentDetailDataType?.startsWith('unf_daily_scores_')
+  )
+
   const detailTitle = $derived.by(() => {
     if (app.detailViewActive && app.currentDetailDataType) {
       if (app.currentDetailDataType.startsWith('party_')) {
@@ -93,9 +100,28 @@
         const d = app.detailData as { name?: string; master?: { name?: string } }
         return d.name || d.master?.name || getDataTypeName(app.currentDetailDataType)
       }
+      if (app.currentDetailDataType.startsWith('unf_scores_')) {
+        return m.crew_total_score()
+      }
+      if (app.currentDetailDataType.startsWith('unf_daily_scores_')) {
+        return m.crew_daily_score()
+      }
       return getDataTypeName(app.currentDetailDataType)
     }
     return ''
+  })
+
+  const detailSubtitle = $derived.by(() => {
+    if (!app.detailViewActive || !app.currentDetailDataType) return undefined
+    if (app.currentDetailDataType.startsWith('unf_scores_')) {
+      const eventNum = app.currentDetailDataType.replace('unf_scores_', '')
+      return m.crew_event_label({ eventNumber: eventNum })
+    }
+    if (app.currentDetailDataType.startsWith('unf_daily_scores_')) {
+      const eventNum = app.currentDetailDataType.replace('unf_daily_scores_', '')
+      return m.crew_event_label({ eventNumber: eventNum })
+    }
+    return undefined
   })
 
   const playlistPickerTitle = $derived.by(() => {
@@ -214,15 +240,20 @@
     <div class="tab-content">
       <PartyPanel />
       <CollectionPanel />
+      <CrewPanel />
       <DatabasePanel />
     </div>
   </div>
 
   <ProfilePopover />
 
-  <DetailView title={detailTitle} onBack={goBackFromDetail}>
+  <DetailView title={detailTitle} subtitle={detailSubtitle} onBack={goBackFromDetail}>
     {#snippet navRight()}
-      <DetailActions />
+      {#if isCrewDetail}
+        <CrewActions />
+      {:else}
+        <DetailActions />
+      {/if}
     {/snippet}
   </DetailView>
 

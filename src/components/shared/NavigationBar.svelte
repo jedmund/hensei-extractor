@@ -5,21 +5,31 @@
 
   interface Props {
     title?: string
+    subtitle?: string
+    scrolled?: boolean
+    bordered?: boolean
     left?: Snippet
     center?: Snippet
     right?: Snippet
     class?: string
   }
 
-  let { title, left, center, right, class: className }: Props = $props()
+  let { title, subtitle, scrolled = false, bordered = false, left, center, right, class: className }: Props = $props()
 </script>
 
-<header class="navigation-bar {className || ''}">
+<header class="navigation-bar {className || ''}" class:bordered class:scrolled>
   <div class="navigation-bar-left">
     {#if left}{@render left()}{/if}
   </div>
-  <span class="navigation-bar-title">
-    {#if center}{@render center()}{:else}{title ?? ''}{/if}
+  <span class="navigation-bar-title" class:has-subtitle={!!subtitle}>
+    {#if center}
+      {@render center()}
+    {:else}
+      <span class="navigation-bar-title-text">{title ?? ''}</span>
+      {#if subtitle}
+        <span class="navigation-bar-subtitle">{subtitle}</span>
+      {/if}
+    {/if}
   </span>
   <div class="navigation-bar-right">
     {#if right}{@render right()}{/if}
@@ -39,6 +49,16 @@
     background: white;
     flex-shrink: 0;
     position: relative;
+    z-index: 10;
+    &.bordered {
+      border-bottom: 1px solid var(--color-border-light, rgba(0, 0, 0, 0.08));
+      @include smooth-transition($duration-quick, box-shadow, border-color);
+    }
+
+    &.bordered.scrolled {
+      border-bottom-color: transparent;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.18);
+    }
   }
 
   .navigation-bar-left,
@@ -64,8 +84,22 @@
     white-space: nowrap;
     pointer-events: none;
 
+    &.has-subtitle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
     :global(> *) {
       pointer-events: auto;
     }
+  }
+
+  .navigation-bar-subtitle {
+    font-size: $font-tiny;
+    font-weight: $normal;
+    color: var(--color-text-tertiary);
+    line-height: 1.2;
   }
 </style>

@@ -42,7 +42,7 @@ class AppState {
   noticeAcknowledged = $state(false)
 
   // Navigation
-  activeTab = $state<'party' | 'collection' | 'database'>('party')
+  activeTab = $state<'party' | 'collection' | 'database' | 'crew'>('party')
   detailViewActive = $state(false)
   currentDetailDataType = $state<string | null>(null)
 
@@ -71,6 +71,9 @@ class AppState {
   // Conflict resolution
   pendingConflicts = $state<unknown[] | null>(null)
   conflictResolutions = $state<Record<string, 'import' | 'skip'> | null>(null)
+
+  // Crew import
+  crewImportRound = $state<string>('preliminaries')
 
   // UI state
   showingDisclaimer = $state(false)

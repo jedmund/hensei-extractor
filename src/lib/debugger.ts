@@ -35,7 +35,12 @@ const INTERCEPT_PATTERNS = [
   '/weapon/container_list/',
   '/summon/container_list/',
   // Stash content pages (for extracting stash names from HTML)
-  '/container/content/list/'
+  '/container/content/list/',
+  // UNF (Unite & Fight) score pages (double-slash is empty user ID segment)
+  '/total_performance/',
+  '/todays_performance/',
+  // Guild info (for crew ID)
+  '/rest/guild/main/guild_info'
 ]
 
 // ==========================================
@@ -60,6 +65,7 @@ export interface InterceptMetadata {
   masterId: string | null
   stashNumber: string | null
   stashName: string | null
+  eventNumber: number | null
 }
 
 type OnDataInterceptedCallback = (
@@ -287,6 +293,8 @@ function processInterceptedData(
   let pageNumber = getPageNumber(url)
   if (dataType.startsWith('stash_')) {
     pageNumber = (data as { current?: number })?.current ?? 1
+  } else if (dataType === 'unf_scores' || dataType === 'unf_daily_scores') {
+    pageNumber = getUnfPageNumber(url)
   }
 
   const metadata: InterceptMetadata = {
@@ -294,7 +302,8 @@ function processInterceptedData(
     partyId: dataType === 'party' ? getPartyId(url, data) : null,
     masterId: getMasterId(url, data, dataType),
     stashNumber: dataType.startsWith('stash_') ? getStashNumber(url) : null,
-    stashName: dataType.startsWith('stash_') ? getStashName() : null
+    stashName: dataType.startsWith('stash_') ? getStashName() : null,
+    eventNumber: getEventNumber(url)
   }
 
   onDataIntercepted(url, data, dataType, metadata, timestamp)
@@ -317,6 +326,11 @@ function getDataType(url: string): string {
   if (url.includes('/npc/list/')) return 'list_npc'
   if (url.includes('/weapon/list/')) return 'list_weapon'
   if (url.includes('/summon/list/')) return 'list_summon'
+  if (url.includes('/total_performance/') && url.includes('/teamraid'))
+    return 'unf_scores'
+  if (url.includes('/todays_performance/') && url.includes('/teamraid'))
+    return 'unf_daily_scores'
+  if (url.includes('/rest/guild/main/guild_info')) return 'guild_info'
   return 'unknown'
 }
 
@@ -382,4 +396,14 @@ function getMasterId(
   }
 
   return null
+}
+
+function getEventNumber(url: string): number | null {
+  const match = url.match(/\/teamraid0*(\d+)\//)
+  return match ? parseInt(match[1]!, 10) : null
+}
+
+function getUnfPageNumber(url: string): number | null {
+  const match = url.match(/\/(?:total|todays)_performance\/(\d+)/)
+  return match ? parseInt(match[1]!, 10) : null
 }

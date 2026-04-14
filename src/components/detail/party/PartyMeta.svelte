@@ -8,6 +8,12 @@
   import Tooltip from '../../shared/Tooltip.svelte'
   import Icon from '../../shared/Icon.svelte'
 
+  interface Props {
+    scrolled?: boolean
+  }
+
+  let { scrolled = false }: Props = $props()
+
   type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
   let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
 
@@ -52,7 +58,7 @@
   let raidImageError = $state(false)
 </script>
 
-<div class="party-meta" id="partyMeta">
+<div class="party-meta" class:scrolled id="partyMeta">
   <div class="party-name-container" id="partyNameContainer">
     <Input
       type="text"

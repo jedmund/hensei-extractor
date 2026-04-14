@@ -65,7 +65,17 @@ export function formatCacheStatus(
         })
       }
 
-      if (type.startsWith('detail_npc_')) {
+      if (type.startsWith('unf_scores_')) {
+        const eventNum = type.replace('unf_scores_', '')
+        displayName = m.crew_event_label({ eventNumber: eventNum })
+        const members = info.totalItems ?? 0
+        subtitle = `${m.crew_total_score()}\u00A0\u00B7\u00A0${m.crew_member_count({ count: members })}`
+      } else if (type.startsWith('unf_daily_scores_')) {
+        const eventNum = type.replace('unf_daily_scores_', '')
+        displayName = m.crew_event_label({ eventNumber: eventNum })
+        const members = info.totalItems ?? 0
+        subtitle = `${m.crew_daily_score()}\u00A0\u00B7\u00A0${m.crew_member_count({ count: members })}`
+      } else if (type.startsWith('detail_npc_')) {
         displayName = info.itemName ?? m.type_character()
       } else if (type.startsWith('detail_weapon_')) {
         displayName = info.itemName ?? m.type_weapon()
