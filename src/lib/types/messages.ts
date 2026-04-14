@@ -19,6 +19,7 @@ export type ExtensionMessage =
   | { action: 'fetchRaidGroups' }
   | { action: 'uploadUnfScores'; dataType: string; round: string }
   | { action: 'createCrew'; name: string }
+  | { action: 'fetchLatestGwEvent' }
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean
@@ -150,6 +151,20 @@ export interface UploadUnfScoresResponse {
 export interface CreateCrewResponse {
   success?: boolean
   crew?: unknown
+  error?: string
+}
+
+/** A GW event summary from the status endpoint */
+export interface GwEventSummary {
+  eventNumber: number
+  startDate: string
+  endDate: string
+}
+
+/** Response from fetchLatestGwEvent (GET /gw_events/status) */
+export interface FetchLatestGwEventResponse {
+  recent?: GwEventSummary | null
+  upcoming?: GwEventSummary | null
   error?: string
 }
 

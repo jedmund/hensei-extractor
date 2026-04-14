@@ -7,6 +7,7 @@ import type {
   UploadCollectionResponse,
   UploadUnfScoresResponse,
   CreateCrewResponse,
+  FetchLatestGwEventResponse,
   CheckConflictsResponse,
   PreviewSyncDeletionsResponse,
   FetchRaidGroupsResponse,
@@ -139,6 +140,12 @@ export async function uploadUnfScores(
     dataType,
     round
   }) as Promise<UploadUnfScoresResponse>
+}
+
+export async function fetchLatestGwEvent(): Promise<FetchLatestGwEventResponse> {
+  return send({
+    action: 'fetchLatestGwEvent'
+  }) as Promise<FetchLatestGwEventResponse>
 }
 
 export async function createCrew(name: string): Promise<CreateCrewResponse> {

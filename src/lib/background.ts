@@ -697,9 +697,16 @@ async function cacheUnfScores(
   const cacheKey = prefix + eventNumber
 
   const memberList = (
-    data as { member_list?: { list?: unknown[]; last?: number } }
+    data as { member_list?: { list?: unknown; last?: number } }
   )?.member_list
   if (!memberList?.list) return
+
+  // Game returns an array for page 1 but an object keyed by index for pages 2+
+  const rawList: unknown[] = Array.isArray(memberList.list)
+    ? memberList.list
+    : Object.values(memberList.list as Record<string, unknown>)
+
+  if (rawList.length === 0) return
 
   const result = await chrome.storage.local.get(cacheKey)
   const existing: CachedUnfScores = (result[cacheKey] as CachedUnfScores) ?? {
@@ -716,7 +723,7 @@ async function cacheUnfScores(
     existing.pages = {}
   }
 
-  const members: UnfMember[] = memberList.list.map((m: unknown) => {
+  const members: UnfMember[] = rawList.map((m: unknown) => {
     const member = m as Record<string, unknown>
     return {
       id: member.id as string,
@@ -1008,6 +1015,10 @@ chrome.runtime.onMessage.addListener(
         handleCreateCrew((message as { name?: string }).name ?? '').then(
           sendResponse
         )
+        return true
+
+      case 'fetchLatestGwEvent':
+        handleFetchLatestGwEvent().then(sendResponse)
         return true
 
       default:
@@ -1717,6 +1728,46 @@ async function handleCreateCrew(
   }
 
   return { success: true, crew: result.data }
+}
+
+async function handleFetchLatestGwEvent(): Promise<FetchLatestGwEventResponse> {
+  try {
+    const apiUrl = await getApiUrl('/gw_events/status')
+    const response = await fetch(apiUrl)
+    if (!response.ok) return { error: 'request_failed' }
+
+    const data = (await response.json()) as {
+      upcoming: {
+        event_number: number
+        start_date: string
+        end_date: string
+      } | null
+      recent: {
+        event_number: number
+        start_date: string
+        end_date: string
+      } | null
+    }
+
+    return {
+      recent: data.recent
+        ? {
+            eventNumber: data.recent.event_number,
+            startDate: data.recent.start_date,
+            endDate: data.recent.end_date
+          }
+        : null,
+      upcoming: data.upcoming
+        ? {
+            eventNumber: data.upcoming.event_number,
+            startDate: data.upcoming.start_date,
+            endDate: data.upcoming.end_date
+          }
+        : null
+    }
+  } catch {
+    return { error: 'request_failed' }
+  }
 }
 
 async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
