@@ -1,3 +1,6 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+
 /* Playlist Selector */
 .playlist-selector {
   display: flex;
@@ -7,12 +10,12 @@
 .playlist-selector-button {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   width: 100%;
-  padding: 0.8rem 1.6rem;
+  padding: spacing.$unit spacing.$unit-2x;
   background: var(--input-bound-bg);
   border: 2px solid transparent;
-  border-radius: var(--input-corner);
+  border-radius: layout.$input-corner;
   font-family: inherit;
   font-size: var(--input-font-size);
   font-weight: 400;
@@ -36,14 +39,14 @@
 .visibility-row {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 /* Crew Share Toggle */
 .crew-share-toggle {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: spacing.$unit * 1.25;
   white-space: nowrap;
 }
 
@@ -85,21 +88,21 @@
 .playlist-create-form {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1.6rem;
+  gap: spacing.$unit;
+  padding: spacing.$unit-2x;
   flex: 1;
 
   textarea.contained {
     -webkit-font-smoothing: antialiased;
     background-color: var(--input-bound-bg);
     border: none;
-    border-radius: 0.8rem;
+    border-radius: spacing.$unit;
     box-sizing: border-box;
     color: var(--color-text);
     display: block;
     font-family: inherit;
     font-size: 1.5rem;
-    padding: 0.8rem 1.2rem;
+    padding: spacing.$unit spacing.$unit * 1.5;
     width: 100%;
     resize: vertical;
     transition: background-color var(--transition-fast);
@@ -123,11 +126,11 @@
 
 /* Search */
 .playlist-picker-search {
-  padding: 1.2rem 1.6rem 0.8rem;
+  padding: spacing.$unit * 1.5 spacing.$unit-2x spacing.$unit;
   flex-shrink: 0;
 
   input {
-    padding: 1.2rem;
+    padding: spacing.$unit * 1.5;
     font-size: 1.4rem;
   }
 }
@@ -136,14 +139,14 @@
 .playlist-picker-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0.4rem 0.8rem;
+  padding: spacing.$unit-half spacing.$unit;
 }
 
 .playlist-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3.2rem;
+  padding: spacing.$unit-4x;
   color: var(--color-text-secondary);
   font-size: 1.4rem;
   font-style: italic;
@@ -153,11 +156,11 @@
 .playlist-item {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1rem 1.2rem;
+  gap: spacing.$unit * 1.5;
+  padding: spacing.$unit * 1.25 spacing.$unit * 1.5;
   background: transparent;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
@@ -176,7 +179,7 @@
 .playlist-item-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: spacing.$unit-quarter;
   flex: 1;
   min-width: 0;
 }
@@ -204,7 +207,7 @@
 
 /* Footer */
 .playlist-picker-footer {
-  padding: 1.2rem 1.6rem;
+  padding: spacing.$unit * 1.5 spacing.$unit-2x;
   border-top: none;
   flex-shrink: 0;
 }
