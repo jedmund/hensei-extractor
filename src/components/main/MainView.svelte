@@ -100,9 +100,28 @@
         const d = app.detailData as { name?: string; master?: { name?: string } }
         return d.name || d.master?.name || getDataTypeName(app.currentDetailDataType)
       }
+      if (app.currentDetailDataType.startsWith('unf_scores_')) {
+        return m.crew_total_score()
+      }
+      if (app.currentDetailDataType.startsWith('unf_daily_scores_')) {
+        return m.crew_daily_score()
+      }
       return getDataTypeName(app.currentDetailDataType)
     }
     return ''
+  })
+
+  const detailSubtitle = $derived.by(() => {
+    if (!app.detailViewActive || !app.currentDetailDataType) return undefined
+    if (app.currentDetailDataType.startsWith('unf_scores_')) {
+      const eventNum = app.currentDetailDataType.replace('unf_scores_', '')
+      return m.crew_event_label({ eventNumber: eventNum })
+    }
+    if (app.currentDetailDataType.startsWith('unf_daily_scores_')) {
+      const eventNum = app.currentDetailDataType.replace('unf_daily_scores_', '')
+      return m.crew_event_label({ eventNumber: eventNum })
+    }
+    return undefined
   })
 
   const playlistPickerTitle = $derived.by(() => {
@@ -228,7 +247,7 @@
 
   <ProfilePopover />
 
-  <DetailView title={detailTitle} onBack={goBackFromDetail}>
+  <DetailView title={detailTitle} subtitle={detailSubtitle} onBack={goBackFromDetail}>
     {#snippet navRight()}
       {#if isCrewDetail}
         <CrewActions />
