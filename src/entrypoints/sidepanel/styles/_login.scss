@@ -1,8 +1,11 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+
 .login-view {
   position: relative;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
+  padding: spacing.$unit-2x;
   overflow-y: auto;
 }
 
@@ -31,11 +34,11 @@
 .auth-card {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: spacing.$unit-2x;
   background: var(--color-bg-white);
-  border-radius: var(--radius-xl);
+  border-radius: layout.$card-corner;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  padding: 2.4rem;
+  padding: spacing.$unit-3x;
   width: 100%;
 }
 
@@ -49,7 +52,7 @@
 .auth-body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: spacing.$unit;
 
   p {
     font-size: 1.4rem;
@@ -61,7 +64,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: spacing.$unit * 1.5;
 }
 
 .auth-footer {
@@ -72,7 +75,7 @@
   a {
     color: var(--color-link);
     text-decoration: none;
-    padding-left: 0.4rem;
+    padding-left: spacing.$unit-half;
 
     &:hover {
       text-decoration: underline;
@@ -87,7 +90,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
+  padding: spacing.$unit-2x;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
 }
@@ -100,7 +103,7 @@
 
 .login-language-switch {
   display: block;
-  margin-top: 2.4rem;
+  margin-top: spacing.$unit-3x;
   text-align: center;
   color: var(--color-text-secondary);
   font-size: 1.3rem;
