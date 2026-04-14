@@ -1,29 +1,33 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
 .notice {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: spacing.$unit-2x;
   background: var(--color-warning);
   border: 1px solid var(--color-warning-border);
   color: #341d0a;
-  padding: var(--spacing-lg);
-  font-size: 1.4rem;
-  border-radius: var(--radius-xl);
+  padding: spacing.$unit-2x;
+  font-size: type.$font-small;
+  border-radius: layout.$card-corner;
   line-height: 1.5;
 }
 
 .notice-text {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: spacing.$unit;
 }
 
 /* Status messages */
 .status-info,
 .status-success,
 .status-error {
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-lg);
-  font-size: 1.4rem;
+  padding: spacing.$unit;
+  border-radius: layout.$input-corner;
+  font-size: type.$font-small;
 }
 
 .status-info {

@@ -49,7 +49,7 @@
     align-items: center;
     padding: $unit calc($unit * 1.5);
     border-radius: $bubble-menu-item-corner;
-    font-size: $font-button;
+    font-size: $font-small;
     font-weight: $medium;
     color: var(--color-text);
     cursor: pointer;

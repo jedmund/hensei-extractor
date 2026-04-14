@@ -1,12 +1,16 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
 .database-detail {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--spacing-md);
+  gap: spacing.$unit * 1.5;
 }
 
 .database-detail-image {
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: hidden;
   background: var(--color-bg);
 
@@ -38,8 +42,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 0;
-  font-size: 1.5rem;
+  padding: spacing.$unit 0;
+  font-size: type.$font-small;
 }
 
 .stat-label {
@@ -51,13 +55,13 @@
 }
 
 .stat-icon {
-  height: 2.4rem;
+  height: spacing.$unit-3x;
   vertical-align: middle;
 }
 
 .stat-comment {
-  margin-top: var(--spacing-sm);
-  padding-top: var(--spacing-sm);
+  margin-top: spacing.$unit;
+  padding-top: spacing.$unit;
   border-top: 1px solid var(--color-border);
 
   .stat-value {
@@ -69,13 +73,13 @@
 /* Star rating display */
 .stars {
   display: flex;
-  gap: 0.2rem;
+  gap: spacing.$unit-quarter;
   align-items: center;
 }
 
 .star {
-  width: 1.8rem;
-  height: 1.8rem;
+  width: spacing.$unit * 2.25;
+  height: spacing.$unit * 2.25;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

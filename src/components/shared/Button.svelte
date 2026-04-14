@@ -144,7 +144,7 @@
     white-space: nowrap;
     border: none;
     border-radius: $input-corner;
-    font-size: $font-button;
+    font-size: $font-small;
     font-weight: $medium;
     background: var(--button-bg);
     color: var(--button-text);
@@ -289,7 +289,7 @@
   :global([data-button-root].medium) {
     height: calc($unit * 5.5);
     padding: $unit ($unit * 2.5);
-    font-size: $font-regular;
+    font-size: 1.6rem;
   }
 
   :global([data-button-root].large) {

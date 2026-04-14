@@ -1,17 +1,21 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
 .cache-items {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: spacing.$unit;
   flex: 1;
   overflow-y: auto;
 }
 
 .cache-empty,
 .cache-error {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   text-align: center;
-  padding: var(--spacing-lg);
+  padding: spacing.$unit-2x;
 }
 
 .cache-error {
@@ -21,11 +25,11 @@
 .cache-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: 1rem 1.2rem;
+  gap: spacing.$unit;
+  padding: spacing.$unit * 1.25 spacing.$unit * 1.5;
   background: transparent;
   width: 100%;
-  border-radius: var(--radius-lg);
+  border-radius: layout.$input-corner;
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -85,26 +89,26 @@
 .cache-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: spacing.$unit-quarter;
   flex: 1;
 }
 
 .cache-name-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: spacing.$unit-three-quarter;
 }
 
 .cache-name {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
 }
 
 .stash-tag {
-  font-size: 1.3rem;
-  font-weight: 500;
-  padding: 1px 0.8rem;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
+  padding: 1px spacing.$unit;
   border-radius: 999px;
   background: var(--element-bg);
   color: var(--element-text);
@@ -115,12 +119,12 @@
 }
 
 .cache-subtitle {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   color: var(--color-text-tertiary);
 }
 
 .cache-age {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }

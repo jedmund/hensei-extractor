@@ -1,3 +1,7 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
 .detail-view {
   position: absolute;
   top: 0;
@@ -13,23 +17,23 @@
 .detail-actions {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 .detail-back {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: spacing.$unit-half;
   background: none;
   border: none;
   color: var(--element-text);
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   cursor: pointer;
-  padding: 0.4rem 0.8rem;
-  margin-left: -0.8rem;
-  border-radius: var(--radius-sm);
+  padding: spacing.$unit-half spacing.$unit;
+  margin-left: -(spacing.$unit);
+  border-radius: layout.$item-corner-small;
   transition: opacity var(--transition-fast);
 
   &:hover {
@@ -66,9 +70,9 @@ body.light #playlistCreateSubmit {
   justify-content: space-between;
   position: relative;
   z-index: 5;
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
-  padding: 0.8rem 1.6rem;
+  padding: spacing.$unit spacing.$unit-2x;
   flex-shrink: 0;
 
   span:empty {
@@ -79,7 +83,7 @@ body.light #playlistCreateSubmit {
 .detail-meta-left {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: spacing.$unit-three-quarter;
 }
 
 #detailItemCount {
@@ -91,13 +95,13 @@ body.light #playlistCreateSubmit {
 .collapsible-section {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 .collapsible-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: spacing.$unit-three-quarter;
 }
 
 [data-collapsible-trigger].collapsible-trigger {
@@ -107,11 +111,11 @@ body.light #playlistCreateSubmit {
   align-items: center;
   flex: 1;
   min-width: 0;
-  padding: 0.8rem;
-  border-radius: 0.8rem;
+  padding: spacing.$unit;
+  border-radius: layout.$input-corner;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   cursor: pointer;
@@ -125,7 +129,7 @@ body.light #playlistCreateSubmit {
 
 .collapsible-count {
   margin-left: auto;
-  font-weight: 400;
+  font-weight: type.$normal;
   color: var(--color-text-tertiary);
 }
 
@@ -137,14 +141,14 @@ body.light #playlistCreateSubmit {
 [data-popover-trigger].filter-trigger {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: spacing.$unit-half;
   background: var(--input-bg);
   border: 2px solid transparent;
-  border-radius: 0.8rem;
-  padding: 0.4rem 0.8rem;
+  border-radius: layout.$input-corner;
+  padding: spacing.$unit-half spacing.$unit;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -163,11 +167,11 @@ body.light #playlistCreateSubmit {
   align-items: center;
   background: var(--input-bg);
   border: 2px solid transparent;
-  border-radius: 0.8rem;
-  padding: 0.4rem 0.8rem;
+  border-radius: layout.$input-corner;
+  padding: spacing.$unit-half spacing.$unit;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   -webkit-font-smoothing: antialiased;
@@ -192,20 +196,20 @@ body.light #playlistCreateSubmit {
 [data-popover-content].filter-content {
   background: white;
   border: 1px solid var(--color-border-light);
-  border-radius: 1.2rem;
+  border-radius: layout.$card-corner;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 320px;
-  padding: 0.8rem 0;
+  padding: spacing.$unit 0;
   z-index: 20;
 }
 
 .filter-option {
   display: flex;
   align-items: flex-start;
-  gap: 0.8rem;
-  padding: 0.8rem 1.2rem;
-  font-size: 1.4rem;
-  font-weight: 400;
+  gap: spacing.$unit;
+  padding: spacing.$unit (spacing.$unit * 1.5);
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   color: var(--color-text);
   cursor: pointer;
   transition: background-color var(--transition-fast);
@@ -216,25 +220,25 @@ body.light #playlistCreateSubmit {
 }
 
 .filter-section-title {
-  font-size: 1.3rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text-secondary);
-  padding: 0.8rem 1.2rem 0.4rem;
+  padding: spacing.$unit (spacing.$unit * 1.5) spacing.$unit-half;
 }
 
 .filter-section + .filter-section .filter-section-title {
-  padding-top: 1.2rem;
+  padding-top: spacing.$unit * 1.5;
 }
 
 .filter-option-text {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: spacing.$unit-quarter;
 }
 
 .filter-option-desc {
-  font-size: 1.3rem;
-  font-weight: 400;
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   color: var(--color-text-secondary);
 }
 
@@ -243,13 +247,13 @@ body.light #playlistCreateSubmit {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  padding: 8rem 1.6rem;
+  gap: spacing.$unit;
+  padding: spacing.$unit-10x spacing.$unit-2x;
   text-align: center;
 
   p {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     color: var(--color-text-secondary);
   }
 }
@@ -257,11 +261,11 @@ body.light #playlistCreateSubmit {
 .filter-show-all {
   background: none;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  padding: 0.6rem 1.4rem;
+  border-radius: layout.$item-corner;
+  padding: spacing.$unit-three-quarter 1.4rem;
   font-family: inherit;
-  font-size: 1.3rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -283,13 +287,13 @@ body.light #playlistCreateSubmit {
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 0.4rem;
+  margin-top: spacing.$unit-half;
   background: white;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 10rem;
-  padding: 0.4rem 0;
+  padding: spacing.$unit-half 0;
   z-index: 20;
   display: none;
 
@@ -301,9 +305,9 @@ body.light #playlistCreateSubmit {
 .copy-dropdown-item {
   display: block;
   width: 100%;
-  padding: 0.6rem 1.2rem;
-  font-size: 1.4rem;
-  font-weight: 400;
+  padding: spacing.$unit-three-quarter (spacing.$unit * 1.5);
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   font-family: inherit;
   color: var(--color-text);
   background: none;
@@ -321,72 +325,72 @@ body.light #playlistCreateSubmit {
 .detail-items {
   flex: 1;
   overflow-y: auto;
-  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  padding: 0 spacing.$unit-2x spacing.$unit-2x;
 
   &:has(.collapsible-section) {
     display: flex;
     flex-direction: column;
-    gap: 1.6rem;
+    gap: spacing.$unit-2x;
   }
 }
 
 /* Item Grid */
 .item-grid {
   display: grid;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 
   &.characters,
   &.weapons,
   &.summons {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem;
+    gap: spacing.$unit;
   }
 
   /* Fixed width for collection grids (handles missing images) */
   &.square-cells .grid-item {
-    width: 8rem;
+    width: spacing.$unit-10x;
   }
 
   &.artifacts {
-    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(spacing.$unit * 7.5, 1fr));
   }
 
   &.accessories {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem;
+    gap: spacing.$unit;
 
     .grid-item > img {
       height: auto;
-      width: 8rem;
+      width: spacing.$unit-10x;
     }
   }
 
   &.bullets {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem;
+    gap: spacing.$unit;
 
     .grid-item > img {
       height: auto;
-      width: 8rem;
+      width: spacing.$unit-10x;
     }
   }
 }
 
 .grid-item {
   position: relative;
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: visible;
   background: var(--color-bg);
   container-type: inline-size;
 
   > img {
-    height: 8rem;
+    height: spacing.$unit-10x;
     width: auto;
     display: block;
-    border-radius: var(--radius-md);
+    border-radius: layout.$item-corner;
   }
 
   &.selectable {
@@ -416,10 +420,10 @@ body.light #playlistCreateSubmit {
 .list-item {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 0.8rem;
+  gap: spacing.$unit * 1.5;
+  padding: spacing.$unit;
   background: var(--color-bg);
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
 
   &.selectable {
     cursor: pointer;
@@ -576,12 +580,12 @@ body.light #playlistCreateSubmit {
 /* Item Checkbox */
 .item-checkbox {
   position: absolute;
-  bottom: 0.4rem;
-  right: 0.4rem;
-  width: 2rem;
-  height: 2rem;
+  bottom: spacing.$unit-half;
+  right: spacing.$unit-half;
+  width: spacing.$unit * 2.5;
+  height: spacing.$unit * 2.5;
   background: white;
-  border-radius: var(--radius-sm);
+  border-radius: layout.$item-corner-small;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -625,13 +629,13 @@ body.light #playlistCreateSubmit {
 .item-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 .list-item-image {
-  width: 4.8rem;
-  height: 4.8rem;
-  border-radius: var(--radius-sm);
+  width: spacing.$unit-6x;
+  height: spacing.$unit-6x;
+  border-radius: layout.$item-corner-small;
   object-fit: cover;
   background: #e0e0e0;
 }
@@ -639,22 +643,22 @@ body.light #playlistCreateSubmit {
 .list-item-info {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: spacing.$unit-half;
 }
 
 .list-item-name {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text);
 }
 
 .list-item-level {
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: type.$medium;
 }
 
 .list-item-labels {
   display: flex;
-  gap: 0.4rem;
+  gap: spacing.$unit-half;
 }
 
 .label-icon {
@@ -666,12 +670,12 @@ body.light #playlistCreateSubmit {
 .char-stats-list {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: spacing.$unit * 1.5;
 }
 
 .char-stats-item {
   background: var(--color-bg);
-  border-radius: var(--radius-lg);
+  border-radius: layout.$input-corner;
   overflow: hidden;
 
   &.new-item {
@@ -692,7 +696,7 @@ body.light #playlistCreateSubmit {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.2rem;
+  padding: 1rem (spacing.$unit * 1.5);
   background: rgba(0, 0, 0, 0.03);
 
   .item-checkbox {
@@ -706,14 +710,14 @@ body.light #playlistCreateSubmit {
 .char-stats-name-row {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   flex: 1;
   min-width: 0;
 }
 
 .char-stats-name {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -721,7 +725,7 @@ body.light #playlistCreateSubmit {
 }
 
 .char-stats-element {
-  height: 2rem;
+  height: spacing.$unit * 2.5;
   width: auto;
   flex-shrink: 0;
 }
@@ -733,9 +737,9 @@ body.light #playlistCreateSubmit {
 }
 
 .char-stats-image {
-  width: 4.8rem;
-  height: 4.8rem;
-  border-radius: var(--radius-sm);
+  width: spacing.$unit-6x;
+  height: spacing.$unit-6x;
+  border-radius: layout.$item-corner-small;
   object-fit: cover;
   background: #e0e0e0;
   display: block;
@@ -743,52 +747,52 @@ body.light #playlistCreateSubmit {
 
 .char-stats-perpetuity {
   position: absolute;
-  width: 2.8rem;
-  height: 2.8rem;
-  top: -0.6rem;
-  right: -0.6rem;
+  width: spacing.$unit * 3.5;
+  height: spacing.$unit * 3.5;
+  top: -(spacing.$unit-three-quarter);
+  right: -(spacing.$unit-three-quarter);
 }
 
 .char-stats-body {
-  padding: 1rem 1.2rem;
+  padding: 1rem (spacing.$unit * 1.5);
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 .char-stats-awakening {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text);
-  font-weight: 500;
+  font-weight: type.$medium;
 }
 
 .char-stats-section {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: spacing.$unit-half;
 }
 
 .char-stats-subheader {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: type.$font-small;
+  font-weight: type.$semibold;
   color: var(--color-text-secondary);
 }
 
 .char-stats-line {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
-  padding-left: 1.2rem;
+  padding-left: spacing.$unit * 1.5;
 }
 
 .char-stats-empty {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   font-style: italic;
 }
 
 /* Party Sections */
 .party-section {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: spacing.$unit-2x;
 
   &:last-child {
     margin-bottom: 0;
@@ -796,31 +800,31 @@ body.light #playlistCreateSubmit {
 }
 
 .party-section-title {
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
-  margin: 0 0 var(--spacing-sm) 0;
+  margin: 0 0 spacing.$unit 0;
 }
 
 .job-row {
   display: flex;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   align-items: center;
 
   .grid-item > img {
     height: auto;
-    width: 8rem;
+    width: spacing.$unit-10x;
   }
 }
 
 /* Job item (same height as grid items, natural width) */
 .wide-item {
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: hidden;
   background: var(--color-bg);
 
   img {
-    height: 8rem;
+    height: spacing.$unit-10x;
     width: auto;
     display: block;
   }
@@ -830,24 +834,24 @@ body.light #playlistCreateSubmit {
 .job-skills-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.8rem;
+  gap: spacing.$unit-half;
+  margin-top: spacing.$unit;
 }
 
 .job-skill-item {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 
   img {
-    width: 3.2rem;
-    height: 3.2rem;
-    border-radius: 0.4rem;
+    width: spacing.$unit-4x;
+    height: spacing.$unit-4x;
+    border-radius: spacing.$unit-half;
     object-fit: cover;
   }
 
   span {
-    font-size: 1.3rem;
+    font-size: type.$font-small;
     color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
@@ -856,9 +860,9 @@ body.light #playlistCreateSubmit {
 }
 
 .job-skill-placeholder {
-  width: 3.2rem;
-  height: 3.2rem;
-  border-radius: 0.4rem;
+  width: spacing.$unit-4x;
+  height: spacing.$unit-4x;
+  border-radius: spacing.$unit-half;
   background: var(--color-border-light);
 }
 
@@ -870,7 +874,7 @@ body.light #playlistCreateSubmit {
 .character-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.8rem;
+  gap: spacing.$unit;
 
   .grid-item > img {
     width: 100%;
@@ -882,12 +886,12 @@ body.light #playlistCreateSubmit {
 .weapon-layout {
   display: grid;
   grid-template-columns: 1fr 3fr;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 }
 
 .weapon-mainhand {
   position: relative;
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: hidden;
   container-type: inline-size;
 
@@ -895,14 +899,14 @@ body.light #playlistCreateSubmit {
     width: 100%;
     height: auto;
     display: block;
-    border-radius: var(--radius-md);
+    border-radius: layout.$item-corner;
   }
 }
 
 .weapon-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.8rem;
+  gap: spacing.$unit;
 
   .grid-item > img {
     width: 100%;
@@ -914,13 +918,13 @@ body.light #playlistCreateSubmit {
 .summon-layout {
   display: grid;
   grid-template-columns: 1.17fr 2fr 1.17fr;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   align-items: stretch;
 }
 
 .summon-main,
 .summon-friend {
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: hidden;
   min-height: 0;
 
@@ -930,14 +934,14 @@ body.light #playlistCreateSubmit {
     object-fit: contain;
     object-position: top;
     display: block;
-    border-radius: var(--radius-md);
+    border-radius: layout.$item-corner;
   }
 }
 
 .summon-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.8rem;
+  gap: spacing.$unit;
   align-content: space-between;
   height: 100%;
 
@@ -951,7 +955,7 @@ body.light #playlistCreateSubmit {
 .cache-right {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   flex-shrink: 0;
 }
 
@@ -959,8 +963,8 @@ body.light #playlistCreateSubmit {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: spacing.$unit-3x;
+  height: spacing.$unit-3x;
   background: none;
   border: none;
   cursor: pointer;
@@ -983,8 +987,8 @@ body.light #playlistCreateSubmit {
 .party-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 0.8rem;
+  gap: spacing.$unit;
+  padding: spacing.$unit;
   flex-shrink: 0;
 }
 
@@ -997,15 +1001,15 @@ body.light #playlistCreateSubmit {
 .raid-selector-button {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   width: 100%;
-  padding: 0.8rem 1.6rem;
+  padding: spacing.$unit spacing.$unit-2x;
   background: var(--input-bound-bg);
   border: 2px solid transparent;
-  border-radius: var(--input-corner);
+  border-radius: layout.$input-corner;
   font-family: inherit;
   font-size: var(--input-font-size);
-  font-weight: 400;
+  font-weight: type.$normal;
   color: var(--color-text);
   cursor: pointer;
   -webkit-font-smoothing: antialiased;
@@ -1017,9 +1021,9 @@ body.light #playlistCreateSubmit {
 }
 
 .raid-selector-image {
-  height: 2.4rem;
+  height: spacing.$unit-3x;
   width: auto;
-  border-radius: var(--radius-sm);
+  border-radius: layout.$item-corner-small;
   flex-shrink: 0;
 }
 

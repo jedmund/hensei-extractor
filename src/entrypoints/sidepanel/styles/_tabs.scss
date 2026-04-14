@@ -1,9 +1,12 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+
 .tabs {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  padding: 0.8rem;
-  gap: 0.4rem;
+  padding: spacing.$unit;
+  gap: spacing.$unit-half;
 }
 
 .tab-profile {
@@ -11,7 +14,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  padding: 0.4rem;
+  padding: spacing.$unit-half;
   background: none;
   border: none;
   border-radius: 500px;
@@ -28,9 +31,9 @@
 }
 
 .tab-avatar {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 1.4rem;
+  width: spacing.$unit * 3.5;
+  height: spacing.$unit * 3.5;
+  border-radius: spacing.$unit * 1.75;
   background: #efefef;
   display: block;
 }
@@ -47,8 +50,8 @@
   display: none;
   flex-direction: column;
   height: 100%;
-  padding: var(--spacing-sm);
-  gap: var(--spacing-sm);
+  padding: spacing.$unit;
+  gap: spacing.$unit;
   overflow-y: auto;
 
   &.active {
@@ -58,7 +61,7 @@
 
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: spacing.$unit;
   flex-shrink: 0;
 
   .button {

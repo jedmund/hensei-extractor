@@ -1,16 +1,19 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
 .update-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: fixed;
-  bottom: var(--spacing-sm);
-  left: var(--spacing-md);
-  right: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm)
-    var(--spacing-md);
+  bottom: spacing.$unit;
+  left: spacing.$unit * 1.5;
+  right: spacing.$unit * 1.5;
+  padding: spacing.$unit spacing.$unit spacing.$unit spacing.$unit * 1.5;
   background: var(--color-primary-light);
-  border-radius: var(--radius-xl);
-  font-size: 1.4rem;
+  border-radius: layout.$card-corner;
+  font-size: type.$font-small;
   color: var(--color-primary);
   z-index: 100;
 
@@ -28,11 +31,11 @@
 .update-banner-text {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: spacing.$unit-quarter;
 }
 
 .update-banner-subtitle {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   opacity: 0.7;
 }
 
@@ -42,7 +45,7 @@
 
 @keyframes banner-slide-in {
   from {
-    transform: translateY(calc(100% + var(--spacing-md)));
+    transform: translateY(calc(100% + #{spacing.$unit * 1.5}));
     opacity: 0;
   }
   to {

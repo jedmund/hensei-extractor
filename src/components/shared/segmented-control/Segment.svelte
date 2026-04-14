@@ -54,7 +54,7 @@
     color: var(--color-text-secondary);
     cursor: pointer;
     flex-grow: 1;
-    font-size: $font-regular;
+    font-size: 1.6rem;
     font-weight: $normal;
     min-width: 100px;
     position: relative;

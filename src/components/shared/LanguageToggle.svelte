@@ -124,7 +124,7 @@
 
   .track-label {
     color: white;
-    font-size: 10px;
+    font-size: typography.$font-micro;
     font-weight: typography.$bold;
     position: absolute;
     z-index: 2;

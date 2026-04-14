@@ -58,7 +58,7 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    font-size: $font-button;
+    font-size: $font-small;
     font-weight: $medium;
     color: var(--color-text);
     white-space: nowrap;
