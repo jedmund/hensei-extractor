@@ -28,10 +28,13 @@ jobs:
         env:
           WXT_UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
 
+      - name: Rename output
+        run: mv .output/*.zip granblue-team-extension.zip
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Build ${{ github.run_number }}
-          files: .output/*.zip
+          files: granblue-team-extension.zip
           generate_release_notes: true
