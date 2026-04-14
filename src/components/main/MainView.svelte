@@ -4,6 +4,8 @@
   import { app } from '../../lib/state/app.svelte.js'
   import { fetchUserInfo } from '../../lib/auth.js'
   import { getImageUrl, getDataTypeName } from '../../lib/constants.js'
+  import { extractItems } from '../../lib/detail-helpers.js'
+  const WEAPON_KEY_GROUPS = new Set([7, 10, 17, 27, 29, 30])
   const ELEMENT_CLASSES = ['fire', 'water', 'earth', 'wind', 'light', 'dark'] as const
   import { checkExtensionVersion } from '../../lib/services/chrome-messages.js'
   import NavigationBar from '../shared/NavigationBar.svelte'
@@ -14,6 +16,7 @@
   import DatabasePanel from './DatabasePanel.svelte'
   import ProfilePopover from '../profile/ProfilePopover.svelte'
   import UpdateBanner from '../shared/UpdateBanner.svelte'
+  import Hint from '../shared/Hint.svelte'
   import DetailView from '../detail/DetailView.svelte'
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
@@ -22,6 +25,58 @@
   import PlaylistPicker from '../pickers/PlaylistPicker.svelte'
 
   let latestVersion = $state<string | null>(null)
+
+  const partyCount = $derived(
+    Object.keys(app.cachedStatus).filter(
+      (type) => type.startsWith('party_') && app.cachedStatus[type]?.available
+    ).length
+  )
+
+  function collectionItemType(dataType: string): string | null {
+    if (!dataType.startsWith('list_') && !dataType.startsWith('collection_')) return null
+    if (dataType.includes('npc')) return m.hint_type_characters()
+    if (dataType.includes('weapon')) return m.hint_type_weapons()
+    if (dataType.includes('summon')) return m.hint_type_summons()
+    if (dataType.includes('artifact')) return m.hint_type_artifacts()
+    return null
+  }
+
+  const currentHints = $derived.by(() => {
+    const hints: string[] = []
+    const dt = app.currentDetailDataType ?? ''
+
+    if (app.detailViewActive) {
+      const itemType = collectionItemType(dt)
+      const itemCount = app.cachedStatus[dt]?.totalItems ?? 0
+
+      if (itemType && itemCount < 60) {
+        hints.push(m.hint_collection_pages({ type: itemType }))
+      }
+
+      if (dt.includes('weapon') && app.detailData) {
+        const items = extractItems(dt, app.detailData as Record<string, unknown>)
+        const hasKeyWeapons = items.some((item) => {
+          const group = parseInt(String(item.master?.is_group ?? '0'))
+          return WEAPON_KEY_GROUPS.has(group)
+        })
+        if (hasKeyWeapons) {
+          hints.push(m.hint_weapon_keys())
+        }
+      }
+
+      if (dt.includes('weapon') || dt.includes('summon')) {
+        if (dt.startsWith('list_') || dt.startsWith('collection_')) {
+          const capitalized = itemType ? itemType.charAt(0).toUpperCase() + itemType.slice(1) : ''
+          hints.push(m.hint_collapsed_sections({ type: itemType ?? '' }))
+          hints.push(m.hint_level1_unselected({ type: capitalized }))
+        }
+      }
+    } else if (app.activeTab === 'party' && partyCount >= 1 && partyCount <= 5) {
+      hints.push(m.hint_party_switch())
+    }
+
+    return hints
+  })
 
   const avatarUrl = $derived(
     app.auth?.avatar?.picture
@@ -150,6 +205,7 @@
 
   <div class="main-content">
     <UpdateBanner {latestVersion} />
+    <Hint hints={currentHints} hasUpdateBanner={!!latestVersion && !app.detailViewActive} />
 
     <div class="tab-content">
       <PartyPanel />

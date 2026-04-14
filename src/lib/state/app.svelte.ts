@@ -75,6 +75,7 @@ class AppState {
   // UI state
   showingDisclaimer = $state(false)
   profilePopoverOpen = $state(false)
+  hintsEnabled = $state(true)
   toastMessage = $state('')
   toastVisible = $state(false)
 
