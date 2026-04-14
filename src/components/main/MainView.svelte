@@ -14,6 +14,7 @@
   import PartyPanel from './PartyPanel.svelte'
   import CollectionPanel from './CollectionPanel.svelte'
   import DatabasePanel from './DatabasePanel.svelte'
+  import CrewPanel from './CrewPanel.svelte'
   import ProfilePopover from '../profile/ProfilePopover.svelte'
   import UpdateBanner from '../shared/UpdateBanner.svelte'
   import Hint from '../shared/Hint.svelte'
@@ -21,6 +22,7 @@
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import DetailActions from '../detail/DetailActions.svelte'
+  import CrewActions from '../detail/CrewActions.svelte'
   import RaidPicker from '../pickers/RaidPicker.svelte'
   import PlaylistPicker from '../pickers/PlaylistPicker.svelte'
 
@@ -82,6 +84,11 @@
     app.auth?.avatar?.picture
       ? getImageUrl(`profile/${app.auth.avatar.picture}@2x.png`)
       : getImageUrl('profile/npc@2x.png')
+  )
+
+  const isCrewDetail = $derived(
+    app.currentDetailDataType?.startsWith('unf_scores_') ||
+    app.currentDetailDataType?.startsWith('unf_daily_scores_')
   )
 
   const detailTitle = $derived.by(() => {
@@ -214,6 +221,7 @@
     <div class="tab-content">
       <PartyPanel />
       <CollectionPanel />
+      <CrewPanel />
       <DatabasePanel />
     </div>
   </div>
@@ -222,7 +230,11 @@
 
   <DetailView title={detailTitle} onBack={goBackFromDetail}>
     {#snippet navRight()}
-      <DetailActions />
+      {#if isCrewDetail}
+        <CrewActions />
+      {:else}
+        <DetailActions />
+      {/if}
     {/snippet}
   </DetailView>
 

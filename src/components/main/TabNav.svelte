@@ -12,7 +12,7 @@
 
   function handleTabChange(value: string) {
     app.profilePopoverOpen = false
-    app.activeTab = value as 'party' | 'collection' | 'database'
+    app.activeTab = value as 'party' | 'collection' | 'database' | 'crew'
   }
 </script>
 
@@ -20,6 +20,7 @@
   <SegmentedControl value={app.activeTab} onValueChange={handleTabChange} {element} variant="background" size="small" grow>
     <Segment value="party">{m.nav_party()}</Segment>
     <Segment value="collection">{m.nav_collection()}</Segment>
+    <Segment value="crew">{m.nav_crew()}</Segment>
     {#if showDatabase}
       <Segment value="database">{m.nav_database()}</Segment>
     {/if}

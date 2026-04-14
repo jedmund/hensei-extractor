@@ -65,7 +65,21 @@ export function formatCacheStatus(
         })
       }
 
-      if (type.startsWith('detail_npc_')) {
+      if (type.startsWith('unf_scores_')) {
+        const eventNum = type.replace('unf_scores_', '')
+        displayName = m.crew_event_label({ eventNumber: eventNum })
+        subtitle = m.count_items_pages({
+          items: info.totalItems ?? 0,
+          pages: info.pageCount ?? 0
+        })
+      } else if (type.startsWith('unf_daily_scores_')) {
+        const eventNum = type.replace('unf_daily_scores_', '')
+        displayName = m.crew_event_daily_label({ eventNumber: eventNum })
+        subtitle = m.count_items_pages({
+          items: info.totalItems ?? 0,
+          pages: info.pageCount ?? 0
+        })
+      } else if (type.startsWith('detail_npc_')) {
         displayName = info.itemName ?? m.type_character()
       } else if (type.startsWith('detail_weapon_')) {
         displayName = info.itemName ?? m.type_weapon()

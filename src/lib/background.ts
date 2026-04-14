@@ -696,7 +696,9 @@ async function cacheUnfScores(
   if (!prefix) return
   const cacheKey = prefix + eventNumber
 
-  const memberList = (data as { member_list?: { list?: unknown[]; last?: number } })?.member_list
+  const memberList = (
+    data as { member_list?: { list?: unknown[]; last?: number } }
+  )?.member_list
   if (!memberList?.list) return
 
   const result = await chrome.storage.local.get(cacheKey)
@@ -743,10 +745,7 @@ async function cacheUnfScores(
   await chrome.storage.local.set({ [cacheKey]: existing })
 }
 
-async function cacheGuildInfo(
-  data: unknown,
-  timestamp: number
-): Promise<void> {
+async function cacheGuildInfo(data: unknown, timestamp: number): Promise<void> {
   const guildData = data as { is_guild_in?: string }
   if (!guildData?.is_guild_in) return
 
@@ -1006,9 +1005,9 @@ chrome.runtime.onMessage.addListener(
         return true
 
       case 'createCrew':
-        handleCreateCrew(
-          (message as { name?: string }).name ?? ''
-        ).then(sendResponse)
+        handleCreateCrew((message as { name?: string }).name ?? '').then(
+          sendResponse
+        )
         return true
 
       default:

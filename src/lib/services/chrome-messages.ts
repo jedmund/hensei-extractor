@@ -141,9 +141,7 @@ export async function uploadUnfScores(
   }) as Promise<UploadUnfScoresResponse>
 }
 
-export async function createCrew(
-  name: string
-): Promise<CreateCrewResponse> {
+export async function createCrew(name: string): Promise<CreateCrewResponse> {
   return send({
     action: 'createCrew',
     name
