@@ -43,6 +43,7 @@
     {#if collectionTypes.length === 0}
       <div class="cache-empty">
         <p>{m.empty_collection()}</p>
+        <p>{m.empty_cta()}</p>
         <div class="cache-empty-actions">
           <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#list' })}>
             {m.empty_inventory()}
