@@ -515,7 +515,8 @@ function renderBaseStats({
   seriesMap,
   element,
   proficiencies,
-  type
+  type,
+  showName = true
 }: {
   data: RawGameItem
   name: string
@@ -524,6 +525,7 @@ function renderBaseStats({
   element?: string | number
   proficiencies?: Array<string | number>
   type: 'weapon' | 'summon' | 'character'
+  showName?: boolean
 }) {
   const master = data.master ?? data
   const param = data.param ?? ({} as RawParam)
@@ -535,7 +537,7 @@ function renderBaseStats({
   const level = param.level || master.max_level
 
   let html = '<div class="database-stats">'
-  html += statRow(m.stat_name(), name)
+  if (showName) html += statRow(m.stat_name(), name)
   if (id) html += statRow(m.stat_id(), id)
 
   const seriesId = Number(data.series_id || master.series_id)
@@ -607,7 +609,8 @@ export function renderCharacterStats(
     element,
     proficiencies,
     seriesMap: GAME_CHARACTER_SERIES_NAMES,
-    type: 'character'
+    type: 'character',
+    showName: false
   })
   let html = base
 
@@ -636,7 +639,8 @@ export function renderWeaponStats(
     element,
     proficiencies: proficiency ? [proficiency] : [],
     seriesMap: GAME_WEAPON_SERIES_NAMES,
-    type: 'weapon'
+    type: 'weapon',
+    showName: false
   })
   let html = base
 
@@ -685,7 +689,8 @@ export function renderSummonStats(
     id,
     element,
     seriesMap: GAME_SUMMON_SERIES_NAMES,
-    type: 'summon'
+    type: 'summon',
+    showName: false
   })
   let html = base
 

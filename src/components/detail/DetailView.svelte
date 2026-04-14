@@ -435,7 +435,7 @@
       {#if navRight}{@render navRight()}{/if}
     {/snippet}
   </NavigationBar>
-  {#if !isParty}
+  {#if !isParty && !isDatabase}
     <div class="detail-meta">
       <div class="detail-meta-left">
         {#if isCollection}

@@ -1,0 +1,122 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+@use 'themes/typography' as type;
+
+.hint {
+  position: fixed;
+  bottom: spacing.$unit;
+  left: spacing.$unit * 1.5;
+  right: spacing.$unit * 1.5;
+  padding: spacing.$unit * 1.5;
+  padding-top: spacing.$unit * 2;
+  background: white;
+  border-radius: layout.$card-corner;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 4px 20px rgba(0, 0, 0, 0.12);
+  z-index: 101;
+  animation: hint-slide-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.575s both;
+}
+
+.hint-above-banner {
+  bottom: spacing.$unit * 8;
+}
+
+.hint-close {
+  position: absolute;
+  top: spacing.$unit;
+  right: spacing.$unit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: spacing.$unit-3x;
+  height: spacing.$unit-3x;
+  border-radius: spacing.$unit;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-text);
+  }
+}
+
+.hint-pages {
+  display: grid;
+
+  > .hint-text {
+    grid-area: 1 / 1;
+    visibility: hidden;
+  }
+
+  > .hint-text-active {
+    visibility: visible;
+  }
+}
+
+.hint-text {
+  font-size: type.$font-small;
+  color: var(--color-text);
+  text-align: left;
+  line-height: 1.5;
+  margin-right: spacing.$unit-3x;
+}
+
+.hint-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: spacing.$unit;
+}
+
+.hint-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: spacing.$unit-3x;
+  height: spacing.$unit-3x;
+  flex-shrink: 0;
+  border-radius: spacing.$unit;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-text);
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+}
+
+.hint-indicator {
+  font-size: type.$font-tiny;
+  color: var(--color-text-tertiary);
+}
+
+.hint-dismissing {
+  animation: hint-slide-out 0.3s ease-in forwards !important;
+}
+
+@keyframes hint-slide-out {
+  to {
+    transform: translateY(calc(100% + #{spacing.$unit * 1.5}));
+  }
+}
+
+@keyframes hint-slide-in {
+  from {
+    transform: translateY(calc(100% + #{spacing.$unit * 1.5}));
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

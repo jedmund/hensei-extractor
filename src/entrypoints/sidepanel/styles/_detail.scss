@@ -342,14 +342,7 @@ body.light #playlistCreateSubmit {
   &.characters,
   &.weapons,
   &.summons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: spacing.$unit;
-  }
-
-  /* Fixed width for collection grids (handles missing images) */
-  &.square-cells .grid-item {
-    width: spacing.$unit-10x;
+    grid-template-columns: repeat(auto-fill, minmax(spacing.$unit-8x, 1fr));
   }
 
   &.artifacts {
@@ -387,8 +380,8 @@ body.light #playlistCreateSubmit {
   container-type: inline-size;
 
   > img {
-    height: spacing.$unit-10x;
-    width: auto;
+    width: 100%;
+    height: auto;
     display: block;
     border-radius: layout.$item-corner;
   }

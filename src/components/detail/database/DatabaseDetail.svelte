@@ -42,14 +42,14 @@
   )
 
   let imageUrl = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/m/${id}_01.jpg`
-    if (dataType.startsWith('detail_weapon')) return `${GBF_CDN}/weapon/m/${id}.jpg`
-    if (dataType.startsWith('detail_summon')) return `${GBF_CDN}/summon/m/${id}.jpg`
+    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/detail/${id}_01.png`
+    if (dataType.startsWith('detail_weapon')) return `${GBF_CDN}/weapon/b/${id}.png`
+    if (dataType.startsWith('detail_summon')) return `${GBF_CDN}/summon/detail/${id}.png`
     return ''
   })
 
   let fallbackUrl = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/m/${id}_01_0.jpg`
+    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/detail/${id}_01_0.png`
     return ''
   })
 

@@ -10,23 +10,30 @@
 }
 
 .database-detail-image {
-  border-radius: layout.$item-corner;
+  width: 100%;
+  border-radius: layout.$card-corner;
   overflow: hidden;
   background: var(--color-bg);
 
   img {
     display: block;
-    max-width: 100%;
+    width: 100%;
     height: auto;
   }
 
-  &.character-main img {
-    width: 28rem;
-  }
-
-  &.weapon-main img,
-  &.summon-main img {
-    width: 100%;
+  &.character-main,
+  &.weapon-main,
+  &.summon-main {
+    background-image:
+      url('https://siero-img.s3-us-west-2.amazonaws.com/relief.png'),
+      linear-gradient(to right, #000, #484440, #000);
+    background-size:
+      130% auto,
+      100% 100%;
+    background-position:
+      -10px -10px,
+      center;
+    background-repeat: no-repeat, no-repeat;
   }
 }
 

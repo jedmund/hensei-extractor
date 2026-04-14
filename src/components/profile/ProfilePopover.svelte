@@ -54,6 +54,12 @@
     app.showToast(m.cache_cleared())
   }
 
+  function handleToggleHints() {
+    app.hintsEnabled = !app.hintsEnabled
+    chrome.storage.local.set({ hintsEnabled: app.hintsEnabled })
+    app.profilePopoverOpen = false
+  }
+
   function handleShowDisclaimer() {
     app.profilePopoverOpen = false
     app.showingDisclaimer = true
@@ -94,8 +100,16 @@
 
     <LanguageToggle />
 
+    <div class="popover-divider"></div>
+
     <MenuItem onclick={handleClearCache}>
       {m.profile_clear_cache()}
+    </MenuItem>
+
+    <div class="popover-divider"></div>
+
+    <MenuItem onclick={handleToggleHints}>
+      {app.hintsEnabled ? m.profile_hide_hints() : m.profile_show_hints()}
     </MenuItem>
 
     <MenuItem onclick={handleShowDisclaimer}>
@@ -107,6 +121,8 @@
         {m.profile_pop_out()}
       </MenuItem>
     {/if}
+
+    <div class="popover-divider"></div>
 
     <MenuItem variant="destructive" onclick={handleLogout}>
       {m.profile_logout()}

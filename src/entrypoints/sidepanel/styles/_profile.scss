@@ -108,6 +108,13 @@
   padding: spacing.$unit;
 }
 
+.popover-divider {
+  height: 2px;
+  background: var(--bg-tertiary);
+  border-radius: 1px;
+  margin: spacing.$unit-half 0;
+}
+
 .profile-footer {
   margin-top: auto;
   display: flex;

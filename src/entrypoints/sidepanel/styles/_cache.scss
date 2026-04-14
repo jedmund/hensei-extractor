@@ -12,10 +12,22 @@
 
 .cache-empty,
 .cache-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: spacing.$unit * 1.5;
+  flex: 1;
   font-size: type.$font-small;
   color: var(--color-text-tertiary);
   text-align: center;
   padding: spacing.$unit-2x;
+  padding-bottom: spacing.$unit-10x;
+}
+
+.cache-empty-actions {
+  display: flex;
+  gap: spacing.$unit;
 }
 
 .cache-error {

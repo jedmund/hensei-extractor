@@ -2,6 +2,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { TAB_DATA_TYPES } from '../../lib/constants.js'
+  import Button from '../shared/Button.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
 
   const collectionTypes = $derived.by(() => {
@@ -40,7 +41,17 @@
 >
   <div class="cache-items" id="collectionItems">
     {#if collectionTypes.length === 0}
-      <p class="cache-empty">{m.empty_collection()}</p>
+      <div class="cache-empty">
+        <p>{m.empty_collection()}</p>
+        <div class="cache-empty-actions">
+          <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#list' })}>
+            {m.empty_inventory()}
+          </Button>
+          <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#container' })}>
+            {m.empty_stashes()}
+          </Button>
+        </div>
+      </div>
     {:else}
       {#each collectionTypes as dataType (dataType)}
         <CacheItemRow
