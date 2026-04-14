@@ -89,6 +89,7 @@
 
   // Ownership data for collection categorization
   let ownedIds = $state<Set<string>>(new Set())
+  let ownershipLoaded = $state(false)
 
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
@@ -162,7 +163,7 @@
   // Initialize selected items once ownership data is loaded
   let lastInitDataType = $state('')
   $effect(() => {
-    if (!isCollection || categorizedSections.length === 0) return
+    if (!isCollection || !ownershipLoaded || categorizedSections.length === 0) return
     if (lastInitDataType === dataType) return
     lastInitDataType = dataType
     const willImportSection = categorizedSections.find((s) => s.key === 'will_import')
@@ -205,6 +206,7 @@
   onMount(() => {
     function onMessage(message: { action: string; dataType?: string }) {
       if (message.action === 'dataCaptured' && message.dataType === dataType) {
+        lastInitDataType = ''
         loadDetailData(dataType)
       }
     }
@@ -254,6 +256,7 @@
   }
 
   async function loadOwnedIds(dt: string) {
+    ownershipLoaded = false
     try {
       const response = await getCollectionIds()
       if (response.error) { ownedIds = new Set(); return }
@@ -270,6 +273,8 @@
       }
     } catch {
       ownedIds = new Set()
+    } finally {
+      ownershipLoaded = true
     }
   }
 

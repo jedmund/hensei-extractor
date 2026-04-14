@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: white;
+  background: #f5f5f5;
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -68,7 +68,6 @@ body.light #playlistCreateSubmit {
   z-index: 5;
   font-size: 1.4rem;
   color: var(--color-text-tertiary);
-  background: var(--color-bg);
   padding: 0.8rem 1.6rem;
   flex-shrink: 0;
 
@@ -329,7 +328,6 @@ body.light #playlistCreateSubmit {
     flex-direction: column;
     gap: 1.6rem;
   }
-  background: #f5f5f5;
 }
 
 /* Item Grid */
