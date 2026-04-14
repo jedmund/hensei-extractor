@@ -5,16 +5,9 @@
   import Button from '../shared/Button.svelte'
   import CopyDropdown from './CopyDropdown.svelte'
 
+  type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
+  let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
   let hasCrew = $derived(!!app.auth?.hasCrew)
-
-  const rounds = [
-    { value: 'preliminaries', label: m.crew_round_preliminaries },
-    { value: 'interlude', label: m.crew_round_interlude },
-    { value: 'finals_day_1', label: m.crew_round_finals_1 },
-    { value: 'finals_day_2', label: m.crew_round_finals_2 },
-    { value: 'finals_day_3', label: m.crew_round_finals_3 },
-    { value: 'finals_day_4', label: m.crew_round_finals_4 }
-  ]
 
   let importLabel = $derived.by(() => {
     switch (app.importState) {
@@ -69,17 +62,10 @@
   <CopyDropdown />
 
   {#if hasCrew}
-    <select
-      class="crew-round-select"
-      bind:value={app.crewImportRound}
-    >
-      {#each rounds as round}
-        <option value={round.value}>{round.label()}</option>
-      {/each}
-    </select>
-
     <Button
       size="small"
+      {element}
+      elementStyle
       class={app.importState === 'imported' ? 'imported' : ''}
       id="crewImport"
       disabled={importDisabled}
@@ -95,20 +81,5 @@
     display: flex;
     align-items: center;
     gap: 6px;
-  }
-
-  .crew-round-select {
-    padding: 4px 6px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-bg-secondary);
-    color: var(--color-text);
-    font-size: 11px;
-    outline: none;
-    cursor: pointer;
-  }
-
-  .crew-round-select:focus {
-    border-color: var(--color-accent);
   }
 </style>

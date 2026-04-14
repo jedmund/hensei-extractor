@@ -2,6 +2,9 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { createCrew } from '../../lib/services/chrome-messages.js'
+  import Select from '../shared/Select.svelte'
+  import Icon from '../shared/Icon.svelte'
+  import Button from '../shared/Button.svelte'
 
   interface UnfMember {
     id: string
@@ -24,12 +27,30 @@
   let { data }: Props = $props()
 
   let hasCrew = $derived(!!app.auth?.hasCrew)
+  let isDailyScores = $derived(
+    app.currentDetailDataType?.startsWith('unf_daily_scores_') ?? false
+  )
   let crewName = $state('')
   let creating = $state(false)
   let createError = $state('')
 
+  const roundOptions = [
+    { value: 'preliminaries', label: m.crew_round_preliminaries() },
+    { value: 'interlude', label: m.crew_round_interlude() },
+    { value: 'finals_day_1', label: m.crew_round_finals_1() },
+    { value: 'finals_day_2', label: m.crew_round_finals_2() },
+    { value: 'finals_day_3', label: m.crew_round_finals_3() },
+    { value: 'finals_day_4', label: m.crew_round_finals_4() }
+  ]
+
   function formatHonors(n: number): string {
     return n.toLocaleString()
+  }
+
+  function openProfile(id: string) {
+    chrome.tabs.create({
+      url: `https://game.granbluefantasy.jp/#profile/${id}`
+    })
   }
 
   async function handleCreateCrew() {
@@ -73,127 +94,128 @@
       {#if createError}
         <p class="crew-create-error">{createError}</p>
       {/if}
-      <button
-        class="crew-create-button"
+      <Button
+        size="small"
         disabled={creating || !crewName.trim()}
         onclick={handleCreateCrew}
       >
         {creating ? m.action_creating() : m.crew_create_title()}
-      </button>
+      </Button>
     </div>
   {/if}
 
-  {#if !data.isComplete}
-    <div class="crew-incomplete-warning">
-      {m.crew_pages_incomplete()}
+  {#if hasCrew && isDailyScores}
+    <div class="crew-round-select">
+      <Select
+        options={roundOptions}
+        bind:value={app.crewImportRound}
+        fullWidth
+        size="small"
+      />
     </div>
   {/if}
 
   <div class="crew-member-list">
     {#each data.members as member (member.id)}
-      <div class="crew-member-row">
+      <button
+        class="crew-member-row"
+        onclick={() => openProfile(member.id)}
+      >
         <span class="crew-member-rank">#{member.rank}</span>
         <div class="crew-member-info">
           <span class="crew-member-name">{member.name}</span>
           <span class="crew-member-id">{member.id}</span>
         </div>
         <span class="crew-member-honors">{formatHonors(member.contribution)}</span>
-      </div>
+        <Icon name="chevron-right" size={14} class="crew-member-chevron" />
+      </button>
     {/each}
   </div>
 </div>
 
-<style>
+<style lang="scss">
+  @use 'themes/spacing' as *;
+  @use 'themes/typography' as *;
+  @use 'themes/layout' as *;
+  @use 'themes/effects' as *;
+
   .crew-score-detail {
     display: flex;
     flex-direction: column;
-    gap: 0;
   }
 
   .crew-create-form {
-    padding: 12px 16px;
+    padding: $unit-2x;
     border-bottom: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: $unit;
   }
 
   .crew-create-desc {
-    font-size: 12px;
+    font-size: $font-tiny;
     color: var(--color-text-secondary);
     margin: 0;
   }
 
   .crew-create-label {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: $font-micro;
+    font-weight: $semibold;
     color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .crew-create-input {
-    padding: 6px 8px;
+    padding: $unit-three-quarter $unit;
     border: 1px solid var(--color-border);
-    border-radius: 6px;
+    border-radius: $input-corner;
     background: var(--color-bg-secondary);
     color: var(--color-text);
-    font-size: 13px;
+    font-size: $font-small;
     outline: none;
-  }
 
-  .crew-create-input:focus {
-    border-color: var(--color-accent);
+    &:focus {
+      border-color: var(--color-accent);
+    }
   }
 
   .crew-create-error {
-    font-size: 12px;
+    font-size: $font-tiny;
     color: var(--color-error);
     margin: 0;
   }
 
-  .crew-create-button {
-    align-self: flex-start;
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    background: var(--color-accent);
-    color: white;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .crew-create-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .crew-incomplete-warning {
-    padding: 8px 16px;
-    font-size: 12px;
-    color: var(--color-warning, #b58a00);
-    background: var(--color-warning-bg, rgba(181, 138, 0, 0.08));
-    border-bottom: 1px solid var(--color-border);
+  .crew-round-select {
+    padding: $unit-2x $unit-2x $unit;
   }
 
   .crew-member-list {
     display: flex;
     flex-direction: column;
+    padding: $unit-half;
   }
 
   .crew-member-row {
+    all: unset;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--color-border);
+    gap: $unit;
+    padding: $unit $unit-2x $unit $unit;
+    border-radius: $item-corner;
+    cursor: pointer;
+    @include smooth-transition($duration-quick, background-color);
+
+    &:hover {
+      background-color: var(--color-bg-primary, #fff);
+    }
   }
 
   .crew-member-rank {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    min-width: 28px;
+    font-size: $font-tiny;
+    color: var(--color-text-tertiary);
+    min-width: $unit-3x;
     font-variant-numeric: tabular-nums;
   }
 
@@ -202,11 +224,12 @@
     flex-direction: column;
     flex: 1;
     min-width: 0;
+    gap: 1px;
   }
 
   .crew-member-name {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: $font-small;
+    font-weight: $medium;
     color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
@@ -214,15 +237,20 @@
   }
 
   .crew-member-id {
-    font-size: 11px;
+    font-size: $font-tiny;
     color: var(--color-text-tertiary);
   }
 
   .crew-member-honors {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: $font-small;
+    font-weight: $normal;
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+
+  :global(.crew-member-chevron) {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
   }
 </style>

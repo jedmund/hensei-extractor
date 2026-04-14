@@ -105,7 +105,7 @@
     justify-content: center;
     text-align: center;
     box-sizing: border-box;
-    font-weight: $medium;
+    font-weight: $normal;
     height: 100%;
     white-space: nowrap;
     overflow: hidden;
@@ -118,6 +118,11 @@
   // Indicator (hidden)
   :global([data-radio-group-item].segment .segment-indicator) {
     display: none;
+  }
+
+  // Selected state (all variants)
+  :global([data-radio-group-item].segment[data-state='checked'] .segment-label) {
+    font-weight: $medium;
   }
 
   // Default variant
