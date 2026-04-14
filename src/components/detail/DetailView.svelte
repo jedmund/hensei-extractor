@@ -3,27 +3,35 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
-  import { getDataTypeName } from '../../lib/constants.js'
   import { getApiUrl } from '../../lib/constants.js'
   import {
     isCollectionType,
     isDatabaseDetailType,
+    isCharacterCollection,
     isWeaponOrSummonCollection,
     extractItems,
     countItems,
-    toArray
+    toArray,
+    getOwnershipId,
+    isLevel1
   } from '../../lib/detail-helpers.js'
-  import { getCachedData, fetchRaidGroups } from '../../lib/services/chrome-messages.js'
+  import { getCachedData, fetchRaidGroups, getCollectionIds } from '../../lib/services/chrome-messages.js'
   import { translateError, getLocale } from '../../lib/i18n.js'
 
+  import { onMount } from 'svelte'
   import type { RawGameItem } from '../../lib/detail-helpers.js'
   import type { RaidGroup } from '../../lib/types/messages.js'
 
   import NavigationBar from '../shared/NavigationBar.svelte'
   import Icon from '../shared/Icon.svelte'
+  import Tooltip from '../shared/Tooltip.svelte'
   import DetailFilter from './DetailFilter.svelte'
+
+  type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
+  let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
   import ItemGrid from './items/ItemGrid.svelte'
   import ItemList from './items/ItemList.svelte'
+  import CollapsibleSection from './items/CollapsibleSection.svelte'
   import PartyDetail from './party/PartyDetail.svelte'
   import PartyMeta from './party/PartyMeta.svelte'
   import DatabaseDetail from './database/DatabaseDetail.svelte'
@@ -43,6 +51,9 @@
   let isCharStats = $derived(dataType === 'character_stats')
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
+  )
+  let showSyncDeletions = $derived(
+    isCollection && !isCharacterCollection(dataType)
   )
 
   interface SummonSearchResult {
@@ -76,6 +87,10 @@
     [key: string]: unknown
   }
 
+  // Ownership data for collection categorization
+  let ownedIds = $state<Set<string>>(new Set())
+  let ownershipLoaded = $state(false)
+
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
   let weaponKeyMap = $state<Record<string, { slug: string; name: string }> | null>(null)
@@ -83,37 +98,81 @@
   let weaponStatModifiers = $state<Record<string, WeaponStatModifier> | null>(null)
   let simplePortraits = $state(false)
 
-  // Filtered items for collection views
+  type ItemEntry = { item: RawGameItem; originalIndex: number }
+
+  // Filtered items for collection views (rarity only, no lv1 exclusion — that's a section now)
   let filteredItems = $derived.by(() => {
-    if (!app.detailData || isParty || isDatabase || isCharStats) return []
+    if (!app.detailData || isParty || isDatabase || isCharStats) return [] as ItemEntry[]
     const allItems = extractItems(dataType, app.detailData as Record<string, unknown>)
     return allItems
       .map((item: RawGameItem, index: number) => ({ item, originalIndex: index }))
       .filter(({ item, originalIndex }) => {
         if (app.brokenImageIndices.has(originalIndex)) return false
-        if (isWeaponOrSummonCollection(dataType)) {
+        if (isWeaponOrSummonCollection(dataType) || isCharacterCollection(dataType)) {
           const rarity = item.master?.rarity?.toString() || item.rarity?.toString()
           if (rarity && !app.activeRarityFilters.has(rarity)) return false
-          if (app.excludeLv1Items) {
-            const level = item.param?.level || item.level || item.lv
-            if (level === 1 || level === '1') return false
-          }
         }
         return true
       })
+  })
+
+  // Categorize items into sections
+  interface CategorySection {
+    key: string
+    label: string
+    items: ItemEntry[]
+    defaultExpanded: boolean
+  }
+
+  let categorizedSections = $derived.by((): CategorySection[] => {
+    if (!isCollection || filteredItems.length === 0) return []
+    const willImport: ItemEntry[] = []
+    const alreadyOwned: ItemEntry[] = []
+    const level1: ItemEntry[] = []
+
+    const showLv1Section = isWeaponOrSummonCollection(dataType)
+
+    for (const entry of filteredItems) {
+      const ownershipId = getOwnershipId(dataType, entry.item)
+      if (showLv1Section && isLevel1(entry.item)) {
+        level1.push(entry)
+      } else if (ownershipId && ownedIds.has(ownershipId)) {
+        alreadyOwned.push(entry)
+      } else {
+        willImport.push(entry)
+      }
+    }
+
+    const sections: CategorySection[] = []
+    if (willImport.length > 0) {
+      sections.push({ key: 'will_import', label: m.section_will_import(), items: willImport, defaultExpanded: true })
+    }
+    if (alreadyOwned.length > 0) {
+      sections.push({ key: 'already_owned', label: m.section_already_owned(), items: alreadyOwned, defaultExpanded: willImport.length === 0 })
+    }
+    if (level1.length > 0) {
+      sections.push({ key: 'level_1', label: m.section_level_1(), items: level1, defaultExpanded: false })
+    }
+    return sections
   })
 
   let hasNames = $derived(
     filteredItems.some(({ item }) => item.name || item.master?.name)
   )
 
-  // Initialize selected items for collections
+  // Initialize selected items once ownership data is loaded
+  let lastInitDataType = $state('')
   $effect(() => {
-    if (!isCollection || filteredItems.length === 0) return
+    if (!isCollection || !ownershipLoaded || categorizedSections.length === 0) return
+    if (lastInitDataType === dataType) return
+    lastInitDataType = dataType
+    const willImportSection = categorizedSections.find((s) => s.key === 'will_import')
     const next = new Set<number>()
-    for (const { originalIndex } of filteredItems) {
-      if (!app.manuallyUnchecked.has(originalIndex)) {
-        next.add(originalIndex)
+    if (willImportSection) {
+      for (const { originalIndex } of willImportSection.items) {
+        if (!app.manuallyUnchecked.has(originalIndex)) {
+          next.add(originalIndex)
+        }
       }
     }
     app.selectedItems = next
@@ -121,11 +180,6 @@
 
   // Status and display info
   let status = $derived(app.cachedStatus[dataType] || null)
-
-  let stashLabel = $derived.by(() => {
-    if (!status) return getDataTypeName(dataType)
-    return status.stashName || status.displayName || getDataTypeName(dataType)
-  })
 
   let itemCountText = $derived.by(() => {
     if (isParty || !app.detailData) return ''
@@ -141,57 +195,23 @@
     return count === 1 ? m.count_item({ count }) : m.count_items({ count })
   })
 
-  // Select all / deselect all
-  let totalCheckboxes = $derived(filteredItems.length)
-  let checkedCount = $derived(
-    filteredItems.filter(({ originalIndex }) => app.selectedItems.has(originalIndex)).length
-  )
-  let selectAllState = $derived.by(() => {
-    if (totalCheckboxes === 0) return 'unchecked'
-    if (checkedCount === 0) return 'unchecked'
-    if (checkedCount === totalCheckboxes) return 'checked'
-    return 'indeterminate'
-  })
-
-  let selectAllLabel = $derived.by(() => {
-    if (selectAllState === 'checked') {
-      return totalCheckboxes === 1
-        ? m.action_deselect_count_one({ count: totalCheckboxes })
-        : m.action_deselect_count({ count: totalCheckboxes })
-    }
-    const remaining = totalCheckboxes - checkedCount
-    return remaining === 1
-      ? m.action_select_count_one({ count: remaining })
-      : m.action_select_count({ count: remaining })
-  })
-
-  function toggleSelectAll() {
-    if (selectAllState === 'checked') {
-      // Deselect all
-      const next = new Set<number>()
-      const unchecked = new Set(app.manuallyUnchecked)
-      for (const { originalIndex } of filteredItems) {
-        unchecked.add(originalIndex)
-      }
-      app.selectedItems = next
-      app.manuallyUnchecked = unchecked
-    } else {
-      // Select all
-      const next = new Set<number>()
-      const unchecked = new Set<number>()
-      for (const { originalIndex } of filteredItems) {
-        next.add(originalIndex)
-      }
-      app.selectedItems = next
-      app.manuallyUnchecked = unchecked
-    }
-  }
-
   // Fetch data when dataType changes
   $effect(() => {
     const dt = app.currentDetailDataType
     if (!dt) return
     loadDetailData(dt)
+  })
+
+  // Reload when new data is captured for the current view
+  onMount(() => {
+    function onMessage(message: { action: string; dataType?: string }) {
+      if (message.action === 'dataCaptured' && message.dataType === dataType) {
+        lastInitDataType = ''
+        loadDetailData(dataType)
+      }
+    }
+    chrome.runtime.onMessage.addListener(onMessage)
+    return () => chrome.runtime.onMessage.removeListener(onMessage)
   })
 
   async function loadDetailData(dt: string) {
@@ -207,6 +227,11 @@
     const authResult = await chrome.storage.local.get('gbAuth')
     const gbAuth = authResult.gbAuth as Record<string, unknown> | undefined
     simplePortraits = (gbAuth?.simplePortraits as boolean) || false
+
+    // Fetch ownership for collection categorization
+    if (isCollectionType(dt) && dt !== 'character_stats') {
+      await loadOwnedIds(dt)
+    }
 
     if (dt.startsWith('party_')) {
       await loadPartySupplementary(response.data as PartyDeckData)
@@ -228,6 +253,29 @@
     }
 
     app.detailViewActive = true
+  }
+
+  async function loadOwnedIds(dt: string) {
+    ownershipLoaded = false
+    try {
+      const response = await getCollectionIds()
+      if (response.error) { ownedIds = new Set(); return }
+      if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
+        ownedIds = new Set(response.weapons || [])
+      } else if (dt.includes('summon') || dt.startsWith('stash_summon')) {
+        ownedIds = new Set(response.summons || [])
+      } else if (dt.includes('artifact')) {
+        ownedIds = new Set(response.artifacts || [])
+      } else if (dt.includes('npc') || dt.includes('character')) {
+        ownedIds = new Set(response.characters || [])
+      } else {
+        ownedIds = new Set()
+      }
+    } catch {
+      ownedIds = new Set()
+    } finally {
+      ownershipLoaded = true
+    }
   }
 
   async function loadPartySupplementary(data: PartyDeckData) {
@@ -391,31 +439,22 @@
     <div class="detail-meta">
       <div class="detail-meta-left">
         {#if isCollection}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <label
-            class="select-all-toggle"
-            id="selectAllToggle"
-            data-state={selectAllState}
-            class:disabled={totalCheckboxes === 0}
-            onclick={toggleSelectAll}
-          >
-            <span class="select-all-checkbox" id="selectAllCheckbox">
-              <span class="select-all-check"><Icon name="check" size={14} /></span>
-              <span class="select-all-dash"><Icon name="minus" size={14} /></span>
-            </span>
-            <span class="select-all-label" id="selectAllLabel">{selectAllLabel}</span>
-          </label>
+          <DetailFilter {element} />
         {:else}
           <span class="detail-item-count-standalone" id="detailItemCount">{itemCountText}</span>
         {/if}
       </div>
-
-      <span class="detail-meta-center" id="detailStashName">{stashLabel}</span>
-
-      <div class="detail-meta-right">
-        <DetailFilter />
-      </div>
+      {#if showSyncDeletions}
+        <Tooltip content={m.filter_enable_sync_desc()}>
+          <button
+            class="sync-toggle"
+            class:active={app.enableFullSync}
+            onclick={() => { app.enableFullSync = !app.enableFullSync }}
+          >
+            {m.filter_enable_sync()}
+          </button>
+        </Tooltip>
+      {/if}
     </div>
   {/if}
 
@@ -438,6 +477,33 @@
         <DatabaseDetail dataType={dataType} data={app.detailData as Record<string, unknown>} />
       {:else if isCharStats}
         <CharacterStatsList data={app.detailData as Record<string, Record<string, unknown>>} />
+      {:else if isCollection && categorizedSections.length > 0}
+        {#each categorizedSections as section (section.key)}
+          <CollapsibleSection
+            title={section.label}
+            count={section.items.length}
+            defaultOpen={section.defaultExpanded}
+            indices={section.items.map((e) => e.originalIndex)}
+            {element}
+          >
+            {#if hasNames}
+              <ItemList
+                items={section.items}
+                {dataType}
+                {isCollection}
+                {simplePortraits}
+              />
+            {:else}
+              <ItemGrid
+                items={section.items}
+                {dataType}
+                {isCollection}
+                {simplePortraits}
+                {weaponStatModifiers}
+              />
+            {/if}
+          </CollapsibleSection>
+        {/each}
       {:else if hasNames}
         <ItemList
           items={filteredItems}

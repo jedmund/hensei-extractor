@@ -44,7 +44,7 @@
   })
 
   let importDisabled = $derived(
-    app.importState === 'importing' || app.importState === 'imported'
+    app.importState === 'importing' || app.importState === 'imported' || app.selectedItems.size === 0
   )
 
   function supportsConflictCheck(dt: string): boolean {

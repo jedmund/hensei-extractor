@@ -94,6 +94,7 @@ export interface RawGameItem {
   skill2?: RawWeaponSkillRef
   skill3?: RawWeaponSkillRef
   artifact_id?: string
+  rarity?: string | number
   attribute?: string | number
   element?: string | number
   kind?: string | number
@@ -145,6 +146,10 @@ export function isCollectionType(dataType: string): boolean {
 
 export function isDatabaseDetailType(dataType: string): boolean {
   return dataType.startsWith('detail_')
+}
+
+export function isCharacterCollection(dataType: string): boolean {
+  return dataType === 'collection_npc' || dataType === 'list_npc'
 }
 
 export function isWeaponOrSummonCollection(dataType: string): boolean {
@@ -284,6 +289,19 @@ export function getArtifactLabels(item: RawGameItem): string {
 
   html += '</div>'
   return html
+}
+
+export function getOwnershipId(dataType: string, item: RawGameItem): string {
+  if (dataType.includes('npc') || dataType.includes('character'))
+    return item.master?.id?.toString() || ''
+  if (dataType.includes('artifact')) return item.id?.toString() || ''
+  return item.param?.id?.toString() || ''
+}
+
+export function isLevel1(item: RawGameItem): boolean {
+  const level =
+    item.param?.level || item.level || (item as Record<string, unknown>).lv
+  return level === 1 || level === '1'
 }
 
 export function getGridClass(dataType: string): string {

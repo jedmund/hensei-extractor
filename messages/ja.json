@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "extension_version": "拡張機能 v{version}",
   "nav_party": "パーティ",
   "nav_collection": "コレクション",
   "nav_database": "データベース",
@@ -103,6 +104,10 @@
   "party_section_bullets": "バレット",
   "party_no_data": "パーティデータがありません",
   "stat_already_owned": "コレクションに登録済み",
+  "section_will_import": "インポート予定",
+  "section_will_update": "更新予定",
+  "section_already_owned": "コレクションに登録済み",
+  "section_level_1": "レベル1",
   "stat_name": "名前",
   "stat_id": "ID",
   "stat_series": "シリーズ",

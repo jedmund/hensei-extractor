@@ -27,8 +27,6 @@
       'User'
   )
 
-  const version = chrome.runtime.getManifest().version
-
   onMount(async () => {
     const siteUrl = await getSiteBaseUrl()
     const user = app.auth?.user?.username
@@ -114,6 +112,5 @@
       {m.profile_logout()}
     </MenuItem>
 
-    <span class="version-label" id="versionLabel">v{version}</span>
   </div>
 </div>

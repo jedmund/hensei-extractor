@@ -30,7 +30,7 @@
     {/snippet}
   </TooltipBase.Trigger>
   <TooltipBase.Portal>
-    <TooltipBase.Content class="tooltip-content" sideOffset={8}>
+    <TooltipBase.Content class="tooltip-content" sideOffset={8} collisionPadding={8}>
       {content}
     </TooltipBase.Content>
   </TooltipBase.Portal>

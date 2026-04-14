@@ -59,7 +59,6 @@ class AppState {
 
   // Filters
   activeRarityFilters = $state(new Set(['4']))
-  excludeLv1Items = $state(true)
   enableFullSync = $state(false)
 
   // Party import meta
