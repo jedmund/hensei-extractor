@@ -271,12 +271,18 @@ async function handleInterceptedData(
 
   try {
     let actualDataType = dataType
+    let cached = false
 
     if (dataType === 'party' && partyId) {
-      await cacheParty(partyId, data as Record<string, unknown>, timestamp, url)
+      cached = await cacheParty(
+        partyId,
+        data as Record<string, unknown>,
+        timestamp,
+        url
+      )
       actualDataType = `party_${partyId}`
     } else if (dataType === 'character_detail' || dataType === 'zenith_npc') {
-      await cacheCharacterStats(
+      cached = await cacheCharacterStats(
         dataType,
         data as Record<string, unknown>,
         masterId,
@@ -287,7 +293,7 @@ async function handleInterceptedData(
     } else if (dataType.startsWith('stash_')) {
       const stashNum = metadata.stashNumber ?? '1'
       const prefix = CACHE_PREFIXES[dataType]
-      await cacheListPage(
+      cached = await cacheListPage(
         dataType,
         pageNumber,
         data as PageData,
@@ -300,7 +306,12 @@ async function handleInterceptedData(
       dataType.startsWith('list_') ||
       dataType.startsWith('collection_')
     ) {
-      await cacheListPage(dataType, pageNumber, data as PageData, timestamp)
+      cached = await cacheListPage(
+        dataType,
+        pageNumber,
+        data as PageData,
+        timestamp
+      )
     } else if (dataType.startsWith('detail_')) {
       const result = await cacheDetailItem(
         dataType,
@@ -309,6 +320,7 @@ async function handleInterceptedData(
         url
       )
       actualDataType = result.dataType
+      cached = result.cached
       if (dataType === 'detail_npc') {
         const d = data as Record<string, unknown>
         await cacheCharacterStats(
@@ -323,23 +335,31 @@ async function handleInterceptedData(
       (dataType === 'unf_scores' || dataType === 'unf_daily_scores') &&
       eventNumber
     ) {
-      await cacheUnfScores(eventNumber, pageNumber, data, timestamp, dataType)
+      cached = await cacheUnfScores(
+        eventNumber,
+        pageNumber,
+        data,
+        timestamp,
+        dataType
+      )
       actualDataType = `${dataType}_${eventNumber}`
     } else if (dataType === 'guild_info') {
-      await cacheGuildInfo(data, timestamp)
+      cached = await cacheGuildInfo(data, timestamp)
       actualDataType = 'guild_info'
     } else {
-      await cacheSingleItem(dataType, data, timestamp, url)
+      cached = await cacheSingleItem(dataType, data, timestamp, url)
     }
 
-    chrome.runtime
-      .sendMessage({
-        action: 'dataCaptured',
-        dataType: actualDataType,
-        pageNumber,
-        timestamp
-      })
-      .catch(() => {})
+    if (cached) {
+      chrome.runtime
+        .sendMessage({
+          action: 'dataCaptured',
+          dataType: actualDataType,
+          pageNumber,
+          timestamp
+        })
+        .catch(() => {})
+    }
   } catch (error) {
     console.error('[Background] Error caching data:', error)
   }
@@ -354,13 +374,14 @@ async function cacheSingleItem(
   data: unknown,
   timestamp: number,
   url: string
-): Promise<void> {
+): Promise<boolean> {
   const cacheKey = CACHE_KEYS[dataType]
-  if (!cacheKey) return
+  if (!cacheKey) return false
 
   await chrome.storage.local.set({
     [cacheKey]: { data, timestamp, url }
   })
+  return true
 }
 
 async function cacheDetailItem(
@@ -368,15 +389,15 @@ async function cacheDetailItem(
   data: Record<string, unknown>,
   timestamp: number,
   url: string
-): Promise<{ dataType: string }> {
+): Promise<{ dataType: string; cached: boolean }> {
   const master = data.master as Record<string, unknown> | undefined
   const granblueId = (data.id as string) ?? master?.id
   const name = (data.name as string) ?? master?.name ?? 'Unknown'
 
   const prefix = CACHE_PREFIXES[dataType]
   if (!prefix) {
-    await cacheSingleItem(dataType, data, timestamp, url)
-    return { dataType }
+    const cached = await cacheSingleItem(dataType, data, timestamp, url)
+    return { dataType, cached }
   }
   const cacheKey = `${prefix}${granblueId}`
 
@@ -390,7 +411,7 @@ async function cacheDetailItem(
     }
   })
 
-  return { dataType: `${dataType}_${granblueId}` }
+  return { dataType: `${dataType}_${granblueId}`, cached: true }
 }
 
 async function cacheParty(
@@ -398,7 +419,7 @@ async function cacheParty(
   data: Record<string, unknown>,
   timestamp: number,
   url: string
-): Promise<void> {
+): Promise<boolean> {
   const cacheKey = CACHE_PREFIXES.party + partyId
   const deck = data.deck as Record<string, unknown> | undefined
   const partyName =
@@ -407,6 +428,7 @@ async function cacheParty(
   await chrome.storage.local.set({
     [cacheKey]: { data, timestamp, url, partyId, partyName }
   })
+  return true
 }
 
 async function cacheListPage(
@@ -416,9 +438,9 @@ async function cacheListPage(
   timestamp: number,
   cacheKeyOverride?: string,
   stashName?: string
-): Promise<void> {
+): Promise<boolean> {
   const cacheKey = cacheKeyOverride ?? CACHE_KEYS[dataType]
-  if (!cacheKey) return
+  if (!cacheKey) return false
 
   const result = await chrome.storage.local.get(cacheKey)
   const existing: CachedListData = (result[cacheKey] as CachedListData) ?? {
@@ -457,6 +479,7 @@ async function cacheListPage(
     : false
 
   await chrome.storage.local.set({ [cacheKey]: existing })
+  return true
 }
 
 async function cacheCharacterStats(
@@ -465,7 +488,7 @@ async function cacheCharacterStats(
   masterId: string | null,
   timestamp: number,
   _url: string
-): Promise<void> {
+): Promise<boolean> {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
   const existing: {
     lastUpdated: number | null
@@ -488,7 +511,7 @@ async function cacheCharacterStats(
   const resolvedMasterId = (master?.id as string) ?? masterId
   if (!resolvedMasterId) {
     console.warn('[Background] No master_id found for character stats')
-    return
+    return false
   }
 
   const current: CharacterStatsEntry = existing.updates[resolvedMasterId] ?? {
@@ -583,6 +606,7 @@ async function cacheCharacterStats(
   await chrome.storage.local.set({
     [CACHE_KEYS.character_stats!]: existing
   })
+  return true
 }
 
 // ==========================================
@@ -691,22 +715,22 @@ async function cacheUnfScores(
   data: unknown,
   timestamp: number,
   dataTypePrefix: string
-): Promise<void> {
+): Promise<boolean> {
   const prefix = CACHE_PREFIXES[dataTypePrefix]
-  if (!prefix) return
+  if (!prefix) return false
   const cacheKey = prefix + eventNumber
 
   const memberList = (
     data as { member_list?: { list?: unknown; last?: number } }
   )?.member_list
-  if (!memberList?.list) return
+  if (!memberList?.list) return false
 
   // Game returns an array for page 1 but an object keyed by index for pages 2+
   const rawList: unknown[] = Array.isArray(memberList.list)
     ? memberList.list
     : Object.values(memberList.list as Record<string, unknown>)
 
-  if (rawList.length === 0) return
+  if (rawList.length === 0) return false
 
   const result = await chrome.storage.local.get(cacheKey)
   const existing: CachedUnfScores = (result[cacheKey] as CachedUnfScores) ?? {
@@ -750,11 +774,15 @@ async function cacheUnfScores(
   existing.isComplete = existing.pageCount >= existing.totalPages
 
   await chrome.storage.local.set({ [cacheKey]: existing })
+  return true
 }
 
-async function cacheGuildInfo(data: unknown, timestamp: number): Promise<void> {
+async function cacheGuildInfo(
+  data: unknown,
+  timestamp: number
+): Promise<boolean> {
   const guildData = data as { is_guild_in?: string }
-  if (!guildData?.is_guild_in) return
+  if (!guildData?.is_guild_in) return false
 
   const cacheKey = CACHE_KEYS.guild_info!
   await chrome.storage.local.set({
@@ -763,6 +791,7 @@ async function cacheGuildInfo(data: unknown, timestamp: number): Promise<void> {
       timestamp
     } satisfies CachedGuildInfo
   })
+  return true
 }
 
 // ==========================================

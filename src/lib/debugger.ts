@@ -261,7 +261,7 @@ async function handleLoadingFinished(
 
     const data: unknown = JSON.parse(bodyText)
 
-    processInterceptedData(pending.url, data, pending.timestamp)
+    await processInterceptedData(pending.url, data, pending.timestamp, tabId)
   } catch {
     // Response might not be JSON, or request might have failed
   }
@@ -276,11 +276,12 @@ function shouldIntercept(url: string): boolean {
 // INTERNAL: DATA PROCESSING
 // ==========================================
 
-function processInterceptedData(
+async function processInterceptedData(
   url: string,
   data: unknown,
-  timestamp: number
-): void {
+  timestamp: number,
+  tabId: number
+): Promise<void> {
   if (url.includes('/container/content/list/')) {
     extractStashName(url, data as { data?: string })
     return
@@ -289,6 +290,8 @@ function processInterceptedData(
   if (!onDataIntercepted) return
 
   const dataType = getDataType(url)
+
+  if (!(await isValidPageContext(tabId, dataType))) return
 
   let pageNumber = getPageNumber(url)
   if (dataType.startsWith('stash_')) {
@@ -307,6 +310,28 @@ function processInterceptedData(
   }
 
   onDataIntercepted(url, data, dataType, metadata, timestamp)
+}
+
+const PAGE_CONTEXT_RULES: Record<string, (hash: string) => boolean> = {
+  guild_info: (hash) => hash.startsWith('#guild/'),
+  unf_scores: (hash) => hash.startsWith('#event/teamraid'),
+  unf_daily_scores: (hash) => hash.startsWith('#event/teamraid')
+}
+
+async function isValidPageContext(
+  tabId: number,
+  dataType: string
+): Promise<boolean> {
+  const rule = PAGE_CONTEXT_RULES[dataType]
+  if (!rule) return true
+
+  try {
+    const tab = await chrome.tabs.get(tabId)
+    const hash = new URL(tab.url ?? '').hash
+    return rule(hash)
+  } catch {
+    return false
+  }
 }
 
 function getDataType(url: string): string {
