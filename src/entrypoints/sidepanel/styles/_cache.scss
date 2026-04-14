@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .cache-items {
   display: flex;
@@ -11,7 +12,7 @@
 
 .cache-empty,
 .cache-error {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   text-align: center;
   padding: spacing.$unit-2x;
@@ -99,14 +100,14 @@
 }
 
 .cache-name {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
 }
 
 .stash-tag {
-  font-size: 1.3rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   padding: 1px spacing.$unit;
   border-radius: 999px;
   background: var(--element-bg);
@@ -118,12 +119,12 @@
 }
 
 .cache-subtitle {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   color: var(--color-text-tertiary);
 }
 
 .cache-age {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }

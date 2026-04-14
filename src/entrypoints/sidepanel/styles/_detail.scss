@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .detail-view {
   position: absolute;
@@ -27,8 +28,8 @@
   border: none;
   color: var(--element-text);
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   cursor: pointer;
   padding: spacing.$unit-half spacing.$unit;
   margin-left: -(spacing.$unit);
@@ -69,7 +70,7 @@ body.light #playlistCreateSubmit {
   justify-content: space-between;
   position: relative;
   z-index: 5;
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   padding: spacing.$unit spacing.$unit-2x;
   flex-shrink: 0;
@@ -113,8 +114,8 @@ body.light #playlistCreateSubmit {
   padding: spacing.$unit;
   border-radius: layout.$input-corner;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   cursor: pointer;
@@ -128,7 +129,7 @@ body.light #playlistCreateSubmit {
 
 .collapsible-count {
   margin-left: auto;
-  font-weight: 400;
+  font-weight: type.$normal;
   color: var(--color-text-tertiary);
 }
 
@@ -146,8 +147,8 @@ body.light #playlistCreateSubmit {
   border-radius: layout.$input-corner;
   padding: spacing.$unit-half spacing.$unit;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -169,8 +170,8 @@ body.light #playlistCreateSubmit {
   border-radius: layout.$input-corner;
   padding: spacing.$unit-half spacing.$unit;
   font-family: inherit;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   -webkit-font-smoothing: antialiased;
@@ -207,8 +208,8 @@ body.light #playlistCreateSubmit {
   align-items: flex-start;
   gap: spacing.$unit;
   padding: spacing.$unit (spacing.$unit * 1.5);
-  font-size: 1.4rem;
-  font-weight: 400;
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   color: var(--color-text);
   cursor: pointer;
   transition: background-color var(--transition-fast);
@@ -219,8 +220,8 @@ body.light #playlistCreateSubmit {
 }
 
 .filter-section-title {
-  font-size: 1.3rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text-secondary);
   padding: spacing.$unit (spacing.$unit * 1.5) spacing.$unit-half;
 }
@@ -236,8 +237,8 @@ body.light #playlistCreateSubmit {
 }
 
 .filter-option-desc {
-  font-size: 1.3rem;
-  font-weight: 400;
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   color: var(--color-text-secondary);
 }
 
@@ -252,7 +253,7 @@ body.light #playlistCreateSubmit {
 
   p {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     color: var(--color-text-secondary);
   }
 }
@@ -263,8 +264,8 @@ body.light #playlistCreateSubmit {
   border-radius: layout.$item-corner;
   padding: spacing.$unit-three-quarter 1.4rem;
   font-family: inherit;
-  font-size: 1.3rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -305,8 +306,8 @@ body.light #playlistCreateSubmit {
   display: block;
   width: 100%;
   padding: spacing.$unit-three-quarter (spacing.$unit * 1.5);
-  font-size: 1.4rem;
-  font-weight: 400;
+  font-size: type.$font-small;
+  font-weight: type.$normal;
   font-family: inherit;
   color: var(--color-text);
   background: none;
@@ -646,13 +647,13 @@ body.light #playlistCreateSubmit {
 }
 
 .list-item-name {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text);
 }
 
 .list-item-level {
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: type.$medium;
 }
 
 .list-item-labels {
@@ -715,8 +716,8 @@ body.light #playlistCreateSubmit {
 }
 
 .char-stats-name {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -760,9 +761,9 @@ body.light #playlistCreateSubmit {
 }
 
 .char-stats-awakening {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text);
-  font-weight: 500;
+  font-weight: type.$medium;
 }
 
 .char-stats-section {
@@ -772,19 +773,19 @@ body.light #playlistCreateSubmit {
 }
 
 .char-stats-subheader {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: type.$font-small;
+  font-weight: type.$semibold;
   color: var(--color-text-secondary);
 }
 
 .char-stats-line {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   padding-left: spacing.$unit * 1.5;
 }
 
 .char-stats-empty {
-  font-size: 1.5rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
   font-style: italic;
 }
@@ -799,8 +800,8 @@ body.light #playlistCreateSubmit {
 }
 
 .party-section-title {
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   margin: 0 0 spacing.$unit 0;
 }
@@ -850,7 +851,7 @@ body.light #playlistCreateSubmit {
   }
 
   span {
-    font-size: 1.3rem;
+    font-size: type.$font-small;
     color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
@@ -1008,7 +1009,7 @@ body.light #playlistCreateSubmit {
   border-radius: layout.$input-corner;
   font-family: inherit;
   font-size: var(--input-font-size);
-  font-weight: 400;
+  font-weight: type.$normal;
   color: var(--color-text);
   cursor: pointer;
   -webkit-font-smoothing: antialiased;

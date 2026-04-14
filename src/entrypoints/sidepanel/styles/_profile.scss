@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .profile-header {
   display: flex;
@@ -35,13 +36,13 @@
 }
 
 .profile-subheader {
-  font-size: 1.2rem;
+  font-size: type.$font-tiny;
   color: var(--color-text-tertiary);
 }
 
 .profile-username {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: type.$font-small;
+  font-weight: type.$semibold;
   color: var(--color-text);
 }
 

@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .toast {
   position: fixed;
@@ -10,8 +11,8 @@
   color: white;
   padding: (spacing.$unit * 1.25) spacing.$unit-2x;
   border-radius: layout.$input-corner;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   opacity: 0;
   transition:
     transform 0.3s ease,

@@ -398,7 +398,7 @@
     }
 
     &.medium {
-      font-size: $font-regular;
+      font-size: 1.6rem;
       min-height: $unit-4x;
 
       &:not(.wrapper) {
@@ -407,7 +407,7 @@
 
       &.wrapper input {
         padding: $unit calc($unit * 1.5);
-        font-size: $font-regular;
+        font-size: 1.6rem;
       }
 
       &:has(.iconLeft) input {
@@ -501,7 +501,7 @@
 
     &.medium {
       padding: $unit calc($unit * 1.5);
-      font-size: $font-regular;
+      font-size: 1.6rem;
       min-height: $unit-4x;
     }
 

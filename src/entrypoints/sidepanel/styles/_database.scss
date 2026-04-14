@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .database-detail {
   display: flex;
@@ -42,7 +43,7 @@
   justify-content: space-between;
   align-items: center;
   padding: spacing.$unit 0;
-  font-size: 1.5rem;
+  font-size: type.$font-small;
 }
 
 .stat-label {

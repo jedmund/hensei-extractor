@@ -481,7 +481,7 @@
   // Size: medium (default)
   :global([data-select-trigger].select.medium) {
     padding: $unit $unit-2x;
-    font-size: $font-button;
+    font-size: $font-small;
     min-height: $unit-4x;
   }
 

@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .notice {
   display: flex;
@@ -9,7 +10,7 @@
   border: 1px solid var(--color-warning-border);
   color: #341d0a;
   padding: spacing.$unit-2x;
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   border-radius: layout.$card-corner;
   line-height: 1.5;
 }
@@ -26,7 +27,7 @@
 .status-error {
   padding: spacing.$unit;
   border-radius: layout.$input-corner;
-  font-size: 1.4rem;
+  font-size: type.$font-small;
 }
 
 .status-info {

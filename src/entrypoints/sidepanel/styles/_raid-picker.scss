@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .raid-picker-view {
   position: absolute;
@@ -20,7 +21,7 @@
 
   input {
     padding: spacing.$unit * 1.5;
-    font-size: 1.4rem;
+    font-size: type.$font-small;
   }
 }
 
@@ -65,7 +66,7 @@
   justify-content: center;
   padding: spacing.$unit-4x;
   color: var(--color-text-secondary);
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   font-style: italic;
 }
 
@@ -87,14 +88,14 @@
 }
 
 .raid-group-name {
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text-secondary);
 }
 
 .raid-ex-badge {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: type.$font-tiny;
+  font-weight: type.$semibold;
   color: var(--color-text-tertiary);
   background: rgba(0, 0, 0, 0.06);
   padding: 1px spacing.$unit-half;
@@ -148,8 +149,8 @@
 }
 
 .raid-item-name {
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -157,7 +158,7 @@
 }
 
 .raid-item-level {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-tertiary);
 }
 

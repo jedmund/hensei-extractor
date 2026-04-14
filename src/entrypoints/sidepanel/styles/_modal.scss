@@ -1,5 +1,6 @@
 @use 'themes/spacing' as spacing;
 @use 'themes/layout' as layout;
+@use 'themes/typography' as type;
 
 .modal {
   position: fixed;
@@ -40,8 +41,8 @@
 
 .modal-title {
   margin: 0 0 spacing.$unit * 1.5;
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: type.$font-medium;
+  font-weight: type.$semibold;
   color: var(--color-text);
 }
 
@@ -49,7 +50,7 @@
   margin-bottom: spacing.$unit * 2.5;
 
   p {
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     line-height: 1.5;
     color: var(--color-text-tertiary);
     margin: 0;
@@ -60,8 +61,8 @@
   margin-top: spacing.$unit * 1.5;
 
   .delete-count {
-    font-size: 1.4rem;
-    font-weight: 500;
+    font-size: type.$font-small;
+    font-weight: type.$medium;
     color: var(--color-error);
     margin-bottom: spacing.$unit;
   }
@@ -72,7 +73,7 @@
     padding: 0 0 0 spacing.$unit * 2.5;
     max-height: 15rem;
     overflow-y: auto;
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     color: var(--color-text-tertiary);
 
     li {
@@ -81,12 +82,12 @@
   }
 
   .no-deletions {
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     color: var(--color-success);
   }
 
   .more-items {
-    font-size: 1.4rem;
+    font-size: type.$font-small;
     font-style: italic;
     color: var(--color-text-secondary);
     margin-top: spacing.$unit;
@@ -122,7 +123,7 @@
 
   p {
     color: #6b4e00;
-    font-size: 1.4rem;
+    font-size: type.$font-small;
   }
 }
 
@@ -179,8 +180,8 @@
 }
 
 .conflict-item-name {
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
   color: var(--color-text);
   margin: 0;
   text-align: center;
@@ -192,8 +193,8 @@
   bottom: spacing.$unit-half;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: type.$font-micro;
+  font-weight: type.$semibold;
   padding: 1px spacing.$unit-three-quarter;
   border-radius: 0.3rem;
   text-transform: uppercase;
@@ -230,7 +231,7 @@
   border-radius: 50%;
   border: 1px solid var(--color-border);
   background: white;
-  font-size: 1.8rem;
+  font-size: type.$font-medium;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -249,7 +250,7 @@
 }
 
 #conflictCounter {
-  font-size: 1.4rem;
+  font-size: type.$font-small;
   color: var(--color-text-secondary);
   min-width: 5rem;
   text-align: center;
