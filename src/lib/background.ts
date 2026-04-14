@@ -200,6 +200,29 @@ interface VersionCheckResult {
   latest: string
 }
 
+interface CachedUnfScores {
+  eventNumber: number
+  pages: Record<number, UnfMember[]>
+  lastUpdated: number
+  totalPages: number
+  pageCount: number
+  memberCount: number
+  isComplete: boolean
+}
+
+interface UnfMember {
+  id: string
+  name: string
+  contribution: number
+  rank: number
+  level: string
+}
+
+interface CachedGuildInfo {
+  guildId: string
+  timestamp: number
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
@@ -244,7 +267,7 @@ async function handleInterceptedData(
     return
   }
 
-  const { pageNumber, partyId, masterId } = metadata
+  const { pageNumber, partyId, masterId, eventNumber } = metadata
 
   try {
     let actualDataType = dataType
@@ -296,6 +319,15 @@ async function handleInterceptedData(
           url
         )
       }
+    } else if (
+      (dataType === 'unf_scores' || dataType === 'unf_daily_scores') &&
+      eventNumber
+    ) {
+      await cacheUnfScores(eventNumber, pageNumber, data, timestamp, dataType)
+      actualDataType = `${dataType}_${eventNumber}`
+    } else if (dataType === 'guild_info') {
+      await cacheGuildInfo(data, timestamp)
+      actualDataType = 'guild_info'
     } else {
       await cacheSingleItem(dataType, data, timestamp, url)
     }
@@ -650,6 +682,84 @@ function parseZenithMasteryData(
 }
 
 // ==========================================
+// UNF SCORE CACHING
+// ==========================================
+
+async function cacheUnfScores(
+  eventNumber: number,
+  pageNumber: number | null,
+  data: unknown,
+  timestamp: number,
+  dataTypePrefix: string
+): Promise<void> {
+  const prefix = CACHE_PREFIXES[dataTypePrefix]
+  if (!prefix) return
+  const cacheKey = prefix + eventNumber
+
+  const memberList = (data as { member_list?: { list?: unknown[]; last?: number } })?.member_list
+  if (!memberList?.list) return
+
+  const result = await chrome.storage.local.get(cacheKey)
+  const existing: CachedUnfScores = (result[cacheKey] as CachedUnfScores) ?? {
+    eventNumber,
+    pages: {},
+    lastUpdated: 0,
+    totalPages: 1,
+    pageCount: 0,
+    memberCount: 0,
+    isComplete: false
+  }
+
+  if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
+    existing.pages = {}
+  }
+
+  const members: UnfMember[] = memberList.list.map((m: unknown) => {
+    const member = m as Record<string, unknown>
+    return {
+      id: member.id as string,
+      name: member.name as string,
+      contribution: member.contribution as number,
+      rank: member.rank as number,
+      level: member.level as string
+    }
+  })
+
+  if (pageNumber != null) {
+    existing.pages[pageNumber] = members
+  }
+
+  existing.lastUpdated = timestamp
+  existing.totalPages = (memberList.last as number) ?? existing.totalPages
+
+  let memberCount = 0
+  for (const page of Object.values(existing.pages)) {
+    memberCount += page.length
+  }
+  existing.memberCount = memberCount
+  existing.pageCount = Object.keys(existing.pages).length
+  existing.isComplete = existing.pageCount >= existing.totalPages
+
+  await chrome.storage.local.set({ [cacheKey]: existing })
+}
+
+async function cacheGuildInfo(
+  data: unknown,
+  timestamp: number
+): Promise<void> {
+  const guildData = data as { is_guild_in?: string }
+  if (!guildData?.is_guild_in) return
+
+  const cacheKey = CACHE_KEYS.guild_info!
+  await chrome.storage.local.set({
+    [cacheKey]: {
+      guildId: guildData.is_guild_in,
+      timestamp
+    } satisfies CachedGuildInfo
+  })
+}
+
+// ==========================================
 // VERSION CHECK
 // ==========================================
 
@@ -888,6 +998,19 @@ chrome.runtime.onMessage.addListener(
         })
         return true
 
+      case 'uploadUnfScores':
+        handleUploadUnfScores(
+          message.dataType!,
+          (message as { round?: string }).round ?? 'preliminaries'
+        ).then(sendResponse)
+        return true
+
+      case 'createCrew':
+        handleCreateCrew(
+          (message as { name?: string }).name ?? ''
+        ).then(sendResponse)
+        return true
+
       default:
         return false
     }
@@ -992,6 +1115,31 @@ async function handleGetCachedData(
       dataType,
       pageCount: cached.pageCount as number,
       totalItems: cached.totalItems as number
+    }
+  }
+
+  if (
+    dataType.startsWith('unf_scores_') ||
+    dataType.startsWith('unf_daily_scores_')
+  ) {
+    const unfData = cached as unknown as CachedUnfScores
+    const allMembers: UnfMember[] = []
+    for (const page of Object.values(unfData.pages)) {
+      allMembers.push(...page)
+    }
+    allMembers.sort((a, b) => a.rank - b.rank)
+    return {
+      data: {
+        eventNumber: unfData.eventNumber,
+        members: allMembers,
+        totalPages: unfData.totalPages,
+        pageCount: unfData.pageCount,
+        isComplete: unfData.isComplete
+      } as unknown as Record<string, unknown>,
+      timestamp: unfData.lastUpdated,
+      age,
+      dataType,
+      totalItems: allMembers.length
     }
   }
 
@@ -1109,6 +1257,21 @@ async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         isStale: stale,
         granblueId: suffix,
         itemName: (c.itemName as string) ?? 'Unknown'
+      }
+    } else if (
+      matchedPrefix === 'unf_scores' ||
+      matchedPrefix === 'unf_daily_scores'
+    ) {
+      const unfData = c as unknown as CachedUnfScores
+      status[dt] = {
+        available: !stale && unfData.memberCount > 0,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
+        pageCount: unfData.pageCount,
+        totalPages: unfData.totalPages,
+        totalItems: unfData.memberCount,
+        isComplete: unfData.isComplete
       }
     }
   }
@@ -1476,6 +1639,85 @@ async function uploadCharacterStats(
     skipped: (result.data!.skipped as number) ?? 0,
     errors: (result.data!.errors as unknown[]) ?? []
   }
+}
+
+async function handleUploadUnfScores(
+  dataType: string,
+  round: string
+): Promise<{
+  success?: boolean
+  imported?: number
+  phantomsCreated?: number
+  errors?: unknown[]
+  error?: string
+}> {
+  const cacheKey = resolveCacheKey(dataType)
+  if (!cacheKey) return { error: 'unknown_type' }
+
+  const stored = await chrome.storage.local.get(cacheKey)
+  const cached = stored[cacheKey] as CachedUnfScores | undefined
+  if (!cached || cached.memberCount === 0) return { error: 'no_cached_data' }
+
+  const allMembers: UnfMember[] = []
+  for (const page of Object.values(cached.pages)) {
+    allMembers.push(...page)
+  }
+
+  const isCumulative = dataType.startsWith('unf_scores_')
+
+  const result = await authenticatedPost('/crew/import_gw_scores', {
+    event_number: cached.eventNumber,
+    round,
+    is_cumulative: isCumulative,
+    members: allMembers.map((m) => ({
+      granblue_id: m.id,
+      name: m.name,
+      score: m.contribution
+    }))
+  })
+
+  if (result.error) return { error: result.error }
+
+  const data = result.data!
+  return {
+    success: true,
+    imported: data.imported as number,
+    phantomsCreated: data.phantoms_created as number,
+    errors: (data.errors as unknown[]) ?? []
+  }
+}
+
+async function handleCreateCrew(
+  name: string
+): Promise<{ success?: boolean; crew?: unknown; error?: string }> {
+  const guildResult = await chrome.storage.local.get(CACHE_KEYS.guild_info!)
+  const guildInfo = guildResult[CACHE_KEYS.guild_info!] as
+    | CachedGuildInfo
+    | undefined
+  const guildId = guildInfo?.guildId
+
+  const body: Record<string, unknown> = { crew: { name } }
+  if (guildId) {
+    ;(body.crew as Record<string, unknown>).granblue_crew_id = guildId
+  }
+
+  const result = await authenticatedPost('/crews', body)
+  if (result.error) {
+    if (result.error.includes('granblue_crew_id')) {
+      return { error: 'crew_already_exists' }
+    }
+    return { error: result.error }
+  }
+
+  // Update stored auth to reflect new crew
+  const authResult = await chrome.storage.local.get('gbAuth')
+  const auth = authResult.gbAuth as Record<string, unknown> | undefined
+  if (auth) {
+    auth.hasCrew = true
+    await chrome.storage.local.set({ gbAuth: auth })
+  }
+
+  return { success: true, crew: result.data }
 }
 
 async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
