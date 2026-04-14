@@ -12,10 +12,19 @@
 
 .cache-empty,
 .cache-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: spacing.$unit * 1.5;
   font-size: type.$font-small;
   color: var(--color-text-tertiary);
   text-align: center;
-  padding: spacing.$unit-2x;
+  padding: spacing.$unit-4x spacing.$unit-2x;
+}
+
+.cache-empty-actions {
+  display: flex;
+  gap: spacing.$unit;
 }
 
 .cache-error {

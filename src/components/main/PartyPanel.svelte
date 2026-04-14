@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
+  import Button from '../shared/Button.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
 
   const partyTypes = $derived(
@@ -24,7 +25,14 @@
 <div class="panel" class:active={app.activeTab === 'party'} id="partyPanel">
   <div class="cache-items" id="partyItems">
     {#if partyTypes.length === 0}
-      <p class="cache-empty">{m.empty_party()}</p>
+      <div class="cache-empty">
+        <p>{m.empty_party()}</p>
+        <div class="cache-empty-actions">
+          <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#party/index/0/npc/0' })}>
+            {m.empty_current_party()}
+          </Button>
+        </div>
+      </div>
     {:else}
       {#each partyTypes as dataType (dataType)}
         <CacheItemRow
