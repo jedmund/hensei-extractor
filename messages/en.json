@@ -347,7 +347,7 @@
   "type_unf_scores": "UNF Scores",
   "type_unf_daily_scores": "UNF Daily Scores",
   "empty_crew": "Visit the Top Members page on the Unite and Fight event page in-game to capture score data.",
-  "empty_crew_button_honors": "UnF{eventNumber} Honors",
+  "empty_crew_button_honors": "U&F #{eventNumber} Honors",
   "empty_crew_button_members": "Member List",
   "crew_event_label": "Unite and Fight #{eventNumber}",
   "crew_event_daily_label": "Unite and Fight #{eventNumber} Daily",
