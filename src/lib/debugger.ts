@@ -36,9 +36,9 @@ const INTERCEPT_PATTERNS = [
   '/summon/container_list/',
   // Stash content pages (for extracting stash names from HTML)
   '/container/content/list/',
-  // UNF (Unite & Fight) score pages
-  '/rest/performance//total_performance/',
-  '/rest/performance//todays_performance/',
+  // UNF (Unite & Fight) score pages (double-slash is empty user ID segment)
+  '/total_performance/',
+  '/todays_performance/',
   // Guild info (for crew ID)
   '/rest/guild/main/guild_info'
 ]
@@ -326,8 +326,9 @@ function getDataType(url: string): string {
   if (url.includes('/npc/list/')) return 'list_npc'
   if (url.includes('/weapon/list/')) return 'list_weapon'
   if (url.includes('/summon/list/')) return 'list_summon'
-  if (url.includes('/rest/performance//total_performance/')) return 'unf_scores'
-  if (url.includes('/rest/performance//todays_performance/'))
+  if (url.includes('/total_performance/') && url.includes('/teamraid'))
+    return 'unf_scores'
+  if (url.includes('/todays_performance/') && url.includes('/teamraid'))
     return 'unf_daily_scores'
   if (url.includes('/rest/guild/main/guild_info')) return 'guild_info'
   return 'unknown'
