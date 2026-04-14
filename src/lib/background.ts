@@ -1017,6 +1017,12 @@ chrome.runtime.onMessage.addListener(
         )
         return true
 
+      case 'previewGwPhantoms':
+        handlePreviewGwPhantoms(
+          (message as { dataType: string }).dataType
+        ).then(sendResponse)
+        return true
+
       case 'fetchLatestGwEvent':
         handleFetchLatestGwEvent().then(sendResponse)
         return true
@@ -1694,6 +1700,40 @@ async function handleUploadUnfScores(
     imported: data.imported as number,
     phantomsCreated: data.phantoms_created as number,
     errors: (data.errors as unknown[]) ?? []
+  }
+}
+
+async function handlePreviewGwPhantoms(
+  dataType: string
+): Promise<{
+  existingPhantomIds?: string[]
+  newPhantomIds?: string[]
+  error?: string
+}> {
+  const cacheKey = resolveCacheKey(dataType)
+  if (!cacheKey) return { error: 'unknown_type' }
+
+  const stored = await chrome.storage.local.get(cacheKey)
+  const cached = stored[cacheKey] as CachedUnfScores | undefined
+  if (!cached || cached.memberCount === 0) return { error: 'no_cached_data' }
+
+  const allMembers: UnfMember[] = []
+  for (const page of Object.values(cached.pages)) {
+    allMembers.push(...page)
+  }
+
+  const result = await authenticatedPost('/crew/preview_gw_phantoms', {
+    granblue_ids: allMembers.map((m) => m.id)
+  })
+
+  if (result.error) return { error: result.error }
+  const data = result.data as {
+    existing_phantom_ids: string[]
+    new_phantom_ids: string[]
+  }
+  return {
+    existingPhantomIds: data.existing_phantom_ids,
+    newPhantomIds: data.new_phantom_ids
   }
 }
 

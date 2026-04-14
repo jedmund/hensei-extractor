@@ -20,6 +20,7 @@ export type ExtensionMessage =
   | { action: 'uploadUnfScores'; dataType: string; round: string }
   | { action: 'createCrew'; name: string }
   | { action: 'fetchLatestGwEvent' }
+  | { action: 'previewGwPhantoms'; dataType: string }
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean
@@ -165,6 +166,13 @@ export interface GwEventSummary {
 export interface FetchLatestGwEventResponse {
   recent?: GwEventSummary | null
   upcoming?: GwEventSummary | null
+  error?: string
+}
+
+/** Response from previewGwPhantoms */
+export interface PreviewGwPhantomsResponse {
+  existingPhantomIds?: string[]
+  newPhantomIds?: string[]
   error?: string
 }
 

@@ -1,7 +1,10 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { createCrew } from '../../lib/services/chrome-messages.js'
+  import {
+    createCrew,
+    previewGwPhantoms
+  } from '../../lib/services/chrome-messages.js'
   import Select from '../shared/Select.svelte'
   import Icon from '../shared/Icon.svelte'
   import Button from '../shared/Button.svelte'
@@ -33,6 +36,27 @@
   let crewName = $state('')
   let creating = $state(false)
   let createError = $state('')
+
+  let existingPhantomIds = $state<Set<string>>(new Set())
+  let newPhantomIds = $state<Set<string>>(new Set())
+  let phantomChecked = $state(false)
+
+  $effect(() => {
+    if (hasCrew && data.members.length > 0 && !phantomChecked) {
+      phantomChecked = true
+      const dataType = app.currentDetailDataType
+      if (dataType) {
+        previewGwPhantoms(dataType).then((result) => {
+          if (result.existingPhantomIds) {
+            existingPhantomIds = new Set(result.existingPhantomIds)
+          }
+          if (result.newPhantomIds) {
+            newPhantomIds = new Set(result.newPhantomIds)
+          }
+        })
+      }
+    }
+  })
 
   const roundOptions = [
     { value: 'preliminaries', label: m.crew_round_preliminaries() },
@@ -123,7 +147,14 @@
       >
         <span class="crew-member-rank">#{member.rank}</span>
         <div class="crew-member-info">
-          <span class="crew-member-name">{member.name}</span>
+          <span class="crew-member-name-row">
+            <span class="crew-member-name">{member.name}</span>
+            {#if newPhantomIds.has(member.id)}
+              <span class="crew-member-tag new">{m.crew_tag_new()}</span>
+            {:else if existingPhantomIds.has(member.id)}
+              <span class="crew-member-tag phantom">{m.crew_tag_phantom()}</span>
+            {/if}
+          </span>
           <span class="crew-member-id">{member.id}</span>
         </div>
         <span class="crew-member-honors">{formatHonors(member.contribution)}</span>
@@ -227,6 +258,13 @@
     gap: 1px;
   }
 
+  .crew-member-name-row {
+    display: flex;
+    align-items: center;
+    gap: $unit-half;
+    min-width: 0;
+  }
+
   .crew-member-name {
     font-size: $font-small;
     font-weight: $medium;
@@ -234,6 +272,29 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .crew-member-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px $unit-half;
+    border-radius: $item-corner-small;
+    font-size: $font-micro;
+    font-weight: $medium;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    flex-shrink: 0;
+
+    &.phantom {
+      background: var(--color-bg-tertiary, rgba(0, 0, 0, 0.06));
+      color: var(--color-text-tertiary);
+    }
+
+    &.new {
+      background: var(--color-warning, #fffcd2);
+      color: var(--color-warning-text, #7a6200);
+    }
   }
 
   .crew-member-id {

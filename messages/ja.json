@@ -354,6 +354,8 @@
   "crew_total_score": "累計貢献度",
   "crew_daily_score": "当日貢献度",
   "crew_member_count": "{count}人",
+  "crew_tag_new": "新規",
+  "crew_tag_phantom": "ファントム",
   "crew_pages_incomplete": "ゲーム内で未取得のページに移動して全メンバーを取り込みましょう。",
   "crew_create_title": "クルー作成",
   "crew_create_desc": "スコアをインポートするにはgranblue.teamでクルーを作成してください。",
