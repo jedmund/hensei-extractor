@@ -1703,9 +1703,7 @@ async function handleUploadUnfScores(
   }
 }
 
-async function handlePreviewGwPhantoms(
-  dataType: string
-): Promise<{
+async function handlePreviewGwPhantoms(dataType: string): Promise<{
   existingPhantomIds?: string[]
   newPhantomIds?: string[]
   error?: string
