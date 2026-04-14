@@ -9,8 +9,7 @@
   bottom: spacing.$unit;
   left: spacing.$unit * 1.5;
   right: spacing.$unit * 1.5;
-  padding: spacing.$unit spacing.$unit spacing.$unit
-    spacing.$unit * 1.5;
+  padding: spacing.$unit spacing.$unit spacing.$unit spacing.$unit * 1.5;
   background: var(--color-primary-light);
   border-radius: layout.$card-corner;
   font-size: 1.4rem;
