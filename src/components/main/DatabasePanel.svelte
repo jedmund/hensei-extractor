@@ -35,7 +35,6 @@
     {#if databaseTypes.length === 0}
       <div class="cache-empty">
         <p>{m.empty_database()}</p>
-        <p>{m.empty_cta()}</p>
         <div class="cache-empty-actions">
           <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#archive/top' })}>
             {m.empty_journal()}

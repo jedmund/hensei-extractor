@@ -27,7 +27,6 @@
     {#if partyTypes.length === 0}
       <div class="cache-empty">
         <p>{m.empty_party()}</p>
-        <p>{m.empty_cta()}</p>
         <div class="cache-empty-actions">
           <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#party/index/0/npc/0' })}>
             {m.empty_current_party()}
