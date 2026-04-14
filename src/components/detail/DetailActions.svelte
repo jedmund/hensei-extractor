@@ -43,8 +43,11 @@
     }
   })
 
+  let hasSelectableItems = $derived(isCollection || isCharStats)
   let importDisabled = $derived(
-    app.importState === 'importing' || app.importState === 'imported' || app.selectedItems.size === 0
+    app.importState === 'importing' ||
+    app.importState === 'imported' ||
+    (hasSelectableItems && app.selectedItems.size === 0)
   )
 
   function supportsConflictCheck(dt: string): boolean {
