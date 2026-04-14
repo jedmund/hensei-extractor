@@ -1,3 +1,6 @@
+@use 'themes/spacing' as spacing;
+@use 'themes/layout' as layout;
+
 .modal {
   position: fixed;
   inset: 0;
@@ -16,9 +19,9 @@
 .modal-content {
   position: relative;
   background: white;
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  width: calc(100% - 3.2rem);
+  border-radius: layout.$card-corner;
+  padding: spacing.$unit * 2.5;
+  width: calc(100% - spacing.$unit-4x);
   max-width: 34rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   animation: modal-in 0.2s ease-out;
@@ -36,14 +39,14 @@
 }
 
 .modal-title {
-  margin: 0 0 1.2rem;
+  margin: 0 0 spacing.$unit * 1.5;
   font-size: 1.8rem;
   font-weight: 600;
   color: var(--color-text);
 }
 
 .modal-body {
-  margin-bottom: 2rem;
+  margin-bottom: spacing.$unit * 2.5;
 
   p {
     font-size: 1.4rem;
@@ -54,26 +57,26 @@
 }
 
 .sync-delete-list {
-  margin-top: 1.2rem;
+  margin-top: spacing.$unit * 1.5;
 
   .delete-count {
     font-size: 1.4rem;
     font-weight: 500;
     color: var(--color-error);
-    margin-bottom: 0.8rem;
+    margin-bottom: spacing.$unit;
   }
 
   .delete-list {
     display: none; /* Legacy - now using grid */
     margin: 0;
-    padding: 0 0 0 2rem;
+    padding: 0 0 0 spacing.$unit * 2.5;
     max-height: 15rem;
     overflow-y: auto;
     font-size: 1.4rem;
     color: var(--color-text-tertiary);
 
     li {
-      margin-bottom: 0.4rem;
+      margin-bottom: spacing.$unit-half;
     }
   }
 
@@ -86,20 +89,20 @@
     font-size: 1.4rem;
     font-style: italic;
     color: var(--color-text-secondary);
-    margin-top: 0.8rem;
+    margin-top: spacing.$unit;
   }
 }
 
 .sync-delete-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.6rem;
-  margin-top: 0.8rem;
+  gap: spacing.$unit-three-quarter;
+  margin-top: spacing.$unit;
 }
 
 .sync-delete-item {
   aspect-ratio: 1;
-  border-radius: var(--radius-sm);
+  border-radius: layout.$item-corner-small;
   overflow: hidden;
   background: var(--color-background);
 
@@ -111,11 +114,11 @@
 }
 
 .sync-warning {
-  margin-top: 1.2rem;
-  padding: 1.2rem;
+  margin-top: spacing.$unit * 1.5;
+  padding: spacing.$unit * 1.5;
   background: var(--color-warning);
   border: 1px solid var(--color-warning-border);
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
 
   p {
     color: #6b4e00;
@@ -125,7 +128,7 @@
 
 .modal-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   justify-content: flex-end;
 
   .button {
@@ -156,15 +159,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  margin-bottom: 1.2rem;
+  gap: spacing.$unit;
+  margin-bottom: spacing.$unit * 1.5;
 }
 
 .conflict-item-image {
   position: relative;
   width: 8rem;
   height: 8rem;
-  border-radius: var(--radius-md);
+  border-radius: layout.$item-corner;
   overflow: hidden;
   background: var(--color-background);
 
@@ -186,12 +189,12 @@
 /* Decision badge overlay */
 .conflict-badge {
   position: absolute;
-  bottom: 0.4rem;
+  bottom: spacing.$unit-half;
   left: 50%;
   transform: translateX(-50%);
   font-size: 1rem;
   font-weight: 600;
-  padding: 1px 0.6rem;
+  padding: 1px spacing.$unit-three-quarter;
   border-radius: 0.3rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -210,7 +213,7 @@
 /* Message */
 .conflict-message {
   text-align: center;
-  margin-bottom: 1.2rem !important;
+  margin-bottom: spacing.$unit * 1.5 !important;
 }
 
 /* Navigation */
@@ -218,12 +221,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.6rem;
+  gap: spacing.$unit-2x;
 }
 
 .conflict-nav-btn {
-  width: 3.2rem;
-  height: 3.2rem;
+  width: spacing.$unit-4x;
+  height: spacing.$unit-4x;
   border-radius: 50%;
   border: 1px solid var(--color-border);
   background: white;
@@ -255,7 +258,7 @@
 /* Action layout */
 .conflict-actions {
   flex-direction: column;
-  gap: 0.8rem;
+  gap: spacing.$unit;
 
   #conflictFinish {
     width: 100%;
@@ -265,7 +268,7 @@
 .conflict-bulk,
 .conflict-item-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: spacing.$unit;
   justify-content: center;
 }
 
