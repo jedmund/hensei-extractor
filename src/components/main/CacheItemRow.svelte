@@ -12,9 +12,16 @@
   let { status, dataType, onclick }: Props = $props()
 
   const isStash = $derived(dataType.startsWith('stash_'))
+  const isDatabase = $derived(dataType.startsWith('detail_'))
   const displayName = $derived(
     status.partyName || status.displayName
   )
+  const databaseTag = $derived.by(() => {
+    if (dataType.startsWith('detail_npc')) return m.type_character()
+    if (dataType.startsWith('detail_weapon')) return m.type_weapon()
+    if (dataType.startsWith('detail_summon')) return m.type_summon()
+    return ''
+  })
 </script>
 
 <button
@@ -29,7 +36,9 @@
         <span class="stash-tag">{m.tag_stash()}</span>
       {/if}
     </div>
-    {#if status.subtitle}
+    {#if isDatabase && databaseTag}
+      <span class="cache-subtitle">{databaseTag}</span>
+    {:else if status.subtitle}
       <span class="cache-subtitle">{status.subtitle}</span>
     {/if}
   </div>
