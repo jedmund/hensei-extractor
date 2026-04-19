@@ -8,6 +8,7 @@
  */
 
 import {
+  apiFetch,
   getApiUrl,
   getSiteBaseUrl,
   CACHE_KEYS,
@@ -801,7 +802,7 @@ async function cacheGuildInfo(
 async function checkExtensionVersion(): Promise<VersionCheckResult | null> {
   try {
     const apiUrl = await getApiUrl('/version')
-    const response = await fetch(apiUrl)
+    const response = await apiFetch(apiUrl)
     if (!response.ok) return null
 
     const data = (await response.json()) as {
@@ -1398,7 +1399,7 @@ async function authenticatedPost(
 
   const apiUrl = await getApiUrl(endpoint)
   try {
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1799,7 +1800,7 @@ async function handleCreateCrew(
 async function handleFetchLatestGwEvent(): Promise<FetchLatestGwEventResponse> {
   try {
     const apiUrl = await getApiUrl('/gw_events/status')
-    const response = await fetch(apiUrl)
+    const response = await apiFetch(apiUrl)
     if (!response.ok) return { error: 'request_failed' }
 
     const data = (await response.json()) as {
@@ -1841,7 +1842,7 @@ async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
     const auth = await getAuthToken()
     if (!auth) return { error: 'not_logged_in' }
 
-    const response = await fetch(
+    const response = await apiFetch(
       await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`),
       {
         headers: { Authorization: `Bearer ${auth.access_token}` }
@@ -1898,7 +1899,7 @@ async function fetchRaidGroups(
 
   const apiUrl = await getApiUrl('/raid_groups')
   try {
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${auth.access_token}`
@@ -1944,7 +1945,7 @@ async function getCollectionIds(): Promise<{
 
   const apiUrl = await getApiUrl(`/users/${userId}/collection/game_ids`)
   try {
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${auth.access_token}`

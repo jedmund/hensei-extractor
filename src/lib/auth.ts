@@ -3,7 +3,7 @@
  * Handles login and user information requests to the Granblue Team API.
  */
 
-import { getApiUrl, getEnvConfig } from './constants.js'
+import { apiFetch, getApiUrl, getEnvConfig } from './constants.js'
 
 interface ApiError extends Error {
   code: string
@@ -44,7 +44,7 @@ async function authenticatedFetch(
     headers['Content-Type'] = 'application/json'
   }
 
-  const response = await fetch(apiUrl, {
+  const response = await apiFetch(apiUrl, {
     method: options.method ?? 'GET',
     headers,
     ...(options.body ? { body: JSON.stringify(options.body) } : {})
@@ -65,7 +65,7 @@ export async function performLogin(
 ): Promise<AuthData> {
   const config = await getEnvConfig()
 
-  const response = await fetch(`${config.apiUrl}/oauth/token`, {
+  const response = await apiFetch(`${config.apiUrl}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
