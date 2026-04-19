@@ -55,6 +55,15 @@ export async function getSiteBaseUrl(): Promise<string> {
   return config.siteUrl
 }
 
+export function apiFetch(
+  input: string | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(init.headers)
+  headers.set('X-Extension-Version', chrome.runtime.getManifest().version)
+  return fetch(input, { ...init, headers })
+}
+
 // ==========================================
 // CACHE CONFIGURATION
 // ==========================================

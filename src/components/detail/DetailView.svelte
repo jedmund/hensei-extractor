@@ -3,7 +3,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
-  import { getApiUrl } from '../../lib/constants.js'
+  import { apiFetch, getApiUrl } from '../../lib/constants.js'
   import {
     isCollectionType,
     isDatabaseDetailType,
@@ -320,7 +320,7 @@
     if (!name) return null
     try {
       const apiUrl = await getApiUrl('/search/summons')
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ search: { query: name } })
@@ -340,8 +340,8 @@
     try {
       const locale = getLocale()
       const [skillMapRes, weaponKeysRes] = await Promise.all([
-        fetch(await getApiUrl('/weapon_keys/skill_map')),
-        fetch(await getApiUrl('/weapon_keys'))
+        apiFetch(await getApiUrl('/weapon_keys/skill_map')),
+        apiFetch(await getApiUrl('/weapon_keys'))
       ])
       if (!skillMapRes.ok || !weaponKeysRes.ok) return null
       const skillMap: Record<string, string> = await skillMapRes.json()
@@ -369,7 +369,7 @@
     if (_weaponStatModCache) return _weaponStatModCache
     try {
       const apiUrl = await getApiUrl('/weapon_stat_modifiers')
-      const response = await fetch(apiUrl)
+      const response = await apiFetch(apiUrl)
       if (!response.ok) return null
       const modifiers = await response.json() as Array<{ slug: string; name_en: string; name_jp: string; suffix?: string }>
       _weaponStatModCache = {} as Record<string, WeaponStatModifier>
@@ -394,7 +394,7 @@
     }
     try {
       const apiUrl = await getApiUrl('/job_skills/resolve')
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ names: uncached })
