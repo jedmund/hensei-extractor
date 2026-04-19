@@ -44,7 +44,7 @@ export async function getCachedData(
 export async function uploadPartyData(options: {
   dataType: string
   name?: string
-  raid?: { slug?: string }
+  raid?: { id?: string | number }
   visibility?: number
   shareWithCrew?: boolean
   playlists?: Array<{ id: string }>
@@ -53,7 +53,7 @@ export async function uploadPartyData(options: {
     action: 'uploadPartyData',
     dataType: options.dataType,
     name: options.name,
-    raidSlug: options.raid?.slug,
+    raidId: options.raid?.id != null ? String(options.raid.id) : undefined,
     visibility: options.visibility,
     shareWithCrew: options.shareWithCrew,
     playlistIds: options.playlists?.map((p) => p.id)

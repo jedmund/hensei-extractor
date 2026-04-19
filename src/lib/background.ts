@@ -840,7 +840,6 @@ interface BackgroundMessage {
   action: string
   dataType?: string
   data?: unknown
-  raidSlug?: string
   raidId?: string
   playlistIds?: string[]
   name?: string
@@ -932,7 +931,7 @@ chrome.runtime.onMessage.addListener(
           }
           uploadPartyData(
             data,
-            message.raidSlug || message.raidId,
+            message.raidId,
             message.playlistIds,
             message.name,
             message.visibility,
