@@ -10,8 +10,10 @@ import type {
   FetchLatestGwEventResponse,
   PreviewGwPhantomsResponse,
   CheckConflictsResponse,
+  CheckUpdatesResponse,
   PreviewSyncDeletionsResponse,
   FetchRaidGroupsResponse,
+  FetchElementVariantsResponse,
   FetchPlaylistsResponse,
   CreatePlaylistResponse,
   CollectionIdsResponse,
@@ -44,7 +46,7 @@ export async function getCachedData(
 export async function uploadPartyData(options: {
   dataType: string
   name?: string
-  raid?: { slug?: string }
+  raid?: { id?: string | number }
   visibility?: number
   shareWithCrew?: boolean
   playlists?: Array<{ id: string }>
@@ -53,7 +55,7 @@ export async function uploadPartyData(options: {
     action: 'uploadPartyData',
     dataType: options.dataType,
     name: options.name,
-    raidSlug: options.raid?.slug,
+    raidId: options.raid?.id != null ? String(options.raid.id) : undefined,
     visibility: options.visibility,
     shareWithCrew: options.shareWithCrew,
     playlistIds: options.playlists?.map((p) => p.id)
@@ -102,6 +104,21 @@ export async function checkConflicts(
   }) as Promise<CheckConflictsResponse>
 }
 
+export async function checkCollectionUpdates(
+  dataType: string
+): Promise<CheckUpdatesResponse> {
+  return send({
+    action: 'checkCollectionUpdates',
+    dataType
+  }) as Promise<CheckUpdatesResponse>
+}
+
+export async function checkCharacterStatsUpdates(): Promise<CheckUpdatesResponse> {
+  return send({
+    action: 'checkCharacterStatsUpdates'
+  }) as Promise<CheckUpdatesResponse>
+}
+
 export async function fetchRaidGroups(
   forceRefresh = false
 ): Promise<FetchRaidGroupsResponse> {
@@ -109,6 +126,15 @@ export async function fetchRaidGroups(
     action: 'fetchRaidGroups',
     forceRefresh
   }) as Promise<FetchRaidGroupsResponse>
+}
+
+export async function fetchElementVariants(
+  forceRefresh = false
+): Promise<FetchElementVariantsResponse> {
+  return send({
+    action: 'fetchElementVariants',
+    forceRefresh
+  }) as Promise<FetchElementVariantsResponse>
 }
 
 export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {

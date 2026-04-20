@@ -55,6 +55,15 @@ export async function getSiteBaseUrl(): Promise<string> {
   return config.siteUrl
 }
 
+export function apiFetch(
+  input: string | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(init.headers)
+  headers.set('X-Extension-Version', chrome.runtime.getManifest().version)
+  return fetch(input, { ...init, headers })
+}
+
 // ==========================================
 // CACHE CONFIGURATION
 // ==========================================
@@ -64,6 +73,9 @@ export const CACHE_TTL_MS = 30 * 60 * 1000
 
 /** How long raid groups cache is considered fresh (1 day) */
 export const RAID_GROUPS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+
+/** How long element-variant map cache is considered fresh (7 days) */
+export const ELEMENT_VARIANTS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 /** Granblue Fantasy CDN for game assets (new items not yet on S3) */
 export const GBF_CDN =
@@ -80,6 +92,7 @@ export const CACHE_KEYS: Record<string, string> = {
   collection_artifact: 'gbf_cache_collection_artifact',
   character_stats: 'gbf_cache_character_stats',
   raid_groups: 'gbf_cache_raid_groups',
+  element_variants: 'gbf_cache_element_variants',
   guild_info: 'gbf_cache_guild_info'
 }
 

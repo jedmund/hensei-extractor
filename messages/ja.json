@@ -113,6 +113,8 @@
   "section_will_import": "インポート予定",
   "section_will_update": "更新予定",
   "section_already_owned": "コレクションに登録済み",
+  "section_has_updates": "更新あり",
+  "section_unchanged": "最新",
   "section_level_1": "レベル1",
   "stat_name": "名前",
   "stat_id": "ID",

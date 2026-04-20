@@ -27,6 +27,7 @@ jobs:
         run: pnpm zip
         env:
           WXT_UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
+          WXT_BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Rename output
         run: mv .output/*.zip granblue-team-extension.zip

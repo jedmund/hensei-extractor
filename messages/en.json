@@ -113,6 +113,8 @@
   "section_will_import": "Will import",
   "section_will_update": "Will update",
   "section_already_owned": "Already in your collection",
+  "section_has_updates": "Updates available",
+  "section_unchanged": "Up to date",
   "section_level_1": "Level 1",
   "stat_name": "Name",
   "stat_id": "ID",

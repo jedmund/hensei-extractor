@@ -3,7 +3,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
-  import { getApiUrl } from '../../lib/constants.js'
+  import { apiFetch, getApiUrl } from '../../lib/constants.js'
   import {
     isCollectionType,
     isDatabaseDetailType,
@@ -15,12 +15,12 @@
     getOwnershipId,
     isLevel1
   } from '../../lib/detail-helpers.js'
-  import { getCachedData, fetchRaidGroups, getCollectionIds } from '../../lib/services/chrome-messages.js'
+  import { getCachedData, fetchRaidGroups, fetchElementVariants, getCollectionIds, checkCollectionUpdates, checkCharacterStatsUpdates } from '../../lib/services/chrome-messages.js'
   import { translateError, getLocale } from '../../lib/i18n.js'
 
   import { onMount } from 'svelte'
   import type { RawGameItem } from '../../lib/detail-helpers.js'
-  import type { RaidGroup } from '../../lib/types/messages.js'
+  import type { RaidGroup, CollectionUpdate } from '../../lib/types/messages.js'
 
   import NavigationBar from '../shared/NavigationBar.svelte'
   import Icon from '../shared/Icon.svelte'
@@ -106,6 +106,9 @@
   let ownedIds = $state<Set<string>>(new Set())
   let ownershipLoaded = $state(false)
 
+  // Pending per-item field deltas from check_updates
+  let collectionUpdates = $state<Map<string, CollectionUpdate>>(new Map())
+
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
   let weaponKeyMap = $state<Record<string, { slug: string; name: string }> | null>(null)
@@ -121,8 +124,7 @@
     const allItems = extractItems(dataType, app.detailData as Record<string, unknown>)
     return allItems
       .map((item: RawGameItem, index: number) => ({ item, originalIndex: index }))
-      .filter(({ item, originalIndex }) => {
-        if (app.brokenImageIndices.has(originalIndex)) return false
+      .filter(({ item }) => {
         if (isWeaponOrSummonCollection(dataType) || isCharacterCollection(dataType)) {
           const rarity = item.master?.rarity?.toString() || item.rarity?.toString()
           if (rarity && !app.activeRarityFilters.has(rarity)) return false
@@ -142,7 +144,8 @@
   let categorizedSections = $derived.by((): CategorySection[] => {
     if (!isCollection || filteredItems.length === 0) return []
     const willImport: ItemEntry[] = []
-    const alreadyOwned: ItemEntry[] = []
+    const hasUpdates: ItemEntry[] = []
+    const unchanged: ItemEntry[] = []
     const level1: ItemEntry[] = []
 
     const showLv1Section = isWeaponOrSummonCollection(dataType)
@@ -152,7 +155,11 @@
       if (showLv1Section && isLevel1(entry.item)) {
         level1.push(entry)
       } else if (ownershipId && ownedIds.has(ownershipId)) {
-        alreadyOwned.push(entry)
+        if (ownershipId && collectionUpdates.has(ownershipId)) {
+          hasUpdates.push(entry)
+        } else {
+          unchanged.push(entry)
+        }
       } else {
         willImport.push(entry)
       }
@@ -162,8 +169,11 @@
     if (willImport.length > 0) {
       sections.push({ key: 'will_import', label: m.section_will_import(), items: willImport, defaultExpanded: true })
     }
-    if (alreadyOwned.length > 0) {
-      sections.push({ key: 'already_owned', label: m.section_already_owned(), items: alreadyOwned, defaultExpanded: willImport.length === 0 })
+    if (hasUpdates.length > 0) {
+      sections.push({ key: 'has_updates', label: m.section_has_updates(), items: hasUpdates, defaultExpanded: true })
+    }
+    if (unchanged.length > 0) {
+      sections.push({ key: 'unchanged', label: m.section_unchanged(), items: unchanged, defaultExpanded: willImport.length === 0 && hasUpdates.length === 0 })
     }
     if (level1.length > 0) {
       sections.push({ key: 'level_1', label: m.section_level_1(), items: level1, defaultExpanded: false })
@@ -181,10 +191,10 @@
     if (!isCollection || !ownershipLoaded || categorizedSections.length === 0) return
     if (lastInitDataType === dataType) return
     lastInitDataType = dataType
-    const willImportSection = categorizedSections.find((s) => s.key === 'will_import')
     const next = new Set<number>()
-    if (willImportSection) {
-      for (const { originalIndex } of willImportSection.items) {
+    for (const section of categorizedSections) {
+      if (section.key !== 'will_import' && section.key !== 'has_updates') continue
+      for (const { originalIndex } of section.items) {
         if (!app.manuallyUnchecked.has(originalIndex)) {
           next.add(originalIndex)
         }
@@ -226,6 +236,10 @@
       }
     }
     chrome.runtime.onMessage.addListener(onMessage)
+    // Warm the element-variant map so weapon image fallbacks are ready before
+    // the first render. Cached with a long TTL in background.ts; this is a no-op
+    // on cache hit.
+    void fetchElementVariants()
     return () => chrome.runtime.onMessage.removeListener(onMessage)
   })
 
@@ -246,6 +260,9 @@
     // Fetch ownership for collection categorization
     if (isCollectionType(dt) && dt !== 'character_stats') {
       await loadOwnedIds(dt)
+      await loadCollectionUpdates(dt)
+    } else if (dt === 'character_stats') {
+      await loadCharacterStatsUpdates()
     }
 
     if (dt.startsWith('party_')) {
@@ -293,6 +310,47 @@
     }
   }
 
+  async function loadCollectionUpdates(dt: string) {
+    // Artifacts don't support partial updates; skip them.
+    if (dt.includes('artifact')) {
+      collectionUpdates = new Map()
+      return
+    }
+    try {
+      const response = await checkCollectionUpdates(dt)
+      if (response.error || !response.updates) {
+        collectionUpdates = new Map()
+        return
+      }
+      const map = new Map<string, CollectionUpdate>()
+      for (const update of response.updates) {
+        const key = update.game_id ?? update.granblue_id
+        if (key) map.set(key, update)
+      }
+      collectionUpdates = map
+    } catch {
+      collectionUpdates = new Map()
+    }
+  }
+
+  async function loadCharacterStatsUpdates() {
+    try {
+      const response = await checkCharacterStatsUpdates()
+      if (response.error || !response.updates) {
+        collectionUpdates = new Map()
+        return
+      }
+      const map = new Map<string, CollectionUpdate>()
+      for (const update of response.updates) {
+        const key = update.granblue_id
+        if (key) map.set(key, update)
+      }
+      collectionUpdates = map
+    } catch {
+      collectionUpdates = new Map()
+    }
+  }
+
   async function loadPartySupplementary(data: PartyDeckData) {
     const summonName = data?.deck?.pc?.damage_info?.summon_name
     const setAction = data?.deck?.pc?.set_action || []
@@ -320,7 +378,7 @@
     if (!name) return null
     try {
       const apiUrl = await getApiUrl('/search/summons')
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ search: { query: name } })
@@ -340,8 +398,8 @@
     try {
       const locale = getLocale()
       const [skillMapRes, weaponKeysRes] = await Promise.all([
-        fetch(await getApiUrl('/weapon_keys/skill_map')),
-        fetch(await getApiUrl('/weapon_keys'))
+        apiFetch(await getApiUrl('/weapon_keys/skill_map')),
+        apiFetch(await getApiUrl('/weapon_keys'))
       ])
       if (!skillMapRes.ok || !weaponKeysRes.ok) return null
       const skillMap: Record<string, string> = await skillMapRes.json()
@@ -369,7 +427,7 @@
     if (_weaponStatModCache) return _weaponStatModCache
     try {
       const apiUrl = await getApiUrl('/weapon_stat_modifiers')
-      const response = await fetch(apiUrl)
+      const response = await apiFetch(apiUrl)
       if (!response.ok) return null
       const modifiers = await response.json() as Array<{ slug: string; name_en: string; name_jp: string; suffix?: string }>
       _weaponStatModCache = {} as Record<string, WeaponStatModifier>
@@ -394,7 +452,7 @@
     }
     try {
       const apiUrl = await getApiUrl('/job_skills/resolve')
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ names: uncached })
@@ -519,6 +577,7 @@
                 {dataType}
                 {isCollection}
                 {simplePortraits}
+                {collectionUpdates}
               />
             {:else}
               <ItemGrid
@@ -527,6 +586,7 @@
                 {isCollection}
                 {simplePortraits}
                 {weaponStatModifiers}
+                {collectionUpdates}
               />
             {/if}
           </CollapsibleSection>
@@ -537,6 +597,7 @@
           {dataType}
           {isCollection}
           {simplePortraits}
+          {collectionUpdates}
         />
       {:else}
         <ItemGrid
@@ -545,6 +606,7 @@
           {isCollection}
           {simplePortraits}
           {weaponStatModifiers}
+          {collectionUpdates}
         />
       {/if}
     {/if}

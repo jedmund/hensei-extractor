@@ -8,12 +8,14 @@
  */
 
 import {
+  apiFetch,
   getApiUrl,
   getSiteBaseUrl,
   CACHE_KEYS,
   CACHE_PREFIXES,
   CACHE_TTL_MS,
   RAID_GROUPS_CACHE_TTL_MS,
+  ELEMENT_VARIANTS_CACHE_TTL_MS,
   resolveCacheKey
 } from './constants.js'
 import {
@@ -140,6 +142,11 @@ interface ConflictCheckResult {
   error?: string
 }
 
+interface UpdateCheckResult {
+  updates?: unknown[]
+  error?: string
+}
+
 interface SyncPreviewResult {
   willDelete?: unknown[]
   count?: number
@@ -185,6 +192,11 @@ interface FetchPlaylistsResult {
 }
 
 interface FetchRaidGroupsResult {
+  data?: unknown
+  error?: string
+}
+
+interface FetchElementVariantsResult {
   data?: unknown
   error?: string
 }
@@ -801,7 +813,7 @@ async function cacheGuildInfo(
 async function checkExtensionVersion(): Promise<VersionCheckResult | null> {
   try {
     const apiUrl = await getApiUrl('/version')
-    const response = await fetch(apiUrl)
+    const response = await apiFetch(apiUrl)
     if (!response.ok) return null
 
     const data = (await response.json()) as {
@@ -840,7 +852,6 @@ interface BackgroundMessage {
   action: string
   dataType?: string
   data?: unknown
-  raidSlug?: string
   raidId?: string
   playlistIds?: string[]
   name?: string
@@ -910,6 +921,10 @@ chrome.runtime.onMessage.addListener(
         fetchRaidGroups(message.forceRefresh).then(sendResponse)
         return true
 
+      case 'fetchElementVariants':
+        fetchElementVariants(message.forceRefresh).then(sendResponse)
+        return true
+
       case 'fetchUserPlaylists':
         fetchUserPlaylists().then(sendResponse)
         return true
@@ -932,7 +947,7 @@ chrome.runtime.onMessage.addListener(
           }
           uploadPartyData(
             data,
-            message.raidSlug || message.raidId,
+            message.raidId,
             message.playlistIds,
             message.name,
             message.visibility,
@@ -967,6 +982,31 @@ chrome.runtime.onMessage.addListener(
           checkConflicts(
             data as Record<number, PageData>,
             message.dataType!
+          ).then(sendResponse)
+        })
+        return true
+
+      case 'checkCollectionUpdates':
+        loadCachedDataForUpload(message.dataType!).then((data) => {
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
+          checkCollectionUpdates(
+            data as Record<number, PageData>,
+            message.dataType!
+          ).then(sendResponse)
+        })
+        return true
+
+      case 'checkCharacterStatsUpdates':
+        loadCachedDataForUpload('character_stats').then((data) => {
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
+          checkCharacterStatsUpdates(
+            data as Record<string, CharacterStatsEntry>
           ).then(sendResponse)
         })
         return true
@@ -1399,7 +1439,7 @@ async function authenticatedPost(
 
   const apiUrl = await getApiUrl(endpoint)
   try {
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1563,6 +1603,77 @@ async function checkConflicts(
   )
   if (result.error) return { error: result.error }
   return { conflicts: (result.data!.conflicts as unknown[]) ?? [] }
+}
+
+async function checkCollectionUpdates(
+  pagesData: Record<number, PageData>,
+  dataType: string
+): Promise<UpdateCheckResult> {
+  const endpoint = resolveEndpoint(dataType)
+  if (!endpoint) return { error: 'unknown_type' }
+
+  const allItems = collectPageItems(pagesData)
+  if (allItems.length === 0) return { error: 'no_items' }
+
+  const result = await authenticatedPost(
+    `/collection/${endpoint}/check_updates`,
+    { data: { list: allItems } }
+  )
+  if (result.error) return { error: result.error }
+  return { updates: (result.data!.updates as unknown[]) ?? [] }
+}
+
+async function checkCharacterStatsUpdates(
+  statsData: Record<string, CharacterStatsEntry>
+): Promise<UpdateCheckResult> {
+  const items = Object.values(statsData).map((char) => {
+    const item: Record<string, unknown> = { granblue_id: char.masterId }
+
+    if (char.uncapLevel !== undefined) {
+      item.uncap_level = char.uncapLevel
+    }
+    if (char.transcendenceStep !== undefined) {
+      item.transcendence_step = char.transcendenceStep
+    }
+
+    if (char.awakening) {
+      item.awakening_type = char.awakening.type
+      item.awakening_level = char.awakening.level
+    }
+
+    if (char.rings && char.rings.length > 0) {
+      char.rings.forEach((ring, i) => {
+        if (ring?.modifier) {
+          item[`ring${i + 1}`] = {
+            modifier: ring.modifier,
+            strength: ring.strength
+          }
+        }
+      })
+    }
+
+    if (char.earring?.modifier) {
+      item.earring = {
+        modifier: char.earring.modifier,
+        strength: char.earring.strength
+      }
+    }
+
+    if (char.perpetuity !== undefined) {
+      item.perpetuity = char.perpetuity
+    }
+
+    return item
+  })
+
+  if (items.length === 0) return { error: 'no_items' }
+
+  const result = await authenticatedPost(
+    '/collection/characters/check_updates',
+    { data: { list: items } }
+  )
+  if (result.error) return { error: result.error }
+  return { updates: (result.data!.updates as unknown[]) ?? [] }
 }
 
 async function uploadCollectionData(
@@ -1800,7 +1911,7 @@ async function handleCreateCrew(
 async function handleFetchLatestGwEvent(): Promise<FetchLatestGwEventResponse> {
   try {
     const apiUrl = await getApiUrl('/gw_events/status')
-    const response = await fetch(apiUrl)
+    const response = await apiFetch(apiUrl)
     if (!response.ok) return { error: 'request_failed' }
 
     const data = (await response.json()) as {
@@ -1842,7 +1953,7 @@ async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
     const auth = await getAuthToken()
     if (!auth) return { error: 'not_logged_in' }
 
-    const response = await fetch(
+    const response = await apiFetch(
       await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`),
       {
         headers: { Authorization: `Bearer ${auth.access_token}` }
@@ -1899,6 +2010,51 @@ async function fetchRaidGroups(
 
   const apiUrl = await getApiUrl('/raid_groups')
   try {
+    const response = await apiFetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${auth.access_token}`
+      }
+    })
+
+    if (!response.ok) {
+      return { error: await parseErrorResponse(response) }
+    }
+
+    const data = await response.json()
+
+    await chrome.storage.local.set({
+      [cacheKey]: { data, timestamp: Date.now() }
+    })
+
+    return { data }
+  } catch {
+    return { error: 'request_failed' }
+  }
+}
+
+async function fetchElementVariants(
+  forceRefresh = false
+): Promise<FetchElementVariantsResult> {
+  const cacheKey = CACHE_KEYS.element_variants!
+  const result = await chrome.storage.local.get(cacheKey)
+  const cached = result[cacheKey] as
+    | { timestamp: number; data: unknown }
+    | undefined
+
+  if (
+    !forceRefresh &&
+    cached?.timestamp &&
+    Date.now() - cached.timestamp < ELEMENT_VARIANTS_CACHE_TTL_MS
+  ) {
+    return { data: cached.data }
+  }
+
+  const auth = await getAuthToken()
+  if (!auth) return { error: 'not_logged_in' }
+
+  const apiUrl = await getApiUrl('/weapons/element_variants')
+  try {
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -1945,7 +2101,7 @@ async function getCollectionIds(): Promise<{
 
   const apiUrl = await getApiUrl(`/users/${userId}/collection/game_ids`)
   try {
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(apiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${auth.access_token}`

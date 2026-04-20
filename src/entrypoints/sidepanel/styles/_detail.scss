@@ -585,6 +585,56 @@ body.light #playlistCreateSubmit {
   }
 }
 
+/* Pending collection update indicator */
+.grid-item .update-indicator {
+  position: absolute;
+  top: 4cqw;
+  right: 4cqw;
+  width: 16cqw;
+  height: 16cqw;
+  border-radius: 50%;
+  background: var(--color-accent, #3b82f6);
+  box-shadow: 0 0 0 2px var(--color-bg, #fff);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.list-item .update-indicator {
+  width: spacing.$unit;
+  height: spacing.$unit;
+  border-radius: 50%;
+  background: var(--color-accent, #3b82f6);
+  flex-shrink: 0;
+  margin-right: spacing.$unit-half;
+}
+
+.update-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$unit-half;
+  min-width: spacing.$unit * 18;
+}
+
+.update-tooltip-title {
+  font-weight: 600;
+  opacity: 0.8;
+  font-size: 0.85em;
+}
+
+.update-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: spacing.$unit;
+}
+
+.update-tooltip-label {
+  opacity: 0.7;
+}
+
+.update-tooltip-values {
+  font-weight: 500;
+}
+
 /* Item Checkbox */
 .item-checkbox {
   position: absolute;

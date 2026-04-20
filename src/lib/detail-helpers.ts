@@ -15,6 +15,7 @@ import {
   AUGMENT_ICON_MAP,
   resolveForgedSummonId
 } from './game-data.js'
+import { getBaseGranblueIdForVariant } from './element-variants.js'
 import * as m from '../paraglide/messages.js'
 import { translateSeries, getLocale } from './i18n.js'
 
@@ -268,6 +269,27 @@ export function getItemImageUrl(
     return getImageUrl(`artifact-square/${artifactId}.jpg`)
   }
   return ''
+}
+
+/**
+ * Returns a fallback image URL for an item whose primary thumbnail may 404.
+ * Currently only meaningful for element-changeable weapons (Ultima, Atma, CCW,
+ * Superlative): the game sends per-element variant IDs whose thumbnails aren't
+ * uploaded to the S3 bucket. Falling back to the base granblue_id image gives
+ * a generic but present thumbnail so the weapon stays visible and importable.
+ */
+export async function getItemImageFallbackUrl(
+  dataType: string,
+  item: RawGameItem
+): Promise<string | undefined> {
+  if (!(dataType.includes('weapon') || dataType.startsWith('stash_weapon'))) {
+    return undefined
+  }
+  const granblueId = item.master?.id || item.param?.id || item.id
+  if (!granblueId) return undefined
+  const baseId = await getBaseGranblueIdForVariant(String(granblueId))
+  if (!baseId) return undefined
+  return getImageUrl(`weapon-square/${baseId}.jpg`)
 }
 
 export function getArtifactLabels(item: RawGameItem): string {
