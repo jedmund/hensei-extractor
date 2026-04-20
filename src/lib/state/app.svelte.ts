@@ -55,7 +55,6 @@ class AppState {
   // Selection
   selectedItems = $state(new Set<number>())
   manuallyUnchecked = $state(new Set<number>())
-  brokenImageIndices = $state(new Set<number>())
 
   // Filters
   activeRarityFilters = $state(new Set(['4']))
@@ -114,7 +113,6 @@ class AppState {
     this.detailData = null
     this.selectedItems = new Set()
     this.manuallyUnchecked = new Set()
-    this.brokenImageIndices = new Set()
     this.enableFullSync = false
     this.partyName = ''
     this.selectedRaid = null

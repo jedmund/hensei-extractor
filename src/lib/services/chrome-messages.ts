@@ -10,8 +10,10 @@ import type {
   FetchLatestGwEventResponse,
   PreviewGwPhantomsResponse,
   CheckConflictsResponse,
+  CheckUpdatesResponse,
   PreviewSyncDeletionsResponse,
   FetchRaidGroupsResponse,
+  FetchElementVariantsResponse,
   FetchPlaylistsResponse,
   CreatePlaylistResponse,
   CollectionIdsResponse,
@@ -102,6 +104,21 @@ export async function checkConflicts(
   }) as Promise<CheckConflictsResponse>
 }
 
+export async function checkCollectionUpdates(
+  dataType: string
+): Promise<CheckUpdatesResponse> {
+  return send({
+    action: 'checkCollectionUpdates',
+    dataType
+  }) as Promise<CheckUpdatesResponse>
+}
+
+export async function checkCharacterStatsUpdates(): Promise<CheckUpdatesResponse> {
+  return send({
+    action: 'checkCharacterStatsUpdates'
+  }) as Promise<CheckUpdatesResponse>
+}
+
 export async function fetchRaidGroups(
   forceRefresh = false
 ): Promise<FetchRaidGroupsResponse> {
@@ -109,6 +126,15 @@ export async function fetchRaidGroups(
     action: 'fetchRaidGroups',
     forceRefresh
   }) as Promise<FetchRaidGroupsResponse>
+}
+
+export async function fetchElementVariants(
+  forceRefresh = false
+): Promise<FetchElementVariantsResponse> {
+  return send({
+    action: 'fetchElementVariants',
+    forceRefresh
+  }) as Promise<FetchElementVariantsResponse>
 }
 
 export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {

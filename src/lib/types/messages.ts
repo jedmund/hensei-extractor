@@ -21,6 +21,8 @@ export type ExtensionMessage =
   | { action: 'createCrew'; name: string }
   | { action: 'fetchLatestGwEvent' }
   | { action: 'previewGwPhantoms'; dataType: string }
+  | { action: 'checkCollectionUpdates'; data: unknown; dataType: string }
+  | { action: 'checkCharacterStatsUpdates'; data: unknown }
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean
@@ -77,6 +79,27 @@ export interface CheckConflictsResponse {
   error?: string
 }
 
+/** A single field-level change returned by check_updates */
+export interface CollectionChangeField {
+  field: string
+  label: string
+  before: { raw: unknown; display: string }
+  after: { raw: unknown; display: string }
+}
+
+/** One record's worth of pending changes, keyed by game_id/granblue_id */
+export interface CollectionUpdate {
+  game_id?: string
+  granblue_id: string
+  changes: CollectionChangeField[]
+}
+
+/** Response from checkCollectionUpdates / checkCharacterStatsUpdates */
+export interface CheckUpdatesResponse {
+  updates?: CollectionUpdate[]
+  error?: string
+}
+
 /** Response from previewSyncDeletions */
 export interface PreviewSyncDeletionsResponse {
   willDelete?: unknown[]
@@ -107,6 +130,19 @@ export interface RaidGroup {
 /** Response from fetchRaidGroups */
 export interface FetchRaidGroupsResponse {
   data?: RaidGroup[]
+  error?: string
+}
+
+/** A weapon's element-variant ID map (element index → game variant ID) */
+export interface ElementVariantEntry {
+  id?: string
+  granblue_id: string
+  element_variant_ids: Record<string, string>
+}
+
+/** Response from fetchElementVariants */
+export interface FetchElementVariantsResponse {
+  data?: ElementVariantEntry[]
   error?: string
 }
 
