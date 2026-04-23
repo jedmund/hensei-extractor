@@ -394,7 +394,20 @@ body.light #playlistCreateSubmit {
   background: var(--color-bg);
   container-type: inline-size;
 
-  > img {
+  > img,
+  > .update-trigger {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: layout.$item-corner;
+  }
+
+  > .update-trigger > span {
+    display: block;
+    width: 100%;
+  }
+
+  > .update-trigger img {
     width: 100%;
     height: auto;
     display: block;
@@ -410,6 +423,7 @@ body.light #playlistCreateSubmit {
     position: relative;
 
     > img,
+    > .update-trigger,
     > .weapon-modifiers {
       opacity: 0.35;
     }
