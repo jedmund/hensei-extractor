@@ -1417,6 +1417,9 @@ function resolveEndpoint(dataType: string): string | null {
   if (ENDPOINT_MAP[dataType]) return ENDPOINT_MAP[dataType]!
   if (dataType.startsWith('stash_weapon')) return 'weapons'
   if (dataType.startsWith('stash_summon')) return 'summons'
+  if (dataType.startsWith('detail_weapon')) return 'weapons'
+  if (dataType.startsWith('detail_summon')) return 'summons'
+  if (dataType.startsWith('detail_npc')) return 'characters'
   return null
 }
 
