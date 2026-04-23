@@ -140,26 +140,28 @@
         {/if}
       {/if}
       {#if pendingUpdate}
-        <RichTooltip>
-          {#snippet content()}
-            <div class="update-tooltip">
-              <div class="update-tooltip-title">{m.section_has_updates()}</div>
-              {#each pendingUpdate.changes as change}
-                <div class="update-tooltip-row">
-                  <span class="update-tooltip-label">{change.label}</span>
-                  <span class="update-tooltip-values">
-                    {change.before.display || '—'} → {change.after.display || '—'}
-                  </span>
-                </div>
-              {/each}
-            </div>
-          {/snippet}
-          <img
-            src={getItemImageUrl(dataType, item, simplePortraits)}
-            alt=""
-            onerror={(e) => handleImageError(originalIndex, e)}
-          />
-        </RichTooltip>
+        <div class="update-trigger">
+          <RichTooltip>
+            {#snippet content()}
+              <div class="update-tooltip">
+                <div class="update-tooltip-title">{m.section_has_updates()}</div>
+                {#each pendingUpdate.changes as change}
+                  <div class="update-tooltip-row">
+                    <span class="update-tooltip-label">{change.label}</span>
+                    <span class="update-tooltip-values">
+                      {change.before.display || '—'} → {change.after.display || '—'}
+                    </span>
+                  </div>
+                {/each}
+              </div>
+            {/snippet}
+            <img
+              src={getItemImageUrl(dataType, item, simplePortraits)}
+              alt=""
+              onerror={(e) => handleImageError(originalIndex, e)}
+            />
+          </RichTooltip>
+        </div>
         <span class="update-indicator" aria-hidden="true"></span>
       {:else}
         <img
