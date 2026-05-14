@@ -74,7 +74,11 @@ export function parseSupportSummons(
   const slots = new Map<string, ParsedSupportSummon>()
 
   SLOT_RE.lastIndex = 0
-  for (let match = SLOT_RE.exec(html); match !== null; match = SLOT_RE.exec(html)) {
+  for (
+    let match = SLOT_RE.exec(html);
+    match !== null;
+    match = SLOT_RE.exec(html)
+  ) {
     const section = parseInt(match[1]!, 10)
     const position = parseInt(match[2]!, 10)
     const granblueId = match[3]!
@@ -87,7 +91,11 @@ export function parseSupportSummons(
   }
 
   NAME_RE.lastIndex = 0
-  for (let match = NAME_RE.exec(html); match !== null; match = NAME_RE.exec(html)) {
+  for (
+    let match = NAME_RE.exec(html);
+    match !== null;
+    match = NAME_RE.exec(html)
+  ) {
     const key = `${match[1]}${match[2]}`
     const slot = slots.get(key)
     if (slot) {

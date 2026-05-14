@@ -94,7 +94,9 @@ export async function uploadCharacterStats(
 }
 
 export async function uploadSupportSummons(): Promise<UploadCollectionResponse> {
-  return send({ action: 'uploadSupportSummons' }) as Promise<UploadCollectionResponse>
+  return send({
+    action: 'uploadSupportSummons'
+  }) as Promise<UploadCollectionResponse>
 }
 
 export async function checkConflicts(

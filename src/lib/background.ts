@@ -1811,7 +1811,7 @@ async function uploadSupportSummons(
   return {
     success: true,
     created:
-      (result.data?.meta as Record<string, unknown>)?.created as number ??
+      ((result.data?.meta as Record<string, unknown>)?.created as number) ??
       parsed.items.length,
     updated: 0,
     skipped: 0,
