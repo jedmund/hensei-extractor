@@ -12,11 +12,13 @@ export interface CacheStatusInfo {
   age: number
   timestamp?: number
   totalItems?: number
+  totalSlots?: number
   pageCount?: number
   itemName?: string
   stashName?: string
   partyName?: string
   partyId?: string
+  gbfUserId?: string | null
 }
 
 /** Formatted cache status for display in the UI */

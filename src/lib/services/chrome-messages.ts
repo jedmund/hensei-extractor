@@ -93,6 +93,10 @@ export async function uploadCharacterStats(
   }) as Promise<UploadCollectionResponse>
 }
 
+export async function uploadSupportSummons(): Promise<UploadCollectionResponse> {
+  return send({ action: 'uploadSupportSummons' }) as Promise<UploadCollectionResponse>
+}
+
 export async function checkConflicts(
   dataType: string,
   selectedIndices: number[]
