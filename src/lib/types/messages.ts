@@ -23,6 +23,7 @@ export type ExtensionMessage =
   | { action: 'previewGwPhantoms'; dataType: string }
   | { action: 'checkCollectionUpdates'; data: unknown; dataType: string }
   | { action: 'checkCharacterStatsUpdates'; data: unknown }
+  | { action: 'uploadSupportSummons' }
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean

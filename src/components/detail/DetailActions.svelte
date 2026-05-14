@@ -7,6 +7,7 @@
     uploadCollectionData,
     uploadDetailData,
     uploadCharacterStats,
+    uploadSupportSummons,
     checkConflicts
   } from '../../lib/services/chrome-messages.js'
   import {
@@ -20,6 +21,7 @@
   let isParty = $derived(dataType.startsWith('party_'))
   let isDatabase = $derived(dataType.startsWith('detail_'))
   let isCharStats = $derived(dataType === 'character_stats')
+  let isSupportSummons = $derived(dataType === 'support_summons')
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
@@ -77,6 +79,8 @@
           shareWithCrew: app.shareWithCrew,
           playlists: app.selectedPlaylists
         })
+      } else if (isSupportSummons) {
+        response = await uploadSupportSummons()
       } else if (isDatabase) {
         response = await uploadDetailData(dataType)
       } else if (isCharStats) {

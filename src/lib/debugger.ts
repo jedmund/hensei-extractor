@@ -40,7 +40,9 @@ const INTERCEPT_PATTERNS = [
   '/total_performance/',
   '/todays_performance/',
   // Guild info (for crew ID)
-  '/rest/guild/main/guild_info'
+  '/rest/guild/main/guild_info',
+  // Profile page (for support summons — HTML payload inside JSON envelope)
+  '/profile/content/index/'
 ]
 
 // ==========================================
@@ -356,6 +358,7 @@ function getDataType(url: string): string {
   if (url.includes('/todays_performance/') && url.includes('/teamraid'))
     return 'unf_daily_scores'
   if (url.includes('/rest/guild/main/guild_info')) return 'guild_info'
+  if (url.includes('/profile/content/index/')) return 'support_summons'
   return 'unknown'
 }
 

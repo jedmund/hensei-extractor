@@ -63,6 +63,11 @@ export function formatCacheStatus(
           items: info.totalItems ?? 0,
           pages: info.pageCount ?? 0
         })
+      } else if (type === 'support_summons') {
+        subtitle = m.support_summons_subtitle({
+          set: info.totalItems ?? 0,
+          total: info.totalSlots ?? 22
+        })
       }
 
       if (type.startsWith('unf_scores_')) {

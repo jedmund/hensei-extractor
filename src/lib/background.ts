@@ -30,6 +30,10 @@ import {
   PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from './mastery.js'
+import {
+  parseSupportSummons,
+  type ParsedSupportSummonPayload
+} from './parsers/support-summons.js'
 
 // ==========================================
 // TYPES
@@ -172,6 +176,7 @@ interface CacheStatusEntry {
   pageCount?: number
   totalPages?: number | null
   totalItems?: number
+  totalSlots?: number
   isComplete?: boolean
   characterCount?: number
   partyId?: string
@@ -179,6 +184,7 @@ interface CacheStatusEntry {
   stashName?: string | null
   granblueId?: string
   itemName?: string
+  gbfUserId?: string | null
 }
 
 interface CacheStatusResult {
@@ -358,6 +364,8 @@ async function handleInterceptedData(
     } else if (dataType === 'guild_info') {
       cached = await cacheGuildInfo(data, timestamp)
       actualDataType = 'guild_info'
+    } else if (dataType === 'support_summons') {
+      cached = await cacheSupportSummons(data, timestamp, url)
     } else {
       cached = await cacheSingleItem(dataType, data, timestamp, url)
     }
@@ -392,6 +400,31 @@ async function cacheSingleItem(
 
   await chrome.storage.local.set({
     [cacheKey]: { data, timestamp, url }
+  })
+  return true
+}
+
+// Parses the support-summon HTML at intercept time so uploads and status
+// readers can work with the already-extracted slot list rather than re-parsing.
+async function cacheSupportSummons(
+  data: unknown,
+  timestamp: number,
+  url: string
+): Promise<boolean> {
+  const cacheKey = CACHE_KEYS.support_summons
+  if (!cacheKey) return false
+
+  const parsed = parseSupportSummons(data, url)
+
+  await chrome.storage.local.set({
+    [cacheKey]: {
+      data: parsed,
+      timestamp,
+      url,
+      totalItems: parsed.items.length,
+      totalSlots: 22,
+      gbfUserId: parsed.gbf_user_id
+    }
   })
   return true
 }
@@ -1029,6 +1062,18 @@ chrome.runtime.onMessage.addListener(
         })
         return true
 
+      case 'uploadSupportSummons':
+        loadCachedDataForUpload('support_summons').then((data) => {
+          if (!data) {
+            sendResponse({ error: 'no_cached_data' })
+            return
+          }
+          uploadSupportSummons(
+            data as unknown as ParsedSupportSummonPayload
+          ).then(sendResponse)
+        })
+        return true
+
       case 'syncCollection':
         loadCachedDataForUpload(message.dataType!).then((data) => {
           if (!data) {
@@ -1272,6 +1317,16 @@ async function handleGetCacheStatus(): Promise<CacheStatusResult> {
           isStale: stale,
           characterCount
         }
+      }
+    } else if (type === 'support_summons') {
+      status[type] = {
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
+        totalItems: (cached.totalItems as number) ?? 0,
+        totalSlots: (cached.totalSlots as number) ?? 22,
+        gbfUserId: (cached.gbfUserId as string | null) ?? null
       }
     } else if (type.startsWith('list_') || type.startsWith('collection_')) {
       status[type] = {
@@ -1733,6 +1788,34 @@ async function uploadCollectionData(
     skipped: (result.data!.skipped as number) ?? 0,
     errors: (result.data!.errors as unknown[]) ?? [],
     reconciliation: result.data!.reconciliation ?? null
+  }
+}
+
+async function uploadSupportSummons(
+  parsed: ParsedSupportSummonPayload
+): Promise<UploadCollectionResult> {
+  if (!parsed?.items) return { error: 'no_items' }
+
+  const body = {
+    support_summons: parsed.items.map((item) => ({
+      gbf_section: item.gbf_section,
+      position: item.position,
+      granblue_id: item.granblue_id,
+      level: item.level
+    }))
+  }
+
+  const result = await authenticatedPost('/support_summons/import', body)
+  if (result.error) return { error: result.error }
+
+  return {
+    success: true,
+    created:
+      ((result.data?.meta as Record<string, unknown>)?.created as number) ??
+      parsed.items.length,
+    updated: 0,
+    skipped: 0,
+    errors: []
   }
 }
 
