@@ -35,6 +35,7 @@ export default defineConfig({
     permissions: ['storage', 'debugger', 'tabs', 'sidePanel', 'cookies'],
     host_permissions: [
       'https://game.granbluefantasy.jp/*',
+      'https://gbf.game.mbga.jp/*',
       'https://granblue.team/*',
       'https://api.granblue.team/*',
       'https://next-api.granblue.team/*'
