@@ -11,7 +11,11 @@
 // ENDPOINT PATTERNS TO INTERCEPT
 // ==========================================
 
-const GBF_DOMAINS = ['game.granbluefantasy.jp', 'steam.granbluefantasy.com']
+const GBF_DOMAINS = [
+  'game.granbluefantasy.jp',
+  'gbf.game.mbga.jp',
+  'steam.granbluefantasy.com'
+]
 
 const INTERCEPT_PATTERNS = [
   '/party/deck',
