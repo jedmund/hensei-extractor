@@ -12,7 +12,7 @@
   import Segment from '../shared/segmented-control/Segment.svelte'
   import * as m from '../../paraglide/messages.js'
   import { fetchRaidGroups } from '../../lib/services/chrome-messages.js'
-  import { RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
+  import { BUCKET, RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
   import { getLocale } from '../../lib/i18n.js'
 
   interface Props {
@@ -103,7 +103,7 @@
   }
 
   function getRaidImageUrl(raid: Raid): string {
-    return raid.slug ? getImageUrl(`raid-thumbnail/${raid.slug}.png`) : ''
+    return raid.slug ? getImageUrl(`${BUCKET.raidThumbnail}/${raid.slug}.png`) : ''
   }
 
   let filteredGroups = $derived.by(() => {

@@ -3,7 +3,7 @@
  * Type checks, data extraction, image URL builders, and modifier data helpers.
  */
 
-import { getImageUrl } from './constants.js'
+import { BUCKET, getImageUrl } from './constants.js'
 import {
   GAME_ELEMENT_NAMES,
   GAME_PROFICIENCY_NAMES,
@@ -253,20 +253,20 @@ export function getItemImageUrl(
 
   if (dataType.includes('npc') || dataType.includes('character')) {
     const suffix = getCharacterImageSuffix(item, simplePortraits)
-    return getImageUrl(`character-square/${granblueId}${suffix}.jpg`)
+    return getImageUrl(`${BUCKET.characterSquare}/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('weapon')) {
     const suffix = getImageSuffix(item)
-    return getImageUrl(`weapon-square/${granblueId}${suffix}.jpg`)
+    return getImageUrl(`${BUCKET.weaponSquare}/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('summon')) {
     const suffix = getImageSuffix(item)
     const resolvedId = resolveForgedSummonId(granblueId ?? '')
-    return getImageUrl(`summon-square/${resolvedId}${suffix}.jpg`)
+    return getImageUrl(`${BUCKET.summonSquare}/${resolvedId}${suffix}.jpg`)
   }
   if (dataType.includes('artifact')) {
     const artifactId = item.artifact_id || granblueId
-    return getImageUrl(`artifact-square/${artifactId}.jpg`)
+    return getImageUrl(`${BUCKET.artifactSquare}/${artifactId}.jpg`)
   }
   return ''
 }
@@ -289,7 +289,7 @@ export async function getItemImageFallbackUrl(
   if (!granblueId) return undefined
   const baseId = await getBaseGranblueIdForVariant(String(granblueId))
   if (!baseId) return undefined
-  return getImageUrl(`weapon-square/${baseId}.jpg`)
+  return getImageUrl(`${BUCKET.weaponSquare}/${baseId}.jpg`)
 }
 
 export function getArtifactLabels(item: RawGameItem): string {

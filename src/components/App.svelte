@@ -3,7 +3,7 @@
   import { app, type AuthData } from '../lib/state/app.svelte.js'
   import { setLocale, getPreferredLocale } from '../lib/i18n.js'
   import { getCacheStatus } from '../lib/services/chrome-messages.js'
-  import { getImageUrl } from '../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../lib/constants.js'
   import { Tooltip } from 'bits-ui'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
@@ -14,7 +14,7 @@
   onMount(async () => {
     document.documentElement.style.setProperty(
       '--login-bg-image',
-      `url('${getImageUrl('port-breeze.jpg')}')`
+      `url('${getImageUrl(`${BUCKET.marketing}/port-breeze.jpg`)}')`
     )
 
     const result = await chrome.storage.local.get([

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
-  import { getImageUrl } from '../../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../../lib/constants.js'
   import Button from '../shared/Button.svelte'
 
   type ConflictDecision = 'import' | 'skip'
@@ -29,9 +29,9 @@
   function getConflictImageUrl(granblueId: string | undefined): string {
     if (!granblueId) return ''
     const dt = app.currentDetailDataType ?? ''
-    if (dt.includes('weapon')) return getImageUrl(`weapon-square/${granblueId}.jpg`)
-    if (dt.includes('summon')) return getImageUrl(`summon-square/${granblueId}.jpg`)
-    if (dt.includes('character') || dt.includes('npc')) return getImageUrl(`character-square/${granblueId}_01.jpg`)
+    if (dt.includes('weapon')) return getImageUrl(`${BUCKET.weaponSquare}/${granblueId}.jpg`)
+    if (dt.includes('summon')) return getImageUrl(`${BUCKET.summonSquare}/${granblueId}.jpg`)
+    if (dt.includes('character') || dt.includes('npc')) return getImageUrl(`${BUCKET.characterSquare}/${granblueId}_01.jpg`)
     return ''
   }
 
