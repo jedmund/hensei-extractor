@@ -48,10 +48,20 @@ export interface CachedDataResponse {
 }
 
 /** Response from uploadPartyData */
+export interface ImportWarning {
+  code: string
+  type: string
+  position: number
+  granblue_id?: string | null
+  name?: string | null
+  details?: string[]
+}
+
 export interface UploadPartyResponse {
   success?: boolean
   shortcode?: string
   url?: string
+  warnings?: ImportWarning[]
   error?: string
 }
 

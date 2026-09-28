@@ -214,6 +214,7 @@
   "toast_import_not_supported": "インポートは対応していません",
   "toast_review_conflicts": "インポート前に競合を確認してください",
   "toast_opening_party": "パーティを開いています...",
+  "toast_opening_party_with_warnings": "パーティを開いています... {count}件のアイテムに問題があり、一部の設定が反映されていない可能性があります",
   "toast_import_success": "インポート成功",
   "toast_imported_items": "{total}件をインポートしました",
   "toast_items_need_review": "{count}件のアイテムの確認が必要です",

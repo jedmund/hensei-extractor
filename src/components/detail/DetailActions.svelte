@@ -80,7 +80,9 @@
     app.importState = 'importing'
 
     try {
-      let response: { error?: string; url?: string; created?: number; updated?: number } | undefined
+      let response:
+        | { error?: string; url?: string; warnings?: unknown[]; created?: number; updated?: number }
+        | undefined
 
       if (isParty) {
         response = await uploadPartyData({
@@ -141,7 +143,12 @@
         app.importState = 'idle'
       } else if (response?.url) {
         chrome.tabs.create({ url: response.url })
-        app.showToast(m.toast_opening_party())
+        const warningCount = response.warnings?.length ?? 0
+        app.showToast(
+          warningCount > 0
+            ? m.toast_opening_party_with_warnings({ count: warningCount })
+            : m.toast_opening_party()
+        )
         app.importState = 'imported'
       } else if (response?.created !== undefined) {
         const total = response.created + (response.updated || 0)
