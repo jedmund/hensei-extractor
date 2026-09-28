@@ -568,6 +568,11 @@ body.light #playlistCreateSubmit {
   }
 }
 
+/* In collection imports, keep skill icons clear of the selection checkbox */
+.grid-item.selectable .weapon-modifiers .weapon-skills {
+  right: calc(#{spacing.$unit-half} * 2 + #{spacing.$unit} * 2.5);
+}
+
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
 .weapon-mainhand .weapon-modifiers {
   .awakening-icon {
