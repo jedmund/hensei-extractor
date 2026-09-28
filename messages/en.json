@@ -218,6 +218,7 @@
   "toast_sync_failed": "Sync failed: {error}",
   "toast_preview_failed": "Preview failed: {error}",
   "toast_data_captured": "{name} data captured!",
+  "toast_data_captured_generic": "Data captured!",
   "update_available": "A new version is available (v{version})",
   "update_link": "Update",
   "update_current": "You're currently on v",
@@ -377,5 +378,9 @@
   "crew_not_officer": "Only crew officers can import scores.",
   "crew_no_event": "GW event not found. Contact an admin to create it.",
   "lang_en": "EN",
-  "lang_ja": "日本語"
+  "lang_ja": "日本語",
+  "aria_previous": "Previous",
+  "aria_next": "Next",
+  "aria_view_details": "View details",
+  "placeholder_select_option": "Select an option"
 }

@@ -5,6 +5,7 @@
   import { getCacheStatus } from '../lib/services/chrome-messages.js'
   import { BUCKET, getImageUrl } from '../lib/constants.js'
   import { Tooltip } from 'bits-ui'
+  import * as m from '../paraglide/messages.js'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
   import WarningCard from './login/WarningCard.svelte'
@@ -32,7 +33,9 @@
       if (message.action === 'dataCaptured') {
         refreshCaches()
         app.showToast(
-          message.name ? `${message.name} data captured!` : 'Data captured!'
+          message.name
+            ? m.toast_data_captured({ name: message.name })
+            : m.toast_data_captured_generic()
         )
       }
     })

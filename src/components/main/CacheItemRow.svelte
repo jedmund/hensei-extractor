@@ -44,7 +44,7 @@
   </div>
   <div class="cache-right">
     <span class="cache-age">{status.ageText}</span>
-    <span class="cache-detail-btn" aria-label="View details">
+    <span class="cache-detail-btn" aria-label={m.aria_view_details()}>
       <Icon name="chevron-right" size={14} />
     </span>
   </div>
