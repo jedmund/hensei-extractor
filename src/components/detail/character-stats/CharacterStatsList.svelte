@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getImageUrl } from '../../../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../../../lib/constants.js'
   import { GAME_ELEMENT_NAMES } from '../../../lib/game-data.js'
   import {
     formatModifier,
@@ -128,7 +128,7 @@
           <div class="char-stats-image-wrapper">
             <img
               class="char-stats-image"
-              src={getImageUrl(`character-square/${char.masterId}_01.jpg`)}
+              src={getImageUrl(`${BUCKET.characterSquare}/${char.masterId}_01.jpg`)}
               alt=""
             />
             {#if char.perpetuity}

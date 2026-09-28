@@ -31,6 +31,32 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
 
 export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
 
+/**
+ * Bucket prefixes for our images. Mirrors BUCKET in hensei-web's
+ * src/lib/utils/images.ts; the bucket was reorganized and the old flat
+ * prefixes (weapon-square/, ax/, …) no longer exist.
+ */
+export const BUCKET = {
+  marketing: 'app/marketing',
+  characterMain: 'characters/main',
+  characterSquare: 'characters/square',
+  weaponMain: 'weapons/main',
+  weaponGrid: 'weapons/grid',
+  weaponSquare: 'weapons/square',
+  weaponKeys: 'weapons/keys',
+  summonGrid: 'summons/grid',
+  summonSquare: 'summons/square',
+  summonTall: 'summons/tall',
+  artifactSquare: 'artifacts/square',
+  accessorySquare: 'accessories/square',
+  bulletSquare: 'bullets/square',
+  jobWide: 'jobs/wide',
+  jobSkills: 'icons/job-skills',
+  awakening: 'icons/awakening',
+  axSkills: 'icons/ax-skills',
+  raidThumbnail: 'raids/thumbnail'
+} as const
+
 export function getImageUrl(path: string): string {
   return `${IMG_URL}/${path}`
 }

@@ -3,8 +3,9 @@
   import { app, type AuthData } from '../lib/state/app.svelte.js'
   import { setLocale, getPreferredLocale } from '../lib/i18n.js'
   import { getAuth, getCacheStatus } from '../lib/services/chrome-messages.js'
-  import { getImageUrl } from '../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../lib/constants.js'
   import { Tooltip } from 'bits-ui'
+  import * as m from '../paraglide/messages.js'
   import LoginView from './login/LoginView.svelte'
   import MainView from './main/MainView.svelte'
   import WarningCard from './login/WarningCard.svelte'
@@ -14,7 +15,7 @@
   onMount(async () => {
     document.documentElement.style.setProperty(
       '--login-bg-image',
-      `url('${getImageUrl('port-breeze.jpg')}')`
+      `url('${getImageUrl(`${BUCKET.marketing}/port-breeze.jpg`)}')`
     )
 
     const result = await chrome.storage.local.get(['noticeAcknowledged'])
@@ -31,7 +32,9 @@
       if (message.action === 'dataCaptured') {
         refreshCaches()
         app.showToast(
-          message.name ? `${message.name} data captured!` : 'Data captured!'
+          message.name
+            ? m.toast_data_captured({ name: message.name })
+            : m.toast_data_captured_generic()
         )
       }
     })
