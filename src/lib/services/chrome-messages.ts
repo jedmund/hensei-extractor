@@ -1,4 +1,5 @@
 import { formatCacheStatus } from '../cache.js'
+import type { AuthData } from '../state/app.svelte.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
 import type {
   CachedDataResponse,
@@ -32,6 +33,11 @@ export async function getCacheStatus(): Promise<
     CacheStatusInfo
   >
   return formatCacheStatus(raw || {})
+}
+
+/** Returns the stored login, refreshing it first if it is about to expire. */
+export async function getAuth(): Promise<AuthData | null> {
+  return ((await send({ action: 'getAuth' })) as AuthData | null) ?? null
 }
 
 export async function getCachedData(

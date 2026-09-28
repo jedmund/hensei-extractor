@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { app, type AuthData } from '../lib/state/app.svelte.js'
   import { setLocale, getPreferredLocale } from '../lib/i18n.js'
-  import { getCacheStatus } from '../lib/services/chrome-messages.js'
+  import { getAuth, getCacheStatus } from '../lib/services/chrome-messages.js'
   import { getImageUrl } from '../lib/constants.js'
   import { Tooltip } from 'bits-ui'
   import LoginView from './login/LoginView.svelte'
@@ -17,11 +17,10 @@
       `url('${getImageUrl('port-breeze.jpg')}')`
     )
 
-    const result = await chrome.storage.local.get([
-      'gbAuth',
-      'noticeAcknowledged'
-    ])
-    const gbAuth = result.gbAuth as AuthData | undefined
+    const result = await chrome.storage.local.get(['noticeAcknowledged'])
+    // Ask the background worker so an expiring login is refreshed (or cleared)
+    // before the panel decides whether to show the login view.
+    const gbAuth = await getAuth()
     const noticeAcknowledged = result.noticeAcknowledged as boolean | undefined
 
     setLocale(getPreferredLocale(gbAuth ?? null))
@@ -35,6 +34,12 @@
           message.name ? `${message.name} data captured!` : 'Data captured!'
         )
       }
+    })
+
+    // Follow refreshes and sign-outs made by the background worker.
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local' || !changes.gbAuth) return
+      app.auth = (changes.gbAuth.newValue as AuthData | undefined) ?? null
     })
 
     if (gbAuth?.access_token) {
