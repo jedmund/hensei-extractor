@@ -50,6 +50,20 @@
     (hasSelectableItems && app.selectedItems.size === 0)
   )
 
+  function importErrorMessage(error: string): string {
+    switch (error) {
+      case 'not_logged_in':
+      case 'invalid_token':
+        return m.toast_import_failed_session()
+      case 'request_failed':
+        return m.toast_import_failed_network()
+      case 'invalid_data':
+        return m.toast_import_failed_invalid()
+      default:
+        return m.toast_import_failed()
+    }
+  }
+
   function supportsConflictCheck(dt: string): boolean {
     return (
       dt === 'collection_weapon' ||
@@ -66,7 +80,9 @@
     app.importState = 'importing'
 
     try {
-      let response: { error?: string; url?: string; created?: number; updated?: number } | undefined
+      let response:
+        | { error?: string; url?: string; warnings?: unknown[]; created?: number; updated?: number }
+        | undefined
 
       if (isParty) {
         response = await uploadPartyData({
@@ -123,11 +139,16 @@
       }
 
       if (response?.error) {
-        app.showToast(m.toast_import_failed())
+        app.showToast(importErrorMessage(response.error))
         app.importState = 'idle'
       } else if (response?.url) {
         chrome.tabs.create({ url: response.url })
-        app.showToast(m.toast_opening_party())
+        const warningCount = response.warnings?.length ?? 0
+        app.showToast(
+          warningCount > 0
+            ? m.toast_opening_party_with_warnings({ count: warningCount })
+            : m.toast_opening_party()
+        )
         app.importState = 'imported'
       } else if (response?.created !== undefined) {
         const total = response.created + (response.updated || 0)

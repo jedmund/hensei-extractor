@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../../lib/state/app.svelte.js'
   import * as m from '../../paraglide/messages.js'
-  import { getImageUrl } from '../../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../../lib/constants.js'
   import Button from '../shared/Button.svelte'
 
   type ConflictDecision = 'import' | 'skip'
@@ -29,9 +29,9 @@
   function getConflictImageUrl(granblueId: string | undefined): string {
     if (!granblueId) return ''
     const dt = app.currentDetailDataType ?? ''
-    if (dt.includes('weapon')) return getImageUrl(`weapon-square/${granblueId}.jpg`)
-    if (dt.includes('summon')) return getImageUrl(`summon-square/${granblueId}.jpg`)
-    if (dt.includes('character') || dt.includes('npc')) return getImageUrl(`character-square/${granblueId}_01.jpg`)
+    if (dt.includes('weapon')) return getImageUrl(`${BUCKET.weaponSquare}/${granblueId}.jpg`)
+    if (dt.includes('summon')) return getImageUrl(`${BUCKET.summonSquare}/${granblueId}.jpg`)
+    if (dt.includes('character') || dt.includes('npc')) return getImageUrl(`${BUCKET.characterSquare}/${granblueId}_01.jpg`)
     return ''
   }
 
@@ -114,9 +114,9 @@
       <p class="conflict-message">{m.conflict_modal_message()}</p>
       {#if currentItem}
         <div class="conflict-nav">
-          <button type="button" class="conflict-nav-btn" aria-label="Previous" disabled={currentIndex === 0} onclick={() => navigate(-1)}>&lsaquo;</button>
+          <button type="button" class="conflict-nav-btn" aria-label={m.aria_previous()} disabled={currentIndex === 0} onclick={() => navigate(-1)}>&lsaquo;</button>
           <span id="conflictCounter">{currentIndex + 1} / {conflicts.length}</span>
-          <button type="button" class="conflict-nav-btn" aria-label="Next" disabled={currentIndex === conflicts.length - 1} onclick={() => navigate(1)}>&rsaquo;</button>
+          <button type="button" class="conflict-nav-btn" aria-label={m.aria_next()} disabled={currentIndex === conflicts.length - 1} onclick={() => navigate(1)}>&rsaquo;</button>
         </div>
       {/if}
     </div>

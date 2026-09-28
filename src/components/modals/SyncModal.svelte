@@ -3,17 +3,17 @@
   import * as m from '../../paraglide/messages.js'
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
-  import { getImageUrl } from '../../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../../lib/constants.js'
   import { previewSyncDeletions, syncCollection } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
   function getSyncPreviewImageUrl(granblueId: string | undefined): string {
     if (!granblueId) return ''
     const dt = app.currentDetailDataType ?? ''
-    if (dt.includes('weapon')) return getImageUrl(`weapon-square/${granblueId}.jpg`)
-    if (dt.includes('summon')) return getImageUrl(`summon-square/${granblueId}.jpg`)
-    if (dt.includes('artifact')) return getImageUrl(`artifact-square/${granblueId}.jpg`)
-    if (dt.includes('npc') || dt.includes('character')) return getImageUrl(`character-square/${granblueId}_01.jpg`)
+    if (dt.includes('weapon')) return getImageUrl(`${BUCKET.weaponSquare}/${granblueId}.jpg`)
+    if (dt.includes('summon')) return getImageUrl(`${BUCKET.summonSquare}/${granblueId}.jpg`)
+    if (dt.includes('artifact')) return getImageUrl(`${BUCKET.artifactSquare}/${granblueId}.jpg`)
+    if (dt.includes('npc') || dt.includes('character')) return getImageUrl(`${BUCKET.characterSquare}/${granblueId}_01.jpg`)
     return ''
   }
 

@@ -3,6 +3,7 @@
   import { Select as SelectPrimitive } from 'bits-ui'
   import { Label } from 'bits-ui'
   import Icon from './Icon.svelte'
+  import * as m from '../../paraglide/messages.js'
 
   interface Option {
     value: T
@@ -49,7 +50,7 @@
     options = [],
     value = $bindable(),
     onValueChange,
-    placeholder = 'Select an option',
+    placeholder = m.placeholder_select_option(),
     disabled = false,
     size = 'medium',
     contained = false,
