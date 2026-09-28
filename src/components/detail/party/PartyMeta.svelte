@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as m from '../../../paraglide/messages.js'
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getImageUrl } from '../../../lib/constants.js'
+  import { BUCKET, getImageUrl } from '../../../lib/constants.js'
   import Input from '../../shared/Input.svelte'
   import Select from '../../shared/Select.svelte'
   import Checkbox from '../../shared/Checkbox.svelte'
@@ -31,7 +31,7 @@
   let raidImageUrl = $derived.by(() => {
     const raid = app.selectedRaid
     if (!raid?.slug) return ''
-    return getImageUrl(`raid-thumbnail/${raid.slug}.png`)
+    return getImageUrl(`${BUCKET.raidThumbnail}/${raid.slug}.png`)
   })
 
   let playlistLabel = $derived.by(() => {
