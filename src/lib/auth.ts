@@ -92,6 +92,47 @@ export async function performLogin(
   return formatAuthData(data)
 }
 
+/**
+ * Exchanges the stored refresh token for a new access/refresh token pair.
+ * Fields stored alongside the tokens (language, display settings) are kept.
+ *
+ * Throws with code 'refresh_unauthorized' when the server rejects the refresh
+ * token (the user must log in again) and 'refresh_failed' for anything else,
+ * so a transient outage doesn't log the user out.
+ */
+export async function refreshAuth<T extends AuthData>(auth: T): Promise<T> {
+  const config = await getEnvConfig()
+
+  let response: Response
+  try {
+    response = await apiFetch(`${config.apiUrl}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        refresh_token: auth.refresh_token,
+        grant_type: 'refresh_token'
+      })
+    })
+  } catch {
+    const err = new Error('refresh_failed') as ApiError
+    err.code = 'refresh_failed'
+    throw err
+  }
+
+  if (!response.ok) {
+    const code =
+      response.status === 400 || response.status === 401
+        ? 'refresh_unauthorized'
+        : 'refresh_failed'
+    const err = new Error(code) as ApiError
+    err.code = code
+    throw err
+  }
+
+  const data = (await response.json()) as RawAuthResponse
+  return { ...auth, ...formatAuthData(data) }
+}
+
 function formatAuthData(data: RawAuthResponse): AuthData {
   const nowMs = Date.now()
   const expiresMs = nowMs + data.expires_in * 1000
