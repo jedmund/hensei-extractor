@@ -30,7 +30,10 @@ import {
   PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from './mastery.js'
-import type { ImportWarning } from './types/messages.js'
+import type {
+  FetchLatestGwEventResponse,
+  ImportWarning
+} from './types/messages.js'
 import { refreshAuth, type AuthData } from './auth.js'
 
 // ==========================================
