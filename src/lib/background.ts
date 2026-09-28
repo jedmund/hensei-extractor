@@ -30,6 +30,7 @@ import {
   PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from './mastery.js'
+import type { ImportWarning } from './types/messages.js'
 
 // ==========================================
 // TYPES
@@ -118,6 +119,7 @@ interface UploadPartyResult {
   success?: boolean
   shortcode?: string
   url?: string
+  warnings?: ImportWarning[]
   error?: string
 }
 
@@ -1489,7 +1491,8 @@ async function uploadPartyData(
   return {
     success: true,
     shortcode: result.data!.shortcode as string,
-    url: `${siteUrl}/teams/${result.data!.shortcode}`
+    url: `${siteUrl}/teams/${result.data!.shortcode}`,
+    warnings: (result.data!.warnings as ImportWarning[] | undefined) ?? []
   }
 }
 
