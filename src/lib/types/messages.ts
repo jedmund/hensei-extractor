@@ -4,6 +4,7 @@
  */
 
 export type ExtensionMessage =
+  | { action: 'getAuth' }
   | { action: 'getCacheStatus' }
   | { action: 'getCachedData'; dataType: string }
   | { action: 'clearCache' }
