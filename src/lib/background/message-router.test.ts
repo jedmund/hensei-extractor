@@ -225,7 +225,8 @@ describe('background message router', () => {
     )
   })
 
-  it('passes collection import and sync options', async () => {
+  // Without updateExisting the API skips owned items, so "Has updates" never applied.
+  it('passes collection import and sync options, updating owned items', async () => {
     send({
       action: 'uploadCollectionData',
       dataType: 'collection_weapon',
@@ -239,6 +240,7 @@ describe('background message router', () => {
         'collection_weapon',
         {
           selectedIndices: [1],
+          updateExisting: true,
           conflictResolutions: { a: 'skip' },
           deletionIds: ['old']
         }
@@ -257,6 +259,7 @@ describe('background message router', () => {
         'collection_weapon',
         {
           selectedIndices: [0],
+          updateExisting: true,
           isFullInventory: true,
           reconcileDeletions: true,
           deletionIds: ['gone']

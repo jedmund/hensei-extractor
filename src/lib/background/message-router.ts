@@ -118,6 +118,7 @@ export function createHandlers(
       withCachedData<Pages, unknown>(m.dataType, (pages) =>
         uploadCollectionData(pages, m.dataType, {
           selectedIndices: m.selectedIndices,
+          updateExisting: true,
           conflictResolutions: m.conflictResolutions,
           deletionIds: m.deletionIds
         })
@@ -126,6 +127,7 @@ export function createHandlers(
       withCachedData<Pages, unknown>(m.dataType, (pages) =>
         uploadCollectionData(pages, m.dataType, {
           selectedIndices: m.selectedIndices,
+          updateExisting: true,
           isFullInventory: true,
           reconcileDeletions: true,
           deletionIds: m.deletionIds
