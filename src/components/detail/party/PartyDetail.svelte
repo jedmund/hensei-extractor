@@ -326,13 +326,8 @@
             <img src={getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)} alt="">
           </div>
         {:else if !friendSummonPending}
-          <div class="summon-friend summon-friend-empty">
-            <span class="summon-friend-empty-label">{m.party_support_summon_label()}</span>
-            <span class="summon-friend-empty-status">
-              {friendSummonName
-                ? m.party_support_summon_undetected({ name: friendSummonName })
-                : m.party_support_summon_none()}
-            </span>
+          <div class="summon-friend">
+            <img class="summon-friend-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
       </div>

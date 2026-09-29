@@ -1010,26 +1010,10 @@ body.light #playlistCreateSubmit {
   }
 }
 
-.summon-friend-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: spacing.$unit-half;
-  padding: spacing.$unit;
-  border: 1px dashed var(--color-border-light);
-  color: var(--color-text-secondary);
-  text-align: center;
-  font-size: type.$font-small;
-}
-
-.summon-friend-empty-label {
-  font-weight: type.$medium;
-  color: var(--color-text);
-}
-
-.summon-friend-empty-status {
-  overflow-wrap: anywhere;
+// The placeholder art is shorter than the tall summon art; it's a flat
+// tile, so fill the slot rather than leave a gap below it.
+.summon-friend img.summon-friend-placeholder {
+  object-fit: cover;
 }
 
 .summon-grid {
