@@ -1,3 +1,5 @@
+import type { ImportWarning } from '../types/messages.js'
+
 export interface AuthToken {
   access_token: string
   user: { id: string; username: string }
@@ -79,6 +81,7 @@ export interface UploadPartyResult {
   success?: boolean
   shortcode?: string
   url?: string
+  warnings?: ImportWarning[]
   error?: string
 }
 

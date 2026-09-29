@@ -7,6 +7,7 @@ import {
 function createDependencies(): MessageRouterDependencies {
   return {
     checkExtensionVersion: vi.fn(async () => null),
+    getAuthToken: vi.fn(async () => null),
     handleGetCacheStatus: vi.fn(async () => ({ _debugger: {} })),
     handleGetCachedData: vi.fn(async () => ({})),
     handleClearCache: vi.fn(async () => ({ success: true })),
@@ -45,6 +46,7 @@ describe('background message router', () => {
 
   it.each([
     ['checkExtensionVersion', 'checkExtensionVersion', {}, []],
+    ['getAuth', 'getAuthToken', {}, []],
     ['getCacheStatus', 'handleGetCacheStatus', {}, []],
     [
       'getCachedData',

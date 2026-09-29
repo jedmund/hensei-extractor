@@ -1,4 +1,5 @@
 import { getSiteBaseUrl } from '../constants.js'
+import type { ImportWarning } from '../types/messages.js'
 import { authenticatedPost, getAuthToken } from './api-client.js'
 import { invalidateCollectionIdsCache } from './reference-data.js'
 import type {
@@ -77,7 +78,8 @@ export async function uploadPartyData(
   return {
     success: true,
     shortcode: result.data!.shortcode as string,
-    url: `${siteUrl}/teams/${result.data!.shortcode}`
+    url: `${siteUrl}/teams/${result.data!.shortcode}`,
+    warnings: (result.data!.warnings as ImportWarning[] | undefined) ?? []
   }
 }
 

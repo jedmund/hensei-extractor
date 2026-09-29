@@ -1,4 +1,5 @@
 import { getAttachedTabs, isAttached } from '../debugger.js'
+import { getAuthToken } from './api-client.js'
 import {
   handleClearCache,
   handleGetCachedData,
@@ -38,6 +39,7 @@ import type { WindowManager } from './window-manager.js'
 
 export interface MessageRouterDependencies {
   checkExtensionVersion: typeof checkExtensionVersion
+  getAuthToken: typeof getAuthToken
   handleGetCacheStatus: typeof handleGetCacheStatus
   handleGetCachedData: typeof handleGetCachedData
   handleClearCache: typeof handleClearCache
@@ -77,6 +79,10 @@ export function createMessageListener(
     switch (message.action) {
       case 'checkExtensionVersion':
         dependencies.checkExtensionVersion().then(sendResponse)
+        return true
+
+      case 'getAuth':
+        dependencies.getAuthToken().then(sendResponse)
         return true
 
       case 'getCacheStatus':
@@ -310,6 +316,7 @@ export function createDefaultMessageListener(
 ): BackgroundMessageListener {
   return createMessageListener({
     checkExtensionVersion,
+    getAuthToken,
     handleGetCacheStatus,
     handleGetCachedData,
     handleClearCache,
