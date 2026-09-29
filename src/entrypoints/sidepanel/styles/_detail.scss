@@ -569,9 +569,10 @@ body.light #playlistCreateSubmit {
 }
 
 /* In collection imports the selection checkbox owns the bottom-right corner,
-   so a weapon's modifier icons sit in a row along the top left instead, the
-   same spot for every cell. A weapon has only one kind: an awakening, an AX
-   or befoulment skill, or 1-3 weapon keys. */
+   so AX/befoulment and weapon key icons sit in a row along the top left
+   instead, and the awakening icon sits bottom left, just above the element
+   circle. A weapon has only one kind: an awakening, an AX or befoulment
+   skill, or 1-3 weapon keys. Same spots for every cell. */
 .grid-item.selectable .weapon-modifiers {
   display: flex;
   align-items: flex-start;
@@ -580,9 +581,17 @@ body.light #playlistCreateSubmit {
   padding: 4cqw;
   box-sizing: border-box;
 
-  .awakening-icon,
   .weapon-skills {
     position: static;
+    display: contents;
+
+    img {
+      margin: 0;
+    }
+
+    img:not(.befoulment-icon) {
+      width: 22cqw;
+    }
   }
 
   // Each icon sits in a tooltip trigger <span>; keep them tight boxes.
@@ -591,17 +600,11 @@ body.light #playlistCreateSubmit {
     display: flex;
   }
 
-  .awakening-icon,
-  .weapon-skills img:not(.befoulment-icon) {
-    width: 22cqw;
-  }
-
-  .weapon-skills {
-    display: contents;
-
-    img {
-      margin: 0;
-    }
+  .awakening-icon {
+    top: auto;
+    left: 4cqw;
+    bottom: 30cqw;
+    width: 25cqw;
   }
 }
 
