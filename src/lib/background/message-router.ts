@@ -35,7 +35,9 @@ import {
   fetchUserPlaylists,
   getCollectionIds
 } from './reference-data.js'
+import { uploadSupportSummons } from './support-summons.js'
 import type { CharacterStatsEntry, PageData } from './types.js'
+import type { ParsedSupportSummonPayload } from '../parsers/support-summons.js'
 import type { WindowManager } from './window-manager.js'
 
 type Handler<A extends ExtensionAction> = (message: MessageOf<A>) => unknown
@@ -140,6 +142,12 @@ export function createHandlers(
     uploadCharacterStats: () =>
       withCachedData<CharacterStats, unknown>('character_stats', (stats) =>
         uploadCharacterStats(stats)
+      ),
+
+    uploadSupportSummons: () =>
+      withCachedData<ParsedSupportSummonPayload, unknown>(
+        'support_summons',
+        (parsed) => uploadSupportSummons(parsed)
       ),
 
     uploadUnfScores: (m) =>

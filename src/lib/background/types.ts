@@ -104,6 +104,7 @@ export interface CacheStatusEntry {
   stashName?: string | null
   granblueId?: string
   itemName?: string
+  gbfUserId?: string | null
 }
 
 export interface CacheStatusResult {

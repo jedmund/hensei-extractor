@@ -29,6 +29,7 @@ function createDependencies(): CaptureDependencies {
     cacheUnfScores: vi.fn(async () => true),
     cacheGuildInfo: vi.fn(async () => true),
     cacheSingleItem: vi.fn(async () => true),
+    cacheSupportSummons: vi.fn(async () => true),
     notifyCaptured: vi.fn(async () => undefined)
   }
 }
@@ -176,6 +177,14 @@ describe('capture dispatcher', () => {
       'cacheGuildInfo',
       [{ is_guild_in: '99' }, 700],
       'guild_info'
+    ],
+    [
+      'support_summons',
+      { data: '' },
+      metadata,
+      'cacheSupportSummons',
+      [{ data: '' }, 700, 'https://game/data'],
+      'support_summons'
     ],
     [
       'other',

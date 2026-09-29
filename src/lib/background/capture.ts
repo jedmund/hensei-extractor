@@ -9,6 +9,7 @@ import {
   cacheUnfScores
 } from './cache-writes.js'
 import { cacheCharacterStats } from './character-stats.js'
+import { cacheSupportSummons } from './support-summons.js'
 import type { PageData } from './types.js'
 
 export interface CaptureDependencies {
@@ -19,6 +20,7 @@ export interface CaptureDependencies {
   cacheUnfScores: typeof cacheUnfScores
   cacheGuildInfo: typeof cacheGuildInfo
   cacheSingleItem: typeof cacheSingleItem
+  cacheSupportSummons: typeof cacheSupportSummons
   notifyCaptured: (message: Record<string, unknown>) => Promise<unknown>
 }
 
@@ -113,6 +115,8 @@ export function createCaptureHandler(dependencies: CaptureDependencies) {
       } else if (dataType === 'guild_info') {
         cached = await dependencies.cacheGuildInfo(data, timestamp)
         actualDataType = 'guild_info'
+      } else if (dataType === 'support_summons') {
+        cached = await dependencies.cacheSupportSummons(data, timestamp, url)
       } else {
         cached = await dependencies.cacheSingleItem(
           dataType,
@@ -147,6 +151,7 @@ export function createDefaultCaptureHandler() {
     cacheUnfScores,
     cacheGuildInfo,
     cacheSingleItem,
+    cacheSupportSummons,
     notifyCaptured: (message) => chrome.runtime.sendMessage(message)
   })
 }

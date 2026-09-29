@@ -4,7 +4,11 @@
  */
 
 import * as m from '../paraglide/messages.js'
-import { CACHE_TTL_MS, getDataTypeName } from './constants.js'
+import {
+  CACHE_TTL_MS,
+  getDataTypeName,
+  SUPPORT_SUMMON_SLOTS
+} from './constants.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from './types/cache.js'
 
 export function formatAge(ageMs: number): string {
@@ -62,6 +66,11 @@ export function formatCacheStatus(
         subtitle = m.count_items_pages({
           items: info.totalItems ?? 0,
           pages: info.pageCount ?? 0
+        })
+      } else if (type === 'support_summons') {
+        subtitle = m.support_summons_subtitle({
+          set: info.totalItems ?? 0,
+          total: SUPPORT_SUMMON_SLOTS
         })
       }
 
