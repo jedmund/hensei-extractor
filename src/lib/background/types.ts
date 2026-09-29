@@ -73,6 +73,7 @@ export interface UploadCollectionOptions {
 
 export interface ApiResult<T = Record<string, unknown>> {
   error?: string
+  errors?: { error: string; granblue_id?: string }[]
   data?: T
   auth?: AuthToken
 }

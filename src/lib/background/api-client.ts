@@ -49,14 +49,36 @@ async function refreshStoredAuth(
   }
 }
 
-export async function parseErrorResponse(response: Response): Promise<string> {
+export interface ApiError {
+  error: string
+  /** Per-item failures from a 422 `{ errors: [...] }` body */
+  errors?: ApiItemError[]
+}
+
+export interface ApiItemError {
+  error: string
+  granblue_id?: string
+  [key: string]: unknown
+}
+
+export async function parseErrorBody(response: Response): Promise<ApiError> {
   try {
-    const json = (await response.json()) as { error?: string }
-    if (json.error) return json.error
+    const json = (await response.json()) as {
+      error?: string
+      errors?: ApiItemError[]
+    }
+    if (json.error) return { error: json.error }
+    if (Array.isArray(json.errors) && json.errors.length > 0) {
+      return { error: 'invalid_data', errors: json.errors }
+    }
   } catch {
     /* not JSON */
   }
-  return 'server_error'
+  return { error: 'server_error' }
+}
+
+export async function parseErrorResponse(response: Response): Promise<string> {
+  return (await parseErrorBody(response)).error
 }
 
 export async function authenticatedPost(
@@ -78,7 +100,7 @@ export async function authenticatedPost(
     })
 
     if (!response.ok) {
-      return { error: await parseErrorResponse(response) }
+      return await parseErrorBody(response)
     }
 
     return { data: (await response.json()) as Record<string, unknown>, auth }
