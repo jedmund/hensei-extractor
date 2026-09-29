@@ -12,8 +12,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vitest run",
-    "test:watch": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vitest"
+    "test": "wxt prepare && paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vitest run",
+    "test:watch": "wxt prepare && paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vitest"
   },
   "author": "Justin Edmund",
   "license": "MIT",
