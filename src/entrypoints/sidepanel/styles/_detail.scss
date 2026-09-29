@@ -568,13 +568,18 @@ body.light #playlistCreateSubmit {
   }
 }
 
-/* In collection imports, keep skill icons clear of the selection checkbox.
-   There's only room for one icon between the checkbox and the element icon,
-   so extra icons (AX + befoulment, weapon keys) stack upward instead. */
+/* In collection imports the selection checkbox owns the bottom-right corner,
+   so skill icons (AX, befoulment, weapon keys) line up along the top right
+   instead, dropping below the pending-update dot when there is one. */
 .grid-item.selectable .weapon-modifiers .weapon-skills {
-  right: calc(#{spacing.$unit-half} * 2 + #{spacing.$unit} * 2.5);
-  flex-direction: column-reverse;
-  align-items: flex-end;
+  top: 4cqw;
+  bottom: auto;
+  right: 4cqw;
+  align-items: flex-start;
+}
+
+.grid-item.selectable.has-update .weapon-modifiers .weapon-skills {
+  top: 24cqw;
 }
 
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
