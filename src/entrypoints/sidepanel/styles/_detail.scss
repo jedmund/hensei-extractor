@@ -600,11 +600,16 @@ body.light #playlistCreateSubmit {
     display: flex;
   }
 
+  // Centered over the element circle (20cqw wide, centered 10.4cqw from the
+  // left, top edge 24.2cqw up) so the banner's concave bottom sits just above
+  // the circle's top arc. The banner is 52/80 of its box wide and its arc
+  // apex is 66/80 down, so a 32cqw box at 21.5cqw puts the apex ~3cqw
+  // (about 2px) above the circle.
   .awakening-icon {
     top: auto;
-    left: 4cqw;
-    bottom: 30cqw;
-    width: 25cqw;
+    left: -5.6cqw;
+    bottom: 21.5cqw;
+    width: 32cqw;
   }
 }
 
