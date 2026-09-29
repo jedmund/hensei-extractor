@@ -122,8 +122,19 @@
 
   let mainWeapon = $derived(weapons[0])
   let gridWeapons = $derived(weapons.slice(1))
-  let mainSummon = $derived(summons[0])
-  let allSubSummons = $derived([...summons.slice(1), ...subSummons])
+  // Fixed summon slots (4 grid, then 2 sub when unlocked) so an empty slot
+  // shows a placeholder instead of the rest shifting up. A slot is empty when
+  // it's missing, null, or has no summon.
+  function summonSlot(data: unknown, key: number): RawPartyItem | null {
+    const item = (data as Record<string, RawPartyItem | null> | undefined)?.[String(key)]
+    return item && (item.master?.id || item.param?.id) ? item : null
+  }
+  let mainSummon = $derived(summonSlot(pc?.summons, 1))
+  let gridSummonSlots = $derived([2, 3, 4, 5].map((key) => summonSlot(pc?.summons, key)))
+  let subSummonSlots = $derived(
+    pc?.is_open_sub_summon === false ? [] : [1, 2].map((key) => summonSlot(pc?.sub_summons, key))
+  )
+  let allSubSummonSlots = $derived([...gridSummonSlots, ...subSummonSlots])
 
   let bulletInfo = $derived(data?.bullet_info?.set_bullets)
   let bullets = $derived.by((): BulletEntry[] => {
@@ -323,20 +334,30 @@
           <div class="summon-main">
             <img src={getImageUrl(`${BUCKET.summonTall}/${id}${suffix}.jpg`)} alt="">
           </div>
+        {:else}
+          <div class="summon-main">
+            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+          </div>
         {/if}
         <div class="summon-grid">
-          {#each allSubSummons as item}
-            {@const id = resolveSummonId(item)}
-            {@const suffix = getImageSuffix(item)}
-            {@const isQuick = quickSummonId && String(item.param?.id) === String(quickSummonId)}
-            <div class="grid-item">
-              {#if isQuick}
-                <div class="summon-modifiers">
-                  <Tooltip content={m.stat_quick_summon()}><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()}></Tooltip>
-                </div>
-              {/if}
-              <img src={getImageUrl(`${BUCKET.summonGrid}/${id}${suffix}.jpg`)} alt="">
-            </div>
+          {#each allSubSummonSlots as item, i (i)}
+            {#if item}
+              {@const id = resolveSummonId(item)}
+              {@const suffix = getImageSuffix(item)}
+              {@const isQuick = quickSummonId && String(item.param?.id) === String(quickSummonId)}
+              <div class="grid-item">
+                {#if isQuick}
+                  <div class="summon-modifiers">
+                    <Tooltip content={m.stat_quick_summon()}><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()}></Tooltip>
+                  </div>
+                {/if}
+                <img src={getImageUrl(`${BUCKET.summonGrid}/${id}${suffix}.jpg`)} alt="">
+              </div>
+            {:else}
+              <div class="grid-item">
+                <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
+              </div>
+            {/if}
           {/each}
         </div>
         {#if friendSummon}
@@ -345,7 +366,7 @@
           </div>
         {:else if !friendSummonPending}
           <div class="summon-friend">
-            <img class="summon-friend-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
       </div>

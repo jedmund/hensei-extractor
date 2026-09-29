@@ -1012,7 +1012,8 @@ body.light #playlistCreateSubmit {
 
 // The placeholder art is shorter than the tall summon art; it's a flat
 // tile, so fill the slot rather than leave a gap below it.
-.summon-friend img.summon-friend-placeholder {
+.summon-main img.summon-placeholder,
+.summon-friend img.summon-placeholder {
   object-fit: cover;
 }
 
