@@ -10,6 +10,7 @@
     ParsedSupportSummonPayload,
     ParsedSupportSummon
   } from '../../lib/parsers/support-summons.js'
+  import { deriveSummonUncap, summonStars } from '../../lib/uncap.js'
 
   interface Props {
     data: ParsedSupportSummonPayload
@@ -74,11 +75,19 @@
                 onerror={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
               />
               <div class="slot-name">{summon.name ?? summon.granblue_id}</div>
-              <div class="slot-level">
-                {summon.level != null
-                  ? m.support_summons_level({ level: summon.level })
-                  : m.support_summons_level_unknown()}
-              </div>
+              {#if summon.level != null}
+                {@const uncap = deriveSummonUncap(summon.level)}
+                <div
+                  class="stars slot-stars"
+                  title={m.support_summons_level({ level: summon.level })}
+                >
+                  {#each summonStars(uncap) as kind, i (i)}
+                    <span class="star {kind}"></span>
+                  {/each}
+                </div>
+              {:else}
+                <div class="slot-level">{m.support_summons_level_unknown()}</div>
+              {/if}
             {:else}
               <img class="slot-image" src={PLACEHOLDER} alt="" />
               <div class="slot-name">{m.support_summons_empty()}</div>
@@ -156,6 +165,16 @@
   .slot-name,
   .slot-level {
     text-align: center;
+  }
+
+  .slot-stars {
+    justify-content: center;
+
+    // Smaller than the database view's stars so six fit under the art.
+    :global(.star) {
+      width: $unit * 1.5;
+      height: $unit * 1.5;
+    }
   }
 
   .slot-name {
