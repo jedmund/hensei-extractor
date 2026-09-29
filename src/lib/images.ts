@@ -56,3 +56,17 @@ export function getSummonImageUrl(
   const id = resolveForgedSummonId(String(granblueId))
   return getImageUrl(`${SUMMON_BUCKETS[variant]}/${id}${suffix}.jpg`)
 }
+
+export type ElementIconKey =
+  | 'fire'
+  | 'water'
+  | 'earth'
+  | 'wind'
+  | 'light'
+  | 'dark'
+  | 'null'
+
+/** Round element icon, same file as hensei-web's getElementImage. */
+export function getElementIconUrl(key: ElementIconKey): string {
+  return getImageUrl(`${BUCKET.elements}/${key}.png`)
+}

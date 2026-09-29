@@ -1,8 +1,10 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import {
+    getElementIconUrl,
     getPlaceholderImageUrl,
-    getSummonImageUrl
+    getSummonImageUrl,
+    type ElementIconKey
   } from '../../lib/images.js'
   import type {
     ParsedSupportSummonPayload,
@@ -15,22 +17,22 @@
 
   let { data }: Props = $props()
 
-  // Elements in GBF's order, with Misc last. Each entry is [GBF section index,
-  // label, slot count]; empty slots are shown so the layout matches the game.
-  const SECTIONS: Array<[number, () => string, number]> = [
-    [1, m.element_fire, 3],
-    [2, m.element_water, 3],
-    [3, m.element_earth, 3],
-    [4, m.element_wind, 3],
-    [5, m.element_light, 3],
-    [6, m.element_dark, 3],
-    [0, m.element_misc, 4]
+  // Elements in GBF's order, with Misc last: [GBF section index, icon, label,
+  // slot count]. Empty slots are shown so the layout matches the game.
+  const SECTIONS: Array<[number, ElementIconKey, () => string, number]> = [
+    [1, 'fire', m.element_fire, 3],
+    [2, 'water', m.element_water, 3],
+    [3, 'earth', m.element_earth, 3],
+    [4, 'wind', m.element_wind, 3],
+    [5, 'light', m.element_light, 3],
+    [6, 'dark', m.element_dark, 3],
+    [0, 'null', m.element_misc, 4]
   ]
 
   const PLACEHOLDER = getPlaceholderImageUrl('summon', 'main')
 
   type Slot = { key: string; summon: ParsedSupportSummon | undefined }
-  type Group = { label: string; slots: Slot[] }
+  type Group = { label: string; icon: string; slots: Slot[] }
 
   let groups = $derived.by((): Group[] => {
     const bySlot = new Map(
@@ -39,8 +41,9 @@
         item
       ])
     )
-    return SECTIONS.map(([section, label, count]) => ({
+    return SECTIONS.map(([section, icon, label, count]) => ({
       label: label(),
+      icon: getElementIconUrl(icon),
       slots: Array.from({ length: count }, (_, position) => {
         const key = `${section}-${position}`
         return { key, summon: bySlot.get(key) }
@@ -56,7 +59,10 @@
 
   {#each groups as group (group.label)}
     <section class="section">
-      <h3 class="section-label">{group.label}</h3>
+      <h3 class="section-label">
+        <img class="section-icon" src={group.icon} alt="" aria-hidden="true" />
+        {group.label}
+      </h3>
       <div class="slots">
         {#each group.slots as { key, summon } (key)}
           <div class="slot" class:empty={!summon}>
@@ -107,10 +113,20 @@
   }
 
   .section-label {
+    display: flex;
+    align-items: center;
+    gap: $unit-half;
     font-size: $font-small;
     font-weight: $medium;
     color: var(--color-text);
     margin: 0;
+  }
+
+  .section-icon {
+    // Match the label's text height, like the site's support summon grid.
+    width: 1.2em;
+    height: 1.2em;
+    flex-shrink: 0;
   }
 
   .slots {
@@ -135,6 +151,11 @@
     width: 100%;
     height: auto;
     border-radius: $item-corner-small;
+  }
+
+  .slot-name,
+  .slot-level {
+    text-align: center;
   }
 
   .slot-name {

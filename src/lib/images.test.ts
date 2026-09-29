@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getElementIconUrl,
   getImageIdSuffix,
   getPlaceholderImageUrl,
   getSummonImageUrl
@@ -35,5 +36,12 @@ describe('getSummonImageUrl', () => {
     expect(getPlaceholderImageUrl('summon', 'main')).toMatch(
       /\/app\/placeholders\/placeholder-summon-main\.png$/
     )
+  })
+})
+
+describe('getElementIconUrl', () => {
+  it('points at the round icon, with null for Misc', () => {
+    expect(getElementIconUrl('fire')).toMatch(/\/icons\/elements\/fire\.png$/)
+    expect(getElementIconUrl('null')).toMatch(/\/icons\/elements\/null\.png$/)
   })
 })

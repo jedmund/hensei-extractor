@@ -54,6 +54,7 @@ export const BUCKET = {
   bulletSquare: 'bullets/square',
   jobWide: 'jobs/wide',
   jobSkills: 'icons/job-skills',
+  elements: 'icons/elements',
   awakening: 'icons/awakening',
   axSkills: 'icons/ax-skills',
   raidThumbnail: 'raids/thumbnail'
