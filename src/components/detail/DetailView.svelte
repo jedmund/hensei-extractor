@@ -73,8 +73,8 @@
 
   interface SummonSearchResult {
     granblue_id?: string
-    imageSuffix?: string
     name?: { en?: string; ja?: string }
+    uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
   }
 
   interface WeaponStatModifier {

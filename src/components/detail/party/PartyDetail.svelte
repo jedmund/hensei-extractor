@@ -6,6 +6,7 @@
     resolveAwakeningIcon,
     resolveAugmentIcon,
     buildAxTooltipLines,
+    maxEvolutionArtSuffixes,
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
@@ -35,8 +36,8 @@
 
   interface SummonSearchResult {
     granblue_id?: string
-    imageSuffix?: string
     name?: { en?: string; ja?: string }
+    uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
   }
 
   interface BulletEntry {
@@ -100,6 +101,23 @@
   let quickSummonId = $derived(pc?.quick_user_summon_id)
   // The party only names its support summon; it's matched by name, which can fail.
   let friendSummonName = $derived(pc?.damage_info?.summon_name)
+
+  // Support summon art at max evolution, stepping down when a summon doesn't
+  // have a given alt art (see maxEvolutionArtSuffixes).
+  let friendArtSuffixes = $derived(maxEvolutionArtSuffixes(friendSummon?.uncap))
+  let friendArtStep = $state(0)
+  $effect(() => {
+    void friendSummon
+    friendArtStep = 0
+  })
+  let friendArtUrl = $derived(
+    friendSummon
+      ? getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendArtSuffixes[friendArtStep] ?? ''}.jpg`)
+      : ''
+  )
+  function nextFriendArt() {
+    if (friendArtStep < friendArtSuffixes.length - 1) friendArtStep += 1
+  }
   let setAction = $derived(pc?.set_action || [])
 
   let mainWeapon = $derived(weapons[0])
@@ -323,7 +341,7 @@
         </div>
         {#if friendSummon}
           <div class="summon-friend">
-            <img src={getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)} alt="">
+            <img src={friendArtUrl} alt="" onerror={nextFriendArt}>
           </div>
         {:else if !friendSummonPending}
           <div class="summon-friend">
