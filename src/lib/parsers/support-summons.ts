@@ -30,6 +30,8 @@ export interface ParsedSupportSummon {
   position: number
   /** The summon's granblue_id (data-masterid) */
   granblue_id: string
+  /** Art ID with uncap suffix, e.g. "2040094000_04" (data-image-id); display only */
+  image_id: string
   /** In-game level, or null when the label couldn't be read */
   level: number | null
   /** Display name from the slot label, when present */
@@ -50,6 +52,7 @@ export interface ParsedSupportSummonPayload {
 
 const SLOT_TAG_RE = /<[^>]*\bid="js-fix-summon(\d)(\d)"[^>]*>/g
 const MASTER_ID_RE = /\bdata-masterid="(\d+)"/
+const IMAGE_ID_RE = /\bdata-image-id="(\d+(?:_\d+)?)"/
 const NAME_RE = /<([^>]*\bid="js-fix-summon(\d)(\d)-name"[^>]*)>([^<]*)</g
 const NAME_ATTR_RE = /\bname="([^"]*)"/
 const LEVEL_LABEL_RE = /^\s*Lv(?:l)?\.?\s*(\d+)\s*(.*?)\s*$/i
@@ -114,6 +117,7 @@ export function parseSupportSummons(
       gbf_section: parseInt(match[1]!, 10),
       position: parseInt(match[2]!, 10),
       granblue_id: masterId,
+      image_id: IMAGE_ID_RE.exec(match[0])?.[1] ?? masterId,
       level: null,
       name: null
     })

@@ -103,6 +103,7 @@
   "support_summons_user_id": "GBF ID {id}",
   "support_summons_level": "Lv.{level}",
   "support_summons_level_unknown": "Lv.?",
+  "support_summons_empty": "未設定",
   "type_character_stats": "キャラクターステータス",
   "type_weapon_stash": "武器倉庫",
   "type_summon_stash": "召喚石倉庫",

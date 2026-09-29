@@ -103,6 +103,7 @@
   "support_summons_user_id": "GBF ID {id}",
   "support_summons_level": "Lv. {level}",
   "support_summons_level_unknown": "Lv. ?",
+  "support_summons_empty": "Not set",
   "type_character_stats": "Character Stats",
   "type_weapon_stash": "Weapon Stash",
   "type_summon_stash": "Summon Stash",

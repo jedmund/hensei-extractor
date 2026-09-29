@@ -57,6 +57,7 @@ describe('uploadSupportSummons', () => {
         gbf_section: 1,
         position: 0,
         granblue_id: '2040094000',
+        image_id: '2040094000',
         level: 250,
         name: 'Agni'
       },
@@ -64,6 +65,7 @@ describe('uploadSupportSummons', () => {
         gbf_section: 0,
         position: 0,
         granblue_id: '2049999000',
+        image_id: '2049999000',
         level: null,
         name: null
       }

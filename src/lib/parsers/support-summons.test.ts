@@ -51,6 +51,7 @@ describe('parseSupportSummons on a real capture', () => {
           gbf_section: 0,
           position: 0,
           granblue_id: '2040158000',
+          image_id: '2040158000',
           level: 100,
           name: 'Qilin'
         },
@@ -58,6 +59,7 @@ describe('parseSupportSummons on a real capture', () => {
           gbf_section: 0,
           position: 1,
           granblue_id: '2040157000',
+          image_id: '2040157000',
           level: 100,
           name: 'Huanglong'
         },
@@ -65,6 +67,7 @@ describe('parseSupportSummons on a real capture', () => {
           gbf_section: 0,
           position: 2,
           granblue_id: '2040065000',
+          image_id: '2040065000_02',
           level: 200,
           name: 'Grand Order'
         },
@@ -72,6 +75,7 @@ describe('parseSupportSummons on a real capture', () => {
           gbf_section: 1,
           position: 0,
           granblue_id: '2040094000',
+          image_id: '2040094000_04',
           level: 250,
           name: 'Agni'
         }
@@ -103,6 +107,7 @@ describe('parseSupportSummons', () => {
           gbf_section: 0,
           position: 0,
           granblue_id: '2040158000',
+          image_id: '2040158000',
           level: 100,
           name: 'Bahamut'
         },
@@ -110,6 +115,7 @@ describe('parseSupportSummons', () => {
           gbf_section: 1,
           position: 0,
           granblue_id: '2040094000',
+          image_id: '2040094000',
           level: 250,
           name: 'Agni'
         }
@@ -136,6 +142,7 @@ describe('parseSupportSummons', () => {
         gbf_section: 3,
         position: 0,
         granblue_id: '2040094000',
+        image_id: '2040094000',
         level: 200,
         name: 'Titan'
       }

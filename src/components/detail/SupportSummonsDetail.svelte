@@ -1,6 +1,9 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
-  import { BUCKET, getImageUrl } from '../../lib/constants.js'
+  import {
+    getPlaceholderImageUrl,
+    getSummonImageUrl
+  } from '../../lib/images.js'
   import type {
     ParsedSupportSummonPayload,
     ParsedSupportSummon
@@ -12,26 +15,37 @@
 
   let { data }: Props = $props()
 
-  // GBF's section order on the profile page: misc first, then the six elements.
-  const SECTIONS: Array<[number, () => string]> = [
-    [0, m.element_misc],
-    [1, m.element_fire],
-    [2, m.element_water],
-    [3, m.element_earth],
-    [4, m.element_wind],
-    [5, m.element_light],
-    [6, m.element_dark]
+  // Elements in GBF's order, with Misc last. Each entry is [GBF section index,
+  // label, slot count]; empty slots are shown so the layout matches the game.
+  const SECTIONS: Array<[number, () => string, number]> = [
+    [1, m.element_fire, 3],
+    [2, m.element_water, 3],
+    [3, m.element_earth, 3],
+    [4, m.element_wind, 3],
+    [5, m.element_light, 3],
+    [6, m.element_dark, 3],
+    [0, m.element_misc, 4]
   ]
 
-  type Group = { label: string; items: ParsedSupportSummon[] }
+  const PLACEHOLDER = getPlaceholderImageUrl('summon', 'main')
+
+  type Slot = { key: string; summon: ParsedSupportSummon | undefined }
+  type Group = { label: string; slots: Slot[] }
+
   let groups = $derived.by((): Group[] => {
-    const items = data?.items ?? []
-    return SECTIONS.map(([section, label]) => ({
+    const bySlot = new Map(
+      (data?.items ?? []).map((item) => [
+        `${item.gbf_section}-${item.position}`,
+        item
+      ])
+    )
+    return SECTIONS.map(([section, label, count]) => ({
       label: label(),
-      items: items
-        .filter((item) => item.gbf_section === section)
-        .sort((a, b) => a.position - b.position)
-    })).filter((group) => group.items.length > 0)
+      slots: Array.from({ length: count }, (_, position) => {
+        const key = `${section}-${position}`
+        return { key, summon: bySlot.get(key) }
+      })
+    }))
   })
 </script>
 
@@ -44,21 +58,25 @@
     <section class="section">
       <h3 class="section-label">{group.label}</h3>
       <div class="slots">
-        {#each group.items as slot (`${slot.gbf_section}-${slot.position}`)}
-          <div class="slot">
-            <img
-              class="slot-image"
-              src={getImageUrl(`${BUCKET.summonSquare}/${slot.granblue_id}.jpg`)}
-              alt={slot.name ?? slot.granblue_id}
-            />
-            <div class="slot-meta">
-              <div class="slot-name">{slot.name ?? slot.granblue_id}</div>
+        {#each group.slots as { key, summon } (key)}
+          <div class="slot" class:empty={!summon}>
+            {#if summon}
+              <img
+                class="slot-image"
+                src={getSummonImageUrl(summon.granblue_id, 'main', summon.image_id)}
+                alt={summon.name ?? summon.granblue_id}
+                onerror={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+              />
+              <div class="slot-name">{summon.name ?? summon.granblue_id}</div>
               <div class="slot-level">
-                {slot.level != null
-                  ? m.support_summons_level({ level: slot.level })
+                {summon.level != null
+                  ? m.support_summons_level({ level: summon.level })
                   : m.support_summons_level_unknown()}
               </div>
-            </div>
+            {:else}
+              <img class="slot-image" src={PLACEHOLDER} alt="" />
+              <div class="slot-name">{m.support_summons_empty()}</div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -97,33 +115,26 @@
 
   .slots {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: $unit;
   }
 
   .slot {
     display: flex;
-    align-items: center;
-    gap: $unit;
-    padding: $unit;
-    background: var(--color-bg);
-    border-radius: $input-corner;
-    min-width: 0;
-  }
-
-  .slot-image {
-    width: $unit-5x;
-    height: $unit-5x;
-    border-radius: $item-corner-small;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-
-  .slot-meta {
-    display: flex;
     flex-direction: column;
     gap: $unit-half;
     min-width: 0;
+
+    &.empty .slot-name {
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .slot-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: $item-corner-small;
   }
 
   .slot-name {
