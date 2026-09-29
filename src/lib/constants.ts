@@ -37,6 +37,7 @@ export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
  * prefixes (weapon-square/, ax/, …) no longer exist.
  */
 export const BUCKET = {
+  placeholders: 'app/placeholders',
   marketing: 'app/marketing',
   characterMain: 'characters/main',
   characterSquare: 'characters/square',
@@ -44,6 +45,7 @@ export const BUCKET = {
   weaponGrid: 'weapons/grid',
   weaponSquare: 'weapons/square',
   weaponKeys: 'weapons/keys',
+  summonMain: 'summons/main',
   summonGrid: 'summons/grid',
   summonSquare: 'summons/square',
   summonTall: 'summons/tall',

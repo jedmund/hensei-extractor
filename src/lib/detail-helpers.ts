@@ -12,10 +12,10 @@ import {
   GAME_SUMMON_SERIES_NAMES,
   WEAPON_AWAKENING_ICONS,
   WEAPON_KEY_SERIES,
-  AUGMENT_ICON_MAP,
-  resolveForgedSummonId
+  AUGMENT_ICON_MAP
 } from './game-data.js'
 import { getBaseGranblueIdForVariant } from './element-variants.js'
+import { getImageIdSuffix, getSummonImageUrl } from './images.js'
 import * as m from '../paraglide/messages.js'
 import { translateSeries, getLocale } from './i18n.js'
 
@@ -235,13 +235,10 @@ function getCharacterImageSuffix(
 }
 
 function getImageSuffix(item: RawGameItem): string {
-  const imageId = item.param?.image_id
-  if (!imageId) return ''
-
-  const id = item.master?.id || item.param?.id || item.id
-  if (!id || !imageId.startsWith(String(id))) return ''
-
-  return imageId.slice(String(id).length)
+  return getImageIdSuffix(
+    item.master?.id || item.param?.id || item.id,
+    item.param?.image_id
+  )
 }
 
 export function getItemImageUrl(
@@ -260,9 +257,7 @@ export function getItemImageUrl(
     return getImageUrl(`${BUCKET.weaponSquare}/${granblueId}${suffix}.jpg`)
   }
   if (dataType.includes('summon')) {
-    const suffix = getImageSuffix(item)
-    const resolvedId = resolveForgedSummonId(granblueId ?? '')
-    return getImageUrl(`${BUCKET.summonSquare}/${resolvedId}${suffix}.jpg`)
+    return getSummonImageUrl(granblueId, 'square', item.param?.image_id)
   }
   if (dataType.includes('artifact')) {
     const artifactId = item.artifact_id || granblueId
