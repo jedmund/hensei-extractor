@@ -1,3 +1,13 @@
+import type {
+  CheckVersionResponse,
+  CreatePlaylistResponse,
+  FetchElementVariantsResponse,
+  FetchPlaylistsResponse,
+  FetchRaidGroupsResponse,
+  ElementVariantEntry,
+  Playlist,
+  RaidGroup
+} from '../types/messages.js'
 import {
   apiFetch,
   CACHE_KEYS,
@@ -10,13 +20,6 @@ import {
   getAuthToken,
   parseErrorResponse
 } from './api-client.js'
-import type {
-  CreatePlaylistResult,
-  FetchElementVariantsResult,
-  FetchPlaylistsResult,
-  FetchRaidGroupsResult,
-  VersionCheckResult
-} from './types.js'
 
 interface CollectionIds {
   weapons?: string[]
@@ -29,7 +32,7 @@ let collectionIdsCache: CollectionIds | null = null
 let collectionIdsCacheTime = 0
 const COLLECTION_IDS_TTL_MS = 5 * 60 * 1000
 
-export async function checkExtensionVersion(): Promise<VersionCheckResult | null> {
+export async function checkExtensionVersion(): Promise<CheckVersionResponse | null> {
   try {
     const apiUrl = await getApiUrl('/version')
     const response = await apiFetch(apiUrl)
@@ -63,7 +66,7 @@ export function compareVersions(a: string, b: string): number {
   return 0
 }
 
-export async function fetchUserPlaylists(): Promise<FetchPlaylistsResult> {
+export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {
   try {
     const auth = await getAuthToken()
     if (!auth) return { error: 'not_logged_in' }
@@ -91,12 +94,14 @@ export async function createPlaylist({
   title: string
   description?: string
   visibility?: number
-}): Promise<CreatePlaylistResult> {
+}): Promise<CreatePlaylistResponse> {
   try {
     const result = await authenticatedPost('/playlists', {
       playlist: { title, description, visibility: visibility || 3 }
     })
-    return result
+    // Don't hand the auth token from authenticatedPost back to the side panel.
+    if (result.error) return { error: result.error }
+    return { data: result.data as unknown as Playlist }
   } catch (error) {
     console.error('Failed to create playlist:', error)
     return { error: 'request_failed' }
@@ -105,11 +110,11 @@ export async function createPlaylist({
 
 export async function fetchRaidGroups(
   forceRefresh = false
-): Promise<FetchRaidGroupsResult> {
+): Promise<FetchRaidGroupsResponse> {
   const cacheKey = CACHE_KEYS.raid_groups!
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey] as
-    | { timestamp: number; data: unknown }
+    | { timestamp: number; data: RaidGroup[] }
     | undefined
 
   if (
@@ -150,11 +155,11 @@ export async function fetchRaidGroups(
 
 export async function fetchElementVariants(
   forceRefresh = false
-): Promise<FetchElementVariantsResult> {
+): Promise<FetchElementVariantsResponse> {
   const cacheKey = CACHE_KEYS.element_variants!
   const result = await chrome.storage.local.get(cacheKey)
   const cached = result[cacheKey] as
-    | { timestamp: number; data: unknown }
+    | { timestamp: number; data: ElementVariantEntry[] }
     | undefined
 
   if (

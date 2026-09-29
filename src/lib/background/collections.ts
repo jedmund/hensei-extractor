@@ -1,18 +1,21 @@
 import { getSiteBaseUrl } from '../constants.js'
-import type { ImportWarning } from '../types/messages.js'
+import type {
+  CheckConflictsResponse,
+  CollectionUpdate,
+  CheckUpdatesResponse,
+  ImportWarning,
+  PreviewSyncDeletionsResponse,
+  UploadCollectionResponse,
+  UploadDetailResponse,
+  UploadPartyResponse
+} from '../types/messages.js'
 import { authenticatedPost, getAuthToken } from './api-client.js'
 import { invalidateCollectionIdsCache } from './reference-data.js'
 import type {
   CharacterStatsEntry,
-  ConflictCheckResult,
   GameFilter,
   PageData,
-  SyncPreviewResult,
-  UpdateCheckResult,
-  UploadCollectionOptions,
-  UploadCollectionResult,
-  UploadDetailResult,
-  UploadPartyResult
+  UploadCollectionOptions
 } from './types.js'
 
 export function collectPageItems(
@@ -57,7 +60,7 @@ export async function uploadPartyData(
   name?: string,
   visibility?: number,
   shareWithCrew?: boolean
-): Promise<UploadPartyResult> {
+): Promise<UploadPartyResponse> {
   const body: Record<string, unknown> = { import: data }
   if (raidId) body.raid_id = raidId
   if (playlistIds && playlistIds.length > 0) body.playlist_ids = playlistIds
@@ -86,7 +89,7 @@ export async function uploadPartyData(
 export async function uploadDetailData(
   data: Record<string, unknown>,
   dataType: string
-): Promise<UploadDetailResult> {
+): Promise<UploadDetailResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: `Unknown data type: ${dataType}` }
 
@@ -160,7 +163,7 @@ export function extractFilterFromPages(
 export async function previewSyncDeletions(
   pagesData: Record<number, PageData>,
   dataType: string
-): Promise<SyncPreviewResult> {
+): Promise<PreviewSyncDeletionsResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -185,7 +188,7 @@ export async function previewSyncDeletions(
 export async function checkConflicts(
   pagesData: Record<number, PageData>,
   dataType: string
-): Promise<ConflictCheckResult> {
+): Promise<CheckConflictsResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -203,7 +206,7 @@ export async function checkConflicts(
 export async function checkCollectionUpdates(
   pagesData: Record<number, PageData>,
   dataType: string
-): Promise<UpdateCheckResult> {
+): Promise<CheckUpdatesResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
@@ -215,7 +218,9 @@ export async function checkCollectionUpdates(
     { data: { list: allItems } }
   )
   if (result.error) return { error: result.error }
-  return { updates: (result.data!.updates as unknown[]) ?? [] }
+  return {
+    updates: (result.data!.updates as CollectionUpdate[] | undefined) ?? []
+  }
 }
 
 export function characterStatsToItems(
@@ -266,7 +271,7 @@ export function characterStatsToItems(
 
 export async function checkCharacterStatsUpdates(
   statsData: Record<string, CharacterStatsEntry>
-): Promise<UpdateCheckResult> {
+): Promise<CheckUpdatesResponse> {
   const items = characterStatsToItems(statsData)
   if (items.length === 0) return { error: 'no_items' }
 
@@ -275,14 +280,16 @@ export async function checkCharacterStatsUpdates(
     { data: { list: items } }
   )
   if (result.error) return { error: result.error }
-  return { updates: (result.data!.updates as unknown[]) ?? [] }
+  return {
+    updates: (result.data!.updates as CollectionUpdate[] | undefined) ?? []
+  }
 }
 
 export async function uploadCollectionData(
   pagesData: Record<number, PageData>,
   dataType: string,
   options: UploadCollectionOptions = {}
-): Promise<UploadCollectionResult> {
+): Promise<UploadCollectionResponse> {
   const {
     updateExisting = false,
     isFullInventory = false,
@@ -337,7 +344,7 @@ export async function uploadCollectionData(
 
 export async function uploadCharacterStats(
   statsData: Record<string, CharacterStatsEntry>
-): Promise<UploadCollectionResult> {
+): Promise<UploadCollectionResponse> {
   const items = characterStatsToItems(statsData)
 
   if (items.length === 0) {

@@ -77,46 +77,6 @@ export interface ApiResult<T = Record<string, unknown>> {
   auth?: AuthToken
 }
 
-export interface UploadPartyResult {
-  success?: boolean
-  shortcode?: string
-  url?: string
-  warnings?: ImportWarning[]
-  error?: string
-}
-
-export interface UploadDetailResult {
-  success?: boolean
-  error?: string
-  [key: string]: unknown
-}
-
-export interface UploadCollectionResult {
-  success?: boolean
-  created?: number
-  updated?: number
-  skipped?: number
-  errors?: unknown[]
-  reconciliation?: unknown
-  error?: string
-}
-
-export interface ConflictCheckResult {
-  conflicts?: unknown[]
-  error?: string
-}
-
-export interface UpdateCheckResult {
-  updates?: unknown[]
-  error?: string
-}
-
-export interface SyncPreviewResult {
-  willDelete?: unknown[]
-  count?: number
-  error?: string
-}
-
 export interface CachedDataResult {
   data?: Record<string, unknown> | Record<number, unknown>
   error?: string
@@ -148,32 +108,6 @@ export interface CacheStatusEntry {
 export interface CacheStatusResult {
   _debugger: { attached: boolean; tabs: number[] }
   [key: string]: CacheStatusEntry | { attached: boolean; tabs: number[] }
-}
-
-export interface FetchPlaylistsResult {
-  data?: unknown
-  error?: string
-}
-
-export interface FetchRaidGroupsResult {
-  data?: unknown
-  error?: string
-}
-
-export interface FetchElementVariantsResult {
-  data?: unknown
-  error?: string
-}
-
-export interface CreatePlaylistResult {
-  data?: Record<string, unknown>
-  error?: string
-}
-
-export interface VersionCheckResult {
-  isOutdated: boolean
-  current: string
-  latest: string
 }
 
 export interface CachedUnfScores {
