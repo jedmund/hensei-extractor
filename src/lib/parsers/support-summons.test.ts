@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   extractGbfUserIdFromUrl,
@@ -28,6 +29,64 @@ function slot(section: number, position: number, id: string, label: string) {
 function emptySlot(section: number, position: number) {
   return `<a class="btn-fix-summon" href="#profile/fix/list/summon/${section}/${position}"></a>`
 }
+
+const REAL_OWN_PROFILE = readFileSync(
+  new globalThis.URL(
+    './__fixtures__/support-summons-own-profile.html',
+    import.meta.url
+  ),
+  'utf8'
+)
+// The real request URL for that capture: path ID and uid are both the player's.
+const REAL_URL =
+  'https://game.granbluefantasy.jp/profile/content/index/11675274?_=1790657107623&t=1790657108016&uid=11675274'
+
+describe('parseSupportSummons on a real capture', () => {
+  it('reads every populated slot and skips the empty one', () => {
+    expect(parseSupportSummons(envelope(REAL_OWN_PROFILE), REAL_URL)).toEqual({
+      gbf_user_id: '11675274',
+      is_own_profile: true,
+      items: [
+        {
+          gbf_section: 0,
+          position: 0,
+          granblue_id: '2040158000',
+          level: 100,
+          name: 'Qilin'
+        },
+        {
+          gbf_section: 0,
+          position: 1,
+          granblue_id: '2040157000',
+          level: 100,
+          name: 'Huanglong'
+        },
+        {
+          gbf_section: 0,
+          position: 2,
+          granblue_id: '2040065000',
+          level: 200,
+          name: 'Grand Order'
+        },
+        {
+          gbf_section: 1,
+          position: 0,
+          granblue_id: '2040094000',
+          level: 250,
+          name: 'Agni'
+        }
+      ]
+    })
+  })
+
+  it('is not own when the same page is fetched for another player', () => {
+    const foreign = REAL_URL.replace('index/11675274', 'index/34905928')
+
+    expect(
+      parseSupportSummons(envelope(REAL_OWN_PROFILE), foreign).is_own_profile
+    ).toBe(false)
+  })
+})
 
 describe('parseSupportSummons', () => {
   it('reads populated slots from the own-profile page, sorted by section', () => {

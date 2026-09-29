@@ -50,7 +50,8 @@ export interface ParsedSupportSummonPayload {
 
 const SLOT_TAG_RE = /<[^>]*\bid="js-fix-summon(\d)(\d)"[^>]*>/g
 const MASTER_ID_RE = /\bdata-masterid="(\d+)"/
-const NAME_RE = /<[^>]*\bid="js-fix-summon(\d)(\d)-name"[^>]*>([^<]*)</g
+const NAME_RE = /<([^>]*\bid="js-fix-summon(\d)(\d)-name"[^>]*)>([^<]*)</g
+const NAME_ATTR_RE = /\bname="([^"]*)"/
 const LEVEL_LABEL_RE = /^\s*Lv(?:l)?\.?\s*(\d+)\s*(.*?)\s*$/i
 const URL_USER_ID_RE = /\/profile\/content\/index\/(\d+)/
 
@@ -119,11 +120,13 @@ export function parseSupportSummons(
   }
 
   for (const match of html.matchAll(NAME_RE)) {
-    const slot = slots.get(`${match[1]}${match[2]}`)
-    const label = LEVEL_LABEL_RE.exec(match[3]!)
-    if (!slot || !label) continue
-    slot.level = parseInt(label[1]!, 10)
-    slot.name = label[2] || null
+    const slot = slots.get(`${match[2]}${match[3]}`)
+    if (!slot) continue
+    // The game also puts the bare name in a name="" attribute; prefer it.
+    const nameAttr = NAME_ATTR_RE.exec(match[1]!)?.[1]
+    const label = LEVEL_LABEL_RE.exec(match[4]!)
+    slot.level = label ? parseInt(label[1]!, 10) : null
+    slot.name = nameAttr || label?.[2] || null
   }
 
   const items = Array.from(slots.values()).sort(
