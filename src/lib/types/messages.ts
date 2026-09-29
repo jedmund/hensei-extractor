@@ -51,6 +51,7 @@ export type ExtensionMessage =
   | { action: 'createCrew'; name?: string }
   | { action: 'previewGwPhantoms'; dataType: string }
   | { action: 'fetchLatestGwEvent' }
+  | { action: 'uploadSupportSummons' }
 
 export type ExtensionAction = ExtensionMessage['action']
 
@@ -116,6 +117,15 @@ export interface UploadCollectionResponse {
   errors?: unknown[]
   reconciliation?: unknown
   error?: string
+}
+
+/** Response from uploadSupportSummons */
+export interface UploadSupportSummonsResponse {
+  success?: boolean
+  created?: number
+  error?: string
+  /** granblue_ids granblue.team doesn't have yet, when error is 'unknown_summons' */
+  unknownSummons?: string[]
 }
 
 /** Response from checkConflicts */

@@ -37,6 +37,8 @@
   import DatabaseDetail from './database/DatabaseDetail.svelte'
   import CharacterStatsList from './character-stats/CharacterStatsList.svelte'
   import CrewScoreDetail from './CrewScoreDetail.svelte'
+  import SupportSummonsDetail from './SupportSummonsDetail.svelte'
+  import type { ParsedSupportSummonPayload } from '../../lib/parsers/support-summons.js'
 
   interface Props {
     title?: string
@@ -62,6 +64,7 @@
     dataType.startsWith('unf_scores_') ||
     dataType.startsWith('unf_daily_scores_')
   )
+  let isSupportSummons = $derived(dataType === 'support_summons')
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
@@ -216,6 +219,10 @@
     if (isDatabase) {
       const detail = app.detailData as RawGameItem
       return detail?.name || detail?.master?.name || ''
+    }
+    if (isSupportSummons) {
+      const id = (app.detailData as unknown as ParsedSupportSummonPayload).gbf_user_id
+      return id ? m.support_summons_user_id({ id }) : ''
     }
     const count = status?.totalItems || countItems(dataType, app.detailData as Record<string, unknown>)
     return count === 1 ? m.count_item({ count }) : m.count_items({ count })
@@ -567,6 +574,8 @@
         <DatabaseDetail dataType={dataType} data={app.detailData as Record<string, unknown>} />
       {:else if isCharStats}
         <CharacterStatsList data={app.detailData as Record<string, Record<string, unknown>>} />
+      {:else if isSupportSummons}
+        <SupportSummonsDetail data={app.detailData as unknown as ParsedSupportSummonPayload} />
       {:else if isCollection && categorizedSections.length > 0}
         {#each categorizedSections as section (section.key)}
           <CollapsibleSection

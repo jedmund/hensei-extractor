@@ -73,6 +73,7 @@ export interface UploadCollectionOptions {
 
 export interface ApiResult<T = Record<string, unknown>> {
   error?: string
+  errors?: { error: string; granblue_id?: string }[]
   data?: T
   auth?: AuthToken
 }
@@ -103,6 +104,7 @@ export interface CacheStatusEntry {
   stashName?: string | null
   granblueId?: string
   itemName?: string
+  gbfUserId?: string | null
 }
 
 export interface CacheStatusResult {

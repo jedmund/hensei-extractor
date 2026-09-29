@@ -180,6 +180,15 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
           characterCount
         }
       }
+    } else if (type === 'support_summons') {
+      status[type] = {
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
+        totalItems: (cached.totalItems as number) ?? 0,
+        gbfUserId: (cached.gbfUserId as string | null) ?? null
+      }
     } else if (type.startsWith('list_') || type.startsWith('collection_')) {
       status[type] = {
         available: !stale && (cached.pageCount as number) > 0,

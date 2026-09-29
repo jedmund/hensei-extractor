@@ -7,6 +7,7 @@ import type {
   UploadPartyResponse,
   UploadDetailResponse,
   UploadCollectionResponse,
+  UploadSupportSummonsResponse,
   UploadUnfScoresResponse,
   CreateCrewResponse,
   FetchLatestGwEventResponse,
@@ -98,6 +99,12 @@ export async function uploadCharacterStats(
     action: 'uploadCharacterStats',
     selectedIndices
   }) as Promise<UploadCollectionResponse>
+}
+
+export async function uploadSupportSummons(): Promise<UploadSupportSummonsResponse> {
+  return send({
+    action: 'uploadSupportSummons'
+  }) as Promise<UploadSupportSummonsResponse>
 }
 
 export async function checkConflicts(
