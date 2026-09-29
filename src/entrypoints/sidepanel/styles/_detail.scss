@@ -576,9 +576,10 @@ body.light #playlistCreateSubmit {
 .grid-item.selectable .weapon-modifiers {
   display: flex;
   align-items: flex-start;
-  // Three 22cqw keys + gaps end at 76cqw, clear of the update dot (80cqw).
+  // Inset 6cqw from the corner; three 22cqw keys + gaps end at 78cqw,
+  // clear of the update dot (80cqw).
   gap: 3cqw;
-  padding: 4cqw;
+  padding: 6cqw;
   box-sizing: border-box;
 
   .weapon-skills {
@@ -591,6 +592,13 @@ body.light #playlistCreateSubmit {
 
     img:not(.befoulment-icon) {
       width: 22cqw;
+    }
+
+    // The befoulment art has transparent padding (drawn area starts 15/80 in
+    // and 16/80 down), so pull it up and left to line its glyph up with the
+    // AX and key squares.
+    img.befoulment-icon {
+      margin: -6.4cqw 0 0 -6cqw;
     }
   }
 
