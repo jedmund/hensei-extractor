@@ -70,6 +70,8 @@
   interface Props {
     data: Record<string, unknown>
     friendSummon?: SummonSearchResult | null
+    /** True while the support summon is being looked up by name */
+    friendSummonPending?: boolean
     weaponKeyMap?: Record<string, { slug: string; name: string }> | null
     jobSkillSlugs?: Record<string, string>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
@@ -79,6 +81,7 @@
   let {
     data: rawData,
     friendSummon = null,
+    friendSummonPending = false,
     weaponKeyMap = null,
     jobSkillSlugs = {},
     weaponStatModifiers = null,
@@ -95,6 +98,8 @@
   let subSummons = $derived(toArray(pc?.sub_summons).filter(Boolean) as RawPartyItem[])
   let accessoryIds = $derived([pc?.familiar_id, pc?.shield_id].filter(Boolean) as string[])
   let quickSummonId = $derived(pc?.quick_user_summon_id)
+  // The party only names its support summon; it's matched by name, which can fail.
+  let friendSummonName = $derived(pc?.damage_info?.summon_name)
   let setAction = $derived(pc?.set_action || [])
 
   let mainWeapon = $derived(weapons[0])
@@ -290,7 +295,7 @@
     </div>
   {/if}
 
-  {#if summons.length > 0 || subSummons.length > 0 || friendSummon}
+  {#if summons.length > 0 || subSummons.length > 0 || friendSummon || friendSummonName}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_summons()}</h3>
       <div class="summon-layout">
@@ -319,6 +324,15 @@
         {#if friendSummon}
           <div class="summon-friend">
             <img src={getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)} alt="">
+          </div>
+        {:else if !friendSummonPending}
+          <div class="summon-friend summon-friend-empty">
+            <span class="summon-friend-empty-label">{m.party_support_summon_label()}</span>
+            <span class="summon-friend-empty-status">
+              {friendSummonName
+                ? m.party_support_summon_undetected({ name: friendSummonName })
+                : m.party_support_summon_none()}
+            </span>
           </div>
         {/if}
       </div>

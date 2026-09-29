@@ -111,6 +111,7 @@
 
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
+  let friendSummonPending = $state(false)
   let weaponKeyMap = $state<Record<string, { slug: string; name: string }> | null>(null)
   let jobSkillSlugs = $state<Record<string, string>>({})
   let weaponStatModifiers = $state<Record<string, WeaponStatModifier> | null>(null)
@@ -356,6 +357,8 @@
     const setAction = data?.deck?.pc?.set_action || []
     const skillNames = setAction.map((s) => s.name).filter(Boolean)
 
+    friendSummon = null
+    friendSummonPending = !!summonName
     const [summonResult, keyMap, skillSlugs, statMods] = await Promise.all([
       summonName ? searchSummonByName(summonName) : Promise.resolve(null),
       fetchWeaponKeyMap(),
@@ -364,6 +367,7 @@
     ])
 
     friendSummon = summonResult
+    friendSummonPending = false
     weaponKeyMap = keyMap
     jobSkillSlugs = skillSlugs
     weaponStatModifiers = statMods
@@ -553,6 +557,7 @@
         <PartyDetail
           data={app.detailData as Record<string, unknown>}
           {friendSummon}
+          {friendSummonPending}
           {weaponKeyMap}
           {jobSkillSlugs}
           {weaponStatModifiers}
