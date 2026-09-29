@@ -92,18 +92,18 @@
   background-position: center;
 
   &.empty {
-    background-image: url('icons/uncap/empty@2x.png');
+    background-image: url('/icons/uncap/empty@2x.png');
   }
 
   &.filled {
-    background-image: url('icons/uncap/yellow@2x.png');
+    background-image: url('/icons/uncap/yellow@2x.png');
   }
 
   &.flb {
-    background-image: url('icons/uncap/blue@2x.png');
+    background-image: url('/icons/uncap/blue@2x.png');
   }
 
   &.ulb {
-    background-image: url('icons/uncap/purple@2x.png');
+    background-image: url('/icons/uncap/purple@2x.png');
   }
 }
