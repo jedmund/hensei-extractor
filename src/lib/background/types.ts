@@ -198,21 +198,3 @@ export interface CachedGuildInfo {
   guildId: string
   timestamp: number
 }
-
-export interface BackgroundMessage {
-  action: string
-  dataType?: string
-  data?: unknown
-  raidId?: string
-  playlistIds?: string[]
-  name?: string
-  visibility?: number
-  shareWithCrew?: boolean
-  selectedIndices?: number[]
-  updateExisting?: boolean
-  isFullInventory?: boolean
-  reconcileDeletions?: boolean
-  conflictResolutions?: unknown
-  deletionIds?: string[]
-  forceRefresh?: boolean
-}

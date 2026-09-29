@@ -2,6 +2,7 @@ import { formatCacheStatus } from '../cache.js'
 import type { AuthData } from '../state/app.svelte.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
 import type {
+  ExtensionMessage,
   CachedDataResponse,
   UploadPartyResponse,
   UploadDetailResponse,
@@ -21,7 +22,7 @@ import type {
   CheckVersionResponse
 } from '../types/messages.js'
 
-function send(message: Record<string, unknown>): Promise<unknown> {
+function send(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
 }
 

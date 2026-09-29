@@ -10,7 +10,12 @@ export interface WindowManagerDependencies {
 
 export interface WindowManager {
   registerListeners: () => void
-  handlePopOutWindow: (sendResponse: (response?: unknown) => void) => boolean
+  popOutWindow: () => Promise<PopOutResult>
+}
+
+export interface PopOutResult {
+  windowId?: number
+  alreadyOpen: boolean
 }
 
 export function createWindowManager(
@@ -33,18 +38,18 @@ export function createWindowManager(
       })
     },
 
-    handlePopOutWindow(sendResponse) {
+    popOutWindow() {
       if (popOutWindowId) {
         dependencies.focusWindow(popOutWindowId)
-        sendResponse({ windowId: popOutWindowId, alreadyOpen: true })
-        return false
+        return Promise.resolve({ windowId: popOutWindowId, alreadyOpen: true })
       }
 
-      dependencies.createPopup((window) => {
-        popOutWindowId = window?.id ?? null
-        sendResponse({ windowId: window?.id, alreadyOpen: false })
+      return new Promise((resolve) => {
+        dependencies.createPopup((window) => {
+          popOutWindowId = window?.id ?? null
+          resolve({ windowId: window?.id, alreadyOpen: false })
+        })
       })
-      return true
     }
   }
 }

@@ -15,6 +15,6 @@ export function initializeBackground(): void {
   windowManager.registerListeners()
 
   chrome.runtime.onMessage.addListener(
-    createDefaultMessageListener(windowManager.handlePopOutWindow)
+    createDefaultMessageListener(windowManager)
   )
 }

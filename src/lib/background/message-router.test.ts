@@ -1,188 +1,221 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ExtensionMessage } from '../types/messages.js'
+import { loadCachedDataForUpload } from './cache-queries.js'
+import * as collections from './collections.js'
+import * as crew from './crew.js'
+import * as referenceData from './reference-data.js'
+import * as apiClient from './api-client.js'
+import * as cacheQueries from './cache-queries.js'
 import {
+  createHandlers,
   createMessageListener,
-  type MessageRouterDependencies
+  type MessageHandlers
 } from './message-router.js'
 
-function createDependencies(): MessageRouterDependencies {
-  return {
-    checkExtensionVersion: vi.fn(async () => null),
-    getAuthToken: vi.fn(async () => null),
-    handleGetCacheStatus: vi.fn(async () => ({ _debugger: {} })),
-    handleGetCachedData: vi.fn(async () => ({})),
-    handleClearCache: vi.fn(async () => ({ success: true })),
-    isAttached: vi.fn(() => true),
-    getAttachedTabs: vi.fn(() => [10]),
-    handlePopOutWindow: vi.fn(() => true),
-    fetchRaidGroups: vi.fn(async () => ({})),
-    fetchElementVariants: vi.fn(async () => ({})),
-    fetchUserPlaylists: vi.fn(async () => ({})),
-    createPlaylist: vi.fn(async () => ({})),
-    loadCachedDataForUpload: vi.fn(async () => ({ 1: { list: ['item'] } })),
-    uploadPartyData: vi.fn(async () => ({})),
-    uploadDetailData: vi.fn(async () => ({})),
-    getCollectionIds: vi.fn(async () => ({})),
-    checkConflicts: vi.fn(async () => ({})),
-    checkCollectionUpdates: vi.fn(async () => ({})),
-    checkCharacterStatsUpdates: vi.fn(async () => ({})),
-    uploadCollectionData: vi.fn(async () => ({})),
-    previewSyncDeletions: vi.fn(async () => ({})),
-    uploadCharacterStats: vi.fn(async () => ({})),
-    handleUploadUnfScores: vi.fn(async () => ({})),
-    handleCreateCrew: vi.fn(async () => ({})),
-    handlePreviewGwPhantoms: vi.fn(async () => ({})),
-    handleFetchLatestGwEvent: vi.fn(async () => ({}))
-  } as unknown as MessageRouterDependencies
-}
+vi.mock('../debugger.js', () => ({
+  isAttached: vi.fn(() => true),
+  getAttachedTabs: vi.fn(() => [10])
+}))
+vi.mock('./api-client.js', () => ({ getAuthToken: vi.fn(async () => null) }))
+vi.mock('./cache-queries.js', () => ({
+  handleGetCacheStatus: vi.fn(async () => ({})),
+  handleGetCachedData: vi.fn(async () => ({})),
+  handleClearCache: vi.fn(async () => ({ success: true })),
+  loadCachedDataForUpload: vi.fn()
+}))
+vi.mock('./collections.js', () => ({
+  checkCharacterStatsUpdates: vi.fn(async () => ({})),
+  checkCollectionUpdates: vi.fn(async () => ({})),
+  checkConflicts: vi.fn(async () => ({})),
+  previewSyncDeletions: vi.fn(async () => ({})),
+  uploadCharacterStats: vi.fn(async () => ({})),
+  uploadCollectionData: vi.fn(async () => ({})),
+  uploadDetailData: vi.fn(async () => ({})),
+  uploadPartyData: vi.fn(async () => ({}))
+}))
+vi.mock('./crew.js', () => ({
+  handleCreateCrew: vi.fn(async () => ({})),
+  handleFetchLatestGwEvent: vi.fn(async () => ({})),
+  handlePreviewGwPhantoms: vi.fn(async () => ({})),
+  handleUploadUnfScores: vi.fn(async () => ({}))
+}))
+vi.mock('./reference-data.js', () => ({
+  checkExtensionVersion: vi.fn(async () => null),
+  createPlaylist: vi.fn(async () => ({})),
+  fetchElementVariants: vi.fn(async () => ({})),
+  fetchRaidGroups: vi.fn(async () => ({})),
+  fetchUserPlaylists: vi.fn(async () => ({})),
+  getCollectionIds: vi.fn(async () => ({}))
+}))
+
+const PAGES = { 1: { list: ['item'] } }
+const sender = {} as chrome.runtime.MessageSender
 
 describe('background message router', () => {
-  let dependencies: MessageRouterDependencies
+  let popOutWindow: ReturnType<typeof vi.fn>
+  let handlers: MessageHandlers
   let sendResponse: ReturnType<typeof vi.fn>
 
+  function send(message: ExtensionMessage) {
+    return createMessageListener(handlers)(message, sender, sendResponse)
+  }
+
   beforeEach(() => {
-    dependencies = createDependencies()
+    vi.clearAllMocks()
+    vi.mocked(loadCachedDataForUpload).mockResolvedValue(PAGES)
+    popOutWindow = vi.fn(async () => ({ windowId: 1, alreadyOpen: false }))
+    handlers = createHandlers({ popOutWindow })
     sendResponse = vi.fn()
   })
 
-  it.each([
-    ['checkExtensionVersion', 'checkExtensionVersion', {}, []],
-    ['getAuth', 'getAuthToken', {}, []],
-    ['getCacheStatus', 'handleGetCacheStatus', {}, []],
+  it.each<[ExtensionMessage, () => unknown, unknown[]]>([
     [
-      'getCachedData',
-      'handleGetCachedData',
-      { dataType: 'list_npc' },
+      { action: 'checkExtensionVersion' },
+      () => referenceData.checkExtensionVersion,
+      []
+    ],
+    [{ action: 'getAuth' }, () => apiClient.getAuthToken, []],
+    [{ action: 'getCacheStatus' }, () => cacheQueries.handleGetCacheStatus, []],
+    [
+      { action: 'getCachedData', dataType: 'list_npc' },
+      () => cacheQueries.handleGetCachedData,
       ['list_npc']
     ],
-    ['clearCache', 'handleClearCache', {}, [undefined]],
-    ['fetchRaidGroups', 'fetchRaidGroups', { forceRefresh: true }, [true]],
     [
-      'fetchElementVariants',
-      'fetchElementVariants',
-      { forceRefresh: false },
+      { action: 'clearCache' },
+      () => cacheQueries.handleClearCache,
+      [undefined]
+    ],
+    [
+      { action: 'fetchRaidGroups', forceRefresh: true },
+      () => referenceData.fetchRaidGroups,
+      [true]
+    ],
+    [
+      { action: 'fetchElementVariants', forceRefresh: false },
+      () => referenceData.fetchElementVariants,
       [false]
     ],
-    ['fetchUserPlaylists', 'fetchUserPlaylists', {}, []],
     [
-      'createPlaylist',
-      'createPlaylist',
-      { data: { title: 'Favorites', description: '', visibility: 3 } },
-      [{ title: 'Favorites', description: '', visibility: 3 }]
+      { action: 'fetchUserPlaylists' },
+      () => referenceData.fetchUserPlaylists,
+      []
     ],
-    ['getCollectionIds', 'getCollectionIds', {}, []],
     [
-      'uploadUnfScores',
-      'handleUploadUnfScores',
-      { dataType: 'unf_scores_77', round: 'finals_1' },
+      { action: 'createPlaylist', data: { title: 'Favorites', visibility: 3 } },
+      () => referenceData.createPlaylist,
+      [{ title: 'Favorites', visibility: 3 }]
+    ],
+    [{ action: 'getCollectionIds' }, () => referenceData.getCollectionIds, []],
+    [
+      {
+        action: 'uploadUnfScores',
+        dataType: 'unf_scores_77',
+        round: 'finals_1'
+      },
+      () => crew.handleUploadUnfScores,
       ['unf_scores_77', 'finals_1']
     ],
-    ['createCrew', 'handleCreateCrew', { name: 'Skyfarers' }, ['Skyfarers']],
     [
-      'previewGwPhantoms',
-      'handlePreviewGwPhantoms',
-      { dataType: 'unf_scores_77' },
+      { action: 'uploadUnfScores', dataType: 'unf_scores_77' },
+      () => crew.handleUploadUnfScores,
+      ['unf_scores_77', 'preliminaries']
+    ],
+    [
+      { action: 'createCrew', name: 'Skyfarers' },
+      () => crew.handleCreateCrew,
+      ['Skyfarers']
+    ],
+    [
+      { action: 'previewGwPhantoms', dataType: 'unf_scores_77' },
+      () => crew.handlePreviewGwPhantoms,
       ['unf_scores_77']
     ],
-    ['fetchLatestGwEvent', 'handleFetchLatestGwEvent', {}, []]
+    [{ action: 'fetchLatestGwEvent' }, () => crew.handleFetchLatestGwEvent, []]
+  ])('routes %o', async (message, target, expectedArguments) => {
+    expect(send(message)).toBe(true)
+    expect(target()).toHaveBeenCalledWith(...expectedArguments)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+  })
+
+  it.each<[ExtensionMessage, string, () => unknown, unknown[]]>([
+    [
+      { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
+      'detail_npc_3040001',
+      () => collections.uploadDetailData,
+      [PAGES, 'detail_npc_3040001']
+    ],
+    [
+      { action: 'checkCollectionUpdates', dataType: 'collection_npc' },
+      'collection_npc',
+      () => collections.checkCollectionUpdates,
+      [PAGES, 'collection_npc']
+    ],
+    [
+      { action: 'checkCharacterStatsUpdates' },
+      'character_stats',
+      () => collections.checkCharacterStatsUpdates,
+      [PAGES]
+    ],
+    [
+      { action: 'previewSyncDeletions', dataType: 'collection_summon' },
+      'collection_summon',
+      () => collections.previewSyncDeletions,
+      [PAGES, 'collection_summon']
+    ],
+    // Selection is not applied to these two today; the whole capture is sent.
+    [
+      {
+        action: 'checkConflicts',
+        dataType: 'collection_weapon',
+        selectedIndices: [1]
+      },
+      'collection_weapon',
+      () => collections.checkConflicts,
+      [PAGES, 'collection_weapon']
+    ],
+    [
+      { action: 'uploadCharacterStats', selectedIndices: [0] },
+      'character_stats',
+      () => collections.uploadCharacterStats,
+      [PAGES]
+    ]
   ])(
-    'routes %s to %s',
-    async (action, dependencyName, fields, expectedArguments) => {
-      const listener = createMessageListener(dependencies)
-
-      const keepAlive = listener(
-        { action, ...fields },
-        {} as chrome.runtime.MessageSender,
-        sendResponse
+    'loads cached data for %o',
+    async (message, cacheKey, target, expectedArguments) => {
+      expect(send(message)).toBe(true)
+      expect(loadCachedDataForUpload).toHaveBeenCalledWith(cacheKey)
+      await vi.waitFor(() =>
+        expect(target()).toHaveBeenCalledWith(...expectedArguments)
       )
-
-      expect(keepAlive).toBe(true)
-      expect(
-        dependencies[dependencyName as keyof MessageRouterDependencies]
-      ).toHaveBeenCalledWith(...expectedArguments)
-      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
     }
   )
 
-  it('responds synchronously to debugger status and ignores unknown actions', () => {
-    const listener = createMessageListener(dependencies)
+  it('returns no_cached_data without calling the upload', async () => {
+    vi.mocked(loadCachedDataForUpload).mockResolvedValue(null)
 
-    expect(
-      listener(
-        { action: 'getDebuggerStatus' },
-        {} as chrome.runtime.MessageSender,
-        sendResponse
-      )
-    ).toBe(false)
-    expect(sendResponse).toHaveBeenCalledWith({
-      attached: true,
-      tabs: [10]
-    })
-
-    expect(
-      listener(
-        { action: 'notReal' },
-        {} as chrome.runtime.MessageSender,
-        sendResponse
-      )
-    ).toBe(false)
-  })
-
-  it('delegates pop-out response lifetime to the window manager', () => {
-    vi.mocked(dependencies.handlePopOutWindow).mockReturnValue(false)
-    const listener = createMessageListener(dependencies)
-
-    expect(
-      listener(
-        { action: 'popOutWindow' },
-        {} as chrome.runtime.MessageSender,
-        sendResponse
-      )
-    ).toBe(false)
-    expect(dependencies.handlePopOutWindow).toHaveBeenCalledWith(sendResponse)
-  })
-
-  it('returns no_cached_data before invoking an upload handler', async () => {
-    vi.mocked(dependencies.loadCachedDataForUpload).mockResolvedValue(null)
-    const listener = createMessageListener(dependencies)
-
-    expect(
-      listener(
-        { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
-        {} as chrome.runtime.MessageSender,
-        sendResponse
-      )
-    ).toBe(true)
+    send({ action: 'uploadDetailData', dataType: 'detail_npc_3040001' })
 
     await vi.waitFor(() =>
       expect(sendResponse).toHaveBeenCalledWith({ error: 'no_cached_data' })
     )
-    expect(dependencies.uploadDetailData).not.toHaveBeenCalled()
+    expect(collections.uploadDetailData).not.toHaveBeenCalled()
   })
 
-  it('forwards party import metadata after loading cached data', async () => {
-    const cachedData = { deck: { name: 'Wind' } }
-    vi.mocked(dependencies.loadCachedDataForUpload).mockResolvedValue(
-      cachedData
-    )
-    const listener = createMessageListener(dependencies)
-
-    listener(
-      {
-        action: 'uploadPartyData',
-        dataType: 'party_1_2',
-        raidId: '42',
-        playlistIds: ['7'],
-        name: 'Wind',
-        visibility: 3,
-        shareWithCrew: true
-      },
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    )
+  it('forwards party import metadata', async () => {
+    send({
+      action: 'uploadPartyData',
+      dataType: 'party_1_2',
+      raidId: '42',
+      playlistIds: ['7'],
+      name: 'Wind',
+      visibility: 3,
+      shareWithCrew: true
+    })
 
     await vi.waitFor(() =>
-      expect(dependencies.uploadPartyData).toHaveBeenCalledWith(
-        cachedData,
+      expect(collections.uploadPartyData).toHaveBeenCalledWith(
+        PAGES,
         '42',
         ['7'],
         'Wind',
@@ -192,86 +225,17 @@ describe('background message router', () => {
     )
   })
 
-  it.each([
-    [
-      'uploadDetailData',
-      { dataType: 'detail_npc_3040001' },
-      'detail_npc_3040001',
-      'uploadDetailData',
-      [{ 1: { list: ['item'] } }, 'detail_npc_3040001']
-    ],
-    [
-      'checkCollectionUpdates',
-      { dataType: 'collection_npc' },
-      'collection_npc',
-      'checkCollectionUpdates',
-      [{ 1: { list: ['item'] } }, 'collection_npc']
-    ],
-    [
-      'checkCharacterStatsUpdates',
-      {},
-      'character_stats',
-      'checkCharacterStatsUpdates',
-      [{ 1: { list: ['item'] } }]
-    ],
-    [
-      'previewSyncDeletions',
-      { dataType: 'collection_summon' },
-      'collection_summon',
-      'previewSyncDeletions',
-      [{ 1: { list: ['item'] } }, 'collection_summon']
-    ],
-    [
-      'uploadCharacterStats',
-      { selectedIndices: [0] },
-      'character_stats',
-      'uploadCharacterStats',
-      [{ 1: { list: ['item'] } }]
-    ]
-  ])(
-    'routes cached action %s after loading %s',
-    async (action, fields, cacheKey, dependencyName, expectedArguments) => {
-      const listener = createMessageListener(dependencies)
-
-      expect(
-        listener(
-          { action, ...fields },
-          {} as chrome.runtime.MessageSender,
-          sendResponse
-        )
-      ).toBe(true)
-
-      expect(dependencies.loadCachedDataForUpload).toHaveBeenCalledWith(
-        cacheKey
-      )
-      await vi.waitFor(() =>
-        expect(
-          dependencies[dependencyName as keyof MessageRouterDependencies]
-        ).toHaveBeenCalledWith(...expectedArguments)
-      )
-    }
-  )
-
-  it('preserves collection upload options and current selection quirks', async () => {
-    const pages = { 1: { list: ['a', 'b'] } }
-    vi.mocked(dependencies.loadCachedDataForUpload).mockResolvedValue(pages)
-    const listener = createMessageListener(dependencies)
-
-    listener(
-      {
-        action: 'uploadCollectionData',
-        dataType: 'collection_weapon',
-        selectedIndices: [1],
-        conflictResolutions: { a: 'skip' },
-        deletionIds: ['old']
-      },
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    )
-
+  it('passes collection import and sync options', async () => {
+    send({
+      action: 'uploadCollectionData',
+      dataType: 'collection_weapon',
+      selectedIndices: [1],
+      conflictResolutions: { a: 'skip' },
+      deletionIds: ['old']
+    })
     await vi.waitFor(() =>
-      expect(dependencies.uploadCollectionData).toHaveBeenCalledWith(
-        pages,
+      expect(collections.uploadCollectionData).toHaveBeenCalledWith(
+        PAGES,
         'collection_weapon',
         {
           selectedIndices: [1],
@@ -281,37 +245,15 @@ describe('background message router', () => {
       )
     )
 
-    listener(
-      {
-        action: 'checkConflicts',
-        dataType: 'collection_weapon',
-        selectedIndices: [1]
-      },
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    )
-
+    send({
+      action: 'syncCollection',
+      dataType: 'collection_weapon',
+      selectedIndices: [0],
+      deletionIds: ['gone']
+    })
     await vi.waitFor(() =>
-      expect(dependencies.checkConflicts).toHaveBeenCalledWith(
-        pages,
-        'collection_weapon'
-      )
-    )
-
-    listener(
-      {
-        action: 'syncCollection',
-        dataType: 'collection_weapon',
-        selectedIndices: [0],
-        deletionIds: ['gone']
-      },
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    )
-
-    await vi.waitFor(() =>
-      expect(dependencies.uploadCollectionData).toHaveBeenLastCalledWith(
-        pages,
+      expect(collections.uploadCollectionData).toHaveBeenLastCalledWith(
+        PAGES,
         'collection_weapon',
         {
           selectedIndices: [0],
@@ -320,6 +262,41 @@ describe('background message router', () => {
           deletionIds: ['gone']
         }
       )
+    )
+  })
+
+  it('answers synchronous handlers immediately', () => {
+    expect(send({ action: 'getDebuggerStatus' })).toBe(false)
+    expect(sendResponse).toHaveBeenCalledWith({ attached: true, tabs: [10] })
+  })
+
+  it('waits for the pop-out window result', async () => {
+    expect(send({ action: 'popOutWindow' })).toBe(true)
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        windowId: 1,
+        alreadyOpen: false
+      })
+    )
+  })
+
+  it('ignores unknown actions', () => {
+    expect(send({ action: 'notReal' } as unknown as ExtensionMessage)).toBe(
+      false
+    )
+    expect(sendResponse).not.toHaveBeenCalled()
+  })
+
+  it('responds with internal_error when a handler rejects', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(referenceData.getCollectionIds).mockRejectedValueOnce(
+      new Error('boom')
+    )
+
+    send({ action: 'getCollectionIds' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'internal_error' })
     )
   })
 })

@@ -31,33 +31,27 @@ describe('window manager', () => {
     expect(dependencies.openSidePanel).toHaveBeenCalledWith(12)
   })
 
-  it('creates, reuses, and releases a pop-out window', () => {
+  it('creates, reuses, and releases a pop-out window', async () => {
     const manager = createWindowManager(dependencies)
     manager.registerListeners()
-    const firstResponse = vi.fn()
 
-    expect(manager.handlePopOutWindow(firstResponse)).toBe(true)
+    const first = manager.popOutWindow()
     const createdCallback = vi.mocked(dependencies.createPopup).mock
       .calls[0]![0]
     createdCallback({ id: 44 } as chrome.windows.Window)
-    expect(firstResponse).toHaveBeenCalledWith({
-      windowId: 44,
-      alreadyOpen: false
-    })
+    await expect(first).resolves.toEqual({ windowId: 44, alreadyOpen: false })
 
-    const secondResponse = vi.fn()
-    expect(manager.handlePopOutWindow(secondResponse)).toBe(false)
-    expect(dependencies.focusWindow).toHaveBeenCalledWith(44)
-    expect(secondResponse).toHaveBeenCalledWith({
+    await expect(manager.popOutWindow()).resolves.toEqual({
       windowId: 44,
       alreadyOpen: true
     })
+    expect(dependencies.focusWindow).toHaveBeenCalledWith(44)
 
     const removedListener = vi.mocked(dependencies.onWindowRemoved).mock
       .calls[0]![0]
     removedListener(44)
 
-    expect(manager.handlePopOutWindow(vi.fn())).toBe(true)
+    void manager.popOutWindow()
     expect(dependencies.createPopup).toHaveBeenCalledTimes(2)
   })
 })

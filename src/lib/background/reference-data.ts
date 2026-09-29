@@ -89,8 +89,8 @@ export async function createPlaylist({
   visibility
 }: {
   title: string
-  description: string
-  visibility: number
+  description?: string
+  visibility?: number
 }): Promise<CreatePlaylistResult> {
   try {
     const result = await authenticatedPost('/playlists', {

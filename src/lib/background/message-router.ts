@@ -1,4 +1,9 @@
 import { getAttachedTabs, isAttached } from '../debugger.js'
+import type {
+  ExtensionAction,
+  ExtensionMessage,
+  MessageOf
+} from '../types/messages.js'
 import { getAuthToken } from './api-client.js'
 import {
   handleClearCache,
@@ -30,316 +35,145 @@ import {
   fetchUserPlaylists,
   getCollectionIds
 } from './reference-data.js'
-import type {
-  BackgroundMessage,
-  CharacterStatsEntry,
-  PageData
-} from './types.js'
+import type { CharacterStatsEntry, PageData } from './types.js'
 import type { WindowManager } from './window-manager.js'
 
-export interface MessageRouterDependencies {
-  checkExtensionVersion: typeof checkExtensionVersion
-  getAuthToken: typeof getAuthToken
-  handleGetCacheStatus: typeof handleGetCacheStatus
-  handleGetCachedData: typeof handleGetCachedData
-  handleClearCache: typeof handleClearCache
-  isAttached: typeof isAttached
-  getAttachedTabs: typeof getAttachedTabs
-  handlePopOutWindow: WindowManager['handlePopOutWindow']
-  fetchRaidGroups: typeof fetchRaidGroups
-  fetchElementVariants: typeof fetchElementVariants
-  fetchUserPlaylists: typeof fetchUserPlaylists
-  createPlaylist: typeof createPlaylist
-  loadCachedDataForUpload: typeof loadCachedDataForUpload
-  uploadPartyData: typeof uploadPartyData
-  uploadDetailData: typeof uploadDetailData
-  getCollectionIds: typeof getCollectionIds
-  checkConflicts: typeof checkConflicts
-  checkCollectionUpdates: typeof checkCollectionUpdates
-  checkCharacterStatsUpdates: typeof checkCharacterStatsUpdates
-  uploadCollectionData: typeof uploadCollectionData
-  previewSyncDeletions: typeof previewSyncDeletions
-  uploadCharacterStats: typeof uploadCharacterStats
-  handleUploadUnfScores: typeof handleUploadUnfScores
-  handleCreateCrew: typeof handleCreateCrew
-  handlePreviewGwPhantoms: typeof handlePreviewGwPhantoms
-  handleFetchLatestGwEvent: typeof handleFetchLatestGwEvent
-}
+type Handler<A extends ExtensionAction> = (message: MessageOf<A>) => unknown
+
+/** One handler per action. Sync results are sent immediately; promises are awaited. */
+export type MessageHandlers = { [A in ExtensionAction]: Handler<A> }
 
 export type BackgroundMessageListener = (
-  message: BackgroundMessage,
+  message: ExtensionMessage,
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: unknown) => void
 ) => boolean
 
+// Loads the cached capture for `dataType` and hands it to `fn`, or reports
+// that there's nothing cached to upload.
+async function withCachedData<T, R>(
+  dataType: string,
+  fn: (data: T) => Promise<R>
+): Promise<R | { error: 'no_cached_data' }> {
+  const data = await loadCachedDataForUpload(dataType)
+  if (!data) return { error: 'no_cached_data' }
+  return fn(data as T)
+}
+
+type Pages = Record<number, PageData>
+type CharacterStats = Record<string, CharacterStatsEntry>
+
+export function createHandlers(
+  windowManager: Pick<WindowManager, 'popOutWindow'>
+): MessageHandlers {
+  return {
+    checkExtensionVersion: () => checkExtensionVersion(),
+    getAuth: () => getAuthToken(),
+    getCacheStatus: () => handleGetCacheStatus(),
+    getCachedData: (m) => handleGetCachedData(m.dataType),
+    clearCache: (m) => handleClearCache(m.dataType),
+    getDebuggerStatus: () => ({
+      attached: isAttached(),
+      tabs: getAttachedTabs()
+    }),
+    popOutWindow: () => windowManager.popOutWindow(),
+
+    fetchRaidGroups: (m) => fetchRaidGroups(m.forceRefresh),
+    fetchElementVariants: (m) => fetchElementVariants(m.forceRefresh),
+    fetchUserPlaylists: () => fetchUserPlaylists(),
+    createPlaylist: (m) => createPlaylist(m.data),
+    getCollectionIds: () => getCollectionIds(),
+
+    uploadPartyData: (m) =>
+      withCachedData(m.dataType, (data) =>
+        uploadPartyData(
+          data,
+          m.raidId,
+          m.playlistIds,
+          m.name,
+          m.visibility,
+          m.shareWithCrew
+        )
+      ),
+    uploadDetailData: (m) =>
+      withCachedData<Record<string, unknown>, unknown>(m.dataType, (data) =>
+        uploadDetailData(data, m.dataType)
+      ),
+
+    // checkConflicts and uploadCharacterStats ignore selectedIndices today;
+    // the whole cached capture is sent.
+    checkConflicts: (m) =>
+      withCachedData<Pages, unknown>(m.dataType, (pages) =>
+        checkConflicts(pages, m.dataType)
+      ),
+    checkCollectionUpdates: (m) =>
+      withCachedData<Pages, unknown>(m.dataType, (pages) =>
+        checkCollectionUpdates(pages, m.dataType)
+      ),
+    checkCharacterStatsUpdates: () =>
+      withCachedData<CharacterStats, unknown>('character_stats', (stats) =>
+        checkCharacterStatsUpdates(stats)
+      ),
+    uploadCollectionData: (m) =>
+      withCachedData<Pages, unknown>(m.dataType, (pages) =>
+        uploadCollectionData(pages, m.dataType, {
+          selectedIndices: m.selectedIndices,
+          conflictResolutions: m.conflictResolutions,
+          deletionIds: m.deletionIds
+        })
+      ),
+    syncCollection: (m) =>
+      withCachedData<Pages, unknown>(m.dataType, (pages) =>
+        uploadCollectionData(pages, m.dataType, {
+          selectedIndices: m.selectedIndices,
+          isFullInventory: true,
+          reconcileDeletions: true,
+          deletionIds: m.deletionIds
+        })
+      ),
+    previewSyncDeletions: (m) =>
+      withCachedData<Pages, unknown>(m.dataType, (pages) =>
+        previewSyncDeletions(pages, m.dataType)
+      ),
+    uploadCharacterStats: () =>
+      withCachedData<CharacterStats, unknown>('character_stats', (stats) =>
+        uploadCharacterStats(stats)
+      ),
+
+    uploadUnfScores: (m) =>
+      handleUploadUnfScores(m.dataType, m.round ?? 'preliminaries'),
+    createCrew: (m) => handleCreateCrew(m.name ?? ''),
+    previewGwPhantoms: (m) => handlePreviewGwPhantoms(m.dataType),
+    fetchLatestGwEvent: () => handleFetchLatestGwEvent()
+  }
+}
+
 export function createMessageListener(
-  dependencies: MessageRouterDependencies
+  handlers: MessageHandlers
 ): BackgroundMessageListener {
   return (message, _sender, sendResponse) => {
-    switch (message.action) {
-      case 'checkExtensionVersion':
-        dependencies.checkExtensionVersion().then(sendResponse)
-        return true
+    const handler = handlers[message.action] as
+      | Handler<ExtensionAction>
+      | undefined
+    if (!handler) return false
 
-      case 'getAuth':
-        dependencies.getAuthToken().then(sendResponse)
-        return true
-
-      case 'getCacheStatus':
-        dependencies.handleGetCacheStatus().then(sendResponse)
-        return true
-
-      case 'getCachedData':
-        dependencies.handleGetCachedData(message.dataType!).then(sendResponse)
-        return true
-
-      case 'clearCache':
-        dependencies.handleClearCache(message.dataType).then(sendResponse)
-        return true
-
-      case 'getDebuggerStatus':
-        sendResponse({
-          attached: dependencies.isAttached(),
-          tabs: dependencies.getAttachedTabs()
-        })
-        return false
-
-      case 'popOutWindow':
-        return dependencies.handlePopOutWindow(sendResponse)
-
-      case 'fetchRaidGroups':
-        dependencies.fetchRaidGroups(message.forceRefresh).then(sendResponse)
-        return true
-
-      case 'fetchElementVariants':
-        dependencies
-          .fetchElementVariants(message.forceRefresh)
-          .then(sendResponse)
-        return true
-
-      case 'fetchUserPlaylists':
-        dependencies.fetchUserPlaylists().then(sendResponse)
-        return true
-
-      case 'createPlaylist':
-        dependencies
-          .createPlaylist(
-            message.data as {
-              title: string
-              description: string
-              visibility: number
-            }
-          )
-          .then(sendResponse)
-        return true
-
-      case 'uploadPartyData':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .uploadPartyData(
-              data,
-              message.raidId,
-              message.playlistIds,
-              message.name,
-              message.visibility,
-              message.shareWithCrew
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'uploadDetailData':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .uploadDetailData(
-              data as Record<string, unknown>,
-              message.dataType!
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'getCollectionIds':
-        dependencies.getCollectionIds().then(sendResponse)
-        return true
-
-      case 'checkConflicts':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .checkConflicts(data as Record<number, PageData>, message.dataType!)
-            .then(sendResponse)
-        })
-        return true
-
-      case 'checkCollectionUpdates':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .checkCollectionUpdates(
-              data as Record<number, PageData>,
-              message.dataType!
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'checkCharacterStatsUpdates':
-        dependencies.loadCachedDataForUpload('character_stats').then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .checkCharacterStatsUpdates(
-              data as Record<string, CharacterStatsEntry>
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'uploadCollectionData':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .uploadCollectionData(
-              data as Record<number, PageData>,
-              message.dataType!,
-              {
-                selectedIndices: message.selectedIndices,
-                conflictResolutions: message.conflictResolutions,
-                deletionIds: message.deletionIds
-              }
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'syncCollection':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .uploadCollectionData(
-              data as Record<number, PageData>,
-              message.dataType!,
-              {
-                selectedIndices: message.selectedIndices,
-                isFullInventory: true,
-                reconcileDeletions: true,
-                deletionIds: message.deletionIds
-              }
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'previewSyncDeletions':
-        dependencies.loadCachedDataForUpload(message.dataType!).then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .previewSyncDeletions(
-              data as Record<number, PageData>,
-              message.dataType!
-            )
-            .then(sendResponse)
-        })
-        return true
-
-      case 'uploadCharacterStats':
-        dependencies.loadCachedDataForUpload('character_stats').then((data) => {
-          if (!data) {
-            sendResponse({ error: 'no_cached_data' })
-            return
-          }
-          dependencies
-            .uploadCharacterStats(data as Record<string, CharacterStatsEntry>)
-            .then(sendResponse)
-        })
-        return true
-
-      case 'uploadUnfScores':
-        dependencies
-          .handleUploadUnfScores(
-            message.dataType!,
-            (message as { round?: string }).round ?? 'preliminaries'
-          )
-          .then(sendResponse)
-        return true
-
-      case 'createCrew':
-        dependencies
-          .handleCreateCrew((message as { name?: string }).name ?? '')
-          .then(sendResponse)
-        return true
-
-      case 'previewGwPhantoms':
-        dependencies
-          .handlePreviewGwPhantoms((message as { dataType: string }).dataType)
-          .then(sendResponse)
-        return true
-
-      case 'fetchLatestGwEvent':
-        dependencies.handleFetchLatestGwEvent().then(sendResponse)
-        return true
-
-      default:
-        return false
+    const result = handler(message as MessageOf<ExtensionAction>)
+    if (!(result instanceof Promise)) {
+      sendResponse(result)
+      return false
     }
+
+    result.then(sendResponse, (error: unknown) => {
+      console.error(`Background handler "${message.action}" failed:`, error)
+      sendResponse({ error: 'internal_error' })
+    })
+    // Keep the message channel open until the promise settles.
+    return true
   }
 }
 
 export function createDefaultMessageListener(
-  handlePopOutWindow: WindowManager['handlePopOutWindow']
+  windowManager: Pick<WindowManager, 'popOutWindow'>
 ): BackgroundMessageListener {
-  return createMessageListener({
-    checkExtensionVersion,
-    getAuthToken,
-    handleGetCacheStatus,
-    handleGetCachedData,
-    handleClearCache,
-    isAttached,
-    getAttachedTabs,
-    handlePopOutWindow,
-    fetchRaidGroups,
-    fetchElementVariants,
-    fetchUserPlaylists,
-    createPlaylist,
-    loadCachedDataForUpload,
-    uploadPartyData,
-    uploadDetailData,
-    getCollectionIds,
-    checkConflicts,
-    checkCollectionUpdates,
-    checkCharacterStatsUpdates,
-    uploadCollectionData,
-    previewSyncDeletions,
-    uploadCharacterStats,
-    handleUploadUnfScores,
-    handleCreateCrew,
-    handlePreviewGwPhantoms,
-    handleFetchLatestGwEvent
-  })
+  return createMessageListener(createHandlers(windowManager))
 }
