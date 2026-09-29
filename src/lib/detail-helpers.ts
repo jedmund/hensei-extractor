@@ -723,3 +723,19 @@ export function renderSummonStats(
 
   return closeStats(html, data, master)
 }
+
+/**
+ * Alt-art suffixes to try, best first, for a summon shown at its max uncap
+ * (the API imports a party's support summon that way, since the party only
+ * names it). Which alt art exists varies by summon, so callers step down
+ * the list when an image fails to load; '' (base art) always exists.
+ */
+export function maxEvolutionArtSuffixes(uncap?: {
+  flb?: boolean
+  ulb?: boolean
+  transcendence?: boolean
+}): string[] {
+  if (uncap?.transcendence) return ['_04', '_03', '_02', '']
+  if (uncap?.ulb || uncap?.flb) return ['_02', '']
+  return ['']
+}

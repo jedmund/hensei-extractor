@@ -6,6 +6,7 @@
     resolveAwakeningIcon,
     resolveAugmentIcon,
     buildAxTooltipLines,
+    maxEvolutionArtSuffixes,
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
@@ -35,8 +36,8 @@
 
   interface SummonSearchResult {
     granblue_id?: string
-    imageSuffix?: string
     name?: { en?: string; ja?: string }
+    uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
   }
 
   interface BulletEntry {
@@ -70,6 +71,8 @@
   interface Props {
     data: Record<string, unknown>
     friendSummon?: SummonSearchResult | null
+    /** True while the support summon is being looked up by name */
+    friendSummonPending?: boolean
     weaponKeyMap?: Record<string, { slug: string; name: string }> | null
     jobSkillSlugs?: Record<string, string>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
@@ -79,6 +82,7 @@
   let {
     data: rawData,
     friendSummon = null,
+    friendSummonPending = false,
     weaponKeyMap = null,
     jobSkillSlugs = {},
     weaponStatModifiers = null,
@@ -95,12 +99,42 @@
   let subSummons = $derived(toArray(pc?.sub_summons).filter(Boolean) as RawPartyItem[])
   let accessoryIds = $derived([pc?.familiar_id, pc?.shield_id].filter(Boolean) as string[])
   let quickSummonId = $derived(pc?.quick_user_summon_id)
+  // The party only names its support summon; it's matched by name, which can fail.
+  let friendSummonName = $derived(pc?.damage_info?.summon_name)
+
+  // Support summon art at max evolution, stepping down when a summon doesn't
+  // have a given alt art (see maxEvolutionArtSuffixes).
+  let friendArtSuffixes = $derived(maxEvolutionArtSuffixes(friendSummon?.uncap))
+  let friendArtStep = $state(0)
+  $effect(() => {
+    void friendSummon
+    friendArtStep = 0
+  })
+  let friendArtUrl = $derived(
+    friendSummon
+      ? getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendArtSuffixes[friendArtStep] ?? ''}.jpg`)
+      : ''
+  )
+  function nextFriendArt() {
+    if (friendArtStep < friendArtSuffixes.length - 1) friendArtStep += 1
+  }
   let setAction = $derived(pc?.set_action || [])
 
   let mainWeapon = $derived(weapons[0])
   let gridWeapons = $derived(weapons.slice(1))
-  let mainSummon = $derived(summons[0])
-  let allSubSummons = $derived([...summons.slice(1), ...subSummons])
+  // Fixed summon slots (4 grid, then 2 sub when unlocked) so an empty slot
+  // shows a placeholder instead of the rest shifting up. A slot is empty when
+  // it's missing, null, or has no summon.
+  function summonSlot(data: unknown, key: number): RawPartyItem | null {
+    const item = (data as Record<string, RawPartyItem | null> | undefined)?.[String(key)]
+    return item && (item.master?.id || item.param?.id) ? item : null
+  }
+  let mainSummon = $derived(summonSlot(pc?.summons, 1))
+  let gridSummonSlots = $derived([2, 3, 4, 5].map((key) => summonSlot(pc?.summons, key)))
+  let subSummonSlots = $derived(
+    pc?.is_open_sub_summon === false ? [] : [1, 2].map((key) => summonSlot(pc?.sub_summons, key))
+  )
+  let allSubSummonSlots = $derived([...gridSummonSlots, ...subSummonSlots])
 
   let bulletInfo = $derived(data?.bullet_info?.set_bullets)
   let bullets = $derived.by((): BulletEntry[] => {
@@ -290,7 +324,7 @@
     </div>
   {/if}
 
-  {#if summons.length > 0 || subSummons.length > 0 || friendSummon}
+  {#if summons.length > 0 || subSummons.length > 0 || friendSummon || friendSummonName}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_summons()}</h3>
       <div class="summon-layout">
@@ -300,25 +334,39 @@
           <div class="summon-main">
             <img src={getImageUrl(`${BUCKET.summonTall}/${id}${suffix}.jpg`)} alt="">
           </div>
+        {:else}
+          <div class="summon-main">
+            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+          </div>
         {/if}
         <div class="summon-grid">
-          {#each allSubSummons as item}
-            {@const id = resolveSummonId(item)}
-            {@const suffix = getImageSuffix(item)}
-            {@const isQuick = quickSummonId && String(item.param?.id) === String(quickSummonId)}
-            <div class="grid-item">
-              {#if isQuick}
-                <div class="summon-modifiers">
-                  <Tooltip content={m.stat_quick_summon()}><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()}></Tooltip>
-                </div>
-              {/if}
-              <img src={getImageUrl(`${BUCKET.summonGrid}/${id}${suffix}.jpg`)} alt="">
-            </div>
+          {#each allSubSummonSlots as item, i (i)}
+            {#if item}
+              {@const id = resolveSummonId(item)}
+              {@const suffix = getImageSuffix(item)}
+              {@const isQuick = quickSummonId && String(item.param?.id) === String(quickSummonId)}
+              <div class="grid-item">
+                {#if isQuick}
+                  <div class="summon-modifiers">
+                    <Tooltip content={m.stat_quick_summon()}><img class="quick-summon-badge" src="icons/quick-summon/filled.svg" alt={m.stat_quick_summon()}></Tooltip>
+                  </div>
+                {/if}
+                <img src={getImageUrl(`${BUCKET.summonGrid}/${id}${suffix}.jpg`)} alt="">
+              </div>
+            {:else}
+              <div class="grid-item">
+                <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
+              </div>
+            {/if}
           {/each}
         </div>
         {#if friendSummon}
           <div class="summon-friend">
-            <img src={getImageUrl(`${BUCKET.summonTall}/${friendSummon.granblue_id}${friendSummon.imageSuffix || ''}.jpg`)} alt="">
+            <img src={friendArtUrl} alt="" onerror={nextFriendArt}>
+          </div>
+        {:else if !friendSummonPending}
+          <div class="summon-friend">
+            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
       </div>
