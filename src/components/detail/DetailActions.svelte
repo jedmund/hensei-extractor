@@ -7,6 +7,7 @@
     uploadCollectionData,
     uploadDetailData,
     uploadCharacterStats,
+    uploadSupportSummons,
     checkConflicts
   } from '../../lib/services/chrome-messages.js'
   import {
@@ -20,6 +21,7 @@
   let isParty = $derived(dataType.startsWith('party_'))
   let isDatabase = $derived(dataType.startsWith('detail_'))
   let isCharStats = $derived(dataType === 'character_stats')
+  let isSupportSummons = $derived(dataType === 'support_summons')
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
@@ -59,6 +61,8 @@
         return m.toast_import_failed_network()
       case 'invalid_data':
         return m.toast_import_failed_invalid()
+      case 'unknown_summons':
+        return m.toast_support_summons_unknown()
       default:
         return m.toast_import_failed()
     }
@@ -81,7 +85,14 @@
 
     try {
       let response:
-        | { error?: string; url?: string; warnings?: unknown[]; created?: number; updated?: number }
+        | {
+            error?: string
+            url?: string
+            warnings?: unknown[]
+            created?: number
+            updated?: number
+            unknownSummons?: string[]
+          }
         | undefined
 
       if (isParty) {
@@ -93,6 +104,8 @@
           shareWithCrew: app.shareWithCrew,
           playlists: app.selectedPlaylists
         })
+      } else if (isSupportSummons) {
+        response = await uploadSupportSummons()
       } else if (isDatabase) {
         response = await uploadDetailData(dataType)
       } else if (isCharStats) {
@@ -149,6 +162,9 @@
             ? m.toast_opening_party_with_warnings({ count: warningCount })
             : m.toast_opening_party()
         )
+        app.importState = 'imported'
+      } else if (isSupportSummons) {
+        app.showToast(m.toast_saved_support_summons({ count: response?.created ?? 0 }))
         app.importState = 'imported'
       } else if (response?.created !== undefined) {
         const total = response.created + (response.updated || 0)

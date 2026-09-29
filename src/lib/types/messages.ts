@@ -1,29 +1,64 @@
 /**
- * Discriminated union for messages between popup and background
- * via chrome.runtime.sendMessage.
+ * Every message the side panel sends to the background worker via
+ * chrome.runtime.sendMessage. The background router is keyed off this union,
+ * so adding an action here without a handler is a type error.
  */
-
 export type ExtensionMessage =
+  | { action: 'checkExtensionVersion' }
   | { action: 'getAuth' }
   | { action: 'getCacheStatus' }
   | { action: 'getCachedData'; dataType: string }
-  | { action: 'clearCache' }
-  | { action: 'importItems'; data: unknown; dataType: string }
-  | { action: 'previewSyncDeletions'; data: unknown; dataType: string }
-  | {
-      action: 'confirmSync'
-      data: unknown
-      dataType: string
-      deletions: unknown
-    }
+  | { action: 'clearCache'; dataType?: string }
+  | { action: 'getDebuggerStatus' }
   | { action: 'popOutWindow' }
-  | { action: 'fetchRaidGroups' }
-  | { action: 'uploadUnfScores'; dataType: string; round: string }
-  | { action: 'createCrew'; name: string }
-  | { action: 'fetchLatestGwEvent' }
+  | { action: 'fetchRaidGroups'; forceRefresh?: boolean }
+  | { action: 'fetchElementVariants'; forceRefresh?: boolean }
+  | { action: 'fetchUserPlaylists' }
+  | {
+      action: 'createPlaylist'
+      data: { title: string; description?: string; visibility?: number }
+    }
+  | { action: 'getCollectionIds' }
+  | {
+      action: 'uploadPartyData'
+      dataType: string
+      name?: string
+      raidId?: string
+      visibility?: number
+      shareWithCrew?: boolean
+      playlistIds?: string[]
+    }
+  | { action: 'uploadDetailData'; dataType: string }
+  | { action: 'checkConflicts'; dataType: string; selectedIndices?: number[] }
+  | { action: 'checkCollectionUpdates'; dataType: string }
+  | { action: 'checkCharacterStatsUpdates' }
+  | {
+      action: 'uploadCollectionData'
+      dataType: string
+      selectedIndices?: number[]
+      conflictResolutions?: Record<string, 'import' | 'skip'> | null
+      deletionIds?: string[]
+    }
+  | {
+      action: 'syncCollection'
+      dataType: string
+      selectedIndices?: number[]
+      deletionIds?: string[]
+    }
+  | { action: 'previewSyncDeletions'; dataType: string }
+  | { action: 'uploadCharacterStats'; selectedIndices?: number[] }
+  | { action: 'uploadUnfScores'; dataType: string; round?: string }
+  | { action: 'createCrew'; name?: string }
   | { action: 'previewGwPhantoms'; dataType: string }
-  | { action: 'checkCollectionUpdates'; data: unknown; dataType: string }
-  | { action: 'checkCharacterStatsUpdates'; data: unknown }
+  | { action: 'fetchLatestGwEvent' }
+  | { action: 'uploadSupportSummons' }
+
+export type ExtensionAction = ExtensionMessage['action']
+
+export type MessageOf<A extends ExtensionAction> = Extract<
+  ExtensionMessage,
+  { action: A }
+>
 
 export interface ExtensionResponse<T = unknown> {
   success: boolean
@@ -82,6 +117,15 @@ export interface UploadCollectionResponse {
   errors?: unknown[]
   reconciliation?: unknown
   error?: string
+}
+
+/** Response from uploadSupportSummons */
+export interface UploadSupportSummonsResponse {
+  success?: boolean
+  created?: number
+  error?: string
+  /** granblue_ids granblue.team doesn't have yet, when error is 'unknown_summons' */
+  unknownSummons?: string[]
 }
 
 /** Response from checkConflicts */

@@ -37,6 +37,7 @@ export const IMG_URL = 'https://siero-img.s3-us-west-2.amazonaws.com'
  * prefixes (weapon-square/, ax/, …) no longer exist.
  */
 export const BUCKET = {
+  placeholders: 'app/placeholders',
   marketing: 'app/marketing',
   characterMain: 'characters/main',
   characterSquare: 'characters/square',
@@ -44,6 +45,7 @@ export const BUCKET = {
   weaponGrid: 'weapons/grid',
   weaponSquare: 'weapons/square',
   weaponKeys: 'weapons/keys',
+  summonMain: 'summons/main',
   summonGrid: 'summons/grid',
   summonSquare: 'summons/square',
   summonTall: 'summons/tall',
@@ -52,6 +54,7 @@ export const BUCKET = {
   bulletSquare: 'bullets/square',
   jobWide: 'jobs/wide',
   jobSkills: 'icons/job-skills',
+  elements: 'icons/elements',
   awakening: 'icons/awakening',
   axSkills: 'icons/ax-skills',
   raidThumbnail: 'raids/thumbnail'
@@ -119,8 +122,12 @@ export const CACHE_KEYS: Record<string, string> = {
   character_stats: 'gbf_cache_character_stats',
   raid_groups: 'gbf_cache_raid_groups',
   element_variants: 'gbf_cache_element_variants',
-  guild_info: 'gbf_cache_guild_info'
+  guild_info: 'gbf_cache_guild_info',
+  support_summons: 'gbf_cache_support_summons'
 }
+
+/** Support summon slots on a GBF profile: 3 per element + 4 misc. */
+export const SUPPORT_SUMMON_SLOTS = 22
 
 /** Cache key prefixes for dynamic data types (appended with ID/number) */
 export const CACHE_PREFIXES: Record<string, string> = {
@@ -176,7 +183,8 @@ const DATA_TYPE_NAMES: Record<string, () => string> = {
   collection_artifact: m.type_artifact_collection,
   character_stats: m.type_character_stats,
   unf_scores: m.type_unf_scores,
-  unf_daily_scores: m.type_unf_daily_scores
+  unf_daily_scores: m.type_unf_daily_scores,
+  support_summons: m.type_support_summons
 }
 
 export function getDataTypeName(dataType: string): string {
@@ -205,6 +213,7 @@ export const DATA_TYPE_ORDER = [
   'collection_weapon',
   'collection_summon',
   'collection_artifact',
+  'support_summons',
   'list_npc',
   'list_weapon',
   'list_summon'
@@ -218,6 +227,7 @@ export const TAB_DATA_TYPES: Record<string, string[]> = {
     'collection_weapon',
     'collection_summon',
     'collection_artifact',
+    'support_summons',
     'list_npc',
     'list_weapon',
     'list_summon'

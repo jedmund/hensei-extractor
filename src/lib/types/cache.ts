@@ -17,6 +17,7 @@ export interface CacheStatusInfo {
   stashName?: string
   partyName?: string
   partyId?: string
+  gbfUserId?: string | null
 }
 
 /** Formatted cache status for display in the UI */

@@ -568,6 +568,58 @@ body.light #playlistCreateSubmit {
   }
 }
 
+/* In collection imports the selection checkbox owns the bottom-right corner,
+   so AX/befoulment and weapon key icons sit in a row along the top left
+   instead, and the awakening icon sits bottom left, just above the element
+   circle. A weapon has only one kind: an awakening, an AX or befoulment
+   skill, or 1-3 weapon keys. Same spots for every cell. */
+.grid-item.selectable .weapon-modifiers {
+  display: flex;
+  align-items: flex-start;
+  // Inset 6cqw from the corner; three 22cqw keys + gaps end at 78cqw,
+  // clear of the update dot (80cqw).
+  gap: 3cqw;
+  padding: 6cqw;
+  box-sizing: border-box;
+
+  .weapon-skills {
+    position: static;
+    display: contents;
+
+    img {
+      margin: 0;
+    }
+
+    img:not(.befoulment-icon) {
+      width: 22cqw;
+    }
+
+    // The befoulment art has transparent padding (drawn area starts 15/80 in
+    // and 16/80 down), so pull it up and left to line its glyph up with the
+    // AX and key squares.
+    img.befoulment-icon {
+      margin: -6.4cqw 0 0 -6cqw;
+    }
+  }
+
+  // Each icon sits in a tooltip trigger <span>; keep them tight boxes.
+  > span,
+  .weapon-skills > span {
+    display: flex;
+  }
+
+  // Sits on the element circle (20cqw wide, centered 10.4cqw from the left,
+  // top edge 24.2cqw up), nudged ~1.6cqw right of its center. The banner is
+  // 52/80 of its box wide and its concave bottom's apex is 66/80 down, so a
+  // 32cqw box at 21.5cqw puts the apex ~3cqw (about 2px) above the circle.
+  .awakening-icon {
+    top: auto;
+    left: -4cqw;
+    bottom: 21.5cqw;
+    width: 32cqw;
+  }
+}
+
 /* Mainhand weapon modifiers (larger since mainhand is taller) */
 .weapon-mainhand .weapon-modifiers {
   .awakening-icon {
@@ -1008,6 +1060,13 @@ body.light #playlistCreateSubmit {
     display: block;
     border-radius: layout.$item-corner;
   }
+}
+
+// The placeholder art is shorter than the tall summon art; it's a flat
+// tile, so fill the slot rather than leave a gap below it.
+.summon-main img.summon-placeholder,
+.summon-friend img.summon-placeholder {
+  object-fit: cover;
 }
 
 .summon-grid {

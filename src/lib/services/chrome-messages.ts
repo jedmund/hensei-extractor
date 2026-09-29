@@ -2,10 +2,12 @@ import { formatCacheStatus } from '../cache.js'
 import type { AuthData } from '../state/app.svelte.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
 import type {
+  ExtensionMessage,
   CachedDataResponse,
   UploadPartyResponse,
   UploadDetailResponse,
   UploadCollectionResponse,
+  UploadSupportSummonsResponse,
   UploadUnfScoresResponse,
   CreateCrewResponse,
   FetchLatestGwEventResponse,
@@ -21,7 +23,7 @@ import type {
   CheckVersionResponse
 } from '../types/messages.js'
 
-function send(message: Record<string, unknown>): Promise<unknown> {
+function send(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
 }
 
@@ -97,6 +99,12 @@ export async function uploadCharacterStats(
     action: 'uploadCharacterStats',
     selectedIndices
   }) as Promise<UploadCollectionResponse>
+}
+
+export async function uploadSupportSummons(): Promise<UploadSupportSummonsResponse> {
+  return send({
+    action: 'uploadSupportSummons'
+  }) as Promise<UploadSupportSummonsResponse>
 }
 
 export async function checkConflicts(
