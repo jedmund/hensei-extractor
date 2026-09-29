@@ -50,6 +50,9 @@
           <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#container' })}>
             {m.empty_stashes()}
           </Button>
+          <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#profile' })}>
+            {m.empty_profile()}
+          </Button>
         </div>
       </div>
     {:else}
