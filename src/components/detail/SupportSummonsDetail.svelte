@@ -54,10 +54,6 @@
 </script>
 
 <div class="support-summons-detail">
-  {#if data?.gbf_user_id}
-    <div class="user-id">{m.support_summons_user_id({ id: data.gbf_user_id })}</div>
-  {/if}
-
   {#each groups as group (group.label)}
     <section class="section">
       <h3 class="section-label">
@@ -108,11 +104,6 @@
     display: flex;
     flex-direction: column;
     gap: $unit-2x;
-  }
-
-  .user-id {
-    font-size: $font-small;
-    color: var(--color-text-secondary);
   }
 
   .section {

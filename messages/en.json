@@ -100,7 +100,7 @@
   "type_artifact_collection": "Artifact Collection",
   "type_support_summons": "Support Summons",
   "support_summons_subtitle": "{set} of {total} slots set",
-  "support_summons_user_id": "GBF ID {id}",
+  "support_summons_user_id": "Player ID {id}",
   "support_summons_level": "Lv. {level}",
   "support_summons_level_unknown": "Lv. ?",
   "support_summons_empty": "Not set",

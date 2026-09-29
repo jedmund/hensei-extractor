@@ -219,6 +219,10 @@
       const detail = app.detailData as RawGameItem
       return detail?.name || detail?.master?.name || ''
     }
+    if (isSupportSummons) {
+      const id = (app.detailData as unknown as ParsedSupportSummonPayload).gbf_user_id
+      return id ? m.support_summons_user_id({ id }) : ''
+    }
     const count = status?.totalItems || countItems(dataType, app.detailData as Record<string, unknown>)
     return count === 1 ? m.count_item({ count }) : m.count_items({ count })
   })

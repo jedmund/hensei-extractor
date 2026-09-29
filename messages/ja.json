@@ -100,7 +100,7 @@
   "type_artifact_collection": "アーティファクトコレクション",
   "type_support_summons": "サポート召喚石",
   "support_summons_subtitle": "{total}枠中{set}枠を設定",
-  "support_summons_user_id": "GBF ID {id}",
+  "support_summons_user_id": "プレイヤーID {id}",
   "support_summons_level": "Lv.{level}",
   "support_summons_level_unknown": "Lv.?",
   "support_summons_empty": "未設定",
