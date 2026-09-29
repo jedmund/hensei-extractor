@@ -4,3 +4,6 @@ granblue-team-extension/
 .output/
 .wxt/
 pnpm-lock.yaml
+src/paraglide/
+project.inlang/*
+!project.inlang/settings.json

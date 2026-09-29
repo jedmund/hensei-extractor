@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import type { ExtensionMessage } from '../types/messages.js'
 import { loadCachedDataForUpload } from './cache-queries.js'
 import * as collections from './collections.js'
@@ -52,9 +52,8 @@ const PAGES = { 1: { list: ['item'] } }
 const sender = {} as chrome.runtime.MessageSender
 
 describe('background message router', () => {
-  let popOutWindow: ReturnType<typeof vi.fn>
   let handlers: MessageHandlers
-  let sendResponse: ReturnType<typeof vi.fn>
+  let sendResponse: Mock<(response?: unknown) => void>
 
   function send(message: ExtensionMessage) {
     return createMessageListener(handlers)(message, sender, sendResponse)
@@ -63,8 +62,9 @@ describe('background message router', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(loadCachedDataForUpload).mockResolvedValue(PAGES)
-    popOutWindow = vi.fn(async () => ({ windowId: 1, alreadyOpen: false }))
-    handlers = createHandlers({ popOutWindow })
+    handlers = createHandlers({
+      popOutWindow: vi.fn(async () => ({ windowId: 1, alreadyOpen: false }))
+    })
     sendResponse = vi.fn()
   })
 
