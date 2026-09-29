@@ -169,11 +169,14 @@
 
   .slot-stars {
     justify-content: center;
+    container-type: inline-size;
 
-    // Smaller than the database view's stars so six fit under the art.
+    // 15px, the site's "medium" star size, shrinking only when the slot is
+    // too narrow for six stars and their gaps.
     :global(.star) {
-      width: $unit * 1.5;
-      height: $unit * 1.5;
+      width: min(15px, calc((100cqw - 5 * $unit-quarter) / 6));
+      height: auto;
+      aspect-ratio: 1;
     }
   }
 
