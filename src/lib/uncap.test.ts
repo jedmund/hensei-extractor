@@ -49,7 +49,23 @@ describe('summonStars', () => {
       'filled',
       'flb',
       'flb',
-      'ulb'
+      'transcendence stage5'
     ])
+  })
+
+  // One shard per 10 levels past 200
+  it.each([
+    [201, 1],
+    [210, 1],
+    [211, 2],
+    [220, 2],
+    [230, 3],
+    [240, 4],
+    [241, 5],
+    [250, 5]
+  ])('level %i shows a transcendence star with %i shards', (level, shards) => {
+    expect(summonStars(deriveSummonUncap(level)).at(-1)).toBe(
+      `transcendence stage${shards}`
+    )
   })
 })

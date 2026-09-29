@@ -22,20 +22,31 @@ export function deriveSummonUncap(level: number): SummonUncap {
   return { uncapLevel: 6, transcendenceStep: step }
 }
 
-export type StarKind = 'empty' | 'filled' | 'flb' | 'ulb'
+export type StarKind =
+  | 'empty'
+  | 'filled'
+  | 'flb'
+  | `transcendence stage${1 | 2 | 3 | 4 | 5}`
 
 /**
- * Star row for a summon, using the side panel's .star classes: three base
- * stars (empty until earned), then a blue star each for FLB and ULB and a
- * purple one for transcendence. Stars the summon hasn't reached past the
- * base three are left off, since the page doesn't say which it can reach.
+ * Star row for a summon, as the side panel's .star classes: three base stars
+ * (empty until earned), a blue star each for FLB and ULB, then the
+ * transcendence star with one shard per step (201–210 is one shard,
+ * 211–220 two, … 241–250 all five). Stars the summon hasn't reached past
+ * the base three are left off, since the page doesn't say which it can reach.
  */
-export function summonStars({ uncapLevel }: SummonUncap): StarKind[] {
+export function summonStars({
+  uncapLevel,
+  transcendenceStep
+}: SummonUncap): StarKind[] {
   const stars: StarKind[] = [0, 1, 2].map((i) =>
     uncapLevel > i ? 'filled' : 'empty'
   )
   if (uncapLevel >= 4) stars.push('flb')
   if (uncapLevel >= 5) stars.push('flb')
-  if (uncapLevel >= 6) stars.push('ulb')
+  if (uncapLevel >= 6 && transcendenceStep >= 1) {
+    const stage = Math.min(5, transcendenceStep) as 1 | 2 | 3 | 4 | 5
+    stars.push(`transcendence stage${stage}`)
+  }
   return stars
 }
