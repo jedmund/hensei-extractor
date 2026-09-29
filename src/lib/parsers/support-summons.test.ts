@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
   extractGbfUserIdFromUrl,
+  extractViewerIdFromUrl,
   parseSupportSummons
 } from './support-summons.js'
 
 // Fixtures follow the markup documented in support-summons.ts. Replace them
 // with trimmed real captures when available.
-const URL = 'https://game.granbluefantasy.jp/profile/content/index/12345678?_=1'
+// GBF appends the logged-in player's ID as `uid` to its XHRs.
+const URL =
+  'https://game.granbluefantasy.jp/profile/content/index/12345678?_=1&t=2&uid=12345678'
+const FOREIGN_URL =
+  'https://game.granbluefantasy.jp/profile/content/index/87654321?_=1&t=2&uid=12345678'
 
 function envelope(html: string) {
   return { data: encodeURIComponent(html) }
@@ -98,15 +103,34 @@ describe('parseSupportSummons', () => {
     })
   })
 
-  it('flags another player’s profile, which has no edit markup', () => {
-    const html =
-      '<div class="prt-summon" data-masterid="2040094000"></div>' +
-      '<div class="prt-summon-name">Lvl 250 Agni</div>'
+  it('flags another player’s profile even though it has the same slot markup', () => {
+    const html = slot(1, 0, '2040094000', 'Lvl 250 Agni')
 
-    expect(parseSupportSummons(envelope(html), URL)).toEqual({
+    expect(parseSupportSummons(envelope(html), FOREIGN_URL)).toMatchObject({
+      gbf_user_id: '87654321',
+      is_own_profile: false
+    })
+  })
+
+  it('treats a request without uid as not the player’s own', () => {
+    const html = slot(1, 0, '2040094000', 'Lvl 250 Agni')
+    const noUid =
+      'https://game.granbluefantasy.jp/profile/content/index/12345678?_=1'
+
+    expect(parseSupportSummons(envelope(html), noUid).is_own_profile).toBe(
+      false
+    )
+  })
+
+  it('treats an own-profile request without an ID in the path as own', () => {
+    const url =
+      'https://game.granbluefantasy.jp/profile/content/index?uid=12345678'
+
+    expect(
+      parseSupportSummons(envelope(slot(0, 0, '1', 'Lv 1 X')), url)
+    ).toMatchObject({
       gbf_user_id: '12345678',
-      is_own_profile: false,
-      items: []
+      is_own_profile: true
     })
   })
 
@@ -115,11 +139,23 @@ describe('parseSupportSummons', () => {
     ['an empty payload', { data: '' }],
     ['malformed URI encoding', { data: '%E0%A4%A' }]
   ])('returns no items for %s', (_label, raw) => {
-    expect(parseSupportSummons(raw, URL)).toEqual({
-      gbf_user_id: '12345678',
-      is_own_profile: false,
-      items: []
-    })
+    expect(parseSupportSummons(raw, URL).items).toEqual([])
+  })
+})
+
+describe('extractViewerIdFromUrl', () => {
+  it('reads the uid param', () => {
+    expect(extractViewerIdFromUrl(URL)).toBe('12345678')
+  })
+
+  it('returns null when uid is missing or not numeric', () => {
+    expect(
+      extractViewerIdFromUrl('https://game.granbluefantasy.jp/x?uid=')
+    ).toBeNull()
+    expect(
+      extractViewerIdFromUrl('https://game.granbluefantasy.jp/x?uid=abc')
+    ).toBeNull()
+    expect(extractViewerIdFromUrl('not a url')).toBeNull()
   })
 })
 

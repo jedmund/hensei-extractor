@@ -4,7 +4,10 @@ import { cacheSupportSummons, uploadSupportSummons } from './support-summons.js'
 
 vi.mock('./api-client.js', () => ({ authenticatedPost: vi.fn() }))
 
-const URL = 'https://game.granbluefantasy.jp/profile/content/index/12345678'
+const URL =
+  'https://game.granbluefantasy.jp/profile/content/index/12345678?uid=12345678'
+const FOREIGN_URL =
+  'https://game.granbluefantasy.jp/profile/content/index/87654321?uid=12345678'
 const set = vi.fn(async () => undefined)
 
 function envelope(html: string) {
@@ -34,11 +37,13 @@ describe('cacheSupportSummons', () => {
   })
 
   it('ignores another player’s profile so it can’t replace the user’s own', async () => {
-    const html = '<div class="prt-summon" data-masterid="2040094000"></div>'
+    const html =
+      '<div id="js-fix-summon10" data-masterid="2040094000"></div>' +
+      '<div id="js-fix-summon10-name">Lvl 250 Agni</div>'
 
-    await expect(cacheSupportSummons(envelope(html), 100, URL)).resolves.toBe(
-      false
-    )
+    await expect(
+      cacheSupportSummons(envelope(html), 100, FOREIGN_URL)
+    ).resolves.toBe(false)
     expect(set).not.toHaveBeenCalled()
   })
 })

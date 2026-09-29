@@ -14,10 +14,13 @@
  *   id="js-fix-summon{S}{P}-name" ... >Lvl <N> <Name></div>   (EN; the JP client uses "Lv")
  *
  * Empty slots have no js-fix-summon id and link to profile/fix/list/summon/{S}/{P}.
- * Both of those are edit ("fix") affordances, which only appear when the
- * player is viewing their own profile. Section indices use GBF's ordering;
- * translation to our internal enum happens server-side in
- * SupportSummonImportService.
+ * The same markup appears on other players' profiles, so it can't tell the
+ * two apart. Instead, GBF's XHRs carry the logged-in player's ID as a `uid`
+ * query param, and the path carries the ID of the profile being viewed; the
+ * profile is the player's own only when they match.
+ *
+ * Section indices use GBF's ordering; translation to our internal enum
+ * happens server-side in SupportSummonImportService.
  */
 
 export interface ParsedSupportSummon {
@@ -37,9 +40,8 @@ export interface ParsedSupportSummonPayload {
   /** GBF account user_id parsed from the request URL */
   gbf_user_id: string | null
   /**
-   * Whether the page had the edit ("fix") controls that only show on the
-   * player's own profile. Another player's profile must never be imported
-   * over the user's support summons.
+   * Whether this is the logged-in player's own profile. Another player's
+   * profile must never be imported over the user's support summons.
    */
   is_own_profile: boolean
   /** Populated slots, omitting empty ones */
@@ -50,12 +52,29 @@ const SLOT_TAG_RE = /<[^>]*\bid="js-fix-summon(\d)(\d)"[^>]*>/g
 const MASTER_ID_RE = /\bdata-masterid="(\d+)"/
 const NAME_RE = /<[^>]*\bid="js-fix-summon(\d)(\d)-name"[^>]*>([^<]*)</g
 const LEVEL_LABEL_RE = /^\s*Lv(?:l)?\.?\s*(\d+)\s*(.*?)\s*$/i
-const EDIT_MARKUP_RE = /js-fix-summon\d\d|profile\/fix\/list\/summon\//
 const URL_USER_ID_RE = /\/profile\/content\/index\/(\d+)/
 
 export function extractGbfUserIdFromUrl(url: string): string | null {
   const match = URL_USER_ID_RE.exec(url)
   return match ? match[1]! : null
+}
+
+/** The logged-in player's ID, from the `uid` param GBF adds to its XHRs. */
+export function extractViewerIdFromUrl(url: string): string | null {
+  try {
+    const uid = new URL(url).searchParams.get('uid')
+    return uid && /^\d+$/.test(uid) ? uid : null
+  } catch {
+    return null
+  }
+}
+
+// Unknown viewer means unknown ownership, which is treated as not-own.
+function isOwnProfile(url: string): boolean {
+  const viewer = extractViewerIdFromUrl(url)
+  if (!viewer) return false
+  const profile = extractGbfUserIdFromUrl(url)
+  return profile === null || profile === viewer
 }
 
 /**
@@ -70,8 +89,8 @@ export function parseSupportSummons(
   url: string
 ): ParsedSupportSummonPayload {
   const empty: ParsedSupportSummonPayload = {
-    gbf_user_id: extractGbfUserIdFromUrl(url),
-    is_own_profile: false,
+    gbf_user_id: extractGbfUserIdFromUrl(url) ?? extractViewerIdFromUrl(url),
+    is_own_profile: isOwnProfile(url),
     items: []
   }
 
@@ -111,9 +130,5 @@ export function parseSupportSummons(
     (a, b) => a.gbf_section - b.gbf_section || a.position - b.position
   )
 
-  return {
-    gbf_user_id: empty.gbf_user_id,
-    is_own_profile: EDIT_MARKUP_RE.test(html),
-    items
-  }
+  return { ...empty, items }
 }
