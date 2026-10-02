@@ -5,7 +5,7 @@
 
 import { apiFetch, getApiUrl, getEnvConfig } from './constants.js'
 
-interface ApiError extends Error {
+export interface ApiError extends Error {
   code: string
 }
 
@@ -22,7 +22,7 @@ export interface AuthData {
   user: AuthUser
 }
 
-interface RawAuthResponse {
+export interface RawAuthResponse {
   access_token: string
   token_type: string
   expires_in: number
@@ -133,7 +133,7 @@ export async function refreshAuth<T extends AuthData>(auth: T): Promise<T> {
   return { ...auth, ...formatAuthData(data) }
 }
 
-function formatAuthData(data: RawAuthResponse): AuthData {
+export function formatAuthData(data: RawAuthResponse): AuthData {
   const nowMs = Date.now()
   const expiresMs = nowMs + data.expires_in * 1000
 

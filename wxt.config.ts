@@ -32,7 +32,19 @@ export default defineConfig({
     description:
       'Passively captures Granblue Fantasy data for export to granblue.team',
     version: process.env.WXT_BUILD_NUMBER ?? '0',
-    permissions: ['storage', 'debugger', 'tabs', 'sidePanel', 'cookies'],
+    // Public key that pins the extension ID to lcobmjandcaicggiddpheahpogbdodid
+    // for every unpacked install, whatever folder it's loaded from. Logging in
+    // through granblue.team only redirects to allowlisted IDs (EXTENSION_IDS).
+    // The private key isn't needed for unpacked installs and isn't kept.
+    key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAneysCmA4/TSeufKcsRbxlEkoick7MsfftmKKlqPsrtwekK1IM8+uftN53WwOyXcHwkgMSd68TBJIgH6QgtJt2vj56Myp+U0dJ43byt9t5KgjtjQ2pDyBPHAaSNYaKeRPdyykqfk6lE/n7UkbbQhypBKRB2eJiL8iN1RY/55vePmW2QjGkdjaj7qPwc2WtVy4P6+9gRXCuY3qH7jS/pJPNI0OS4R7iqOVPV7LLvyUbfEhg+8BLlIWAzoS/f3pDHIepTL8OCukwQomBySqqeE92elqQudMw+TWeGX5zl5qb94ZSqkWYger1RpISyF31hGTxFtdeClM60Q4MTg0ktP6gwIDAQAB',
+    permissions: [
+      'storage',
+      'debugger',
+      'tabs',
+      'sidePanel',
+      'cookies',
+      'identity'
+    ],
     host_permissions: [
       'https://game.granbluefantasy.jp/*',
       'https://gbf.game.mbga.jp/*',
