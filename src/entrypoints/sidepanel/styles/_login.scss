@@ -83,9 +83,11 @@
     }
   }
 
-  // The language switch sits right under the sign-up line inside the card.
+  // The language switch sits right under the sign-up line inside the card,
+  // styled as a link like "Create one".
   .login-language-switch {
     margin-top: spacing.$unit;
+    color: var(--color-link);
   }
 }
 
