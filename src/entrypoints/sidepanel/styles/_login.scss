@@ -82,6 +82,11 @@
       text-decoration: underline;
     }
   }
+
+  // The language switch sits right under the sign-up line inside the card.
+  .login-language-switch {
+    margin-top: spacing.$unit;
+  }
 }
 
 .disclaimer-overlay {

@@ -4,7 +4,15 @@
   import type { AuthData } from '../../lib/auth.js'
   import { loginWithSite } from '../../lib/extension-auth.js'
   import { getLocale } from '../../lib/i18n.js'
+  import type { Snippet } from 'svelte'
   import Button from '../shared/Button.svelte'
+
+  interface Props {
+    /** Rendered at the bottom of the card, under the sign-up link. */
+    footer?: Snippet
+  }
+
+  let { footer }: Props = $props()
 
   // The extension only logs in through granblue.team, so every login method
   // the site supports (password, Discord, Google, Apple) works here.
@@ -39,7 +47,7 @@
 </script>
 
 <div class="auth-card">
-  <h1 class="auth-title">{m.auth_login()}</h1>
+  <h1 class="auth-title">{m.auth_get_started()}</h1>
   <div class="auth-form">
     {#if status}
       <div class="auth-status">{status}</div>
@@ -60,5 +68,6 @@
         >{m.auth_create_account()}</a
       >
     </p>
+    {@render footer?.()}
   </div>
 </div>
