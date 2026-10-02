@@ -1,7 +1,8 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { performLogin } from '../../lib/auth.js'
+  import { performLogin, type AuthData } from '../../lib/auth.js'
+  import { loginWithSite } from '../../lib/extension-auth.js'
   import { getLocale } from '../../lib/i18n.js'
   import Button from '../shared/Button.svelte'
   import Input from '../shared/Input.svelte'
@@ -23,10 +24,7 @@
     try {
       const result = await performLogin(email, password)
       if (result?.access_token) {
-        const gbAuth = { ...result, language: getLocale() }
-        await chrome.storage.local.set({ gbAuth })
-        app.auth = gbAuth
-        status = m.auth_login_success()
+        await saveAuth(result)
       } else {
         status = m.auth_invalid_credentials()
         loading = false
@@ -37,6 +35,31 @@
     }
   }
 
+  async function handleSiteLogin() {
+    loading = true
+    status = m.auth_waiting_for_site()
+
+    try {
+      const result = await loginWithSite()
+      if (result) {
+        await saveAuth(result)
+      } else {
+        // The user closed the window or cancelled on the site.
+        status = ''
+        loading = false
+      }
+    } catch {
+      status = m.auth_site_login_failed()
+      loading = false
+    }
+  }
+
+  async function saveAuth(result: AuthData) {
+    const gbAuth = { ...result, language: getLocale() }
+    await chrome.storage.local.set({ gbAuth })
+    app.auth = gbAuth
+    status = m.auth_login_success()
+  }
 </script>
 
 <div class="auth-card">
@@ -67,6 +90,9 @@
       disabled={loading}
     >
       {m.auth_login()}
+    </Button>
+    <Button fullWidth onclick={handleSiteLogin} disabled={loading}>
+      {m.auth_login_with_site()}
     </Button>
   </div>
   <div class="auth-footer">
