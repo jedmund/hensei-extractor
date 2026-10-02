@@ -72,6 +72,17 @@ export const AUGMENT_ICON_MAP: Record<string, string> = {
 
 export const WEAPON_KEY_SERIES = new Set([3, 13, 17, 19, 27, 40, 44])
 
+/**
+ * Null-element characters (element 0 in Hensei's database): they follow the
+ * party's element and have art for each element, `{id}_{pose}_0{element}`.
+ * Young Cat, SR Lyria and SSR Lyria.
+ */
+export const NULL_ELEMENT_CHARACTER_IDS = new Set([
+  '3020072000',
+  '3030182000',
+  '3040643000'
+])
+
 export const CHARACTER_AWAKENING_MAPPING: Record<number, string> = {
   1: 'character-balanced',
   2: 'character-atk',
