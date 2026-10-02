@@ -104,7 +104,9 @@
 
 .login-language-switch {
   display: block;
-  margin-top: spacing.$unit-3x;
+  // A block-level button keeps its content width, so center it with auto
+  // margins; text-align alone doesn't move it.
+  margin: spacing.$unit-3x auto 0;
   text-align: center;
   color: var(--color-text-secondary);
   font-size: type.$font-small;
