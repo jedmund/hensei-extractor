@@ -4,7 +4,7 @@
   import { Switch as SwitchPrimitive } from 'bits-ui'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { setLocale } from '../../lib/i18n.js'
+  import { chooseLocale } from '../../lib/i18n.js'
   import { updateUserLanguage } from '../../lib/auth.js'
   import {
     getCacheStatus,
@@ -16,7 +16,7 @@
     const lang = checked ? 'ja' : 'en'
     if ((app.locale === 'ja') === checked) return
 
-    setLocale(lang)
+    await chooseLocale(lang)
 
     // Refresh cache display with translated names
     app.cachedStatus = await getCacheStatus()

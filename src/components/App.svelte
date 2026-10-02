@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { app, type AuthData } from '../lib/state/app.svelte.js'
-  import { setLocale, getPreferredLocale } from '../lib/i18n.js'
+  import { setLocale, getPreferredLocale, LOCALE_PREFERENCE_KEY } from '../lib/i18n.js'
   import { getAuth, getCacheStatus } from '../lib/services/chrome-messages.js'
   import { BUCKET, getImageUrl } from '../lib/constants.js'
   import { Tooltip } from 'bits-ui'
@@ -18,13 +18,16 @@
       `url('${getImageUrl(`${BUCKET.marketing}/port-breeze.jpg`)}')`
     )
 
-    const result = await chrome.storage.local.get(['noticeAcknowledged'])
+    const result = await chrome.storage.local.get([
+      'noticeAcknowledged',
+      LOCALE_PREFERENCE_KEY
+    ])
     // Ask the background worker so an expiring login is refreshed (or cleared)
     // before the panel decides whether to show the login view.
     const gbAuth = await getAuth()
     const noticeAcknowledged = result.noticeAcknowledged as boolean | undefined
 
-    setLocale(getPreferredLocale(gbAuth ?? null))
+    setLocale(getPreferredLocale(result[LOCALE_PREFERENCE_KEY]))
     app.auth = gbAuth ?? null
     app.noticeAcknowledged = noticeAcknowledged ?? false
 

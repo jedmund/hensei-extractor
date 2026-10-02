@@ -28,19 +28,34 @@ export function getLocale(): Locale {
   return paraglideGetLocale() as Locale
 }
 
-interface AuthWithLanguage {
-  language?: string
-}
+/** chrome.storage.local key for a language the user picked in the extension. */
+export const LOCALE_PREFERENCE_KEY = 'localePreference'
 
-export function getPreferredLocale(gbAuth: AuthWithLanguage | null): Locale {
-  if (gbAuth?.language === 'ja') return 'ja'
-  if (gbAuth?.language === 'en') return 'en'
+/** Japanese when the browser's UI language is Japanese, English otherwise. */
+export function getBrowserLocale(): Locale {
   try {
     const uiLang = chrome.i18n?.getUILanguage?.() ?? navigator.language ?? 'en'
-    return uiLang.startsWith('ja') ? 'ja' : 'en'
+    return uiLang.toLowerCase().startsWith('ja') ? 'ja' : 'en'
   } catch {
     return 'en'
   }
+}
+
+/**
+ * The extension opens in the browser's language unless the user picked one
+ * with a language switch. The Hensei account's language isn't used: it
+ * defaults to English, so it would override a Japanese browser for everyone
+ * who never changed it.
+ */
+export function getPreferredLocale(preference: unknown): Locale {
+  if (preference === 'ja' || preference === 'en') return preference
+  return getBrowserLocale()
+}
+
+/** Applies a language the user picked and remembers it for next time. */
+export async function chooseLocale(lang: string): Promise<void> {
+  setLocale(lang)
+  await chrome.storage.local.set({ [LOCALE_PREFERENCE_KEY]: getLocale() })
 }
 
 // ==========================================
