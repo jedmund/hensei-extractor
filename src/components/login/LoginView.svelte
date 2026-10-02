@@ -1,13 +1,13 @@
 <script lang="ts">
   import { app } from '../../lib/state/app.svelte.js'
-  import { setLocale } from '../../lib/i18n.js'
+  import { chooseLocale } from '../../lib/i18n.js'
   import WarningCard from './WarningCard.svelte'
   import LoginForm from './LoginForm.svelte'
 
   function toggleLanguage(e: Event) {
     e.preventDefault()
     const newLang = app.locale === 'en' ? 'ja' : 'en'
-    setLocale(newLang)
+    void chooseLocale(newLang)
   }
 
   let langSwitchText = $derived(

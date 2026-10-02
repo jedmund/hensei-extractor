@@ -1,4 +1,5 @@
 import { CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS } from '../constants.js'
+import { decodeHtmlEntities } from '../html-entities.js'
 import type {
   CachedGuildInfo,
   CachedListData,
@@ -61,7 +62,9 @@ export async function cacheParty(
   const cacheKey = CACHE_PREFIXES.party + partyId
   const deck = data.deck as Record<string, unknown> | undefined
   const partyName =
-    (deck?.name as string) ?? `Party ${partyId.replace('_', '-')}`
+    typeof deck?.name === 'string'
+      ? decodeHtmlEntities(deck.name)
+      : `Party ${partyId.replace('_', '-')}`
 
   await chrome.storage.local.set({
     [cacheKey]: { data, timestamp, url, partyId, partyName }
