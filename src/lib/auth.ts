@@ -59,39 +59,6 @@ async function authenticatedFetch(
   return response.json()
 }
 
-export async function performLogin(
-  username: string,
-  password: string
-): Promise<AuthData> {
-  const config = await getEnvConfig()
-
-  const response = await apiFetch(`${config.apiUrl}/oauth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: username,
-      password,
-      grant_type: 'password'
-    })
-  })
-
-  if (!response.ok) {
-    let code = 'unknown'
-    try {
-      const errBody = (await response.json()) as { error?: string }
-      code = errBody.error ?? 'unknown'
-    } catch {
-      // ignore
-    }
-    const err = new Error(code) as ApiError
-    err.code = code
-    throw err
-  }
-
-  const data = (await response.json()) as RawAuthResponse
-  return formatAuthData(data)
-}
-
 /**
  * Exchanges the stored refresh token for a new access/refresh token pair.
  * Fields stored alongside the tokens (language, display settings) are kept.
