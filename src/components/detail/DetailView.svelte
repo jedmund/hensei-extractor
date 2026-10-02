@@ -3,6 +3,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
+  import { decodeHtmlEntities } from '../../lib/html-entities.js'
   import { apiFetch, getApiUrl } from '../../lib/constants.js'
   import {
     isCollectionType,
@@ -288,7 +289,8 @@
       const pc = deck?.pc
       const chars = toArray(deck?.npc).filter(Boolean).length
       const wpns = toArray(pc?.weapons).filter(Boolean).length
-      app.partyName = deck?.name || ''
+      // The game escapes HTML in team names (`A &gt; B`).
+      app.partyName = decodeHtmlEntities(deck?.name || '')
       await autoSuggestRaid(wpns, chars)
     }
 
