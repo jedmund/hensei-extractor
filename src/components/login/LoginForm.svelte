@@ -47,7 +47,6 @@
 </script>
 
 <div class="auth-card">
-  <h1 class="auth-title">{m.auth_get_started()}</h1>
   <div class="auth-form">
     {#if status}
       <div class="auth-status">{status}</div>
