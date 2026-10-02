@@ -18,13 +18,22 @@
 <div class="view login-view">
   <div class="login-background"></div>
   <div class="login-content">
+    {#snippet languageSwitch()}
+      <button type="button" class="login-language-switch" onclick={toggleLanguage}>
+        {langSwitchText}
+      </button>
+    {/snippet}
+
     {#if !app.noticeAcknowledged}
       <WarningCard />
+      {@render languageSwitch()}
     {:else}
-      <LoginForm />
+      <LoginForm>
+        <!-- Inside the card, under the sign-up link -->
+        {#snippet footer()}
+          {@render languageSwitch()}
+        {/snippet}
+      </LoginForm>
     {/if}
-    <button type="button" class="login-language-switch" onclick={toggleLanguage}>
-      {langSwitchText}
-    </button>
   </div>
 </div>

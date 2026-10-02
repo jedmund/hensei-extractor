@@ -1,39 +1,23 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { performLogin, type AuthData } from '../../lib/auth.js'
+  import type { AuthData } from '../../lib/auth.js'
   import { loginWithSite } from '../../lib/extension-auth.js'
   import { getLocale } from '../../lib/i18n.js'
+  import type { Snippet } from 'svelte'
   import Button from '../shared/Button.svelte'
-  import Input from '../shared/Input.svelte'
 
-  let email = $state('')
-  let password = $state('')
+  interface Props {
+    /** Rendered at the bottom of the card, under the sign-up link. */
+    footer?: Snippet
+  }
+
+  let { footer }: Props = $props()
+
+  // The extension only logs in through granblue.team, so every login method
+  // the site supports (password, Discord, Google, Apple) works here.
   let status = $state('')
   let loading = $state(false)
-
-  async function handleLogin() {
-    if (!email || !password) {
-      status = m.auth_enter_credentials()
-      return
-    }
-
-    loading = true
-    status = m.auth_logging_in()
-
-    try {
-      const result = await performLogin(email, password)
-      if (result?.access_token) {
-        await saveAuth(result)
-      } else {
-        status = m.auth_invalid_credentials()
-        loading = false
-      }
-    } catch {
-      status = m.auth_login_failed()
-      loading = false
-    }
-  }
 
   async function handleSiteLogin() {
     loading = true
@@ -63,35 +47,16 @@
 </script>
 
 <div class="auth-card">
-  <h1 class="auth-title">{m.auth_login()}</h1>
   <div class="auth-form">
-    <Input
-      type="email"
-      contained
-      placeholder={m.auth_email()}
-      bind:value={email}
-      disabled={loading}
-    />
-    <Input
-      type="password"
-      contained
-      placeholder={m.auth_password()}
-      bind:value={password}
-      disabled={loading}
-      onkeydown={(e) => e.key === 'Enter' && handleLogin()}
-    />
     {#if status}
       <div class="auth-status">{status}</div>
     {/if}
     <Button
       variant="primary"
       fullWidth
-      onclick={handleLogin}
+      onclick={handleSiteLogin}
       disabled={loading}
     >
-      {m.auth_login()}
-    </Button>
-    <Button fullWidth onclick={handleSiteLogin} disabled={loading}>
       {m.auth_login_with_site()}
     </Button>
   </div>
@@ -102,5 +67,6 @@
         >{m.auth_create_account()}</a
       >
     </p>
+    {@render footer?.()}
   </div>
 </div>
