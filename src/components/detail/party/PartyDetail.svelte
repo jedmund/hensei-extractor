@@ -10,8 +10,10 @@
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
   import { getLocale } from '../../../lib/i18n.js'
+  import { getCharacterArtFallbacks, toHenseiElement } from '../../../lib/images.js'
   import {
     CHARACTER_AWAKENING_MAPPING,
+    NULL_ELEMENT_CHARACTER_IDS,
     resolveForgedSummonId
   } from '../../../lib/game-data.js'
   import * as m from '../../../paraglide/messages.js'
@@ -145,14 +147,45 @@
       .filter((b): b is BulletEntry => !!b && !!b.bullet_id)
   })
 
+  // Null-element characters (Lyria, Young Cat) follow the party's element,
+  // which the main weapon sets, and have art for each element.
+  let partyElement = $derived(
+    toHenseiElement(mainWeapon?.master?.attribute as string | number | undefined)
+  )
+
+  // When character art is missing, try the element art and then the base art
+  // in turn (see getCharacterArtFallbacks). The queue is restarted whenever
+  // the image now shows something other than the fallback we last set, such as
+  // a different party's character in the same slot.
+  function nextCharacterArt(e: Event) {
+    const img = e.currentTarget as HTMLImageElement
+    const queue: string[] =
+      img.dataset.fallbackLast === img.src && img.dataset.fallbacks
+        ? JSON.parse(img.dataset.fallbacks)
+        : getCharacterArtFallbacks(img.src, partyElement)
+    const next = queue.shift()
+    if (!next) return
+    img.dataset.fallbacks = JSON.stringify(queue)
+    img.dataset.fallbackLast = next
+    img.src = next
+  }
+
   function getCharImageSuffix(item: RawPartyItem): string {
     if (item.param?.style === '2') return '_01_style'
     const evolution = item.param?.evolution
     const phase = item.param?.phase
-    if (phase && phase > 0) return '_04'
-    if (evolution && evolution >= 5) return '_03'
-    if (evolution && evolution > 2) return simplePortraits ? '_01' : '_02'
-    return '_01'
+    let pose = '_01'
+    if (phase && phase > 0) pose = '_04'
+    else if (evolution && evolution >= 5) pose = '_03'
+    else if (evolution && evolution > 2) pose = simplePortraits ? '_01' : '_02'
+
+    // Null-element characters show the art for the party's element. If that
+    // pose has no element art, nextCharacterArt steps down from here.
+    const id = String(item.master?.id || item.param?.id || item.id || '')
+    if (partyElement && NULL_ELEMENT_CHARACTER_IDS.has(id)) {
+      return `${pose}_0${partyElement}`
+    }
+    return pose
   }
 
   function getImageSuffix(item: RawPartyItem): string {
@@ -235,7 +268,11 @@
                 {/if}
               </div>
             {/if}
-            <img src={getImageUrl(`${BUCKET.characterMain}/${id}${suffix}.jpg`)} alt="">
+            <img
+              src={getImageUrl(`${BUCKET.characterMain}/${id}${suffix}.jpg`)}
+              alt=""
+              onerror={nextCharacterArt}
+            >
           </div>
         {/each}
       </div>

@@ -2,6 +2,7 @@
   import { app } from '../../../lib/state/app.svelte.js'
   import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, isWeaponOrSummonCollection, resolveAwakeningIcon, resolveAugmentIcon, buildAxTooltipLines, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
   import { BUCKET, getImageUrl } from '../../../lib/constants.js'
+  import { getCharacterBaseArtUrl } from '../../../lib/images.js'
   import { getLocale } from '../../../lib/i18n.js'
   import * as m from '../../../paraglide/messages.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
@@ -67,8 +68,12 @@
     const stage = img.dataset.fallbackStage ?? '0'
 
     if (stage === '0') {
-      const stripped = img.src.replace(/_\d+\.jpg$/, '.jpg')
-      if (stripped !== img.src) {
+      // Characters have no suffix-less art, so fall back to their _01 art;
+      // weapons and summons fall back to their base ID.
+      const stripped = isCharacterType
+        ? getCharacterBaseArtUrl(img.src)
+        : img.src.replace(/_\d+\.jpg$/, '.jpg')
+      if (stripped && stripped !== img.src) {
         img.dataset.fallbackStage = '1'
         img.src = stripped
         return

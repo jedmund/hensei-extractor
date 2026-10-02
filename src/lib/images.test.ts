@@ -1,10 +1,80 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getCharacterArtFallbacks,
+  getCharacterBaseArtUrl,
+  toHenseiElement,
   getElementIconUrl,
   getImageIdSuffix,
   getPlaceholderImageUrl,
   getSummonImageUrl
 } from './images.js'
+
+describe('getCharacterBaseArtUrl', () => {
+  const dir = 'https://siero-img.s3-us-west-2.amazonaws.com/characters/square'
+
+  it('falls back from a pose to the base _01 art', () => {
+    expect(getCharacterBaseArtUrl(`${dir}/3040643000_03.jpg`)).toBe(
+      `${dir}/3040643000_01.jpg`
+    )
+    expect(getCharacterBaseArtUrl(`${dir}/3040643000_04.jpg`)).toBe(
+      `${dir}/3040643000_01.jpg`
+    )
+  })
+
+  it('falls back from style and variant art to _01', () => {
+    expect(getCharacterBaseArtUrl(`${dir}/3040643000_01_style.jpg`)).toBe(
+      `${dir}/3040643000_01.jpg`
+    )
+    expect(getCharacterBaseArtUrl(`${dir}/3040643000_01_1.jpg`)).toBe(
+      `${dir}/3040643000_01.jpg`
+    )
+  })
+
+  it('is null when the URL is already the base art', () => {
+    expect(getCharacterBaseArtUrl(`${dir}/3040643000_01.jpg`)).toBeNull()
+  })
+})
+
+describe('toHenseiElement', () => {
+  it("maps the game's element IDs to Hensei's", () => {
+    expect(toHenseiElement('1')).toBe(2) // Fire
+    expect(toHenseiElement(2)).toBe(3) // Water
+    expect(toHenseiElement('3')).toBe(4) // Earth
+    expect(toHenseiElement('4')).toBe(1) // Wind
+    expect(toHenseiElement('5')).toBe(6) // Light
+    expect(toHenseiElement('6')).toBe(5) // Dark
+  })
+
+  it('is null for no element or an unknown one', () => {
+    expect(toHenseiElement(undefined)).toBeNull()
+    expect(toHenseiElement('0')).toBeNull()
+  })
+})
+
+describe('getCharacterArtFallbacks', () => {
+  const dir = 'https://siero-img.s3-us-west-2.amazonaws.com/characters/main'
+
+  it("tries the party element's art before the base art", () => {
+    expect(getCharacterArtFallbacks(`${dir}/3030182000_03.jpg`, 2)).toEqual([
+      `${dir}/3030182000_03_02.jpg`,
+      `${dir}/3030182000_01_02.jpg`,
+      `${dir}/3030182000_01.jpg`
+    ])
+  })
+
+  it('skips the URL that just failed', () => {
+    expect(getCharacterArtFallbacks(`${dir}/3030182000_01.jpg`, 5)).toEqual([
+      `${dir}/3030182000_01_05.jpg`
+    ])
+  })
+
+  it('falls back to the base art without a party element', () => {
+    expect(getCharacterArtFallbacks(`${dir}/3040643000_03.jpg`)).toEqual([
+      `${dir}/3040643000_01.jpg`
+    ])
+    expect(getCharacterArtFallbacks(`${dir}/3040643000_01.jpg`)).toEqual([])
+  })
+})
 
 describe('getImageIdSuffix', () => {
   it('returns the alt-art suffix the game encodes', () => {
