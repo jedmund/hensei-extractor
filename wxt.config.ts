@@ -32,7 +32,14 @@ export default defineConfig({
     description:
       'Passively captures Granblue Fantasy data for export to granblue.team',
     version: process.env.WXT_BUILD_NUMBER ?? '0',
-    permissions: ['storage', 'debugger', 'tabs', 'sidePanel', 'cookies'],
+    permissions: [
+      'storage',
+      'debugger',
+      'tabs',
+      'sidePanel',
+      'cookies',
+      'identity'
+    ],
     host_permissions: [
       'https://game.granbluefantasy.jp/*',
       'https://gbf.game.mbga.jp/*',
