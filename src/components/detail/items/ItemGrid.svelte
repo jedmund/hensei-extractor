@@ -136,8 +136,8 @@
                     <img class="befoulment-icon" src={getImageUrl(`${BUCKET.axSkills}/${befoulIconFile}.png`)} alt={m.stat_befoulment()}>
                   </RichTooltip>
                 {/if}
-                {#each wMods.weaponKeys as slug}
-                  <Tooltip content={slug}><img class="weapon-key-icon" src={getImageUrl(`${BUCKET.weaponKeys}/${slug}.png`)} alt={slug}></Tooltip>
+                {#each wMods.weaponKeys as key}
+                  <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`${BUCKET.weaponKeys}/${key.slug}.png`)} alt={key.name}></Tooltip>
                 {/each}
               </div>
             {/if}
