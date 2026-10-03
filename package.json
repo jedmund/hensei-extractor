@@ -16,7 +16,7 @@
     "test:watch": "wxt prepare && paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vitest"
   },
   "author": "Justin Edmund",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@parcel/watcher",
