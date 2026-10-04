@@ -4,6 +4,7 @@ import { loadCachedDataForUpload } from './cache-queries.js'
 import * as collections from './collections.js'
 import * as crew from './crew.js'
 import * as referenceData from './reference-data.js'
+import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
 import {
@@ -46,6 +47,12 @@ vi.mock('./reference-data.js', () => ({
   fetchRaidGroups: vi.fn(async () => ({})),
   fetchUserPlaylists: vi.fn(async () => ({})),
   getCollectionIds: vi.fn(async () => ({}))
+}))
+vi.mock('./party-reference.js', () => ({
+  fetchJobSkillSlugs: vi.fn(async () => ({})),
+  fetchWeaponKeyMap: vi.fn(async () => null),
+  fetchWeaponStatModifiers: vi.fn(async () => null),
+  searchSummonByName: vi.fn(async () => null)
 }))
 
 const PAGES = { 1: { list: ['item'] } }
@@ -107,6 +114,26 @@ describe('background message router', () => {
       [{ title: 'Favorites', visibility: 3 }]
     ],
     [{ action: 'getCollectionIds' }, () => referenceData.getCollectionIds, []],
+    [
+      { action: 'searchSummonByName', name: 'Bahamut' },
+      () => partyReference.searchSummonByName,
+      ['Bahamut']
+    ],
+    [
+      { action: 'fetchWeaponKeyMap', locale: 'ja' },
+      () => partyReference.fetchWeaponKeyMap,
+      ['ja']
+    ],
+    [
+      { action: 'fetchWeaponStatModifiers' },
+      () => partyReference.fetchWeaponStatModifiers,
+      []
+    ],
+    [
+      { action: 'fetchJobSkillSlugs', names: ['Rage IV'] },
+      () => partyReference.fetchJobSkillSlugs,
+      [['Rage IV']]
+    ],
     [
       {
         action: 'uploadUnfScores',
