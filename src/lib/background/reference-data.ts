@@ -101,7 +101,11 @@ export async function createPlaylist({
     })
     // Don't hand the auth token from authenticatedPost back to the side panel.
     if (result.error) return { error: result.error }
-    return { data: result.data as unknown as Playlist }
+    // The API wraps the record: { playlist: { id, title, ... } }
+    const playlist = (result.data as { playlist?: Playlist } | undefined)
+      ?.playlist
+    if (!playlist?.id) return { error: 'request_failed' }
+    return { data: playlist }
   } catch (error) {
     console.error('Failed to create playlist:', error)
     return { error: 'request_failed' }
