@@ -1,11 +1,15 @@
 <script lang="ts">
   import { GBF_CDN } from '../../../lib/constants.js'
+  import type { RawGameItem } from '../../../lib/detail-helpers.js'
   import {
-    renderCharacterStats,
-    renderWeaponStats,
-    renderSummonStats
-  } from '../../../lib/detail-helpers.js'
+    characterStatRows,
+    weaponStatRows,
+    summonStatRows,
+    itemCommentLines,
+    type StatRowData
+  } from '../../../lib/item-stats.js'
   import * as m from '../../../paraglide/messages.js'
+  import ItemStats from '../stats/ItemStats.svelte'
 
   interface DatabaseItemData {
     id?: string
@@ -61,18 +65,18 @@
     return ''
   })
 
-  let statsHtml = $derived.by(() => {
-    const item = data as import('../../../lib/detail-helpers.js').RawGameItem
+  let item = $derived(data as RawGameItem)
+  let statRows = $derived.by((): StatRowData[] | null => {
     if (dataType.startsWith('detail_npc')) {
-      return renderCharacterStats(item, name, id, element, proficiencies)
+      return characterStatRows(item, id, element, proficiencies)
     }
     if (dataType.startsWith('detail_weapon')) {
-      return renderWeaponStats(item, name, id, element, proficiencies[0])
+      return weaponStatRows(item, id, element, proficiencies[0])
     }
     if (dataType.startsWith('detail_summon')) {
-      return renderSummonStats(item, name, id, element)
+      return summonStatRows(item, id, element)
     }
-    return ''
+    return null
   })
 
   function handleImageError(e: Event) {
@@ -89,6 +93,8 @@
     <img src={imageUrl} alt={name} onerror={handleImageError} />
   </div>
   <div class="database-detail-info">
-    {@html statsHtml}
+    {#if statRows}
+      <ItemStats rows={statRows} comment={itemCommentLines(item)} />
+    {/if}
   </div>
 </div>

@@ -1,11 +1,12 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getItemImageUrl, getArtifactLabels, getOwnershipId } from '../../../lib/detail-helpers.js'
+  import { getItemImageUrl, getOwnershipId } from '../../../lib/detail-helpers.js'
   import * as m from '../../../paraglide/messages.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
   import type { CollectionUpdate } from '../../../lib/types/messages.js'
   import Icon from '../../shared/Icon.svelte'
   import RichTooltip from '../../shared/RichTooltip.svelte'
+  import ArtifactLabels from './ArtifactLabels.svelte'
 
   interface Props {
     items: Array<{ item: RawGameItem; originalIndex: number }>
@@ -89,7 +90,7 @@
           {/if}
         </span>
         {#if isArtifactType}
-          {@html getArtifactLabels(item)}
+          <ArtifactLabels {item} />
         {/if}
       </div>
       {#if isCollection}
