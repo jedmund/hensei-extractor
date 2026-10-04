@@ -42,7 +42,7 @@
         }
         app.importState = 'idle'
       } else {
-        let msg = m.crew_import_success({ count: result.imported ?? 0 })
+        let msg: string = m.crew_import_success({ count: result.imported ?? 0 })
         if (result.phantomsCreated && result.phantomsCreated > 0) {
           msg += m.crew_phantoms_created({
             phantoms: result.phantomsCreated
