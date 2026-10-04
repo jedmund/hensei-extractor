@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import SlideView from '../shared/SlideView.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import Icon from '../shared/Icon.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import Button from '../shared/Button.svelte'
@@ -166,9 +167,9 @@
 
   <div class="raid-picker-content" id="raidPickerContent">
     {#if raidGroups.length === 0 && loadError}
-      <div class="raid-empty-state">{loadError}</div>
+      <EmptyState variant="list" message={loadError} />
     {:else if filteredGroups.length === 0}
-      <div class="raid-empty-state">{m.raid_no_results()}</div>
+      <EmptyState variant="list" message={m.raid_no_results()} />
     {:else}
       {#each filteredGroups as group}
         {#if (group.raids ?? []).length > 0}

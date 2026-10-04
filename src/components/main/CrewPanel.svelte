@@ -5,6 +5,7 @@
   import { fetchLatestGwEvent } from '../../lib/services/chrome-messages.js'
   import type { GwEventSummary } from '../../lib/types/messages.js'
   import Button from '../shared/Button.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
 
   const unfTypes = $derived(
@@ -48,9 +49,8 @@
 <div class="panel" class:active={app.activeTab === 'crew'} id="crewPanel">
   <div class="cache-items" id="crewItems">
     {#if unfTypes.length === 0}
-      <div class="cache-empty">
-        <p>{m.empty_crew()}</p>
-        <div class="cache-empty-actions">
+      <EmptyState message={m.empty_crew()}>
+        {#snippet actions()}
           {#if recentEvent}
             <Button
               size="small"
@@ -71,8 +71,8 @@
           >
             {m.empty_crew_button_members()}
           </Button>
-        </div>
-      </div>
+        {/snippet}
+      </EmptyState>
     {:else}
       {#each unfTypes as dataType (dataType)}
         <CacheItemRow

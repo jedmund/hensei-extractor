@@ -11,6 +11,7 @@
   import * as m from '../../../paraglide/messages.js'
   import Icon from '../../shared/Icon.svelte'
   import Tooltip from '../../shared/Tooltip.svelte'
+  import EmptyState from '../../shared/EmptyState.svelte'
 
   interface MasteryModifier {
     modifier: number
@@ -91,7 +92,7 @@
 </script>
 
 {#if characters.length === 0}
-  <p class="cache-empty">{m.char_stats_no_captured()}</p>
+  <EmptyState message={m.char_stats_no_captured()} />
 {:else}
   <div class="char-stats-list">
     {#each characters as char, index (char.masterId)}

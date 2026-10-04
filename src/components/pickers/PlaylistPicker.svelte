@@ -2,6 +2,7 @@
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
   import SlideView from '../shared/SlideView.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import Icon from '../shared/Icon.svelte'
   import Button from '../shared/Button.svelte'
   import Input from '../shared/Input.svelte'
@@ -166,7 +167,7 @@
 
   <div class="playlist-picker-content" id="playlistPickerContent">
     {#if playlists.length === 0 && loadError}
-      <div class="playlist-empty">{loadError}</div>
+      <EmptyState variant="list" message={loadError} />
     {:else if filteredPlaylists.length === 0 && searchQuery.trim()}
       <button type="button" class="playlist-item playlist-create-prompt" onclick={() => showCreateFormWithPrefill(searchQuery.trim())}>
         <div class="playlist-item-info">
@@ -174,7 +175,7 @@
         </div>
       </button>
     {:else if filteredPlaylists.length === 0}
-      <div class="playlist-empty">{m.playlist_no_playlists()}</div>
+      <EmptyState variant="list" message={m.playlist_no_playlists()} />
     {:else}
       {#each filteredPlaylists as playlist}
         {@const partyCount = playlist.party_count ?? playlist.parties_count ?? 0}
