@@ -226,7 +226,7 @@
         class:active={app.profilePopoverOpen}
         onclick={togglePopover}
       >
-        <img class="tab-avatar" id="tabAvatar" src={avatarUrl} alt="Profile" />
+        <img class="tab-avatar" id="tabAvatar" src={avatarUrl} alt={m.aria_profile_menu()} />
       </button>
     {/snippet}
   </NavigationBar>
@@ -260,7 +260,7 @@
   <RaidPicker onBack={goBackFromRaidPicker}>
     {#snippet navRight()}
       <Tooltip content={m.raid_reload_tooltip()}>
-        <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" onclick={() => { app.raidRefresh = true }}>
+        <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} onclick={() => { app.raidRefresh = true }}>
           <Icon name="refresh" size={14} />
         </Button>
       </Tooltip>

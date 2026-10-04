@@ -68,9 +68,9 @@
         </p>
         <div class="sync-delete-grid">
           {#each previewItems as item}
-            <Tooltip content={item.name ?? 'Unknown'}>
+            <Tooltip content={item.name ?? m.unknown_name()}>
             <div class="sync-delete-item">
-              <img src={getSyncPreviewImageUrl(item.granblue_id)} alt={item.name ?? 'Unknown'} />
+              <img src={getSyncPreviewImageUrl(item.granblue_id)} alt={item.name ?? m.unknown_name()} />
             </div>
             </Tooltip>
           {/each}

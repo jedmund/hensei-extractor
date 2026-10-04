@@ -159,7 +159,7 @@
       {/each}
     </SegmentedControl>
     <Tooltip content={sortAscending ? m.raid_sort_lowest() : m.raid_sort_highest()}>
-      <Button variant="ghost" size="small" iconOnly onclick={() => sortAscending = !sortAscending}>
+      <Button variant="ghost" size="small" iconOnly aria-label={sortAscending ? m.raid_sort_lowest() : m.raid_sort_highest()} onclick={() => sortAscending = !sortAscending}>
         {#if sortAscending}
           <Icon name="arrow-sort-up" size={14} />
         {:else}
