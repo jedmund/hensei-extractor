@@ -1,5 +1,5 @@
 import { CACHE_PREFIXES } from '../constants.js'
-import type { InterceptMetadata } from '../debugger.js'
+import type { InterceptMetadata } from '../intercept-routes.js'
 import {
   cacheDetailItem,
   cacheGuildInfo,
