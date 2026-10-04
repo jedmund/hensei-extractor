@@ -13,7 +13,7 @@
   import * as m from '../../paraglide/messages.js'
   import { fetchRaidGroups } from '../../lib/services/chrome-messages.js'
   import { BUCKET, RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
-  import { getLocalizedName } from '../../lib/i18n.js'
+  import { getLocalizedName, translateError } from '../../lib/i18n.js'
 
   interface Props {
     onBack?: () => void
@@ -66,21 +66,32 @@
     }
   })
 
-  async function loadRaids(force = false) {
-    const res = await fetchRaidGroups(force)
-    if (!res.error && res.data) raidGroups = res.data as RaidGroup[]
+  // Clear the search however the picker closes (selection or Back).
+  $effect(() => {
+    if (!app.raidPickerOpen) searchQuery = ''
+  })
+
+  /** Loads the raid list. Returns an error code if the load failed. */
+  async function loadRaids(force = false): Promise<string | null> {
+    try {
+      const res = await fetchRaidGroups(force)
+      if (res.error) return res.error
+      if (res.data) raidGroups = res.data as RaidGroup[]
+      return null
+    } catch {
+      return 'request_failed'
+    }
   }
 
   async function refresh() {
     refreshing = true
-    await loadRaids(true)
+    const error = await loadRaids(true)
     refreshing = false
-    app.showToast(m.raid_reloaded())
+    app.showToast(error ? translateError(error) : m.raid_reloaded())
   }
 
   function close() {
     app.raidPickerOpen = false
-    searchQuery = ''
   }
 
   function getGroupName(group: RaidGroup): string {
