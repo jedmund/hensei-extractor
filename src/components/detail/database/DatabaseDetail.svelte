@@ -5,6 +5,7 @@
     renderWeaponStats,
     renderSummonStats
   } from '../../../lib/detail-helpers.js'
+  import * as m from '../../../paraglide/messages.js'
 
   interface DatabaseItemData {
     id?: string
@@ -33,7 +34,7 @@
 
   let data = $derived(rawData as DatabaseItemData)
   let id = $derived(data?.id || data?.master?.id || '')
-  let name = $derived(data?.name || data?.master?.name || 'Unknown')
+  let name = $derived(data?.name || data?.master?.name || m.name_unknown())
   let element = $derived(
     data?.attribute || data?.element || data?.master?.attribute || data?.master?.element
   )

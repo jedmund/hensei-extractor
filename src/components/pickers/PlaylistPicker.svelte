@@ -36,6 +36,7 @@
   let createVisibility = $state(3)
   let creating = $state(false)
   let createError = $state('')
+  let loadError = $state('')
 
   const visibilityOptions = $derived([
     { value: 1, label: m.playlist_public() },
@@ -47,16 +48,28 @@
     if (app.playlistPickerOpen) loadPlaylists()
   })
 
+  // Clear the search however the picker closes (Done or Back). Closing only
+  // the create form keeps it, since the form may have been prefilled from it.
+  $effect(() => {
+    if (!app.playlistPickerOpen) searchQuery = ''
+  })
+
   async function loadPlaylists() {
-    const res = await fetchUserPlaylists()
-    if (!res.error && res.data) {
-      playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+    let error: string | undefined
+    try {
+      const res = await fetchUserPlaylists()
+      error = res.error
+      if (!res.error && res.data) {
+        playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+      }
+    } catch {
+      error = 'request_failed'
     }
+    loadError = error ? translateError(error) : ''
   }
 
   function close() {
     app.playlistPickerOpen = false
-    searchQuery = ''
     hideCreateForm()
   }
 
@@ -162,7 +175,9 @@
   </div>
 
   <div class="playlist-picker-content" id="playlistPickerContent">
-    {#if filteredPlaylists.length === 0 && searchQuery.trim()}
+    {#if playlists.length === 0 && loadError}
+      <div class="playlist-empty">{loadError}</div>
+    {:else if filteredPlaylists.length === 0 && searchQuery.trim()}
       <button type="button" class="playlist-item playlist-create-prompt" onclick={() => showCreateFormWithPrefill(searchQuery.trim())}>
         <div class="playlist-item-info">
           <span class="playlist-item-title">{m.playlist_create_with({ name: searchQuery.trim() })}</span>
