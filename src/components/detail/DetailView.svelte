@@ -240,7 +240,6 @@
   onMount(() => {
     function onMessage(message: { action: string; dataType?: string }) {
       if (message.action === 'dataCaptured' && message.dataType === dataType) {
-        lastInitDataType = ''
         loadDetailData(dataType)
       }
     }
@@ -253,6 +252,14 @@
   })
 
   async function loadDetailData(dt: string) {
+    // This component stays mounted between visits, so clear what the last
+    // visit left behind. Otherwise the default selection is skipped when the
+    // same collection is reopened, or is built from the previous ownership data.
+    lastInitDataType = ''
+    ownershipLoaded = false
+    ownedIds = new Set()
+    collectionUpdates = new Map()
+
     const response = await getCachedData(dt)
     if (response.error) {
       app.showToast(translateError(response.error))
