@@ -47,6 +47,7 @@
   let searchQuery = $state('')
   let sortAscending = $state(false)
   let refreshing = $state(false)
+  let loadError = $state('')
 
   const sections = [
     { id: RAID_SECTIONS.FARMING, label: () => m.raid_section_farming() },
@@ -73,14 +74,16 @@
 
   /** Loads the raid list. Returns an error code if the load failed. */
   async function loadRaids(force = false): Promise<string | null> {
+    let error: string | null = null
     try {
       const res = await fetchRaidGroups(force)
-      if (res.error) return res.error
-      if (res.data) raidGroups = res.data as RaidGroup[]
-      return null
+      if (res.error) error = res.error
+      else if (res.data) raidGroups = res.data as RaidGroup[]
     } catch {
-      return 'request_failed'
+      error = 'request_failed'
     }
+    loadError = error ? translateError(error) : ''
+    return error
   }
 
   async function refresh() {
@@ -181,7 +184,9 @@
   </div>
 
   <div class="raid-picker-content" id="raidPickerContent">
-    {#if filteredGroups.length === 0}
+    {#if raidGroups.length === 0 && loadError}
+      <div class="raid-empty-state">{loadError}</div>
+    {:else if filteredGroups.length === 0}
       <div class="raid-empty-state">{m.raid_no_results()}</div>
     {:else}
       {#each filteredGroups as group}
