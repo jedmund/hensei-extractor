@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
-  import { slideRight } from '../../lib/transitions.js'
-  import NavigationBar from '../shared/NavigationBar.svelte'
+  import SlideView from '../shared/SlideView.svelte'
   import Icon from '../shared/Icon.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import Button from '../shared/Button.svelte'
@@ -135,22 +134,14 @@
 </script>
 
 {#if app.raidPickerOpen}
-<div class="raid-picker-view" id="raidPickerView" transition:slideRight>
-  <NavigationBar title={m.raid_select()}>
-    {#snippet left()}
-      <button class="detail-back" onclick={close}>
-        <Icon name="chevron-left" size={14} />
-        <span>{m.action_back()}</span>
-      </button>
-    {/snippet}
-    {#snippet right()}
-      <Tooltip content={m.raid_reload_tooltip()}>
-        <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} disabled={refreshing} onclick={refresh}>
-          <Icon name="refresh" size={14} />
-        </Button>
-      </Tooltip>
-    {/snippet}
-  </NavigationBar>
+<SlideView class="raid-picker-view" id="raidPickerView" title={m.raid_select()} onBack={close}>
+  {#snippet right()}
+    <Tooltip content={m.raid_reload_tooltip()}>
+      <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} disabled={refreshing} onclick={refresh}>
+        <Icon name="refresh" size={14} />
+      </Button>
+    </Tooltip>
+  {/snippet}
 
   <div class="raid-picker-search">
     <Input type="text" contained id="raidSearchInput" placeholder={m.raid_search()} bind:value={searchQuery} />
@@ -208,5 +199,5 @@
       {/each}
     {/if}
   </div>
-</div>
+</SlideView>
 {/if}
