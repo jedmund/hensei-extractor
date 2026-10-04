@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
   import NavigationBar from '../shared/NavigationBar.svelte'
@@ -11,13 +10,6 @@
   import { fetchUserPlaylists, createPlaylist } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
-  interface Props {
-    title?: string
-    onBack?: () => void
-    navRight?: Snippet
-  }
-
-  let { title = '', onBack, navRight }: Props = $props()
 
   interface Playlist {
     id: string | number
@@ -30,7 +22,7 @@
 
   let playlists = $state<Playlist[]>([])
   let searchQuery = $state('')
-  let showCreateForm = $derived(app.playlistCreateFormOpen)
+  let showCreateForm = $state(false)
   let createTitle = $state('')
   let createDescription = $state('')
   let createVisibility = $state(3)
@@ -95,31 +87,28 @@
   })
 
   function showCreateFormWithPrefill(prefill?: string) {
-    app.playlistCreateFormOpen = true
+    showCreateForm = true
     if (prefill) createTitle = prefill
   }
 
   function hideCreateForm() {
-    app.playlistCreateFormOpen = false
+    showCreateForm = false
   }
 
-  $effect(() => {
-    app.playlistCreateReady = !!createTitle.trim() && !creating
-  })
+  // Back closes the create form first, then the picker
+  function goBack() {
+    if (showCreateForm) hideCreateForm()
+    else close()
+  }
+
+  let createReady = $derived(!!createTitle.trim() && !creating)
 
   $effect(() => {
-    if (!app.playlistCreateFormOpen) {
+    if (!showCreateForm) {
       createTitle = ''
       createDescription = ''
       createVisibility = 3
       createError = ''
-    }
-  })
-
-  $effect(() => {
-    if (app.playlistCreateSubmit) {
-      app.playlistCreateSubmit = false
-      handleCreate()
     }
   })
 
@@ -158,15 +147,19 @@
 
 {#if app.playlistPickerOpen}
 <div class="playlist-picker-view" id="playlistPickerView" transition:slideRight>
-  <NavigationBar {title}>
+  <NavigationBar title={showCreateForm ? m.playlist_create_title() : m.playlist_select()}>
     {#snippet left()}
-      <button class="detail-back" onclick={onBack}>
+      <button class="detail-back" onclick={goBack}>
         <Icon name="chevron-left" size={14} />
         <span>{m.action_back()}</span>
       </button>
     {/snippet}
     {#snippet right()}
-      {#if navRight}{@render navRight()}{/if}
+      {#if showCreateForm}
+        <Button size="small" id="playlistCreateSubmitNav" disabled={!createReady} onclick={handleCreate}>{m.action_create()}</Button>
+      {:else}
+        <Button size="small" id="playlistCreateBtn" onclick={() => showCreateFormWithPrefill()}>{m.playlist_new()}</Button>
+      {/if}
     {/snippet}
   </NavigationBar>
 
