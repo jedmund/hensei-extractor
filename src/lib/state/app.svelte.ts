@@ -1,4 +1,5 @@
 import type { FormattedCacheStatus } from '../types/cache.js'
+import { toastDuration } from '../toast.js'
 
 interface AuthAvatar {
   picture?: string
@@ -80,6 +81,8 @@ class AppState {
   hintsEnabled = $state(true)
   toastMessage = $state('')
   toastVisible = $state(false)
+  /** Bumped on every showToast so a repeated message is announced again. */
+  toastCount = $state(0)
 
   // Picker visibility
   raidPickerOpen = $state(false)
@@ -122,13 +125,19 @@ class AppState {
     this.importState = 'idle'
   }
 
-  showToast(message: string, duration = 3000) {
+  /**
+   * Shows a toast. It stays up long enough to read the message unless an
+   * explicit duration (ms) is given.
+   */
+  showToast(message: string, duration?: number) {
     this.toastMessage = message
     this.toastVisible = true
+    this.toastCount++
+    const visibleFor = duration ?? toastDuration(message)
     clearTimeout(this.toastTimer)
     this.toastTimer = setTimeout(() => {
       this.toastVisible = false
-    }, duration)
+    }, visibleFor)
   }
 }
 
