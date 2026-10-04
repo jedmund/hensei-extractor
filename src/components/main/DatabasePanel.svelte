@@ -2,6 +2,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import Button from '../shared/Button.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
 
   const databaseTypes = $derived(
@@ -33,14 +34,13 @@
 >
   <div class="cache-items" id="databaseItems">
     {#if databaseTypes.length === 0}
-      <div class="cache-empty">
-        <p>{m.empty_database()}</p>
-        <div class="cache-empty-actions">
+      <EmptyState message={m.empty_database()}>
+        {#snippet actions()}
           <Button size="small" onclick={() => chrome.tabs.create({ url: 'https://game.granbluefantasy.jp/#archive/top' })}>
             {m.empty_journal()}
           </Button>
-        </div>
-      </div>
+        {/snippet}
+      </EmptyState>
     {:else}
       {#each databaseTypes as dataType (dataType)}
         <CacheItemRow

@@ -2,7 +2,6 @@
   import type { Snippet } from 'svelte'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { slideRight } from '../../lib/transitions.js'
   import { detailViewKind } from '../../lib/detail-data.js'
   import { getCachedData, fetchElementVariants } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
@@ -10,8 +9,7 @@
   import { onMount } from 'svelte'
   import type { UnfScoresData } from '../../lib/types/messages.js'
 
-  import NavigationBar from '../shared/NavigationBar.svelte'
-  import Icon from '../shared/Icon.svelte'
+  import SlideView from '../shared/SlideView.svelte'
   import DetailScroll from './DetailScroll.svelte'
   import CollectionDetail from './CollectionDetail.svelte'
   import PartyView from './party/PartyView.svelte'
@@ -109,19 +107,7 @@
 </script>
 
 {#if app.detailViewActive}
-<div class="detail-view" transition:slideRight>
-  <NavigationBar {title} {subtitle} {scrolled} bordered={kind === 'database' || kind === 'crewScores'}>
-    {#snippet left()}
-      <button class="detail-back" onclick={onBack}>
-        <Icon name="chevron-left" size={14} />
-        <span>{m.action_back()}</span>
-      </button>
-    {/snippet}
-    {#snippet right()}
-      {#if navRight}{@render navRight()}{/if}
-    {/snippet}
-  </NavigationBar>
-
+<SlideView class="detail-view" {title} {subtitle} {scrolled} bordered={kind === 'database' || kind === 'crewScores'} {onBack} right={navRight}>
   <!-- Keyed so each view starts fresh and is torn down when it's left -->
   {#key dataType}
     {#if kind === 'collection'}
@@ -152,5 +138,5 @@
       </DetailScroll>
     {/if}
   {/key}
-</div>
+</SlideView>
 {/if}

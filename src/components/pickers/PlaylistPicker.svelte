@@ -1,7 +1,8 @@
 <script lang="ts">
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
-  import NavigationBar from '../shared/NavigationBar.svelte'
+  import SlideView from '../shared/SlideView.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import Icon from '../shared/Icon.svelte'
   import Button from '../shared/Button.svelte'
   import Input from '../shared/Input.svelte'
@@ -146,22 +147,19 @@
 </script>
 
 {#if app.playlistPickerOpen}
-<div class="playlist-picker-view" id="playlistPickerView" transition:slideRight>
-  <NavigationBar title={showCreateForm ? m.playlist_create_title() : m.playlist_select()}>
-    {#snippet left()}
-      <button class="detail-back" onclick={goBack}>
-        <Icon name="chevron-left" size={14} />
-        <span>{m.action_back()}</span>
-      </button>
-    {/snippet}
-    {#snippet right()}
-      {#if showCreateForm}
-        <Button size="small" id="playlistCreateSubmitNav" disabled={!createReady} onclick={handleCreate}>{m.action_create()}</Button>
-      {:else}
-        <Button size="small" id="playlistCreateBtn" onclick={() => showCreateFormWithPrefill()}>{m.playlist_new()}</Button>
-      {/if}
-    {/snippet}
-  </NavigationBar>
+<SlideView
+  class="playlist-picker-view"
+  id="playlistPickerView"
+  title={showCreateForm ? m.playlist_create_title() : m.playlist_select()}
+  onBack={goBack}
+>
+  {#snippet right()}
+    {#if showCreateForm}
+      <Button size="small" id="playlistCreateSubmitNav" disabled={!createReady} onclick={handleCreate}>{m.action_create()}</Button>
+    {:else}
+      <Button size="small" id="playlistCreateBtn" onclick={() => showCreateFormWithPrefill()}>{m.playlist_new()}</Button>
+    {/if}
+  {/snippet}
 
   <div class="playlist-picker-search">
     <Input type="text" contained id="playlistSearchInput" placeholder={m.playlist_search()} bind:value={searchQuery} />
@@ -169,7 +167,7 @@
 
   <div class="playlist-picker-content" id="playlistPickerContent">
     {#if playlists.length === 0 && loadError}
-      <div class="playlist-empty">{loadError}</div>
+      <EmptyState variant="list" message={loadError} />
     {:else if filteredPlaylists.length === 0 && searchQuery.trim()}
       <button type="button" class="playlist-item playlist-create-prompt" onclick={() => showCreateFormWithPrefill(searchQuery.trim())}>
         <div class="playlist-item-info">
@@ -177,7 +175,7 @@
         </div>
       </button>
     {:else if filteredPlaylists.length === 0}
-      <div class="playlist-empty">{m.playlist_no_playlists()}</div>
+      <EmptyState variant="list" message={m.playlist_no_playlists()} />
     {:else}
       {#each filteredPlaylists as playlist}
         {@const partyCount = playlist.party_count ?? playlist.parties_count ?? 0}
@@ -211,5 +209,5 @@
       </div>
     </div>
   {/if}
-</div>
+</SlideView>
 {/if}

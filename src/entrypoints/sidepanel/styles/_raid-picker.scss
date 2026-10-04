@@ -60,16 +60,6 @@
   overflow-y: auto;
 }
 
-.raid-empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: spacing.$unit-4x;
-  color: var(--color-text-secondary);
-  font-size: type.$font-small;
-  font-style: italic;
-}
-
 /* Raid Group */
 .raid-group {
   display: flex;
