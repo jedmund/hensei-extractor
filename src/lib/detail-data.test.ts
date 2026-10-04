@@ -5,12 +5,14 @@ vi.mock('./state/app.svelte.js', () => ({ app: { locale: 'en' } }))
 
 import {
   categorizeItems,
-  characterStatsUpdatesByKey,
   collectionUpdatesByKey,
   countPartyMembers,
   defaultSelection,
-  detailLoadPlan,
+  detailViewKind,
+  filterByRarity,
   findRaidBySlug,
+  hasItemNames,
+  isWeaponType,
   ownedIdsFor,
   partyLookups,
   suggestedRaidSlug,
@@ -18,34 +20,33 @@ import {
 } from './detail-data.js'
 import type { CollectionUpdate, RaidGroup } from './types/messages.js'
 
-describe('detailLoadPlan', () => {
+describe('detailViewKind', () => {
   it.each([
-    ['collection_weapon', [true, false, false, true, false]],
-    ['stash_weapon_3', [true, false, false, true, false]],
-    ['collection_npc', [true, false, false, false, false]],
-    ['list_summon', [true, false, false, false, false]],
-    ['collection_artifact', [true, false, false, false, false]],
-    ['character_stats', [false, true, false, false, false]],
-    ['party_1_2', [false, false, true, false, true]],
-    ['detail_weapon_1040001', [false, false, false, true, false]],
-    ['detail_npc_3040001', [false, false, false, false, false]],
-    ['unf_scores_77', [false, false, false, false, false]],
-    ['support_summons', [false, false, false, false, false]]
-  ])('plans the lookups for %s', (dataType, flags) => {
-    const [
-      ownership,
-      characterStatsUpdates,
-      partySupplementary,
-      weaponStatModifiers,
-      raidSuggestion
-    ] = flags
-    expect(detailLoadPlan(dataType)).toEqual({
-      ownership,
-      characterStatsUpdates,
-      partySupplementary,
-      weaponStatModifiers,
-      raidSuggestion
-    })
+    ['unf_scores_77', 'crewScores'],
+    ['unf_daily_scores_77', 'crewScores'],
+    ['party_1_2', 'party'],
+    ['detail_weapon_1040001', 'database'],
+    ['character_stats', 'characterStats'],
+    ['support_summons', 'supportSummons'],
+    ['collection_weapon', 'collection'],
+    ['collection_artifact', 'collection'],
+    ['list_npc', 'collection'],
+    ['stash_summon_2', 'collection'],
+    ['', 'other']
+  ])('shows %s in the %s view', (dataType, kind) => {
+    expect(detailViewKind(dataType)).toBe(kind)
+  })
+})
+
+describe('isWeaponType', () => {
+  it.each([
+    ['collection_weapon', true],
+    ['list_weapon', true],
+    ['stash_weapon_3', true],
+    ['collection_summon', false],
+    ['party_1_2', false]
+  ])('%s → %s', (dataType, expected) => {
+    expect(isWeaponType(dataType)).toBe(expected)
   })
 })
 
@@ -88,13 +89,6 @@ describe('update maps', () => {
   it('keys collection updates by game_id, falling back to granblue_id', () => {
     expect([...collectionUpdatesByKey(updates).keys()]).toEqual([
       '111',
-      '3040001'
-    ])
-  })
-
-  it('keys character stats updates by granblue_id', () => {
-    expect([...characterStatsUpdatesByKey(updates).keys()]).toEqual([
-      '1040001',
       '3040001'
     ])
   })
@@ -251,5 +245,40 @@ describe('categorizeItems', () => {
       updates
     )
     expect(defaultSelection(sections, new Set([4]))).toEqual(new Set([0, 1]))
+  })
+})
+
+describe('filterByRarity', () => {
+  const items = [
+    { master: { rarity: '4' }, name: 'SSR' },
+    { rarity: 3 },
+    { master: {} }
+  ] as ItemEntry['item'][]
+
+  it('keeps items whose rarity is on, and items without one, with their index', () => {
+    expect(
+      filterByRarity('collection_weapon', items, new Set(['4'])).map(
+        (e) => e.originalIndex
+      )
+    ).toEqual([0, 2])
+    expect(
+      filterByRarity('list_npc', items, new Set(['3'])).map(
+        (e) => e.originalIndex
+      )
+    ).toEqual([1, 2])
+  })
+
+  it('ignores the filter for artifacts', () => {
+    expect(
+      filterByRarity('collection_artifact', items, new Set()).map(
+        (e) => e.originalIndex
+      )
+    ).toEqual([0, 1, 2])
+  })
+
+  it('lists named items', () => {
+    const entries = filterByRarity('collection_artifact', items, new Set())
+    expect(hasItemNames(entries)).toBe(true)
+    expect(hasItemNames(entries.slice(1))).toBe(false)
   })
 })

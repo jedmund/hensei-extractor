@@ -1,14 +1,16 @@
 /**
- * Decisions behind DetailView's loading: which lookups a data type needs,
- * how the responses are turned into view state, how collection items are
- * sectioned and ticked, and which raid a captured party suggests.
- * The component owns the state and the requests; these are pure.
+ * Decisions behind the detail views: which view a data type gets, how
+ * lookup responses are turned into view state, how collection items are
+ * filtered, sectioned and ticked, and which raid a captured party suggests.
+ * The components own the state and the requests; these are pure.
  */
 
 import * as m from '../paraglide/messages.js'
 import {
   getOwnershipId,
+  isCharacterCollection,
   isCollectionType,
+  isDatabaseDetailType,
   isLevel1,
   isWeaponOrSummonCollection,
   toArray,
@@ -39,37 +41,33 @@ export interface PartyDeckData {
   [key: string]: unknown
 }
 
-export function isPartyType(dataType: string): boolean {
-  return dataType.startsWith('party_')
-}
-
 export function isWeaponType(dataType: string): boolean {
   return dataType.includes('weapon') || dataType.startsWith('stash_weapon')
 }
 
-/** Which lookups loadDetailData runs after the cached data for `dataType`. */
-export interface DetailLoadPlan {
-  /** Owned ids and pending updates, to section a collection */
-  ownership: boolean
-  /** Pending updates for captured character stats */
-  characterStatsUpdates: boolean
-  /** Support summon, weapon keys, job skills and stat modifiers */
-  partySupplementary: boolean
-  /** Stat modifier names for AX tooltips */
-  weaponStatModifiers: boolean
-  /** Party name and raid suggestion */
-  raidSuggestion: boolean
-}
+/** Which child view DetailView shows for a data type. */
+export type DetailViewKind =
+  | 'crewScores'
+  | 'party'
+  | 'database'
+  | 'characterStats'
+  | 'supportSummons'
+  | 'collection'
+  | 'other'
 
-export function detailLoadPlan(dataType: string): DetailLoadPlan {
-  const ownership = isCollectionType(dataType) && dataType !== 'character_stats'
-  return {
-    ownership,
-    characterStatsUpdates: dataType === 'character_stats',
-    partySupplementary: isPartyType(dataType),
-    weaponStatModifiers: isWeaponType(dataType),
-    raidSuggestion: isPartyType(dataType)
+export function detailViewKind(dataType: string): DetailViewKind {
+  if (
+    dataType.startsWith('unf_scores_') ||
+    dataType.startsWith('unf_daily_scores_')
+  ) {
+    return 'crewScores'
   }
+  if (dataType.startsWith('party_')) return 'party'
+  if (isDatabaseDetailType(dataType)) return 'database'
+  if (dataType === 'character_stats') return 'characterStats'
+  if (dataType === 'support_summons') return 'supportSummons'
+  if (isCollectionType(dataType)) return 'collection'
+  return 'other'
 }
 
 /** The owned ids that apply to `dataType`, empty if the lookup failed. */
@@ -100,18 +98,6 @@ export function collectionUpdatesByKey(
   const map = new Map<string, CollectionUpdate>()
   for (const update of updates) {
     const key = update.game_id ?? update.granblue_id
-    if (key) map.set(key, update)
-  }
-  return map
-}
-
-/** Character stats updates keyed by granblue_id. */
-export function characterStatsUpdatesByKey(
-  updates: CollectionUpdate[]
-): Map<string, CollectionUpdate> {
-  const map = new Map<string, CollectionUpdate>()
-  for (const update of updates) {
-    const key = update.granblue_id
     if (key) map.set(key, update)
   }
   return map
@@ -165,6 +151,35 @@ export function findRaidBySlug(
 }
 
 export type ItemEntry = { item: RawGameItem; originalIndex: number }
+
+/**
+ * Pairs items with their capture index, keeping weapons, summons and
+ * characters whose rarity passes the filter. Level 1 items stay; they get
+ * their own section.
+ */
+export function filterByRarity(
+  dataType: string,
+  items: RawGameItem[],
+  activeRarityFilters: Set<string>
+): ItemEntry[] {
+  const byRarity =
+    isWeaponOrSummonCollection(dataType) || isCharacterCollection(dataType)
+  return items
+    .map((item, index) => ({ item, originalIndex: index }))
+    .filter(({ item }) => {
+      if (byRarity) {
+        const rarity =
+          item.master?.rarity?.toString() || item.rarity?.toString()
+        if (rarity && !activeRarityFilters.has(rarity)) return false
+      }
+      return true
+    })
+}
+
+/** Named items are shown as a list, unnamed ones as a grid. */
+export function hasItemNames(entries: ItemEntry[]): boolean {
+  return entries.some(({ item }) => item.name || item.master?.name)
+}
 
 export interface CategorySection {
   key: string

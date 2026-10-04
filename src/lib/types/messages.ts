@@ -87,6 +87,24 @@ export interface CachedDataResponse {
   characterCount?: number
 }
 
+/** A crew member's score in getCachedData's unf_scores_* data */
+export interface UnfScoreMember {
+  id: string
+  name: string
+  contribution: number
+  rank: number
+  level: string
+}
+
+/** getCachedData's data for unf_scores_* and unf_daily_scores_*, ranked */
+export interface UnfScoresData {
+  eventNumber: number
+  members: UnfScoreMember[]
+  totalPages: number
+  pageCount: number
+  isComplete: boolean
+}
+
 /** Response from uploadPartyData */
 export interface ImportWarning {
   code: string
