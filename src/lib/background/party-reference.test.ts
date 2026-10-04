@@ -94,13 +94,17 @@ describe('fetchWeaponKeyMap', () => {
     expect(apiFetch).toHaveBeenCalledWith('https://api.test/v1/weapon_keys')
   })
 
-  // Not keyed by locale: the first language asked keeps its names.
-  it('reuses the first map it built', async () => {
+  it('caches one map per locale', async () => {
     mockKeyEndpoints()
 
-    const first = await fetchWeaponKeyMap('en')
-    await expect(fetchWeaponKeyMap('ja')).resolves.toBe(first)
+    const en = await fetchWeaponKeyMap('en')
+    await expect(fetchWeaponKeyMap('en')).resolves.toBe(en)
     expect(apiFetch).toHaveBeenCalledTimes(2)
+
+    const ja = await fetchWeaponKeyMap('ja')
+    expect(ja?.['1001']?.name).toBe('強壮のペンデュラム')
+    expect(en?.['1001']?.name).toBe('Pendulum of Strength')
+    expect(apiFetch).toHaveBeenCalledTimes(4)
   })
 
   it('returns null and caches nothing when either request fails', async () => {

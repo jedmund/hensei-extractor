@@ -13,9 +13,9 @@ import type {
 } from '../types/messages.js'
 import { apiFetch, getApiUrl } from '../constants.js'
 
-// Kept in memory for the life of the service worker. Not keyed by locale:
-// the key map keeps the names of whichever language asked for it first.
-let weaponKeyMapCache: WeaponKeyMap | null = null
+// Kept in memory for the life of the service worker, which every side panel
+// shares. Key names are per language, so that cache is keyed by locale.
+let weaponKeyMapCache: Partial<Record<UiLocale, WeaponKeyMap>> = {}
 let weaponStatModifiersCache: WeaponStatModifiers | null = null
 let jobSkillCache: Record<string, string | null> = {}
 
@@ -46,7 +46,8 @@ export async function searchSummonByName(
 export async function fetchWeaponKeyMap(
   locale: UiLocale
 ): Promise<WeaponKeyMap | null> {
-  if (weaponKeyMapCache) return weaponKeyMapCache
+  const cached = weaponKeyMapCache[locale]
+  if (cached) return cached
   try {
     const [skillMapRes, weaponKeysRes] = await Promise.all([
       apiFetch(await getApiUrl('/weapon_keys/skill_map')),
@@ -67,8 +68,8 @@ export async function fetchWeaponKeyMap(
       result[skillId] = { slug, name: slugToName[slug] || slug }
     }
 
-    weaponKeyMapCache = result
-    return weaponKeyMapCache
+    weaponKeyMapCache[locale] = result
+    return result
   } catch {
     return null
   }
@@ -131,7 +132,7 @@ export async function fetchJobSkillSlugs(
 
 /** For tests. */
 export function resetPartyReferenceCaches(): void {
-  weaponKeyMapCache = null
+  weaponKeyMapCache = {}
   weaponStatModifiersCache = null
   jobSkillCache = {}
 }
