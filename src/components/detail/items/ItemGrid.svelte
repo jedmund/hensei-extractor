@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, isWeaponOrSummonCollection, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
+  import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
   import { getCharacterBaseArtUrl } from '../../../lib/images.js'
   import * as m from '../../../paraglide/messages.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'

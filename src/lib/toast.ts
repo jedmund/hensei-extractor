@@ -9,7 +9,8 @@ const MS_PER_CHAR = 60
 
 // Kana, CJK ideographs and full-width forms carry more per character than
 // Latin text, so they count double.
-const WIDE_CHAR = /[　-ヿ㐀-䶿一-鿿豈-﫿＀-￯]/u
+const WIDE_CHAR =
+  /[\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]/u
 
 /**
  * How long a toast should stay visible so there's time to read it: a short

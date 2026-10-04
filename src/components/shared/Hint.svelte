@@ -47,7 +47,7 @@
 
   // Reset index when hints change
   $effect(() => {
-    hints
+    void hints
     currentIndex = 0
   })
 </script>

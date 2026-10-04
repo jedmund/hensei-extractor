@@ -4,7 +4,7 @@
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import { BUCKET, getImageUrl } from '../../lib/constants.js'
-  import { previewSyncDeletions, syncCollection } from '../../lib/services/chrome-messages.js'
+  import { syncCollection } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
   function getSyncPreviewImageUrl(granblueId: string | undefined): string {
