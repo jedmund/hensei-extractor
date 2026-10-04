@@ -19,9 +19,11 @@ import {
 import type {
   CollectionIdsResponse,
   CollectionUpdate,
+  FetchRaidGroupsResponse,
   RaidEntry,
   RaidGroup
 } from './types/messages.js'
+import type { RaidSelection } from './state/app.svelte.js'
 
 export interface PartyDeckData {
   deck?: {
@@ -148,6 +150,36 @@ export function findRaidBySlug(
     if (raid) return { ...raid, group }
   }
   return null
+}
+
+/** The parts of the app state a raid suggestion reads and writes. */
+export interface RaidSuggestionTarget {
+  selectedRaid: RaidSelection | null
+  /** Bumped whenever the user picks or clears a raid by hand */
+  manualRaidSelections: number
+}
+
+/**
+ * Selects the raid a party's size suggests, once the raid list has loaded.
+ * Skipped if the load is stale, or if the user picked or cleared a raid by
+ * hand since `manualSelectionsAtStart` was read at the start of the load.
+ */
+export async function applySuggestedRaid(options: {
+  target: RaidSuggestionTarget
+  manualSelectionsAtStart: number
+  weapons: number
+  characters: number
+  loadRaidGroups: () => Promise<FetchRaidGroupsResponse>
+  current: () => boolean
+}): Promise<void> {
+  const { target, weapons, characters } = options
+  const response = await options.loadRaidGroups()
+  if (!options.current() || response.error || !response.data) return
+  if (target.manualRaidSelections !== options.manualSelectionsAtStart) return
+
+  const slug = suggestedRaidSlug(weapons, characters)
+  const suggested = slug ? findRaidBySlug(response.data, slug) : null
+  if (suggested) target.selectedRaid = suggested
 }
 
 export type ItemEntry = { item: RawGameItem; originalIndex: number }

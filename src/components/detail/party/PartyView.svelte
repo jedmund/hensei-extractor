@@ -5,13 +5,12 @@
   import {
     partyLookups,
     countPartyMembers,
-    suggestedRaidSlug,
-    findRaidBySlug,
+    applySuggestedRaid,
     type PartyDeckData
   } from '../../../lib/detail-data.js'
   import { fetchRaidGroups, searchSummonByName, fetchWeaponKeyMap, fetchWeaponStatModifiers, fetchJobSkillSlugs } from '../../../lib/services/chrome-messages.js'
   import { getLocale } from '../../../lib/i18n.js'
-  import type { RaidGroup, SummonSearchResult, WeaponKeyMap, WeaponStatModifiers, JobSkillSlugs } from '../../../lib/types/messages.js'
+  import type { SummonSearchResult, WeaponKeyMap, WeaponStatModifiers, JobSkillSlugs } from '../../../lib/types/messages.js'
 
   import DetailScroll from '../DetailScroll.svelte'
   import PartyDetail from './PartyDetail.svelte'
@@ -55,6 +54,8 @@
     // state writes also check it's still the open view.
     const current = () =>
       !destroyed && gen === generation && app.currentDetailDataType === dataType
+    // A raid picked by hand while the lookups run wins over the suggestion
+    const manualSelectionsAtStart = app.manualRaidSelections
 
     // The game escapes HTML in team names (`A &gt; B`).
     app.partyName = decodeHtmlEntities(party?.deck?.name || '')
@@ -63,7 +64,14 @@
     if (!current()) return
 
     const { weapons, characters } = countPartyMembers(party)
-    await autoSuggestRaid(weapons, characters, current)
+    await applySuggestedRaid({
+      target: app,
+      manualSelectionsAtStart,
+      weapons,
+      characters,
+      loadRaidGroups: fetchRaidGroups,
+      current
+    })
   }
 
   async function loadSupplementary(party: PartyDeckData, current: () => boolean) {
@@ -84,17 +92,6 @@
     weaponKeyMap = keyMap
     jobSkillSlugs = skillSlugs
     weaponStatModifiers = statMods
-  }
-
-  async function autoSuggestRaid(weaponCount: number, characterCount: number, current: () => boolean) {
-    const response = await fetchRaidGroups()
-    if (!current() || response.error || !response.data) return
-    const slug = suggestedRaidSlug(weaponCount, characterCount)
-    const suggested = slug ? findRaidBySlug(response.data as RaidGroup[], slug) : null
-
-    if (suggested) {
-      app.selectedRaid = suggested
-    }
   }
 </script>
 

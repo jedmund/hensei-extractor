@@ -66,6 +66,8 @@ class AppState {
   shareWithCrew = $state(false)
   partyName = $state('')
   selectedRaid = $state<RaidSelection | null>(null)
+  /** Bumped by every manual pick, so a pending auto-suggestion can tell */
+  manualRaidSelections = $state(0)
   selectedPlaylists = $state<PlaylistSelection[]>([])
 
   // Conflict resolution
@@ -119,6 +121,12 @@ class AppState {
     this.pendingConflicts = null
     this.conflictResolutions = null
     this.importState = 'idle'
+  }
+
+  /** Sets the raid the user picked (or cleared) in the raid picker. */
+  chooseRaid(raid: RaidSelection | null) {
+    this.selectedRaid = raid
+    this.manualRaidSelections++
   }
 
   /**
