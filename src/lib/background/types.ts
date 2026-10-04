@@ -1,5 +1,3 @@
-import type { ImportWarning } from '../types/messages.js'
-
 export interface AuthToken {
   access_token: string
   user: { id: string; username: string }

@@ -10,10 +10,7 @@
     uploadSupportSummons,
     checkConflicts
   } from '../../lib/services/chrome-messages.js'
-  import {
-    isCollectionType,
-    isWeaponOrSummonCollection
-  } from '../../lib/detail-helpers.js'
+  import { isCollectionType } from '../../lib/detail-helpers.js'
   import { previewSyncDeletions } from '../../lib/services/chrome-messages.js'
   import CopyDropdown from './CopyDropdown.svelte'
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import SlideView from '../shared/SlideView.svelte'
   import EmptyState from '../shared/EmptyState.svelte'

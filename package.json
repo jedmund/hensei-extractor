@@ -30,11 +30,13 @@
     "@wxt-dev/module-svelte": "latest",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.23.0",
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "sass": "latest",
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.71.0",
     "vitest": "^5.0.2",
     "wxt": "latest"
   },

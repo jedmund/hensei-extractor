@@ -7,6 +7,8 @@
     children: Snippet
   }
 
+  // scrolled is written back to the parent through bind:scrolled
+  // eslint-disable-next-line no-useless-assignment
   let { scrolled = $bindable(false), children }: Props = $props()
 
   // Each view gets a new list, which starts at the top
