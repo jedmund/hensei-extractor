@@ -13,7 +13,7 @@
   import * as m from '../../paraglide/messages.js'
   import { fetchRaidGroups } from '../../lib/services/chrome-messages.js'
   import { BUCKET, RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
-  import { getLocale } from '../../lib/i18n.js'
+  import { getLocalizedName } from '../../lib/i18n.js'
 
   interface Props {
     onBack?: () => void
@@ -84,17 +84,11 @@
   }
 
   function getGroupName(group: RaidGroup): string {
-    if (typeof group.name === 'string') return group.name
-    const loc = getLocale()
-    if (loc === 'ja') return group.name?.ja ?? group.name_jp ?? group.name?.en ?? group.name_en ?? 'Unknown'
-    return group.name?.en ?? group.name_en ?? group.name?.ja ?? group.name_jp ?? 'Unknown'
+    return getLocalizedName(group)
   }
 
   function getRaidName(raid: Raid): string {
-    if (typeof raid.name === 'string') return raid.name
-    const loc = getLocale()
-    if (loc === 'ja') return raid.name?.ja ?? raid.name_jp ?? raid.name?.en ?? raid.name_en ?? 'Unknown'
-    return raid.name?.en ?? raid.name_en ?? raid.name?.ja ?? raid.name_jp ?? 'Unknown'
+    return getLocalizedName(raid)
   }
 
   function getRaidNameJp(raid: Raid): string {

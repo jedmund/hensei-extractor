@@ -216,3 +216,27 @@ export function translateProficiency(englishName: string): string {
   const fn = PROFICIENCY_NAMES[englishName.toLowerCase()]
   return fn ? fn() : englishName
 }
+
+// ==========================================
+// LOCALIZED RECORD NAMES
+// ==========================================
+
+/** A record named in both languages, as the API returns raids and raid groups. */
+export interface LocalizedNameSource {
+  name?: string | { en?: string; ja?: string } | null
+  name_en?: string
+  name_jp?: string
+}
+
+/**
+ * The record's name in the current language, falling back to the other
+ * language and then to a translated "Unknown".
+ */
+export function getLocalizedName(source: LocalizedNameSource): string {
+  const name = source.name
+  if (typeof name === 'string') return name
+  const en = name?.en ?? source.name_en
+  const ja = name?.ja ?? source.name_jp
+  const localized = getLocale() === 'ja' ? (ja ?? en) : (en ?? ja)
+  return localized ?? m.name_unknown()
+}
