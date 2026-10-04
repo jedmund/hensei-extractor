@@ -332,6 +332,8 @@ export interface WeaponModifiers {
   } | null
   befoulment: {
     skill: Record<string, RawAugmentSkillEntry> | null
+    /** The befoulment's displayed value, e.g. "-10%", when the game sends one */
+    showValue: string | null
     exorcismLevel: number
     maxExorcismLevel: number
     iconImage: string | null
@@ -402,6 +404,7 @@ export function getWeaponModifiers(
             (param.augment_skill_info?.[0] as
               | Record<string, RawAugmentSkillEntry>
               | undefined) ?? null,
+          showValue: firstAugmentShowValue(param.augment_skill_info?.[0]),
           exorcismLevel: odiant.exorcision_level || 0,
           maxExorcismLevel: odiant.max_exorcision_level || 5,
           iconImage: param.augment_skill_icon_image?.[0] || null
@@ -409,6 +412,17 @@ export function getWeaponModifiers(
       : null,
     weaponKeys
   }
+}
+
+/**
+ * The show_value of the first skill in an augment_skill_info entry. The game
+ * sends each entry as a list of skills (older captures used an object keyed
+ * by skill id), so this reads the first value either way.
+ */
+export function firstAugmentShowValue(entry: unknown): string | null {
+  if (!entry || typeof entry !== 'object') return null
+  const first = Object.values(entry)[0] as RawAugmentSkillEntry | undefined
+  return first?.show_value || null
 }
 
 /** Resolve the AX skill icon filename from AUGMENT_ICON_MAP */

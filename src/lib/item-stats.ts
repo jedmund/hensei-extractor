@@ -13,7 +13,7 @@ import {
   GAME_WEAPON_SERIES_NAMES,
   GAME_SUMMON_SERIES_NAMES
 } from './game-data.js'
-import type { RawGameItem } from './detail-helpers.js'
+import { firstAugmentShowValue, type RawGameItem } from './detail-helpers.js'
 import { decodeHtmlEntities } from './html-entities.js'
 import { translateSeries } from './i18n.js'
 import * as m from '../paraglide/messages.js'
@@ -271,14 +271,11 @@ export function weaponStatRows(
 
   const odiant = param.odiant
   if (odiant?.is_odiant_weapon) {
-    const befoulSkillMap = param.augment_skill_info?.[0]
-    const befoulSkill = befoulSkillMap
-      ? Object.values(befoulSkillMap)[0]
-      : undefined
     rows.push(
       textRow(
         m.stat_befoulment(),
-        befoulSkill?.show_value || m.stat_befoulment_active()
+        firstAugmentShowValue(param.augment_skill_info?.[0]) ||
+          m.stat_befoulment_active()
       )
     )
     rows.push(

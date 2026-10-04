@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('./state/app.svelte.js', () => ({ app: { locale: 'en' } }))
 
 import { getImageUrl } from './constants.js'
-import type { RawGameItem } from './detail-helpers.js'
+import {
+  firstAugmentShowValue,
+  getWeaponModifiers,
+  type RawGameItem
+} from './detail-helpers.js'
 import {
   artifactLabelIcons,
   characterStatRows,
@@ -333,5 +337,38 @@ describe('summonStatRows', () => {
   it('has no proficiency row', () => {
     const rows = summonStatRows({ specialty_weapon: [1] }, '', undefined)
     expect(rows).toEqual([])
+  })
+})
+
+describe('befoulment value', () => {
+  // The game sends each augment_skill_info entry as a list of skills
+  const befouled = {
+    param: {
+      odiant: {
+        is_odiant_weapon: true,
+        exorcision_level: 2,
+        max_exorcision_level: 5
+      },
+      augment_skill_info: [[{ skill_id: 1801, show_value: '-10%' }]]
+    }
+  } as unknown as RawGameItem
+
+  it('reads the first skill of a list or a keyed entry', () => {
+    expect(firstAugmentShowValue([{ show_value: '-10%' }])).toBe('-10%')
+    expect(firstAugmentShowValue({ 1801: { show_value: '-10%' } })).toBe('-10%')
+    expect(firstAugmentShowValue([])).toBeNull()
+    expect(firstAugmentShowValue(undefined)).toBeNull()
+  })
+
+  it('gives the tooltip the befoulment value', () => {
+    expect(getWeaponModifiers(befouled).befoulment?.showValue).toBe('-10%')
+  })
+
+  it('shows the befoulment value in the weapon stats', () => {
+    const rows = weaponStatRows(befouled, '1040001000', 1)
+    expect(rows).toContainEqual({
+      label: 'Befoulment',
+      value: { kind: 'text', text: '-10%' }
+    })
   })
 })

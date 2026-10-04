@@ -43,7 +43,7 @@
         {#if mods.befoulment}
           {@const befoulIcon = resolveAugmentIcon(mods.befoulment.iconImage || 'ex_skill_def_down')}
           <RichTooltip>
-            {#snippet content()}<div>{m.stat_befoulment()}: {mods.befoulment!.skill?.show_value || m.stat_befouled()}</div><div>{m.stat_exorcism()} {mods.befoulment!.exorcismLevel}/{mods.befoulment!.maxExorcismLevel}</div>{/snippet}
+            {#snippet content()}<div>{m.stat_befoulment()}: {mods.befoulment!.showValue || m.stat_befouled()}</div><div>{m.stat_exorcism()} {mods.befoulment!.exorcismLevel}/{mods.befoulment!.maxExorcismLevel}</div>{/snippet}
             <img class="befoulment-icon" src={getImageUrl(`${BUCKET.axSkills}/${befoulIcon}.png`)} alt={m.stat_befoulment()}>
           </RichTooltip>
         {/if}
