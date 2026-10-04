@@ -35,6 +35,12 @@ import {
   fetchUserPlaylists,
   getCollectionIds
 } from './reference-data.js'
+import {
+  fetchJobSkillSlugs,
+  fetchWeaponKeyMap,
+  fetchWeaponStatModifiers,
+  searchSummonByName
+} from './party-reference.js'
 import { uploadSupportSummons } from './support-summons.js'
 import type { CharacterStatsEntry, PageData } from './types.js'
 import type { ParsedSupportSummonPayload } from '../parsers/support-summons.js'
@@ -85,6 +91,10 @@ export function createHandlers(
     fetchUserPlaylists: () => fetchUserPlaylists(),
     createPlaylist: (m) => createPlaylist(m.data),
     getCollectionIds: () => getCollectionIds(),
+    searchSummonByName: (m) => searchSummonByName(m.name),
+    fetchWeaponKeyMap: (m) => fetchWeaponKeyMap(m.locale),
+    fetchWeaponStatModifiers: () => fetchWeaponStatModifiers(),
+    fetchJobSkillSlugs: (m) => fetchJobSkillSlugs(m.names),
 
     uploadPartyData: (m) =>
       withCachedData(m.dataType, (data) =>

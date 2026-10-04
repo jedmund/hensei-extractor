@@ -19,6 +19,10 @@ export type ExtensionMessage =
       data: { title: string; description?: string; visibility?: number }
     }
   | { action: 'getCollectionIds' }
+  | { action: 'searchSummonByName'; name: string }
+  | { action: 'fetchWeaponKeyMap'; locale: UiLocale }
+  | { action: 'fetchWeaponStatModifiers' }
+  | { action: 'fetchJobSkillSlugs'; names: string[] }
   | {
       action: 'uploadPartyData'
       dataType: string
@@ -231,6 +235,32 @@ export interface CollectionIdsResponse {
   artifacts?: string[]
   error?: string
 }
+
+/** The side panel's display language */
+export type UiLocale = 'en' | 'ja'
+
+/** A summon from POST /search/summons, as searchSummonByName returns it */
+export interface SummonSearchResult {
+  granblue_id?: string
+  name?: { en?: string; ja?: string }
+  uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
+}
+
+/** Weapon key skill id → the key's slug and localized name */
+export type WeaponKeyMap = Record<string, { slug: string; name: string }>
+
+/** A weapon stat modifier's names, keyed by slug in WeaponStatModifiers */
+export interface WeaponStatModifier {
+  nameEn?: string
+  nameJp?: string
+  suffix?: string
+  [key: string]: unknown
+}
+
+export type WeaponStatModifiers = Record<string, WeaponStatModifier>
+
+/** Job skill name → slug, or null when the API doesn't know the skill */
+export type JobSkillSlugs = Record<string, string | null>
 
 /** Response from uploadUnfScores */
 export interface UploadUnfScoresResponse {

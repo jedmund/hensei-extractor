@@ -76,7 +76,7 @@
     /** True while the support summon is being looked up by name */
     friendSummonPending?: boolean
     weaponKeyMap?: Record<string, { slug: string; name: string }> | null
-    jobSkillSlugs?: Record<string, string>
+    jobSkillSlugs?: Record<string, string | null>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
   }

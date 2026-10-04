@@ -4,24 +4,35 @@
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
   import { decodeHtmlEntities } from '../../lib/html-entities.js'
-  import { apiFetch, getApiUrl } from '../../lib/constants.js'
   import {
     isCollectionType,
     isDatabaseDetailType,
     isCharacterCollection,
     isWeaponOrSummonCollection,
     extractItems,
-    countItems,
-    toArray,
-    getOwnershipId,
-    isLevel1
+    countItems
   } from '../../lib/detail-helpers.js'
-  import { getCachedData, fetchRaidGroups, fetchElementVariants, getCollectionIds, checkCollectionUpdates, checkCharacterStatsUpdates } from '../../lib/services/chrome-messages.js'
+  import {
+    detailLoadPlan,
+    ownedIdsFor,
+    collectionUpdatesByKey,
+    characterStatsUpdatesByKey,
+    partyLookups,
+    countPartyMembers,
+    suggestedRaidSlug,
+    findRaidBySlug,
+    categorizeItems,
+    defaultSelection,
+    type PartyDeckData,
+    type ItemEntry,
+    type CategorySection
+  } from '../../lib/detail-data.js'
+  import { getCachedData, fetchRaidGroups, fetchElementVariants, getCollectionIds, checkCollectionUpdates, checkCharacterStatsUpdates, searchSummonByName, fetchWeaponKeyMap, fetchWeaponStatModifiers, fetchJobSkillSlugs } from '../../lib/services/chrome-messages.js'
   import { translateError, getLocale } from '../../lib/i18n.js'
 
   import { onMount } from 'svelte'
   import type { RawGameItem } from '../../lib/detail-helpers.js'
-  import type { RaidGroup, CollectionUpdate } from '../../lib/types/messages.js'
+  import type { RaidGroup, CollectionUpdate, SummonSearchResult, WeaponKeyMap, WeaponStatModifiers, JobSkillSlugs } from '../../lib/types/messages.js'
 
   import NavigationBar from '../shared/NavigationBar.svelte'
   import Icon from '../shared/Icon.svelte'
@@ -75,37 +86,6 @@
     isCollection && !isCharacterCollection(dataType)
   )
 
-  interface SummonSearchResult {
-    granblue_id?: string
-    name?: { en?: string; ja?: string }
-    uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
-  }
-
-  interface WeaponStatModifier {
-    nameEn?: string
-    nameJp?: string
-    suffix?: string
-    [key: string]: unknown
-  }
-
-  interface PartyDeckData {
-    deck?: {
-      pc?: {
-        weapons?: Record<string, unknown>
-        summons?: Record<string, unknown>
-        sub_summons?: Record<string, unknown>
-        damage_info?: { summon_name?: string }
-        set_action?: Array<{ name: string }>
-        [key: string]: unknown
-      }
-      npc?: Record<string, unknown>
-      name?: string
-      [key: string]: unknown
-    }
-    bullet_info?: { set_bullets?: Record<string, unknown> }
-    [key: string]: unknown
-  }
-
   // Ownership data for collection categorization
   let ownedIds = $state<Set<string>>(new Set())
   let ownershipLoaded = $state(false)
@@ -116,12 +96,10 @@
   // Supplementary data for parties
   let friendSummon = $state<SummonSearchResult | null>(null)
   let friendSummonPending = $state(false)
-  let weaponKeyMap = $state<Record<string, { slug: string; name: string }> | null>(null)
-  let jobSkillSlugs = $state<Record<string, string>>({})
-  let weaponStatModifiers = $state<Record<string, WeaponStatModifier> | null>(null)
+  let weaponKeyMap = $state<WeaponKeyMap | null>(null)
+  let jobSkillSlugs = $state<JobSkillSlugs>({})
+  let weaponStatModifiers = $state<WeaponStatModifiers | null>(null)
   let simplePortraits = $state(false)
-
-  type ItemEntry = { item: RawGameItem; originalIndex: number }
 
   // Filtered items for collection views (rarity only, no lv1 exclusion — that's a section now)
   let filteredItems = $derived.by(() => {
@@ -139,51 +117,9 @@
   })
 
   // Categorize items into sections
-  interface CategorySection {
-    key: string
-    label: string
-    items: ItemEntry[]
-    defaultExpanded: boolean
-  }
-
   let categorizedSections = $derived.by((): CategorySection[] => {
     if (!isCollection || filteredItems.length === 0) return []
-    const willImport: ItemEntry[] = []
-    const hasUpdates: ItemEntry[] = []
-    const unchanged: ItemEntry[] = []
-    const level1: ItemEntry[] = []
-
-    const showLv1Section = isWeaponOrSummonCollection(dataType)
-
-    for (const entry of filteredItems) {
-      const ownershipId = getOwnershipId(dataType, entry.item)
-      if (showLv1Section && isLevel1(entry.item)) {
-        level1.push(entry)
-      } else if (ownershipId && ownedIds.has(ownershipId)) {
-        if (ownershipId && collectionUpdates.has(ownershipId)) {
-          hasUpdates.push(entry)
-        } else {
-          unchanged.push(entry)
-        }
-      } else {
-        willImport.push(entry)
-      }
-    }
-
-    const sections: CategorySection[] = []
-    if (willImport.length > 0) {
-      sections.push({ key: 'will_import', label: m.section_will_import(), items: willImport, defaultExpanded: true })
-    }
-    if (hasUpdates.length > 0) {
-      sections.push({ key: 'has_updates', label: m.section_has_updates(), items: hasUpdates, defaultExpanded: true })
-    }
-    if (unchanged.length > 0) {
-      sections.push({ key: 'unchanged', label: m.section_unchanged(), items: unchanged, defaultExpanded: willImport.length === 0 && hasUpdates.length === 0 })
-    }
-    if (level1.length > 0) {
-      sections.push({ key: 'level_1', label: m.section_level_1(), items: level1, defaultExpanded: false })
-    }
-    return sections
+    return categorizeItems(dataType, filteredItems, ownedIds, collectionUpdates)
   })
 
   let hasNames = $derived(
@@ -196,16 +132,7 @@
     if (!isCollection || !ownershipLoaded || categorizedSections.length === 0) return
     if (lastInitDataType === dataType) return
     lastInitDataType = dataType
-    const next = new Set<number>()
-    for (const section of categorizedSections) {
-      if (section.key !== 'will_import' && section.key !== 'has_updates') continue
-      for (const { originalIndex } of section.items) {
-        if (!app.manuallyUnchecked.has(originalIndex)) {
-          next.add(originalIndex)
-        }
-      }
-    }
-    app.selectedItems = next
+    app.selectedItems = defaultSelection(categorizedSections, app.manuallyUnchecked)
   })
 
   // Status and display info
@@ -283,35 +210,34 @@
     const gbAuth = authResult.gbAuth as Record<string, unknown> | undefined
     simplePortraits = (gbAuth?.simplePortraits as boolean) || false
 
+    const plan = detailLoadPlan(dt)
+
     // Fetch ownership for collection categorization
-    if (isCollectionType(dt) && dt !== 'character_stats') {
+    if (plan.ownership) {
       await Promise.all([loadOwnedIds(dt, current), loadCollectionUpdates(dt, current)])
       // Only once both have landed, so items with updates are ticked too
       if (!current()) return
       ownershipLoaded = true
-    } else if (dt === 'character_stats') {
+    } else if (plan.characterStatsUpdates) {
       await loadCharacterStatsUpdates(current)
     }
 
-    if (dt.startsWith('party_')) {
+    if (plan.partySupplementary) {
       await loadPartySupplementary(response.data as PartyDeckData, current)
     }
 
-    if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
+    if (plan.weaponStatModifiers) {
       await loadWeaponStatModifiers(current)
     }
     if (!current()) return
 
     // Auto-suggest raid for parties
-    if (dt.startsWith('party_')) {
+    if (plan.raidSuggestion) {
       const partyData = response.data as PartyDeckData | undefined
-      const deck = partyData?.deck
-      const pc = deck?.pc
-      const chars = toArray(deck?.npc).filter(Boolean).length
-      const wpns = toArray(pc?.weapons).filter(Boolean).length
+      const { weapons, characters } = countPartyMembers(partyData)
       // The game escapes HTML in team names (`A &gt; B`).
-      app.partyName = decodeHtmlEntities(deck?.name || '')
-      await autoSuggestRaid(wpns, chars, current)
+      app.partyName = decodeHtmlEntities(partyData?.deck?.name || '')
+      await autoSuggestRaid(weapons, characters, current)
     }
 
     if (!current()) return
@@ -322,18 +248,7 @@
     try {
       const response = await getCollectionIds()
       if (!current()) return
-      if (response.error) { ownedIds = new Set(); return }
-      if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
-        ownedIds = new Set(response.weapons || [])
-      } else if (dt.includes('summon') || dt.startsWith('stash_summon')) {
-        ownedIds = new Set(response.summons || [])
-      } else if (dt.includes('artifact')) {
-        ownedIds = new Set(response.artifacts || [])
-      } else if (dt.includes('npc') || dt.includes('character')) {
-        ownedIds = new Set(response.characters || [])
-      } else {
-        ownedIds = new Set()
-      }
+      ownedIds = ownedIdsFor(dt, response)
     } catch {
       if (current()) ownedIds = new Set()
     }
@@ -352,12 +267,7 @@
         collectionUpdates = new Map()
         return
       }
-      const map = new Map<string, CollectionUpdate>()
-      for (const update of response.updates) {
-        const key = update.game_id ?? update.granblue_id
-        if (key) map.set(key, update)
-      }
-      collectionUpdates = map
+      collectionUpdates = collectionUpdatesByKey(response.updates)
     } catch {
       if (current()) collectionUpdates = new Map()
     }
@@ -371,27 +281,20 @@
         collectionUpdates = new Map()
         return
       }
-      const map = new Map<string, CollectionUpdate>()
-      for (const update of response.updates) {
-        const key = update.granblue_id
-        if (key) map.set(key, update)
-      }
-      collectionUpdates = map
+      collectionUpdates = characterStatsUpdatesByKey(response.updates)
     } catch {
       if (current()) collectionUpdates = new Map()
     }
   }
 
   async function loadPartySupplementary(data: PartyDeckData, current: () => boolean) {
-    const summonName = data?.deck?.pc?.damage_info?.summon_name
-    const setAction = data?.deck?.pc?.set_action || []
-    const skillNames = setAction.map((s) => s.name).filter(Boolean)
+    const { summonName, skillNames } = partyLookups(data)
 
     friendSummon = null
     friendSummonPending = !!summonName
     const [summonResult, keyMap, skillSlugs, statMods] = await Promise.all([
       summonName ? searchSummonByName(summonName) : Promise.resolve(null),
-      fetchWeaponKeyMap(),
+      fetchWeaponKeyMap(getLocale()),
       skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({}),
       fetchWeaponStatModifiers()
     ])
@@ -409,125 +312,15 @@
     if (current()) weaponStatModifiers = modifiers
   }
 
-  // API helpers (same logic as popup.js)
-  async function searchSummonByName(name: string) {
-    if (!name) return null
-    try {
-      const apiUrl = await getApiUrl('/search/summons')
-      const response = await apiFetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ search: { query: name } })
-      })
-      if (!response.ok) return null
-      const json = await response.json()
-      const results = json.results || []
-      return results.find((s: SummonSearchResult) => s.name?.en === name || s.name?.ja === name) || null
-    } catch {
-      return null
-    }
-  }
-
-  let _weaponKeyMapCache: Record<string, { slug: string; name: string }> | null = null
-  async function fetchWeaponKeyMap() {
-    if (_weaponKeyMapCache) return _weaponKeyMapCache
-    try {
-      const locale = getLocale()
-      const [skillMapRes, weaponKeysRes] = await Promise.all([
-        apiFetch(await getApiUrl('/weapon_keys/skill_map')),
-        apiFetch(await getApiUrl('/weapon_keys'))
-      ])
-      if (!skillMapRes.ok || !weaponKeysRes.ok) return null
-      const skillMap: Record<string, string> = await skillMapRes.json()
-      const weaponKeys: Array<{ slug: string; name: Record<string, string> }> = await weaponKeysRes.json()
-
-      const slugToName: Record<string, string> = {}
-      for (const key of weaponKeys) {
-        slugToName[key.slug] = key.name[locale] || key.name.en || key.slug
-      }
-
-      const result: Record<string, { slug: string; name: string }> = {}
-      for (const [skillId, slug] of Object.entries(skillMap)) {
-        result[skillId] = { slug, name: slugToName[slug] || slug }
-      }
-
-      _weaponKeyMapCache = result
-      return _weaponKeyMapCache
-    } catch {
-      return null
-    }
-  }
-
-  let _weaponStatModCache: Record<string, WeaponStatModifier> | null = null
-  async function fetchWeaponStatModifiers() {
-    if (_weaponStatModCache) return _weaponStatModCache
-    try {
-      const apiUrl = await getApiUrl('/weapon_stat_modifiers')
-      const response = await apiFetch(apiUrl)
-      if (!response.ok) return null
-      const modifiers = await response.json() as Array<{ slug: string; name_en: string; name_jp: string; suffix?: string }>
-      _weaponStatModCache = {} as Record<string, WeaponStatModifier>
-      for (const mod of modifiers) {
-        _weaponStatModCache[mod.slug] = {
-          nameEn: mod.name_en,
-          nameJp: mod.name_jp,
-          suffix: mod.suffix || ''
-        }
-      }
-      return _weaponStatModCache
-    } catch {
-      return null
-    }
-  }
-
-  let _jobSkillCache: Record<string, string | null> = {}
-  async function fetchJobSkillSlugs(names: string[]) {
-    const uncached = names.filter((n) => !(n in _jobSkillCache))
-    if (uncached.length === 0) {
-      return Object.fromEntries(names.map((n) => [n, _jobSkillCache[n] || null]))
-    }
-    try {
-      const apiUrl = await getApiUrl('/job_skills/resolve')
-      const response = await apiFetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ names: uncached })
-      })
-      if (response.ok) {
-        const results = await response.json()
-        for (const r of results) _jobSkillCache[r.name] = r.slug
-      }
-    } catch {
-      /* fall through */
-    }
-    return Object.fromEntries(names.map((n) => [n, _jobSkillCache[n] || null]))
-  }
-
   async function autoSuggestRaid(weaponCount: number, characterCount: number, current: () => boolean) {
     const response = await fetchRaidGroups()
     if (!current() || response.error || !response.data) return
-    const groups = response.data as RaidGroup[]
-    let suggested = null
-
-    if (weaponCount === 13 && characterCount === 8) {
-      suggested = findRaidBySlug(groups, 'versusia')
-    } else if (weaponCount === 13 && characterCount === 5) {
-      suggested = findRaidBySlug(groups, 'farming-ex')
-    } else if (characterCount === 5) {
-      suggested = findRaidBySlug(groups, 'farming')
-    }
+    const slug = suggestedRaidSlug(weaponCount, characterCount)
+    const suggested = slug ? findRaidBySlug(response.data as RaidGroup[], slug) : null
 
     if (suggested) {
       app.selectedRaid = suggested
     }
-  }
-
-  function findRaidBySlug(groups: RaidGroup[], slug: string) {
-    for (const group of groups) {
-      const raid = (group.raids || []).find((r) => r.slug === slug)
-      if (raid) return { ...raid, group }
-    }
-    return null
   }
 </script>
 
