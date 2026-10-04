@@ -98,6 +98,8 @@ export interface UploadPartyResponse {
   shortcode?: string
   url?: string
   warnings?: ImportWarning[]
+  /** The party was imported but sharing it with the crew failed */
+  shareFailed?: boolean
   error?: string
 }
 
