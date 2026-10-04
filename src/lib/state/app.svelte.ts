@@ -86,11 +86,7 @@ class AppState {
 
   // Picker visibility
   raidPickerOpen = $state(false)
-  raidRefresh = $state(false)
   playlistPickerOpen = $state(false)
-  playlistCreateFormOpen = $state(false)
-  playlistCreateSubmit = $state(false)
-  playlistCreateReady = $state(false)
 
   // Modal visibility
   syncModalOpen = $state(false)

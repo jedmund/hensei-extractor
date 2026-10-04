@@ -9,7 +9,6 @@
   const ELEMENT_CLASSES = ['fire', 'water', 'earth', 'wind', 'light', 'dark'] as const
   import { checkExtensionVersion } from '../../lib/services/chrome-messages.js'
   import NavigationBar from '../shared/NavigationBar.svelte'
-  import Icon from '../shared/Icon.svelte'
   import TabNav from './TabNav.svelte'
   import PartyPanel from './PartyPanel.svelte'
   import CollectionPanel from './CollectionPanel.svelte'
@@ -19,7 +18,6 @@
   import UpdateBanner from '../shared/UpdateBanner.svelte'
   import Hint from '../shared/Hint.svelte'
   import DetailView from '../detail/DetailView.svelte'
-  import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import DetailActions from '../detail/DetailActions.svelte'
   import CrewActions from '../detail/CrewActions.svelte'
@@ -124,25 +122,8 @@
     return undefined
   })
 
-  const playlistPickerTitle = $derived.by(() => {
-    if (app.playlistCreateFormOpen) return m.playlist_create_title()
-    return m.playlist_select()
-  })
-
   function goBackFromDetail() {
     app.resetDetailState()
-  }
-
-  function goBackFromRaidPicker() {
-    app.raidPickerOpen = false
-  }
-
-  function goBackFromPlaylistPicker() {
-    if (app.playlistCreateFormOpen) {
-      app.playlistCreateFormOpen = false
-      return
-    }
-    app.playlistPickerOpen = false
   }
 
   function togglePopover(e: MouseEvent) {
@@ -257,23 +238,7 @@
     {/snippet}
   </DetailView>
 
-  <RaidPicker onBack={goBackFromRaidPicker}>
-    {#snippet navRight()}
-      <Tooltip content={m.raid_reload_tooltip()}>
-        <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} onclick={() => { app.raidRefresh = true }}>
-          <Icon name="refresh" size={14} />
-        </Button>
-      </Tooltip>
-    {/snippet}
-  </RaidPicker>
+  <RaidPicker />
 
-  <PlaylistPicker title={playlistPickerTitle} onBack={goBackFromPlaylistPicker}>
-    {#snippet navRight()}
-      {#if app.playlistCreateFormOpen}
-        <Button size="small" id="playlistCreateSubmitNav" disabled={!app.playlistCreateReady} onclick={() => { app.playlistCreateSubmit = true }}>{m.action_create()}</Button>
-      {:else}
-        <Button size="small" id="playlistCreateBtn" onclick={() => { app.playlistCreateFormOpen = true }}>{m.playlist_new()}</Button>
-      {/if}
-    {/snippet}
-  </PlaylistPicker>
+  <PlaylistPicker />
 </div>

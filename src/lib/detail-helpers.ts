@@ -39,6 +39,8 @@ interface RawMaster {
   max_hp?: string | number
   max_attack?: string | number
   max_level?: string | number
+  /** The game's weapon group id; MainView uses it to spot weapons that take keys */
+  is_group?: string | number
 }
 
 /** AX / befoulment skill entry as returned by the API */

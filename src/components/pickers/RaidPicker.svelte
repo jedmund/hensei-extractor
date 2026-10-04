@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
   import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
@@ -15,12 +14,6 @@
   import { BUCKET, RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
   import { getLocalizedName, translateError } from '../../lib/i18n.js'
 
-  interface Props {
-    onBack?: () => void
-    navRight?: Snippet
-  }
-
-  let { onBack, navRight }: Props = $props()
 
   interface LocalizedName { en?: string; ja?: string }
   interface Raid {
@@ -58,13 +51,6 @@
 
   $effect(() => {
     if (app.raidPickerOpen) loadRaids()
-  })
-
-  $effect(() => {
-    if (app.raidRefresh) {
-      app.raidRefresh = false
-      refresh()
-    }
   })
 
   // Clear the search however the picker closes (selection or Back).
@@ -152,13 +138,17 @@
 <div class="raid-picker-view" id="raidPickerView" transition:slideRight>
   <NavigationBar title={m.raid_select()}>
     {#snippet left()}
-      <button class="detail-back" onclick={onBack}>
+      <button class="detail-back" onclick={close}>
         <Icon name="chevron-left" size={14} />
         <span>{m.action_back()}</span>
       </button>
     {/snippet}
     {#snippet right()}
-      {#if navRight}{@render navRight()}{/if}
+      <Tooltip content={m.raid_reload_tooltip()}>
+        <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} disabled={refreshing} onclick={refresh}>
+          <Icon name="refresh" size={14} />
+        </Button>
+      </Tooltip>
     {/snippet}
   </NavigationBar>
 
