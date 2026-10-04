@@ -34,7 +34,7 @@
 
   let data = $derived(rawData as DatabaseItemData)
   let id = $derived(data?.id || data?.master?.id || '')
-  let name = $derived(data?.name || data?.master?.name || m.unknown_name())
+  let name = $derived(data?.name || data?.master?.name || m.name_unknown())
   let element = $derived(
     data?.attribute || data?.element || data?.master?.attribute || data?.master?.element
   )
