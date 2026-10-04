@@ -251,7 +251,15 @@
     return () => chrome.runtime.onMessage.removeListener(onMessage)
   })
 
+  // Bumped on every load. A load whose number is no longer the latest, or
+  // whose view has been closed or switched, drops its results. Not $state:
+  // the fetch effect would otherwise depend on it and re-run.
+  let loadSeq = 0
+
   async function loadDetailData(dt: string) {
+    const seq = ++loadSeq
+    const current = () => seq === loadSeq && app.currentDetailDataType === dt
+
     // This component stays mounted between visits, so clear what the last
     // visit left behind. Otherwise the default selection is skipped when the
     // same collection is reopened, or is built from the previous ownership data.
@@ -261,6 +269,7 @@
     collectionUpdates = new Map()
 
     const response = await getCachedData(dt)
+    if (!current()) return
     if (response.error) {
       app.showToast(translateError(response.error))
       return
@@ -270,24 +279,28 @@
 
     // Get auth for simplePortraits
     const authResult = await chrome.storage.local.get('gbAuth')
+    if (!current()) return
     const gbAuth = authResult.gbAuth as Record<string, unknown> | undefined
     simplePortraits = (gbAuth?.simplePortraits as boolean) || false
 
     // Fetch ownership for collection categorization
     if (isCollectionType(dt) && dt !== 'character_stats') {
-      await loadOwnedIds(dt)
-      await loadCollectionUpdates(dt)
+      await Promise.all([loadOwnedIds(dt, current), loadCollectionUpdates(dt, current)])
+      // Only once both have landed, so items with updates are ticked too
+      if (!current()) return
+      ownershipLoaded = true
     } else if (dt === 'character_stats') {
-      await loadCharacterStatsUpdates()
+      await loadCharacterStatsUpdates(current)
     }
 
     if (dt.startsWith('party_')) {
-      await loadPartySupplementary(response.data as PartyDeckData)
+      await loadPartySupplementary(response.data as PartyDeckData, current)
     }
 
     if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
-      await loadWeaponStatModifiers()
+      await loadWeaponStatModifiers(current)
     }
+    if (!current()) return
 
     // Auto-suggest raid for parties
     if (dt.startsWith('party_')) {
@@ -298,16 +311,17 @@
       const wpns = toArray(pc?.weapons).filter(Boolean).length
       // The game escapes HTML in team names (`A &gt; B`).
       app.partyName = decodeHtmlEntities(deck?.name || '')
-      await autoSuggestRaid(wpns, chars)
+      await autoSuggestRaid(wpns, chars, current)
     }
 
+    if (!current()) return
     app.detailViewActive = true
   }
 
-  async function loadOwnedIds(dt: string) {
-    ownershipLoaded = false
+  async function loadOwnedIds(dt: string, current: () => boolean) {
     try {
       const response = await getCollectionIds()
+      if (!current()) return
       if (response.error) { ownedIds = new Set(); return }
       if (dt.includes('weapon') || dt.startsWith('stash_weapon')) {
         ownedIds = new Set(response.weapons || [])
@@ -321,13 +335,11 @@
         ownedIds = new Set()
       }
     } catch {
-      ownedIds = new Set()
-    } finally {
-      ownershipLoaded = true
+      if (current()) ownedIds = new Set()
     }
   }
 
-  async function loadCollectionUpdates(dt: string) {
+  async function loadCollectionUpdates(dt: string, current: () => boolean) {
     // Artifacts don't support partial updates; skip them.
     if (dt.includes('artifact')) {
       collectionUpdates = new Map()
@@ -335,6 +347,7 @@
     }
     try {
       const response = await checkCollectionUpdates(dt)
+      if (!current()) return
       if (response.error || !response.updates) {
         collectionUpdates = new Map()
         return
@@ -346,13 +359,14 @@
       }
       collectionUpdates = map
     } catch {
-      collectionUpdates = new Map()
+      if (current()) collectionUpdates = new Map()
     }
   }
 
-  async function loadCharacterStatsUpdates() {
+  async function loadCharacterStatsUpdates(current: () => boolean) {
     try {
       const response = await checkCharacterStatsUpdates()
+      if (!current()) return
       if (response.error || !response.updates) {
         collectionUpdates = new Map()
         return
@@ -364,11 +378,11 @@
       }
       collectionUpdates = map
     } catch {
-      collectionUpdates = new Map()
+      if (current()) collectionUpdates = new Map()
     }
   }
 
-  async function loadPartySupplementary(data: PartyDeckData) {
+  async function loadPartySupplementary(data: PartyDeckData, current: () => boolean) {
     const summonName = data?.deck?.pc?.damage_info?.summon_name
     const setAction = data?.deck?.pc?.set_action || []
     const skillNames = setAction.map((s) => s.name).filter(Boolean)
@@ -381,6 +395,7 @@
       skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({}),
       fetchWeaponStatModifiers()
     ])
+    if (!current()) return
 
     friendSummon = summonResult
     friendSummonPending = false
@@ -389,8 +404,9 @@
     weaponStatModifiers = statMods
   }
 
-  async function loadWeaponStatModifiers() {
-    weaponStatModifiers = await fetchWeaponStatModifiers()
+  async function loadWeaponStatModifiers(current: () => boolean) {
+    const modifiers = await fetchWeaponStatModifiers()
+    if (current()) weaponStatModifiers = modifiers
   }
 
   // API helpers (same logic as popup.js)
@@ -487,9 +503,9 @@
     return Object.fromEntries(names.map((n) => [n, _jobSkillCache[n] || null]))
   }
 
-  async function autoSuggestRaid(weaponCount: number, characterCount: number) {
+  async function autoSuggestRaid(weaponCount: number, characterCount: number, current: () => boolean) {
     const response = await fetchRaidGroups()
-    if (response.error || !response.data) return
+    if (!current() || response.error || !response.data) return
     const groups = response.data as RaidGroup[]
     let suggested = null
 
