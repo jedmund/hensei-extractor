@@ -7,8 +7,10 @@ import {
   chooseLocale,
   getBrowserLocale,
   getLocale,
+  getLocalizedName,
   getPreferredLocale,
-  LOCALE_PREFERENCE_KEY
+  LOCALE_PREFERENCE_KEY,
+  setLocale
 } from './i18n.js'
 
 function stubBrowserLanguage(uiLanguage: string) {
@@ -62,5 +64,42 @@ describe('chooseLocale', () => {
     expect(getLocale()).toBe('ja')
     expect(set).toHaveBeenCalledWith({ [LOCALE_PREFERENCE_KEY]: 'ja' })
     await chooseLocale('en')
+  })
+})
+
+describe('getLocalizedName', () => {
+  afterEach(() => {
+    setLocale('en')
+  })
+
+  it('uses a plain string name as is', () => {
+    setLocale('ja')
+    expect(getLocalizedName({ name: 'Lucilius' })).toBe('Lucilius')
+  })
+
+  it('picks the name in the current language', () => {
+    const raid = { name: { en: 'The World', ja: 'ワールド' } }
+    expect(getLocalizedName(raid)).toBe('The World')
+    setLocale('ja')
+    expect(getLocalizedName(raid)).toBe('ワールド')
+  })
+
+  it('reads the flat name fields', () => {
+    const group = { name_en: 'Six Dragons', name_jp: '六竜' }
+    expect(getLocalizedName(group)).toBe('Six Dragons')
+    setLocale('ja')
+    expect(getLocalizedName(group)).toBe('六竜')
+  })
+
+  it('falls back to the other language', () => {
+    expect(getLocalizedName({ name: { ja: 'ワールド' } })).toBe('ワールド')
+    setLocale('ja')
+    expect(getLocalizedName({ name: { en: 'The World' } })).toBe('The World')
+  })
+
+  it('is a translated "Unknown" without a name', () => {
+    expect(getLocalizedName({})).toBe('Unknown')
+    setLocale('ja')
+    expect(getLocalizedName({ name: null })).toBe('不明')
   })
 })
