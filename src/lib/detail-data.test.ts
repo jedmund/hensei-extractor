@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('./state/app.svelte.js', () => ({ app: { locale: 'en' } }))
 
 import {
+  applySuggestedRaid,
   categorizeItems,
   collectionUpdatesByKey,
   countPartyMembers,
@@ -16,7 +17,8 @@ import {
   ownedIdsFor,
   partyLookups,
   suggestedRaidSlug,
-  type ItemEntry
+  type ItemEntry,
+  type RaidSuggestionTarget
 } from './detail-data.js'
 import type { CollectionUpdate, RaidGroup } from './types/messages.js'
 
@@ -280,5 +282,111 @@ describe('filterByRarity', () => {
     const entries = filterByRarity('collection_artifact', items, new Set())
     expect(hasItemNames(entries)).toBe(true)
     expect(hasItemNames(entries.slice(1))).toBe(false)
+  })
+})
+
+describe('applySuggestedRaid', () => {
+  const groups: RaidGroup[] = [
+    {
+      id: 'g1',
+      name: { en: 'Farming', ja: '周回' },
+      section: 1,
+      difficulty: 1,
+      raids: [{ id: 'farm', slug: 'farming', name: { en: 'Farming' } }]
+    }
+  ]
+  const manualPick = { id: 'tia', slug: 'tiamat-omega' }
+
+  /** A raid lookup that stays pending until the test resolves it. */
+  function deferredLookup() {
+    let resolve!: (value: { data: RaidGroup[] }) => void
+    const promise = new Promise<{ data: RaidGroup[] }>((r) => (resolve = r))
+    return { load: () => promise, resolve }
+  }
+
+  it('suggests a raid when nothing was picked by hand', async () => {
+    const target: RaidSuggestionTarget = {
+      selectedRaid: null,
+      manualRaidSelections: 0
+    }
+    const lookup = deferredLookup()
+
+    const pending = applySuggestedRaid({
+      target,
+      manualSelectionsAtStart: target.manualRaidSelections,
+      weapons: 10,
+      characters: 5,
+      loadRaidGroups: lookup.load,
+      current: () => true
+    })
+    lookup.resolve({ data: groups })
+    await pending
+
+    expect(target.selectedRaid).toMatchObject({ id: 'farm', slug: 'farming' })
+  })
+
+  it('keeps a raid picked by hand while the lookup was pending', async () => {
+    const target: RaidSuggestionTarget = {
+      selectedRaid: null,
+      manualRaidSelections: 0
+    }
+    const lookup = deferredLookup()
+
+    const pending = applySuggestedRaid({
+      target,
+      manualSelectionsAtStart: target.manualRaidSelections,
+      weapons: 10,
+      characters: 5,
+      loadRaidGroups: lookup.load,
+      current: () => true
+    })
+    // What app.chooseRaid does from the raid picker
+    target.selectedRaid = manualPick
+    target.manualRaidSelections++
+    lookup.resolve({ data: groups })
+    await pending
+
+    expect(target.selectedRaid).toBe(manualPick)
+  })
+
+  it('keeps a raid cleared by hand while the lookup was pending', async () => {
+    const target: RaidSuggestionTarget = {
+      selectedRaid: manualPick,
+      manualRaidSelections: 3
+    }
+    const lookup = deferredLookup()
+
+    const pending = applySuggestedRaid({
+      target,
+      manualSelectionsAtStart: target.manualRaidSelections,
+      weapons: 10,
+      characters: 5,
+      loadRaidGroups: lookup.load,
+      current: () => true
+    })
+    target.selectedRaid = null
+    target.manualRaidSelections++
+    lookup.resolve({ data: groups })
+    await pending
+
+    expect(target.selectedRaid).toBeNull()
+  })
+
+  it('drops the suggestion when the load is stale', async () => {
+    const target: RaidSuggestionTarget = {
+      selectedRaid: null,
+      manualRaidSelections: 0
+    }
+
+    await applySuggestedRaid({
+      target,
+      manualSelectionsAtStart: 0,
+      weapons: 10,
+      characters: 5,
+      loadRaidGroups: async () => ({ data: groups }),
+      current: () => false
+    })
+
+    expect(target.selectedRaid).toBeNull()
   })
 })

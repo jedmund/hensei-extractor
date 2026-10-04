@@ -126,9 +126,9 @@
 
   function selectRaid(raid: Raid, group: RaidGroup) {
     if (app.selectedRaid && app.selectedRaid.id === raid.id) {
-      app.selectedRaid = null
+      app.chooseRaid(null)
     } else {
-      app.selectedRaid = { ...raid, group }
+      app.chooseRaid({ ...raid, group })
     }
     close()
   }
