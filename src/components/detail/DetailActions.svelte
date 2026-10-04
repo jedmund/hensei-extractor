@@ -89,6 +89,7 @@
             error?: string
             url?: string
             warnings?: unknown[]
+            shareFailed?: boolean
             created?: number
             updated?: number
             unknownSummons?: string[]
@@ -158,9 +159,11 @@
         chrome.tabs.create({ url: response.url })
         const warningCount = response.warnings?.length ?? 0
         app.showToast(
-          warningCount > 0
-            ? m.toast_opening_party_with_warnings({ count: warningCount })
-            : m.toast_opening_party()
+          response.shareFailed
+            ? m.toast_opening_party_share_failed()
+            : warningCount > 0
+              ? m.toast_opening_party_with_warnings({ count: warningCount })
+              : m.toast_opening_party()
         )
         app.importState = 'imported'
       } else if (isSupportSummons) {

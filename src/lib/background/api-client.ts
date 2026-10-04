@@ -53,6 +53,8 @@ export interface ApiError {
   error: string
   /** Per-item failures from a 422 `{ errors: [...] }` body */
   errors?: ApiItemError[]
+  /** Human-readable detail when the API sends one (English, not for display) */
+  message?: string
 }
 
 export interface ApiItemError {
@@ -65,12 +67,24 @@ export async function parseErrorBody(response: Response): Promise<ApiError> {
   try {
     const json = (await response.json()) as {
       error?: string
-      errors?: ApiItemError[]
+      errors?: ApiItemError[] | { message?: string; code?: string }
+      message?: string
+      code?: string
     }
     if (json.error) return { error: json.error }
-    if (Array.isArray(json.errors) && json.errors.length > 0) {
-      return { error: 'invalid_data', errors: json.errors }
+    if (Array.isArray(json.errors)) {
+      if (json.errors.length > 0) {
+        return { error: 'invalid_data', errors: json.errors }
+      }
+    } else if (json.errors?.code || json.errors?.message) {
+      // Rescued exceptions: `{ errors: { message, code? } }`
+      return {
+        error: json.errors.code ?? 'invalid_data',
+        message: json.errors.message
+      }
     }
+    // Domain errors (crews, shares): `{ code, message }`
+    if (json.code) return { error: json.code, message: json.message }
   } catch {
     /* not JSON */
   }

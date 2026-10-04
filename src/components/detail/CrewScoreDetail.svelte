@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
+  import { translateError } from '../../lib/i18n.js'
   import { app } from '../../lib/state/app.svelte.js'
   import {
     createCrew,
@@ -86,8 +87,10 @@
       const result = await createCrew(crewName.trim())
       if (result.error === 'crew_already_exists') {
         createError = m.crew_create_error_exists()
+      } else if (result.error === 'already_in_crew') {
+        createError = m.crew_create_error_in_crew()
       } else if (result.error) {
-        createError = result.error
+        createError = translateError(result.error)
       } else {
         app.auth = { ...app.auth!, hasCrew: true }
         app.showToast(m.crew_create_success())

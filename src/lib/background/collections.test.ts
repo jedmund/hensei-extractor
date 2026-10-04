@@ -1,11 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { authenticatedPost } from './api-client.js'
 import {
   characterStatsToItems,
   collectPageItems,
   extractFilterFromPages,
   parseGameFilter,
-  resolveEndpoint
+  resolveEndpoint,
+  uploadPartyData
 } from './collections.js'
+
+vi.mock('./api-client.js', () => ({
+  authenticatedPost: vi.fn(),
+  getAuthToken: vi.fn()
+}))
+vi.mock('../constants.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../constants.js')>()),
+  getSiteBaseUrl: vi.fn(async () => 'https://granblue.team')
+}))
 
 describe('collection helpers', () => {
   it('collects page items in page insertion order', () => {
@@ -89,5 +100,34 @@ describe('collection helpers', () => {
         perpetuity: false
       }
     ])
+  })
+})
+
+describe('uploadPartyData', () => {
+  beforeEach(() => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({
+      data: { shortcode: 'abc123', party_id: 'p1', warnings: [] }
+    })
+  })
+
+  it('imports and shares with the crew', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({ data: {} })
+
+    const res = await uploadPartyData({}, undefined, [], undefined, 1, true)
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith('/parties/p1/shares', {})
+    expect(res).toMatchObject({ success: true, shortcode: 'abc123' })
+    expect(res.shareFailed).toBeUndefined()
+  })
+
+  it('still succeeds when the share fails', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({
+      error: 'not_in_crew'
+    })
+
+    const res = await uploadPartyData({}, undefined, [], undefined, 1, true)
+
+    expect(res).toMatchObject({ success: true, shareFailed: true })
   })
 })

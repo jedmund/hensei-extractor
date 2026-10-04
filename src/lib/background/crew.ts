@@ -102,7 +102,8 @@ export async function handleCreateCrew(
 
   const result = await authenticatedPost('/crews', body)
   if (result.error) {
-    if (result.error.includes('granblue_crew_id')) {
+    // The uniqueness failure has no code, only Rails' validation message.
+    if (/granblue crew.*already been taken/i.test(result.message ?? '')) {
       return { error: 'crew_already_exists' }
     }
     return { error: result.error }

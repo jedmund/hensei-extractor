@@ -70,11 +70,14 @@ export async function uploadPartyData(
   const result = await authenticatedPost('/import', body)
   if (result.error) return result
 
+  // The party is already saved, so a failed share doesn't fail the import.
+  let shareFailed = false
   if (shareWithCrew && result.data?.party_id) {
-    await authenticatedPost(
+    const share = await authenticatedPost(
       `/parties/${result.data.party_id}/shares`,
       {}
-    ).catch(() => {})
+    )
+    shareFailed = !!share.error
   }
 
   const siteUrl = await getSiteBaseUrl()
@@ -82,7 +85,8 @@ export async function uploadPartyData(
     success: true,
     shortcode: result.data!.shortcode as string,
     url: `${siteUrl}/teams/${result.data!.shortcode}`,
-    warnings: (result.data!.warnings as ImportWarning[] | undefined) ?? []
+    warnings: (result.data!.warnings as ImportWarning[] | undefined) ?? [],
+    ...(shareFailed && { shareFailed })
   }
 }
 
