@@ -6,26 +6,13 @@
     createCrew,
     previewGwPhantoms
   } from '../../lib/services/chrome-messages.js'
+  import type { UnfScoresData } from '../../lib/types/messages.js'
   import Select from '../shared/Select.svelte'
   import Icon from '../shared/Icon.svelte'
   import Button from '../shared/Button.svelte'
 
-  interface UnfMember {
-    id: string
-    name: string
-    contribution: number
-    rank: number
-    level: string
-  }
-
   interface Props {
-    data: {
-      eventNumber: number
-      members: UnfMember[]
-      totalPages: number
-      pageCount: number
-      isComplete: boolean
-    }
+    data: UnfScoresData
   }
 
   let { data }: Props = $props()
