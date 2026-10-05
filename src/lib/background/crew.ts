@@ -5,7 +5,7 @@ import {
   resolveCacheKey
 } from '../constants.js'
 import type { FetchLatestGwEventResponse } from '../types/messages.js'
-import { authenticatedPost } from './api-client.js'
+import { authenticatedPost, parseErrorResponse } from './api-client.js'
 import type { CachedGuildInfo, CachedUnfScores, UnfMember } from './types.js'
 
 export async function handleUploadUnfScores(
@@ -102,8 +102,10 @@ export async function handleCreateCrew(
 
   const result = await authenticatedPost('/crews', body)
   if (result.error) {
-    // The uniqueness failure has no code, only Rails' validation message.
-    if (/granblue crew.*already been taken/i.test(result.message ?? '')) {
+    if (
+      /granblue crew.*already been taken/i.test(result.message ?? '') ||
+      result.fieldErrors?.granblue_crew_id?.includes('has already been taken')
+    ) {
       return { error: 'crew_already_exists' }
     }
     return { error: result.error }
@@ -123,7 +125,7 @@ export async function handleFetchLatestGwEvent(): Promise<FetchLatestGwEventResp
   try {
     const apiUrl = await getApiUrl('/gw_events/status')
     const response = await apiFetch(apiUrl)
-    if (!response.ok) return { error: 'request_failed' }
+    if (!response.ok) return { error: await parseErrorResponse(response) }
 
     const data = (await response.json()) as {
       upcoming: {

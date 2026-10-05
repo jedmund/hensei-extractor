@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { translateError } from '../../lib/i18n.js'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import Button from '../shared/Button.svelte'
@@ -61,7 +62,7 @@
       case 'unknown_summons':
         return m.toast_support_summons_unknown()
       default:
-        return m.toast_import_failed()
+        return translateError(error)
     }
   }
 
@@ -184,7 +185,7 @@
     if (!dataType) return
     const res = await previewSyncDeletions(dataType)
     if (res.error) {
-      app.showToast(res.error)
+      app.showToast(translateError(res.error))
       return
     }
     app.syncPreview = {

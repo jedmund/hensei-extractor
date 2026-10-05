@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { translateError } from '../../lib/i18n.js'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { uploadUnfScores } from '../../lib/services/chrome-messages.js'
@@ -33,13 +34,11 @@
       const result = await uploadUnfScores(dataType, app.crewImportRound)
 
       if (result.error) {
-        if (result.error === 'not_in_crew') {
-          app.showToast(m.crew_not_officer())
-        } else if (result.error.includes('not found')) {
-          app.showToast(m.crew_no_event())
-        } else {
-          app.showToast(m.toast_import_failed())
-        }
+        app.showToast(
+          result.error === 'not_found'
+            ? m.crew_no_event()
+            : translateError(result.error)
+        )
         app.importState = 'idle'
       } else {
         let msg: string = m.crew_import_success({ count: result.imported ?? 0 })
