@@ -32,7 +32,7 @@
   "error_no_items": "No items found",
   "error_unknown_type": "Unsupported data type",
   "error_request_failed": "Could not connect to server. Please try again.",
-  "error_server_error": "Hensei is having trouble processing requests. Please try again later.",
+  "error_server_error": "Granblue.team is having trouble processing requests. Please try again later.",
   "warning_p1": "This extension only reads data your browser has already received. It does NOT make additional requests to GBF servers or modify game behavior.",
   "warning_p2": "While this is the safest approach, third-party tools are technically against Terms of Service. Use at your own risk.",
   "warning_p3": "granblue.team assumes no responsibility for any account suspensions or bans that may result from its use.",
