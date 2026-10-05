@@ -5,11 +5,6 @@
 
 import { BUCKET, getImageUrl } from './constants.js'
 import {
-  GAME_ELEMENT_NAMES,
-  GAME_PROFICIENCY_NAMES,
-  GAME_CHARACTER_SERIES_NAMES,
-  GAME_WEAPON_SERIES_NAMES,
-  GAME_SUMMON_SERIES_NAMES,
   WEAPON_AWAKENING_ICONS,
   WEAPON_KEY_SERIES,
   AUGMENT_ICON_MAP
@@ -17,7 +12,6 @@ import {
 import { getBaseGranblueIdForVariant } from './element-variants.js'
 import { getImageIdSuffix, getSummonImageUrl } from './images.js'
 import * as m from '../paraglide/messages.js'
-import { translateSeries, getLocale } from './i18n.js'
 
 // ==========================================
 // RAW API ITEM SHAPES
@@ -39,6 +33,8 @@ interface RawMaster {
   max_hp?: string | number
   max_attack?: string | number
   max_level?: string | number
+  /** The game's weapon group id; MainView uses it to spot weapons that take keys */
+  is_group?: string | number
 }
 
 /** AX / befoulment skill entry as returned by the API */
@@ -287,27 +283,6 @@ export async function getItemImageFallbackUrl(
   return getImageUrl(`${BUCKET.weaponSquare}/${baseId}.jpg`)
 }
 
-export function getArtifactLabels(item: RawGameItem): string {
-  const element = item.attribute || item.element
-  const proficiency = item.kind || item.weapon_kind
-
-  let html = '<div class="list-item-labels">'
-
-  if (
-    element &&
-    GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]
-  ) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}.png`)}" alt="">`
-  }
-
-  if (proficiency && GAME_PROFICIENCY_NAMES[Number(proficiency)]) {
-    html += `<img class="label-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[Number(proficiency)]}.png`)}" alt="">`
-  }
-
-  html += '</div>'
-  return html
-}
-
 export function getOwnershipId(dataType: string, item: RawGameItem): string {
   if (dataType.includes('npc') || dataType.includes('character'))
     return item.master?.id?.toString() || ''
@@ -357,6 +332,8 @@ export interface WeaponModifiers {
   } | null
   befoulment: {
     skill: Record<string, RawAugmentSkillEntry> | null
+    /** The befoulment's displayed value, e.g. "-10%", when the game sends one */
+    showValue: string | null
     exorcismLevel: number
     maxExorcismLevel: number
     iconImage: string | null
@@ -427,6 +404,7 @@ export function getWeaponModifiers(
             (param.augment_skill_info?.[0] as
               | Record<string, RawAugmentSkillEntry>
               | undefined) ?? null,
+          showValue: firstAugmentShowValue(param.augment_skill_info?.[0]),
           exorcismLevel: odiant.exorcision_level || 0,
           maxExorcismLevel: odiant.max_exorcision_level || 5,
           iconImage: param.augment_skill_icon_image?.[0] || null
@@ -434,6 +412,17 @@ export function getWeaponModifiers(
       : null,
     weaponKeys
   }
+}
+
+/**
+ * The show_value of the first skill in an augment_skill_info entry. The game
+ * sends each entry as a list of skills (older captures used an object keyed
+ * by skill id), so this reads the first value either way.
+ */
+export function firstAugmentShowValue(entry: unknown): string | null {
+  if (!entry || typeof entry !== 'object') return null
+  const first = Object.values(entry)[0] as RawAugmentSkillEntry | undefined
+  return first?.show_value || null
 }
 
 /** Resolve the AX skill icon filename from AUGMENT_ICON_MAP */
@@ -473,250 +462,6 @@ export function buildAxTooltipLines(
       return name && value ? `${name} ${value}` : name || value
     })
     .filter((l): l is string => !!l)
-}
-
-// ==========================================
-// STAT RENDERING (for DatabaseDetail)
-// ==========================================
-
-function statRow(label: string, value: string): string {
-  return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-value">${value}</span></div>`
-}
-
-const STAR_CONFIGS: Record<
-  string,
-  { base: number; tiers: Array<{ level: number; cls: string }> }
-> = {
-  character: {
-    base: 4,
-    tiers: [
-      { level: 100, cls: 'flb' },
-      { level: 150, cls: 'ulb' }
-    ]
-  },
-  weapon: {
-    base: 3,
-    tiers: [
-      { level: 150, cls: 'flb' },
-      { level: 200, cls: 'flb' },
-      { level: 250, cls: 'ulb' }
-    ]
-  },
-  summon: {
-    base: 3,
-    tiers: [
-      { level: 150, cls: 'flb' },
-      { level: 200, cls: 'flb' },
-      { level: 250, cls: 'ulb' }
-    ]
-  }
-}
-
-export function renderStars(maxLevel: number, type: string): string {
-  const config = STAR_CONFIGS[type]
-  if (!config) return ''
-  let html = '<span class="stars">'
-  for (let i = 0; i < config.base; i++)
-    html += '<span class="star filled"></span>'
-  for (const tier of config.tiers) {
-    if (maxLevel >= tier.level) html += `<span class="star ${tier.cls}"></span>`
-  }
-  html += '</span>'
-  return html
-}
-
-function renderBaseStats({
-  data,
-  name,
-  id,
-  seriesMap,
-  element,
-  proficiencies,
-  type,
-  showName = true
-}: {
-  data: RawGameItem
-  name: string
-  id: string
-  seriesMap?: Record<number, string>
-  element?: string | number
-  proficiencies?: Array<string | number>
-  type: 'weapon' | 'summon' | 'character'
-  showName?: boolean
-}) {
-  const master = data.master ?? data
-  const param = data.param ?? ({} as RawParam)
-
-  const minHp = master.default_hp || data.default_hp
-  const maxHp = param.hp || master.max_hp || data.max_hp
-  const minAtk = master.default_attack || data.default_attack
-  const maxAtk = param.attack || master.max_attack || data.max_attack
-  const level = param.level || master.max_level
-
-  let html = '<div class="database-stats">'
-  if (showName) html += statRow(m.stat_name(), name)
-  if (id) html += statRow(m.stat_id(), id)
-
-  const seriesId = Number(data.series_id || master.series_id)
-  if (seriesId && seriesMap?.[seriesId]) {
-    html += statRow(
-      m.stat_series(),
-      translateSeries(seriesMap[seriesId]!, type)
-    )
-  }
-
-  if (
-    element &&
-    GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]
-  ) {
-    html += statRow(
-      m.stat_element(),
-      `<img class="stat-icon" src="${getImageUrl(`labels/element/Label_Element_${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}.png`)}" alt="${GAME_ELEMENT_NAMES[element as keyof typeof GAME_ELEMENT_NAMES]}">`
-    )
-  }
-
-  if (proficiencies && proficiencies.length > 0) {
-    const profIcons = proficiencies
-      .filter((p) => GAME_PROFICIENCY_NAMES[p as number])
-      .map(
-        (p) =>
-          `<img class="stat-icon" src="${getImageUrl(`labels/proficiency/Label_Weapon_${GAME_PROFICIENCY_NAMES[p as number]}.png`)}" alt="${GAME_PROFICIENCY_NAMES[p as number]}">`
-      )
-      .join('')
-    if (profIcons) html += statRow(m.stat_proficiency(), profIcons)
-  }
-
-  if (level) html += statRow(m.stat_uncap(), renderStars(Number(level), type))
-  if (minHp) html += statRow(m.stat_min_hp(), Number(minHp).toLocaleString())
-  if (maxHp) html += statRow(m.stat_max_hp(), Number(maxHp).toLocaleString())
-  if (minAtk) html += statRow(m.stat_min_atk(), Number(minAtk).toLocaleString())
-  if (maxAtk) html += statRow(m.stat_max_atk(), Number(maxAtk).toLocaleString())
-  if (level) html += statRow(m.stat_max_level(), String(level))
-
-  return { html, master, param }
-}
-
-function closeStats(
-  html: string,
-  data: RawGameItem,
-  master: RawMaster | RawGameItem
-): string {
-  const comment = data.comment || master.comment
-  if (comment) {
-    html += `<div class="stat-row stat-comment"><span class="stat-value">${comment}</span></div>`
-  }
-  return html + '</div>'
-}
-
-export function renderCharacterStats(
-  data: RawGameItem,
-  name: string,
-  id: string,
-  element: string | number | undefined,
-  proficiencies: Array<string | number> = []
-): string {
-  const {
-    html: base,
-    param,
-    master
-  } = renderBaseStats({
-    data,
-    name,
-    id,
-    element,
-    proficiencies,
-    seriesMap: GAME_CHARACTER_SERIES_NAMES,
-    type: 'character',
-    showName: false
-  })
-  let html = base
-
-  if (param.has_npcaugment_constant) {
-    html += statRow(m.stat_perpetuity_ring(), '\u2713')
-  }
-
-  return closeStats(html, data, master)
-}
-
-export function renderWeaponStats(
-  data: RawGameItem,
-  name: string,
-  id: string,
-  element: string | number | undefined,
-  proficiency?: string | number
-): string {
-  const {
-    html: base,
-    param,
-    master
-  } = renderBaseStats({
-    data,
-    name,
-    id,
-    element,
-    proficiencies: proficiency ? [proficiency] : [],
-    seriesMap: GAME_WEAPON_SERIES_NAMES,
-    type: 'weapon',
-    showName: false
-  })
-  let html = base
-
-  const arousal = param.arousal
-  if (arousal?.is_arousal_weapon) {
-    html += statRow(
-      m.stat_awakening(),
-      `${arousal.form_name || 'Attack'} Lv.${arousal.level || 1}`
-    )
-  }
-
-  const odiant = param.odiant
-  if (odiant?.is_odiant_weapon) {
-    const befoulSkillMap = param.augment_skill_info?.[0]
-    const befoulSkill = befoulSkillMap
-      ? Object.values(befoulSkillMap)[0]
-      : undefined
-    html += statRow(m.stat_befoulment(), befoulSkill?.show_value || 'Active')
-    html += statRow(
-      m.stat_exorcism(),
-      `${odiant.exorcision_level || 0}/${odiant.max_exorcision_level || 5}`
-    )
-  } else {
-    const axSkills = param.augment_skill_info?.[0]
-    if (axSkills && Object.keys(axSkills).length > 0) {
-      const axCount = Object.keys(axSkills).length
-      html += statRow(
-        m.stat_ax_skills(),
-        `${axCount} skill${axCount > 1 ? 's' : ''}`
-      )
-    }
-  }
-
-  return closeStats(html, data, master)
-}
-
-export function renderSummonStats(
-  data: RawGameItem,
-  name: string,
-  id: string,
-  element: string | number | undefined
-): string {
-  const { html: base, master } = renderBaseStats({
-    data,
-    name,
-    id,
-    element,
-    seriesMap: GAME_SUMMON_SERIES_NAMES,
-    type: 'summon',
-    showName: false
-  })
-  let html = base
-
-  const subAura = data.sub_skill?.name
-  if (subAura) {
-    html += statRow(m.stat_sub_aura(), subAura)
-  }
-
-  return closeStats(html, data, master)
 }
 
 /**

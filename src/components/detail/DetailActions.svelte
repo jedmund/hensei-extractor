@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { translateError } from '../../lib/i18n.js'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import Button from '../shared/Button.svelte'
@@ -10,10 +11,7 @@
     uploadSupportSummons,
     checkConflicts
   } from '../../lib/services/chrome-messages.js'
-  import {
-    isCollectionType,
-    isWeaponOrSummonCollection
-  } from '../../lib/detail-helpers.js'
+  import { isCollectionType } from '../../lib/detail-helpers.js'
   import { previewSyncDeletions } from '../../lib/services/chrome-messages.js'
   import CopyDropdown from './CopyDropdown.svelte'
 
@@ -64,7 +62,7 @@
       case 'unknown_summons':
         return m.toast_support_summons_unknown()
       default:
-        return m.toast_import_failed()
+        return translateError(error)
     }
   }
 
@@ -89,6 +87,7 @@
             error?: string
             url?: string
             warnings?: unknown[]
+            shareFailed?: boolean
             created?: number
             updated?: number
             unknownSummons?: string[]
@@ -158,9 +157,11 @@
         chrome.tabs.create({ url: response.url })
         const warningCount = response.warnings?.length ?? 0
         app.showToast(
-          warningCount > 0
-            ? m.toast_opening_party_with_warnings({ count: warningCount })
-            : m.toast_opening_party()
+          response.shareFailed
+            ? m.toast_opening_party_share_failed()
+            : warningCount > 0
+              ? m.toast_opening_party_with_warnings({ count: warningCount })
+              : m.toast_opening_party()
         )
         app.importState = 'imported'
       } else if (isSupportSummons) {
@@ -184,7 +185,7 @@
     if (!dataType) return
     const res = await previewSyncDeletions(dataType)
     if (res.error) {
-      app.showToast(res.error)
+      app.showToast(translateError(res.error))
       return
     }
     app.syncPreview = {

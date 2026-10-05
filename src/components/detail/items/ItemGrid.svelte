@@ -1,15 +1,14 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, isWeaponOrSummonCollection, resolveAwakeningIcon, resolveAugmentIcon, buildAxTooltipLines, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
-  import { BUCKET, getImageUrl } from '../../../lib/constants.js'
+  import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
   import { getCharacterBaseArtUrl } from '../../../lib/images.js'
-  import { getLocale } from '../../../lib/i18n.js'
   import * as m from '../../../paraglide/messages.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
   import type { CollectionUpdate } from '../../../lib/types/messages.js'
   import Icon from '../../shared/Icon.svelte'
-  import Tooltip from '../../shared/Tooltip.svelte'
   import RichTooltip from '../../shared/RichTooltip.svelte'
+  import CharacterModifiers from '../modifiers/CharacterModifiers.svelte'
+  import WeaponModifiers from '../modifiers/WeaponModifiers.svelte'
 
   interface Props {
     items: Array<{ item: RawGameItem; originalIndex: number }>
@@ -108,41 +107,10 @@
     >
       {#if isCharacterType}
         {@const charMods = getCharacterModifiers(item)}
-        {#if charMods.perpetuity}
-          <div class="char-modifiers">
-            <Tooltip content={m.stat_perpetuity_ring()}><img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt={m.stat_perpetuity_ring()}></Tooltip>
-          </div>
-        {/if}
+        <CharacterModifiers perpetuity={charMods.perpetuity} />
       {:else if isWeaponType}
         {@const wMods = getWeaponModifiers(item)}
-        {#if wMods.awakening || wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
-          <div class="weapon-modifiers">
-            {#if wMods.awakening}
-              <Tooltip content="{wMods.awakening.form_name} Lv.{wMods.awakening.level}"><img class="awakening-icon" src={getImageUrl(`${BUCKET.awakening}/${resolveAwakeningIcon(wMods.awakening.form_name)}.png`)} alt={m.stat_awakening()}></Tooltip>
-            {/if}
-            {#if wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
-              <div class="weapon-skills">
-                {#if wMods.axSkill}
-                  {@const axIconFile = resolveAugmentIcon(wMods.axSkill.iconImage || 'ex_skill_atk')}
-                  <RichTooltip>
-                    {#snippet content()}{#each buildAxTooltipLines(wMods.axSkill!.skill, wMods.axSkill!.iconImage, weaponStatModifiers, getLocale()) as line}<div>{line}</div>{/each}{/snippet}
-                    <img class="ax-skill-icon" src={getImageUrl(`${BUCKET.axSkills}/${axIconFile}.png`)} alt={m.stat_ax_skills()}>
-                  </RichTooltip>
-                {/if}
-                {#if wMods.befoulment}
-                  {@const befoulIconFile = resolveAugmentIcon(wMods.befoulment.iconImage || 'ex_skill_def_down')}
-                  <RichTooltip>
-                    {#snippet content()}<div>{m.stat_befoulment()}: {wMods.befoulment!.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {wMods.befoulment!.exorcismLevel}/{wMods.befoulment!.maxExorcismLevel}</div>{/snippet}
-                    <img class="befoulment-icon" src={getImageUrl(`${BUCKET.axSkills}/${befoulIconFile}.png`)} alt={m.stat_befoulment()}>
-                  </RichTooltip>
-                {/if}
-                {#each wMods.weaponKeys as key}
-                  <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`${BUCKET.weaponKeys}/${key.slug}.png`)} alt={key.name}></Tooltip>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
+        <WeaponModifiers mods={wMods} {weaponStatModifiers} />
       {/if}
       {#if pendingUpdate}
         <div class="update-trigger">

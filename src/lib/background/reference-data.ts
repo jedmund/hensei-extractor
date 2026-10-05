@@ -77,7 +77,7 @@ export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {
         headers: { Authorization: `Bearer ${auth.access_token}` }
       }
     )
-    if (!response.ok) throw new Error('request_failed')
+    if (!response.ok) return { error: await parseErrorResponse(response) }
     const data = await response.json()
     return { data }
   } catch (error) {
@@ -100,8 +100,18 @@ export async function createPlaylist({
       playlist: { title, description, visibility: visibility || 3 }
     })
     // Don't hand the auth token from authenticatedPost back to the side panel.
+    if (result.fieldErrors?.title?.includes('has already been taken')) {
+      return { error: 'playlist_title_taken' }
+    }
+    if (result.fieldErrors?.title?.includes("can't be blank")) {
+      return { error: 'playlist_title_required' }
+    }
     if (result.error) return { error: result.error }
-    return { data: result.data as unknown as Playlist }
+    // The API wraps the record: { playlist: { id, title, ... } }
+    const playlist = (result.data as { playlist?: Playlist } | undefined)
+      ?.playlist
+    if (!playlist?.id) return { error: 'request_failed' }
+    return { data: playlist }
   } catch (error) {
     console.error('Failed to create playlist:', error)
     return { error: 'request_failed' }
@@ -224,7 +234,7 @@ export async function getCollectionIds(): Promise<
       }
     })
 
-    if (!response.ok) return { error: 'request_failed' }
+    if (!response.ok) return { error: await parseErrorResponse(response) }
 
     const data = (await response.json()) as CollectionIds
     collectionIdsCache = data

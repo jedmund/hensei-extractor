@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import Icon from './Icon.svelte'
+  import * as m from '../../paraglide/messages.js'
 
   interface Props {
     hints: string[]
@@ -46,14 +47,14 @@
 
   // Reset index when hints change
   $effect(() => {
-    hints
+    void hints
     currentIndex = 0
   })
 </script>
 
 {#if loaded && app.hintsEnabled && hints.length > 0}
   <div class="hint" class:hint-above-banner={hasUpdateBanner} class:hint-dismissing={dismissing} onanimationend={onSlideOutEnd}>
-    <button class="hint-close" onclick={dismiss}>
+    <button class="hint-close" aria-label={m.aria_close()} onclick={dismiss}>
       <Icon name="close" size={12} />
     </button>
 
@@ -65,11 +66,11 @@
 
     {#if hasMultiple}
       <div class="hint-footer">
-        <button class="hint-nav" onclick={prev} disabled={isFirst}>
+        <button class="hint-nav" aria-label={m.aria_previous()} onclick={prev} disabled={isFirst}>
           <Icon name="chevron-left" size={14} />
         </button>
         <span class="hint-indicator">{currentIndex + 1} / {hints.length}</span>
-        <button class="hint-nav" onclick={next} disabled={isLast}>
+        <button class="hint-nav" aria-label={m.aria_next()} onclick={next} disabled={isLast}>
           <Icon name="chevron-right" size={14} />
         </button>
       </div>

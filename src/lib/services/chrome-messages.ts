@@ -20,7 +20,12 @@ import type {
   FetchPlaylistsResponse,
   CreatePlaylistResponse,
   CollectionIdsResponse,
-  CheckVersionResponse
+  CheckVersionResponse,
+  JobSkillSlugs,
+  SummonSearchResult,
+  UiLocale,
+  WeaponKeyMap,
+  WeaponStatModifiers
 } from '../types/messages.js'
 
 function send(message: ExtensionMessage): Promise<unknown> {
@@ -170,6 +175,65 @@ export async function createPlaylist(data: {
 
 export async function getCollectionIds(): Promise<CollectionIdsResponse> {
   return send({ action: 'getCollectionIds' }) as Promise<CollectionIdsResponse>
+}
+
+// The party lookups below never reject, so the party view still opens when
+// the background can't be reached; they fall back as the API calls do.
+
+export async function searchSummonByName(
+  name: string
+): Promise<SummonSearchResult | null> {
+  try {
+    return (
+      ((await send({
+        action: 'searchSummonByName',
+        name
+      })) as SummonSearchResult | null) ?? null
+    )
+  } catch {
+    return null
+  }
+}
+
+export async function fetchWeaponKeyMap(
+  locale: UiLocale
+): Promise<WeaponKeyMap | null> {
+  try {
+    return (
+      ((await send({
+        action: 'fetchWeaponKeyMap',
+        locale
+      })) as WeaponKeyMap | null) ?? null
+    )
+  } catch {
+    return null
+  }
+}
+
+export async function fetchWeaponStatModifiers(): Promise<WeaponStatModifiers | null> {
+  try {
+    return (
+      ((await send({
+        action: 'fetchWeaponStatModifiers'
+      })) as WeaponStatModifiers | null) ?? null
+    )
+  } catch {
+    return null
+  }
+}
+
+export async function fetchJobSkillSlugs(
+  names: string[]
+): Promise<JobSkillSlugs> {
+  try {
+    const slugs = (await send({ action: 'fetchJobSkillSlugs', names })) as
+      | JobSkillSlugs
+      | undefined
+    if (slugs) return slugs
+  } catch {
+    /* fall through */
+  }
+  return Object.fromEntries(names.map((n) => [n, null]))
 }
 
 export async function uploadUnfScores(

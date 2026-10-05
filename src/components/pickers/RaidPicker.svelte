@@ -1,9 +1,7 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
-  import { onMount } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
-  import { slideRight } from '../../lib/transitions.js'
-  import NavigationBar from '../shared/NavigationBar.svelte'
+  import SlideView from '../shared/SlideView.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import Icon from '../shared/Icon.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import Button from '../shared/Button.svelte'
@@ -13,14 +11,8 @@
   import * as m from '../../paraglide/messages.js'
   import { fetchRaidGroups } from '../../lib/services/chrome-messages.js'
   import { BUCKET, RAID_SECTIONS, getImageUrl } from '../../lib/constants.js'
-  import { getLocale } from '../../lib/i18n.js'
+  import { getLocalizedName, translateError } from '../../lib/i18n.js'
 
-  interface Props {
-    onBack?: () => void
-    navRight?: Snippet
-  }
-
-  let { onBack, navRight }: Props = $props()
 
   interface LocalizedName { en?: string; ja?: string }
   interface Raid {
@@ -47,6 +39,7 @@
   let searchQuery = $state('')
   let sortAscending = $state(false)
   let refreshing = $state(false)
+  let loadError = $state('')
 
   const sections = [
     { id: RAID_SECTIONS.FARMING, label: () => m.raid_section_farming() },
@@ -59,42 +52,42 @@
     if (app.raidPickerOpen) loadRaids()
   })
 
+  // Clear the search however the picker closes (selection or Back).
   $effect(() => {
-    if (app.raidRefresh) {
-      app.raidRefresh = false
-      refresh()
-    }
+    if (!app.raidPickerOpen) searchQuery = ''
   })
 
-  async function loadRaids(force = false) {
-    const res = await fetchRaidGroups(force)
-    if (!res.error && res.data) raidGroups = res.data as RaidGroup[]
+  /** Loads the raid list. Returns an error code if the load failed. */
+  async function loadRaids(force = false): Promise<string | null> {
+    let error: string | null = null
+    try {
+      const res = await fetchRaidGroups(force)
+      if (res.error) error = res.error
+      else if (res.data) raidGroups = res.data as RaidGroup[]
+    } catch {
+      error = 'request_failed'
+    }
+    loadError = error ? translateError(error) : ''
+    return error
   }
 
   async function refresh() {
     refreshing = true
-    await loadRaids(true)
+    const error = await loadRaids(true)
     refreshing = false
-    app.showToast(m.raid_reloaded())
+    app.showToast(error ? translateError(error) : m.raid_reloaded())
   }
 
   function close() {
     app.raidPickerOpen = false
-    searchQuery = ''
   }
 
   function getGroupName(group: RaidGroup): string {
-    if (typeof group.name === 'string') return group.name
-    const loc = getLocale()
-    if (loc === 'ja') return group.name?.ja ?? group.name_jp ?? group.name?.en ?? group.name_en ?? 'Unknown'
-    return group.name?.en ?? group.name_en ?? group.name?.ja ?? group.name_jp ?? 'Unknown'
+    return getLocalizedName(group)
   }
 
   function getRaidName(raid: Raid): string {
-    if (typeof raid.name === 'string') return raid.name
-    const loc = getLocale()
-    if (loc === 'ja') return raid.name?.ja ?? raid.name_jp ?? raid.name?.en ?? raid.name_en ?? 'Unknown'
-    return raid.name?.en ?? raid.name_en ?? raid.name?.ja ?? raid.name_jp ?? 'Unknown'
+    return getLocalizedName(raid)
   }
 
   function getRaidNameJp(raid: Raid): string {
@@ -132,27 +125,23 @@
 
   function selectRaid(raid: Raid, group: RaidGroup) {
     if (app.selectedRaid && app.selectedRaid.id === raid.id) {
-      app.selectedRaid = null
+      app.chooseRaid(null)
     } else {
-      app.selectedRaid = { ...raid, group }
+      app.chooseRaid({ ...raid, group })
     }
     close()
   }
 </script>
 
 {#if app.raidPickerOpen}
-<div class="raid-picker-view" id="raidPickerView" transition:slideRight>
-  <NavigationBar title={m.raid_select()}>
-    {#snippet left()}
-      <button class="detail-back" onclick={onBack}>
-        <Icon name="chevron-left" size={14} />
-        <span>{m.action_back()}</span>
-      </button>
-    {/snippet}
-    {#snippet right()}
-      {#if navRight}{@render navRight()}{/if}
-    {/snippet}
-  </NavigationBar>
+<SlideView class="raid-picker-view" id="raidPickerView" title={m.raid_select()} onBack={close}>
+  {#snippet right()}
+    <Tooltip content={m.raid_reload_tooltip()}>
+      <Button variant="ghost" size="small" iconOnly id="raidRefreshBtn" aria-label={m.raid_refresh()} disabled={refreshing} onclick={refresh}>
+        <Icon name="refresh" size={14} />
+      </Button>
+    </Tooltip>
+  {/snippet}
 
   <div class="raid-picker-search">
     <Input type="text" contained id="raidSearchInput" placeholder={m.raid_search()} bind:value={searchQuery} />
@@ -165,7 +154,7 @@
       {/each}
     </SegmentedControl>
     <Tooltip content={sortAscending ? m.raid_sort_lowest() : m.raid_sort_highest()}>
-      <Button variant="ghost" size="small" iconOnly onclick={() => sortAscending = !sortAscending}>
+      <Button variant="ghost" size="small" iconOnly aria-label={sortAscending ? m.raid_sort_lowest() : m.raid_sort_highest()} onclick={() => sortAscending = !sortAscending}>
         {#if sortAscending}
           <Icon name="arrow-sort-up" size={14} />
         {:else}
@@ -176,8 +165,10 @@
   </div>
 
   <div class="raid-picker-content" id="raidPickerContent">
-    {#if filteredGroups.length === 0}
-      <div class="raid-empty-state">{m.raid_no_results()}</div>
+    {#if raidGroups.length === 0 && loadError}
+      <EmptyState variant="list" message={loadError} />
+    {:else if filteredGroups.length === 0}
+      <EmptyState variant="list" message={m.raid_no_results()} />
     {:else}
       {#each filteredGroups as group}
         {#if (group.raids ?? []).length > 0}
@@ -208,5 +199,5 @@
       {/each}
     {/if}
   </div>
-</div>
+</SlideView>
 {/if}

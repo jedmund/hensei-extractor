@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
   import { app } from '../../lib/state/app.svelte.js'
   import { slideRight } from '../../lib/transitions.js'
-  import NavigationBar from '../shared/NavigationBar.svelte'
+  import SlideView from '../shared/SlideView.svelte'
+  import EmptyState from '../shared/EmptyState.svelte'
   import Icon from '../shared/Icon.svelte'
   import Button from '../shared/Button.svelte'
   import Input from '../shared/Input.svelte'
@@ -11,13 +11,6 @@
   import { fetchUserPlaylists, createPlaylist } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
-  interface Props {
-    title?: string
-    onBack?: () => void
-    navRight?: Snippet
-  }
-
-  let { title = '', onBack, navRight }: Props = $props()
 
   interface Playlist {
     id: string | number
@@ -30,12 +23,13 @@
 
   let playlists = $state<Playlist[]>([])
   let searchQuery = $state('')
-  let showCreateForm = $derived(app.playlistCreateFormOpen)
+  let showCreateForm = $state(false)
   let createTitle = $state('')
   let createDescription = $state('')
   let createVisibility = $state(3)
   let creating = $state(false)
   let createError = $state('')
+  let loadError = $state('')
 
   const visibilityOptions = $derived([
     { value: 1, label: m.playlist_public() },
@@ -47,16 +41,28 @@
     if (app.playlistPickerOpen) loadPlaylists()
   })
 
+  // Clear the search however the picker closes (Done or Back). Closing only
+  // the create form keeps it, since the form may have been prefilled from it.
+  $effect(() => {
+    if (!app.playlistPickerOpen) searchQuery = ''
+  })
+
   async function loadPlaylists() {
-    const res = await fetchUserPlaylists()
-    if (!res.error && res.data) {
-      playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+    let error: string | undefined
+    try {
+      const res = await fetchUserPlaylists()
+      error = res.error
+      if (!res.error && res.data) {
+        playlists = (Array.isArray(res.data) ? res.data : res.data.results ?? []) as Playlist[]
+      }
+    } catch {
+      error = 'request_failed'
     }
+    loadError = error ? translateError(error) : ''
   }
 
   function close() {
     app.playlistPickerOpen = false
-    searchQuery = ''
     hideCreateForm()
   }
 
@@ -82,31 +88,28 @@
   })
 
   function showCreateFormWithPrefill(prefill?: string) {
-    app.playlistCreateFormOpen = true
+    showCreateForm = true
     if (prefill) createTitle = prefill
   }
 
   function hideCreateForm() {
-    app.playlistCreateFormOpen = false
+    showCreateForm = false
   }
 
-  $effect(() => {
-    app.playlistCreateReady = !!createTitle.trim() && !creating
-  })
+  // Back closes the create form first, then the picker
+  function goBack() {
+    if (showCreateForm) hideCreateForm()
+    else close()
+  }
+
+  let createReady = $derived(!!createTitle.trim() && !creating)
 
   $effect(() => {
-    if (!app.playlistCreateFormOpen) {
+    if (!showCreateForm) {
       createTitle = ''
       createDescription = ''
       createVisibility = 3
       createError = ''
-    }
-  })
-
-  $effect(() => {
-    if (app.playlistCreateSubmit) {
-      app.playlistCreateSubmit = false
-      handleCreate()
     }
   })
 
@@ -144,32 +147,35 @@
 </script>
 
 {#if app.playlistPickerOpen}
-<div class="playlist-picker-view" id="playlistPickerView" transition:slideRight>
-  <NavigationBar {title}>
-    {#snippet left()}
-      <button class="detail-back" onclick={onBack}>
-        <Icon name="chevron-left" size={14} />
-        <span>{m.action_back()}</span>
-      </button>
-    {/snippet}
-    {#snippet right()}
-      {#if navRight}{@render navRight()}{/if}
-    {/snippet}
-  </NavigationBar>
+<SlideView
+  class="playlist-picker-view"
+  id="playlistPickerView"
+  title={showCreateForm ? m.playlist_create_title() : m.playlist_select()}
+  onBack={goBack}
+>
+  {#snippet right()}
+    {#if showCreateForm}
+      <Button size="small" id="playlistCreateSubmitNav" disabled={!createReady} onclick={handleCreate}>{m.action_create()}</Button>
+    {:else}
+      <Button size="small" id="playlistCreateBtn" onclick={() => showCreateFormWithPrefill()}>{m.playlist_new()}</Button>
+    {/if}
+  {/snippet}
 
   <div class="playlist-picker-search">
     <Input type="text" contained id="playlistSearchInput" placeholder={m.playlist_search()} bind:value={searchQuery} />
   </div>
 
   <div class="playlist-picker-content" id="playlistPickerContent">
-    {#if filteredPlaylists.length === 0 && searchQuery.trim()}
+    {#if playlists.length === 0 && loadError}
+      <EmptyState variant="list" message={loadError} />
+    {:else if filteredPlaylists.length === 0 && searchQuery.trim()}
       <button type="button" class="playlist-item playlist-create-prompt" onclick={() => showCreateFormWithPrefill(searchQuery.trim())}>
         <div class="playlist-item-info">
           <span class="playlist-item-title">{m.playlist_create_with({ name: searchQuery.trim() })}</span>
         </div>
       </button>
     {:else if filteredPlaylists.length === 0}
-      <div class="playlist-empty">{m.playlist_no_playlists()}</div>
+      <EmptyState variant="list" message={m.playlist_no_playlists()} />
     {:else}
       {#each filteredPlaylists as playlist}
         {@const partyCount = playlist.party_count ?? playlist.parties_count ?? 0}
@@ -203,5 +209,5 @@
       </div>
     </div>
   {/if}
-</div>
+</SlideView>
 {/if}

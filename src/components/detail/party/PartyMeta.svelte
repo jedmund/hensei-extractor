@@ -2,6 +2,7 @@
   import * as m from '../../../paraglide/messages.js'
   import { app } from '../../../lib/state/app.svelte.js'
   import { BUCKET, getImageUrl } from '../../../lib/constants.js'
+  import { getLocalizedName } from '../../../lib/i18n.js'
   import Input from '../../shared/Input.svelte'
   import Select from '../../shared/Select.svelte'
   import Checkbox from '../../shared/Checkbox.svelte'
@@ -20,10 +21,7 @@
   let raidLabel = $derived.by(() => {
     const raid = app.selectedRaid
     if (!raid) return m.raid_select()
-    const name =
-      typeof raid.name === 'string'
-        ? raid.name
-        : (raid.name as { en?: string })?.en ?? 'Unknown'
+    const name = getLocalizedName(raid)
     const level = raid.level ? ` Lv. ${raid.level}` : ''
     return `${name}${level}`
   })

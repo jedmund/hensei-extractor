@@ -1,5 +1,3 @@
-import type { ImportWarning } from '../types/messages.js'
-
 export interface AuthToken {
   access_token: string
   user: { id: string; username: string }
@@ -72,8 +70,10 @@ export interface UploadCollectionOptions {
 }
 
 export interface ApiResult<T = Record<string, unknown>> {
+  fieldErrors?: Record<string, string[]>
   error?: string
   errors?: { error: string; granblue_id?: string }[]
+  message?: string
   data?: T
   auth?: AuthToken
 }

@@ -11,6 +11,7 @@
   import * as m from '../../../paraglide/messages.js'
   import Icon from '../../shared/Icon.svelte'
   import Tooltip from '../../shared/Tooltip.svelte'
+  import EmptyState from '../../shared/EmptyState.svelte'
 
   interface MasteryModifier {
     modifier: number
@@ -91,7 +92,7 @@
 </script>
 
 {#if characters.length === 0}
-  <p class="cache-empty">{m.char_stats_no_captured()}</p>
+  <EmptyState message={m.char_stats_no_captured()} />
 {:else}
   <div class="char-stats-list">
     {#each characters as char, index (char.masterId)}
@@ -100,7 +101,6 @@
       {@const earringLine = getEarringLine(char)}
       {@const perpetBonuses = getPerpetBonusLines(char)}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="char-stats-item selectable"
         data-index={index}
@@ -146,6 +146,8 @@
               {#if char.awakening}
                 {char.awakening.typeName || m.stat_awakening()} Lv.{char.awakening.level || 1}
                 {#if char.perpetuity}
+                  <!-- Svelte trims a block's leading whitespace; keep the space -->
+                  <!-- eslint-disable-next-line svelte/no-useless-mustaches -->
                   {' '}&middot; {m.stat_perpetuity_ring()}
                 {/if}
               {:else if char.perpetuity}

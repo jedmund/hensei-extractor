@@ -3,13 +3,9 @@
   import {
     toArray,
     getWeaponModifiers,
-    resolveAwakeningIcon,
-    resolveAugmentIcon,
-    buildAxTooltipLines,
     maxEvolutionArtSuffixes,
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
-  import { getLocale } from '../../../lib/i18n.js'
   import { getCharacterArtFallbacks, toHenseiElement } from '../../../lib/images.js'
   import {
     CHARACTER_AWAKENING_MAPPING,
@@ -18,7 +14,8 @@
   } from '../../../lib/game-data.js'
   import * as m from '../../../paraglide/messages.js'
   import Tooltip from '../../shared/Tooltip.svelte'
-  import RichTooltip from '../../shared/RichTooltip.svelte'
+  import CharacterModifiers from '../modifiers/CharacterModifiers.svelte'
+  import WeaponModifiers from '../modifiers/WeaponModifiers.svelte'
 
   interface RawPartyItem {
     id?: string
@@ -76,7 +73,7 @@
     /** True while the support summon is being looked up by name */
     friendSummonPending?: boolean
     weaponKeyMap?: Record<string, { slug: string; name: string }> | null
-    jobSkillSlugs?: Record<string, string>
+    jobSkillSlugs?: Record<string, string | null>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
   }
@@ -258,16 +255,7 @@
           {@const suffix = getCharImageSuffix(item)}
           {@const mods = getCharModifiers(item)}
           <div class="grid-item">
-            {#if mods.awakening || mods.perpetuity}
-              <div class="char-modifiers">
-                {#if mods.perpetuity}
-                  <Tooltip content={m.stat_perpetuity_ring()}><img class="perpetuity-ring" src="icons/perpetuity/filled.svg" alt={m.stat_perpetuity_ring()}></Tooltip>
-                {/if}
-                {#if mods.awakening}
-                  <Tooltip content={m.stat_awakening()}><img class="awakening-icon" src={getImageUrl(`${BUCKET.awakening}/${mods.awakening}.jpg`)} alt={m.stat_awakening()}></Tooltip>
-                {/if}
-              </div>
-            {/if}
+            <CharacterModifiers perpetuity={mods.perpetuity} awakening={mods.awakening} />
             <img
               src={getImageUrl(`${BUCKET.characterMain}/${id}${suffix}.jpg`)}
               alt=""
@@ -288,34 +276,7 @@
           {@const mainSuffix = getImageSuffix(mainWeapon)}
           {@const mainMods = getWeaponModifiers(mainWeapon, weaponKeyMap)}
           <div class="weapon-mainhand">
-            {#if mainMods.awakening || mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
-              <div class="weapon-modifiers">
-                {#if mainMods.awakening}
-                  <Tooltip content="{mainMods.awakening.form_name} Lv.{mainMods.awakening.level}"><img class="awakening-icon" src={getImageUrl(`${BUCKET.awakening}/${resolveAwakeningIcon(mainMods.awakening.form_name)}.png`)} alt={m.stat_awakening()}></Tooltip>
-                {/if}
-                {#if mainMods.axSkill || mainMods.befoulment || mainMods.weaponKeys.length > 0}
-                  <div class="weapon-skills">
-                    {#if mainMods.axSkill}
-                      {@const axIcon = resolveAugmentIcon(mainMods.axSkill.iconImage || 'ex_skill_atk')}
-                      <RichTooltip>
-                        {#snippet content()}{#each buildAxTooltipLines(mainMods.axSkill!.skill, mainMods.axSkill!.iconImage, weaponStatModifiers, getLocale()) as line}<div>{line}</div>{/each}{/snippet}
-                        <img class="ax-skill-icon" src={getImageUrl(`${BUCKET.axSkills}/${axIcon}.png`)} alt={m.stat_ax_skills()}>
-                      </RichTooltip>
-                    {/if}
-                    {#if mainMods.befoulment}
-                      {@const befoulIcon = resolveAugmentIcon(mainMods.befoulment.iconImage || 'ex_skill_def_down')}
-                      <RichTooltip>
-                        {#snippet content()}<div>{m.stat_befoulment()}: {mainMods.befoulment!.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {mainMods.befoulment!.exorcismLevel}/{mainMods.befoulment!.maxExorcismLevel}</div>{/snippet}
-                        <img class="befoulment-icon" src={getImageUrl(`${BUCKET.axSkills}/${befoulIcon}.png`)} alt={m.stat_befoulment()}>
-                      </RichTooltip>
-                    {/if}
-                    {#each mainMods.weaponKeys as key}
-                      <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`${BUCKET.weaponKeys}/${key.slug}.png`)} alt={key.name}></Tooltip>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/if}
+            <WeaponModifiers mods={mainMods} {weaponStatModifiers} />
             <img src={getImageUrl(`${BUCKET.weaponMain}/${mainId}${mainSuffix}.jpg`)} alt="">
           </div>
         {/if}
@@ -325,34 +286,7 @@
             {@const suffix = getImageSuffix(item)}
             {@const wMods = getWeaponModifiers(item, weaponKeyMap)}
             <div class="grid-item">
-              {#if wMods.awakening || wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
-                <div class="weapon-modifiers">
-                  {#if wMods.awakening}
-                    <Tooltip content="{wMods.awakening.form_name} Lv.{wMods.awakening.level}"><img class="awakening-icon" src={getImageUrl(`${BUCKET.awakening}/${resolveAwakeningIcon(wMods.awakening.form_name)}.png`)} alt={m.stat_awakening()}></Tooltip>
-                  {/if}
-                  {#if wMods.axSkill || wMods.befoulment || wMods.weaponKeys.length > 0}
-                    <div class="weapon-skills">
-                      {#if wMods.axSkill}
-                        {@const axIcon = resolveAugmentIcon(wMods.axSkill.iconImage || 'ex_skill_atk')}
-                        <RichTooltip>
-                          {#snippet content()}{#each buildAxTooltipLines(wMods.axSkill!.skill, wMods.axSkill!.iconImage, weaponStatModifiers, getLocale()) as line}<div>{line}</div>{/each}{/snippet}
-                          <img class="ax-skill-icon" src={getImageUrl(`${BUCKET.axSkills}/${axIcon}.png`)} alt={m.stat_ax_skills()}>
-                        </RichTooltip>
-                      {/if}
-                      {#if wMods.befoulment}
-                        {@const befoulIcon = resolveAugmentIcon(wMods.befoulment.iconImage || 'ex_skill_def_down')}
-                        <RichTooltip>
-                          {#snippet content()}<div>{m.stat_befoulment()}: {wMods.befoulment!.skill?.show_value || 'Befouled'}</div><div>{m.stat_exorcism()} {wMods.befoulment!.exorcismLevel}/{wMods.befoulment!.maxExorcismLevel}</div>{/snippet}
-                          <img class="befoulment-icon" src={getImageUrl(`${BUCKET.axSkills}/${befoulIcon}.png`)} alt={m.stat_befoulment()}>
-                        </RichTooltip>
-                      {/if}
-                      {#each wMods.weaponKeys as key}
-                        <Tooltip content={key.name}><img class="weapon-key-icon" src={getImageUrl(`${BUCKET.weaponKeys}/${key.slug}.png`)} alt={key.name}></Tooltip>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+              <WeaponModifiers mods={wMods} {weaponStatModifiers} />
               <img src={getImageUrl(`${BUCKET.weaponGrid}/${id}${suffix}.jpg`)} alt="">
             </div>
           {/each}

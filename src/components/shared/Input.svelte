@@ -3,6 +3,7 @@
   import type { HTMLInputAttributes } from 'svelte/elements'
   import type { Snippet } from 'svelte'
   import Icon from './Icon.svelte'
+  import * as m from '../../paraglide/messages.js'
 
   interface Props extends Omit<HTMLInputAttributes, 'size'> {
     variant?: 'default' | 'contained'
@@ -147,7 +148,7 @@
       {/if}
 
       {#if clearable && value}
-        <button type="button" class="clearButton" onclick={handleClear}>
+        <button type="button" class="clearButton" aria-label={m.aria_clear()} onclick={handleClear}>
           <Icon name="close" size={14} />
         </button>
       {/if}

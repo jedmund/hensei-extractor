@@ -64,9 +64,7 @@
 <svelte:document onclick={close} />
 
 <div class="copy-dropdown">
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <Button size="small" iconOnly id="copyDropdownToggle" onclick={toggle}>
+  <Button size="small" iconOnly id="copyDropdownToggle" aria-label={m.aria_more_options()} aria-expanded={open} onclick={toggle}>
     <Icon name="more-vertical" size={16} />
   </Button>
   <!-- svelte-ignore a11y_click_events_have_key_events -->

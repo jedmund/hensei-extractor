@@ -4,7 +4,7 @@
   import Button from '../shared/Button.svelte'
   import Tooltip from '../shared/Tooltip.svelte'
   import { BUCKET, getImageUrl } from '../../lib/constants.js'
-  import { previewSyncDeletions, syncCollection } from '../../lib/services/chrome-messages.js'
+  import { syncCollection } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
   function getSyncPreviewImageUrl(granblueId: string | undefined): string {
@@ -68,9 +68,9 @@
         </p>
         <div class="sync-delete-grid">
           {#each previewItems as item}
-            <Tooltip content={item.name ?? 'Unknown'}>
+            <Tooltip content={item.name ?? m.name_unknown()}>
             <div class="sync-delete-item">
-              <img src={getSyncPreviewImageUrl(item.granblue_id)} alt={item.name ?? 'Unknown'} />
+              <img src={getSyncPreviewImageUrl(item.granblue_id)} alt={item.name ?? m.name_unknown()} />
             </div>
             </Tooltip>
           {/each}

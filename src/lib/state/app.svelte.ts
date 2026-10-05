@@ -1,4 +1,5 @@
 import type { FormattedCacheStatus } from '../types/cache.js'
+import { toastDuration } from '../toast.js'
 
 interface AuthAvatar {
   picture?: string
@@ -65,6 +66,8 @@ class AppState {
   shareWithCrew = $state(false)
   partyName = $state('')
   selectedRaid = $state<RaidSelection | null>(null)
+  /** Bumped by every manual pick, so a pending auto-suggestion can tell */
+  manualRaidSelections = $state(0)
   selectedPlaylists = $state<PlaylistSelection[]>([])
 
   // Conflict resolution
@@ -80,14 +83,12 @@ class AppState {
   hintsEnabled = $state(true)
   toastMessage = $state('')
   toastVisible = $state(false)
+  /** Bumped on every showToast so a repeated message is announced again. */
+  toastCount = $state(0)
 
   // Picker visibility
   raidPickerOpen = $state(false)
-  raidRefresh = $state(false)
   playlistPickerOpen = $state(false)
-  playlistCreateFormOpen = $state(false)
-  playlistCreateSubmit = $state(false)
-  playlistCreateReady = $state(false)
 
   // Modal visibility
   syncModalOpen = $state(false)
@@ -122,13 +123,25 @@ class AppState {
     this.importState = 'idle'
   }
 
-  showToast(message: string, duration = 3000) {
+  /** Sets the raid the user picked (or cleared) in the raid picker. */
+  chooseRaid(raid: RaidSelection | null) {
+    this.selectedRaid = raid
+    this.manualRaidSelections++
+  }
+
+  /**
+   * Shows a toast. It stays up long enough to read the message unless an
+   * explicit duration (ms) is given.
+   */
+  showToast(message: string, duration?: number) {
     this.toastMessage = message
     this.toastVisible = true
+    this.toastCount++
+    const visibleFor = duration ?? toastDuration(message)
     clearTimeout(this.toastTimer)
     this.toastTimer = setTimeout(() => {
       this.toastVisible = false
-    }, duration)
+    }, visibleFor)
   }
 }
 

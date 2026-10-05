@@ -7,47 +7,18 @@
  * It never makes additional requests or modifies game behavior.
  */
 
-// ==========================================
-// ENDPOINT PATTERNS TO INTERCEPT
-// ==========================================
-
-const GBF_DOMAINS = [
-  'game.granbluefantasy.jp',
-  'gbf.game.mbga.jp',
-  'steam.granbluefantasy.com'
-]
-
-const INTERCEPT_PATTERNS = [
-  '/party/deck',
-  '/archive/npc_detail',
-  '/archive/weapon_detail',
-  '/archive/summon_detail',
-  '/npc/list/',
-  '/weapon/list/',
-  '/summon/list/',
-  // Collection pages (inventory)
-  '/rest/weapon/list/',
-  '/rest/npc/list/',
-  '/rest/summon/list/',
-  '/rest/artifact/list/',
-  // Character detail page (for awakening data)
-  '/npc/npc/',
-  // Zenith/EMP pages (for mastery bonuses)
-  '/npczenith/bonus_list/',
-  '/npczenith/content/index/',
-  // Stash (container) pages
-  '/weapon/container_list/',
-  '/summon/container_list/',
-  // Stash content pages (for extracting stash names from HTML)
-  '/container/content/list/',
-  // UNF (Unite & Fight) score pages (double-slash is empty user ID segment)
-  '/total_performance/',
-  '/todays_performance/',
-  // Guild info (for crew ID)
-  '/rest/guild/main/guild_info',
-  // Profile page (for support summons — HTML payload inside JSON envelope)
-  '/profile/content/index/'
-]
+import {
+  buildInterceptMetadata,
+  GBF_DOMAINS,
+  getDataType,
+  type InterceptMetadata,
+  isGameUrl,
+  isStashContentUrl,
+  matchesPageContext,
+  parseStashName,
+  requiresPageContext,
+  shouldIntercept
+} from './intercept-routes.js'
 
 // ==========================================
 // STATE TRACKING
@@ -64,15 +35,6 @@ interface PendingRequest {
 }
 
 const pendingRequests = new Map<string, PendingRequest>()
-
-export interface InterceptMetadata {
-  pageNumber: number | null
-  partyId: string | null
-  masterId: string | null
-  stashNumber: string | null
-  stashName: string | null
-  eventNumber: number | null
-}
 
 type OnDataInterceptedCallback = (
   url: string,
@@ -137,16 +99,21 @@ function handleTabUpdated(
   changeInfo: chrome.tabs.OnUpdatedInfo,
   tab: chrome.tabs.Tab
 ): void {
-  if (
-    GBF_DOMAINS.some((d) => tab.url?.includes(d)) &&
-    changeInfo.status === 'complete'
-  ) {
-    doAttach(tabId)
+  const url = changeInfo.url ?? tab.url
+  if (isGameUrl(url)) {
+    if (changeInfo.status === 'complete') doAttach(tabId)
+  } else if (url) {
+    // The tab left the game: stop reading its traffic.
+    doDetach(tabId)
   }
 }
 
 function handleTabRemoved(tabId: number): void {
   attachedTabs.delete(tabId)
+  forgetPendingRequests(tabId)
+}
+
+function forgetPendingRequests(tabId: number): void {
   for (const [requestId, info] of pendingRequests) {
     if (info.tabId === tabId) {
       pendingRequests.delete(requestId)
@@ -176,6 +143,7 @@ async function doAttach(tabId: number): Promise<void> {
 
 async function doDetach(tabId: number): Promise<void> {
   if (!attachedTabs.has(tabId)) return
+  forgetPendingRequests(tabId)
 
   try {
     await chrome.debugger.detach({ tabId })
@@ -273,11 +241,6 @@ async function handleLoadingFinished(
   }
 }
 
-function shouldIntercept(url: string): boolean {
-  if (!url) return false
-  return INTERCEPT_PATTERNS.some((pattern) => url.includes(pattern))
-}
-
 // ==========================================
 // INTERNAL: DATA PROCESSING
 // ==========================================
@@ -288,8 +251,10 @@ async function processInterceptedData(
   timestamp: number,
   tabId: number
 ): Promise<void> {
-  if (url.includes('/container/content/list/')) {
-    extractStashName(url, data as { data?: string })
+  if (isStashContentUrl(url)) {
+    // A page without a name keeps the last one seen.
+    const stashName = parseStashName(data as { data?: string })
+    if (stashName !== null) lastStashName = stashName
     return
   }
 
@@ -299,143 +264,21 @@ async function processInterceptedData(
 
   if (!(await isValidPageContext(tabId, dataType))) return
 
-  let pageNumber = getPageNumber(url)
-  if (dataType.startsWith('stash_')) {
-    pageNumber = (data as { current?: number })?.current ?? 1
-  } else if (dataType === 'unf_scores' || dataType === 'unf_daily_scores') {
-    pageNumber = getUnfPageNumber(url)
-  }
-
-  const metadata: InterceptMetadata = {
-    pageNumber,
-    partyId: dataType === 'party' ? getPartyId(url, data) : null,
-    masterId: getMasterId(url, data, dataType),
-    stashNumber: dataType.startsWith('stash_') ? getStashNumber(url) : null,
-    stashName: dataType.startsWith('stash_') ? getStashName() : null,
-    eventNumber: getEventNumber(url)
-  }
+  const metadata = buildInterceptMetadata(url, data, dataType, lastStashName)
 
   onDataIntercepted(url, data, dataType, metadata, timestamp)
-}
-
-const PAGE_CONTEXT_RULES: Record<string, (hash: string) => boolean> = {
-  guild_info: (hash) => hash.startsWith('#guild/'),
-  unf_scores: (hash) => hash.startsWith('#event/teamraid'),
-  unf_daily_scores: (hash) => hash.startsWith('#event/teamraid')
 }
 
 async function isValidPageContext(
   tabId: number,
   dataType: string
 ): Promise<boolean> {
-  const rule = PAGE_CONTEXT_RULES[dataType]
-  if (!rule) return true
+  if (!requiresPageContext(dataType)) return true
 
   try {
     const tab = await chrome.tabs.get(tabId)
-    const hash = new URL(tab.url ?? '').hash
-    return rule(hash)
+    return matchesPageContext(dataType, tab.url)
   } catch {
     return false
   }
-}
-
-function getDataType(url: string): string {
-  if (url.includes('/party/deck')) return 'party'
-  if (url.includes('/archive/npc_detail')) return 'detail_npc'
-  if (url.includes('/archive/weapon_detail')) return 'detail_weapon'
-  if (url.includes('/archive/summon_detail')) return 'detail_summon'
-  if (url.includes('/npc/npc/')) return 'character_detail'
-  if (url.includes('/npczenith/bonus_list/')) return 'zenith_npc'
-  if (url.includes('/npczenith/content/index/')) return 'zenith_npc'
-  if (url.includes('/weapon/container_list/')) return 'stash_weapon'
-  if (url.includes('/summon/container_list/')) return 'stash_summon'
-  if (url.includes('/rest/weapon/list/')) return 'collection_weapon'
-  if (url.includes('/rest/npc/list/')) return 'collection_npc'
-  if (url.includes('/rest/summon/list/')) return 'collection_summon'
-  if (url.includes('/rest/artifact/list/')) return 'collection_artifact'
-  if (url.includes('/npc/list/')) return 'list_npc'
-  if (url.includes('/weapon/list/')) return 'list_weapon'
-  if (url.includes('/summon/list/')) return 'list_summon'
-  if (url.includes('/total_performance/') && url.includes('/teamraid'))
-    return 'unf_scores'
-  if (url.includes('/todays_performance/') && url.includes('/teamraid'))
-    return 'unf_daily_scores'
-  if (url.includes('/rest/guild/main/guild_info')) return 'guild_info'
-  if (url.includes('/profile/content/index/')) return 'support_summons'
-  return 'unknown'
-}
-
-function getPageNumber(url: string): number | null {
-  const match = url.match(/\/list\/(\d+)/)
-  return match ? parseInt(match[1]!, 10) : null
-}
-
-function getStashNumber(url: string): string {
-  const match = url.match(/\/(?:weapon|summon)\/container_list\/\d+\/(\d+)/)
-  return match ? match[1]! : '1'
-}
-
-function extractStashName(_url: string, data: { data?: string }): void {
-  if (!data?.data) return
-
-  const html = decodeURIComponent(data.data)
-  const nameMatch = html.match(/class="prt-container-name">([^<]+)</)
-  if (nameMatch) {
-    lastStashName = nameMatch[1]!.trim()
-  }
-}
-
-function getStashName(): string | null {
-  return lastStashName ?? null
-}
-
-function getPartyId(url: string, data: unknown): string | null {
-  const urlMatch = url.match(/\/party\/deck\/(\d+)\/(\d+)/)
-  if (urlMatch) {
-    return `${urlMatch[1]}_${urlMatch[2]}`
-  }
-
-  const deckData = data as { deck?: { priority?: number; name?: string } }
-  if (deckData?.deck) {
-    if (deckData.deck.priority !== undefined) {
-      return `deck_${deckData.deck.priority}`
-    }
-    if (deckData.deck.name) {
-      return deckData.deck.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .substring(0, 20)
-    }
-  }
-
-  return null
-}
-
-function getMasterId(
-  url: string,
-  data: unknown,
-  dataType: string
-): string | null {
-  if (dataType === 'zenith_npc') {
-    let match = url.match(/\/npczenith\/bonus_list\/(\d+)/)
-    if (match) return match[1]!
-
-    match = url.match(/\/npczenith\/content\/index\/(\d+)/)
-    if (match) return match[1]!
-  } else if (dataType === 'character_detail') {
-    return (data as { master?: { id?: string } })?.master?.id ?? null
-  }
-
-  return null
-}
-
-function getEventNumber(url: string): number | null {
-  const match = url.match(/\/teamraid0*(\d+)\//)
-  return match ? parseInt(match[1]!, 10) : null
-}
-
-function getUnfPageNumber(url: string): number | null {
-  const match = url.match(/\/(?:total|todays)_performance\/(\d+)/)
-  return match ? parseInt(match[1]!, 10) : null
 }

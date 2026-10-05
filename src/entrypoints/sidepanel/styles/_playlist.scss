@@ -143,16 +143,6 @@
   padding: spacing.$unit-half spacing.$unit;
 }
 
-.playlist-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: spacing.$unit-4x;
-  color: var(--color-text-secondary);
-  font-size: type.$font-small;
-  font-style: italic;
-}
-
 /* Playlist Item */
 .playlist-item {
   display: flex;
