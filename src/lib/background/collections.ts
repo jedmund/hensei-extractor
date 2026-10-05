@@ -95,7 +95,7 @@ export async function uploadDetailData(
   dataType: string
 ): Promise<UploadDetailResponse> {
   const endpoint = resolveEndpoint(dataType)
-  if (!endpoint) return { error: `Unknown data type: ${dataType}` }
+  if (!endpoint) return { error: 'unknown_type' }
 
   const auth = await getAuthToken()
   let lang = 'en'

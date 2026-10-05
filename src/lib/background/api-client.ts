@@ -53,7 +53,8 @@ export interface ApiError {
   error: string
   /** Per-item failures from a 422 `{ errors: [...] }` body */
   errors?: ApiItemError[]
-  /** Human-readable detail when the API sends one (English, not for display) */
+  fieldErrors?: Record<string, string[]>
+  /** Internal detail for recognizing domain failures; never displayed directly. */
   message?: string
 }
 
@@ -63,32 +64,89 @@ export interface ApiItemError {
   [key: string]: unknown
 }
 
+/** Normalize the API's string, nested, field-validation and per-item errors. */
 export async function parseErrorBody(response: Response): Promise<ApiError> {
-  try {
-    const json = (await response.json()) as {
-      error?: string
-      errors?: ApiItemError[] | { message?: string; code?: string }
-      message?: string
-      code?: string
-    }
-    if (json.error) return { error: json.error }
-    if (Array.isArray(json.errors)) {
-      if (json.errors.length > 0) {
-        return { error: 'invalid_data', errors: json.errors }
-      }
-    } else if (json.errors?.code || json.errors?.message) {
-      // Rescued exceptions: `{ errors: { message, code? } }`
-      return {
-        error: json.errors.code ?? 'invalid_data',
-        message: json.errors.message
-      }
-    }
-    // Domain errors (crews, shares): `{ code, message }`
-    if (json.code) return { error: json.code, message: json.message }
-  } catch {
-    /* not JSON */
+  // Status takes precedence over a proxy page or unexpected server exception.
+  if (response.status >= 500) return { error: 'server_error' }
+  const statusErrors: Record<number, string> = {
+    401: 'invalid_token',
+    403: 'forbidden',
+    404: 'not_found',
+    408: 'request_timeout',
+    409: 'conflict',
+    413: 'too_large',
+    429: 'rate_limited'
   }
-  return { error: 'server_error' }
+  const fallback =
+    statusErrors[response.status] ??
+    ([400, 422].includes(response.status) ? 'invalid_data' : 'request_rejected')
+  try {
+    const json: unknown = await response.json()
+    if (!json || typeof json !== 'object') return { error: fallback }
+    const body = json as Record<string, unknown>
+    const fieldErrors: Record<string, string[]> = {}
+    if (
+      body.errors &&
+      typeof body.errors === 'object' &&
+      !Array.isArray(body.errors)
+    ) {
+      for (const [field, messages] of Object.entries(body.errors)) {
+        if (
+          Array.isArray(messages) &&
+          messages.every((m) => typeof m === 'string')
+        ) {
+          fieldErrors[field] = messages
+        }
+      }
+    }
+    if (Object.keys(fieldErrors).length > 0) {
+      return { error: fallback, fieldErrors }
+    }
+    const errors = Array.isArray(body.errors)
+      ? body.errors.filter(
+          (item): item is ApiItemError =>
+            !!item && typeof item === 'object' && typeof item.error === 'string'
+        )
+      : []
+    const nested =
+      body.error && typeof body.error === 'object'
+        ? (body.error as Record<string, unknown>)
+        : undefined
+    const rescued =
+      body.errors &&
+      typeof body.errors === 'object' &&
+      !Array.isArray(body.errors)
+        ? (body.errors as Record<string, unknown>)
+        : undefined
+    const detail = rescued?.message ?? body.message
+    const message = typeof detail === 'string' ? detail : undefined
+    const code =
+      body.code ??
+      rescued?.code ??
+      (typeof body.error === 'string' ? body.error : nested?.code)
+    // Keep known domain codes; never expose arbitrary server exception text.
+    const knownCodes = [
+      'invalid_data',
+      'invalid_token',
+      'not_in_crew',
+      'already_in_crew',
+      'not_officer',
+      'no_items',
+      'no_cached_data',
+      'stale_data',
+      'not_found',
+      'forbidden',
+      'unauthorized',
+      'rate_limited'
+    ]
+    const error =
+      typeof code === 'string' && knownCodes.includes(code) ? code : fallback
+    return errors.length
+      ? { error, errors }
+      : { error, ...(message ? { message } : {}) }
+  } catch {
+    return { error: fallback }
+  }
 }
 
 export async function parseErrorResponse(response: Response): Promise<string> {

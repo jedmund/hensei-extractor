@@ -70,6 +70,7 @@ export interface UploadCollectionOptions {
 }
 
 export interface ApiResult<T = Record<string, unknown>> {
+  fieldErrors?: Record<string, string[]>
   error?: string
   errors?: { error: string; granblue_id?: string }[]
   message?: string

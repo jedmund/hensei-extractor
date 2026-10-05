@@ -5,6 +5,7 @@ vi.mock('./state/app.svelte.js', () => ({ app: { locale: 'en' } }))
 
 import {
   chooseLocale,
+  translateError,
   getBrowserLocale,
   getLocale,
   getLocalizedName,
@@ -101,5 +102,50 @@ describe('getLocalizedName', () => {
     expect(getLocalizedName({})).toBe('Unknown')
     setLocale('ja')
     expect(getLocalizedName({ name: null })).toBe('不明')
+  })
+})
+
+describe('translateError', () => {
+  afterEach(() => setLocale('en'))
+
+  it.each(['en', 'ja'])(
+    'gives distinct actionable messages in %s',
+    (locale) => {
+      setLocale(locale)
+      const codes = [
+        'playlist_title_taken',
+        'invalid_token',
+        'forbidden',
+        'not_found',
+        'rate_limited',
+        'invalid_data',
+        'request_failed',
+        'server_error',
+        'internal_error'
+      ]
+      const messages = codes.map(translateError)
+      expect(new Set(messages).size).toBe(codes.length)
+      for (const message of messages) {
+        expect(message.length).toBeGreaterThan(15)
+        expect(codes).not.toContain(message)
+      }
+    }
+  )
+
+  it('asks for a different playlist name', () => {
+    setLocale('en')
+    expect(translateError('playlist_title_taken')).toBe(
+      'You already have a playlist with this name. Please choose a different name.'
+    )
+  })
+
+  it('does not show raw unknown errors or mislabel them as connection failures', () => {
+    expect(translateError('private server exception')).toBe(
+      translateError('request_rejected')
+    )
+    expect(translateError('toString')).toBe(translateError('request_rejected'))
+    expect(translateError('unexpected')).not.toBe(
+      translateError('request_failed')
+    )
   })
 })

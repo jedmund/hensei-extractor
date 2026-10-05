@@ -70,12 +70,32 @@ const ERROR_MESSAGES: Record<string, () => string> = {
   no_items: m.error_no_items,
   unknown_type: m.error_unknown_type,
   request_failed: m.error_request_failed,
-  server_error: m.error_server_error
+  server_error: m.error_server_error,
+  playlist_title_taken: m.error_playlist_title_taken,
+  invalid_token: m.error_invalid_token,
+  forbidden: m.error_forbidden,
+  not_found: m.error_not_found,
+  rate_limited: m.error_rate_limited,
+  conflict: m.error_conflict,
+  invalid_data: m.error_invalid_data,
+  request_timeout: m.error_request_timeout,
+  too_large: m.error_too_large,
+  request_rejected: m.error_request_rejected,
+  internal_error: m.error_internal_error,
+  unauthorized: m.error_invalid_token,
+  playlist_title_required: m.playlist_title_required,
+  unknown_summons: m.toast_support_summons_unknown,
+  not_in_crew: m.error_not_in_crew,
+  already_in_crew: m.error_already_in_crew,
+  not_officer: m.crew_not_officer,
+  crew_already_exists: m.crew_create_error_exists
 }
 
 export function translateError(code: string): string {
   const fn = ERROR_MESSAGES[code]
-  return fn ? fn() : m.error_request_failed()
+  return Object.hasOwn(ERROR_MESSAGES, code) && fn
+    ? fn()
+    : m.error_request_rejected()
 }
 
 // ==========================================
