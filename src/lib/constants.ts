@@ -138,7 +138,9 @@ export const CACHE_PREFIXES: Record<string, string> = {
   detail_weapon: 'gbf_cache_detail_weapon_',
   detail_summon: 'gbf_cache_detail_summon_',
   unf_scores: 'gbf_cache_unf_scores_',
-  unf_daily_scores: 'gbf_cache_unf_daily_scores_'
+  unf_daily_scores: 'gbf_cache_unf_daily_scores_',
+  // Evoking Solomonis expedition reports, both logs per report ID
+  solomonis_run: 'gbf_cache_solomonis_run_'
 }
 
 export function resolveCacheKey(dataType: string): string | null {
