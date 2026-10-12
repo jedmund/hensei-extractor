@@ -135,7 +135,8 @@ const EMPTY_METADATA = {
   masterId: null,
   stashNumber: null,
   stashName: null,
-  eventNumber: null
+  eventNumber: null,
+  reportId: null
 }
 
 function stashNameResponse(name: string): { data: string } {

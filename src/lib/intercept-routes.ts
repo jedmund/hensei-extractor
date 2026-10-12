@@ -5,6 +5,15 @@
  * chrome APIs or holds state; debugger.ts owns both.
  */
 
+import {
+  getReportId,
+  isSolomonisReportDataType,
+  SOLOMONIS_REPORT,
+  SOLOMONIS_REPORT_BOOK,
+  SOLOMONIS_REPORT_BOOK_PATTERN,
+  SOLOMONIS_REPORT_PATTERN
+} from './solomonis/routes.js'
+
 // ==========================================
 // ENDPOINT PATTERNS TO INTERCEPT
 // ==========================================
@@ -46,7 +55,10 @@ export const INTERCEPT_PATTERNS = [
   // Guild info (for crew ID)
   '/rest/guild/main/guild_info',
   // Profile page (for support summons — HTML payload inside JSON envelope)
-  '/profile/content/index/'
+  '/profile/content/index/',
+  // Evoking Solomonis expedition reports (expedition and guidebook logs)
+  SOLOMONIS_REPORT_PATTERN,
+  SOLOMONIS_REPORT_BOOK_PATTERN
 ]
 
 /**
@@ -136,7 +148,10 @@ export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
     includes: ['/todays_performance/', '/teamraid']
   },
   { dataType: 'guild_info', includes: ['/rest/guild/main/guild_info'] },
-  { dataType: 'support_summons', includes: ['/profile/content/index/'] }
+  { dataType: 'support_summons', includes: ['/profile/content/index/'] },
+  // No other pattern is part of these paths, or contains them.
+  { dataType: SOLOMONIS_REPORT, includes: [SOLOMONIS_REPORT_PATTERN] },
+  { dataType: SOLOMONIS_REPORT_BOOK, includes: [SOLOMONIS_REPORT_BOOK_PATTERN] }
 ]
 
 export function getDataType(url: string): string {
@@ -189,6 +204,8 @@ export interface InterceptMetadata {
   stashNumber: string | null
   stashName: string | null
   eventNumber: number | null
+  /** Solomonis report ID, from the report URL's path */
+  reportId: string | null
 }
 
 /**
@@ -216,7 +233,8 @@ export function buildInterceptMetadata(
     masterId: getMasterId(url, data, dataType),
     stashNumber: isStash ? getStashNumber(url) : null,
     stashName: isStash ? stashName : null,
-    eventNumber: getEventNumber(url)
+    eventNumber: getEventNumber(url),
+    reportId: isSolomonisReportDataType(dataType) ? getReportId(url) : null
   }
 }
 

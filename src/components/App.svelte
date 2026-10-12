@@ -10,6 +10,7 @@
   import MainView from './main/MainView.svelte'
   import WarningCard from './login/WarningCard.svelte'
   import ConflictModal from './modals/ConflictModal.svelte'
+  import SolomonisDuplicateModal from './solomonis/SolomonisDuplicateModal.svelte'
   import Toast from './shared/Toast.svelte'
 
   onMount(async () => {
@@ -83,6 +84,7 @@
   {/if}
 
   <ConflictModal />
+  <SolomonisDuplicateModal />
   <Toast />
 {/key}
 </Tooltip.Provider>

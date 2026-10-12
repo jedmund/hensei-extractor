@@ -18,6 +18,10 @@ export interface CacheStatusInfo {
   partyName?: string
   partyId?: string
   gbfUserId?: string | null
+  /** Solomonis runs: the report ID and which of its two logs are captured */
+  reportId?: string
+  hasReport?: boolean
+  hasBook?: boolean
 }
 
 /** Formatted cache status for display in the UI */

@@ -10,6 +10,8 @@ import {
 } from './cache-writes.js'
 import { cacheCharacterStats } from './character-stats.js'
 import { cacheSupportSummons } from './support-summons.js'
+import { cacheSolomonisReport } from '../solomonis/cache.js'
+import { isSolomonisReportDataType } from '../solomonis/routes.js'
 import type { PageData } from './types.js'
 
 export interface CaptureDependencies {
@@ -21,6 +23,7 @@ export interface CaptureDependencies {
   cacheGuildInfo: typeof cacheGuildInfo
   cacheSingleItem: typeof cacheSingleItem
   cacheSupportSummons: typeof cacheSupportSummons
+  cacheSolomonisReport: typeof cacheSolomonisReport
   notifyCaptured: (message: Record<string, unknown>) => Promise<unknown>
 }
 
@@ -117,6 +120,16 @@ export function createCaptureHandler(dependencies: CaptureDependencies) {
         actualDataType = 'guild_info'
       } else if (dataType === 'support_summons') {
         cached = await dependencies.cacheSupportSummons(data, timestamp, url)
+      } else if (isSolomonisReportDataType(dataType)) {
+        // Cached by report ID from the path; the URL itself isn't kept.
+        const runDataType = await dependencies.cacheSolomonisReport(
+          dataType,
+          metadata.reportId,
+          data,
+          timestamp
+        )
+        cached = runDataType !== null
+        if (runDataType) actualDataType = runDataType
       } else {
         cached = await dependencies.cacheSingleItem(
           dataType,
@@ -152,6 +165,7 @@ export function createDefaultCaptureHandler() {
     cacheGuildInfo,
     cacheSingleItem,
     cacheSupportSummons,
+    cacheSolomonisReport,
     notifyCaptured: (message) => chrome.runtime.sendMessage(message)
   })
 }

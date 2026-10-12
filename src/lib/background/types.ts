@@ -105,6 +105,10 @@ export interface CacheStatusEntry {
   granblueId?: string
   itemName?: string
   gbfUserId?: string | null
+  /** Solomonis runs: the report ID and which of its two logs are captured */
+  reportId?: string
+  hasReport?: boolean
+  hasBook?: boolean
 }
 
 export interface CacheStatusResult {

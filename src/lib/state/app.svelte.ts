@@ -74,6 +74,9 @@ class AppState {
   pendingConflicts = $state<unknown[] | null>(null)
   conflictResolutions = $state<Record<string, 'import' | 'skip'> | null>(null)
 
+  /** A Solomonis report that was already imported: the run to update */
+  solomonisDuplicate = $state<{ shortcode: string; url: string } | null>(null)
+
   // Crew import
   crewImportRound = $state<string>('preliminaries')
 
@@ -120,6 +123,7 @@ class AppState {
     this.selectedPlaylists = []
     this.pendingConflicts = null
     this.conflictResolutions = null
+    this.solomonisDuplicate = null
     this.importState = 'idle'
   }
 

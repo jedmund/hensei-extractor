@@ -10,6 +10,7 @@ import {
   SUPPORT_SUMMON_SLOTS
 } from './constants.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from './types/cache.js'
+import { solomonisRunSubtitle } from './solomonis/status.js'
 
 export function formatAge(ageMs: number): string {
   const seconds = Math.floor(ageMs / 1000)
@@ -67,6 +68,8 @@ export function formatCacheStatus(
           items: info.totalItems ?? 0,
           pages: info.pageCount ?? 0
         })
+      } else if (type.startsWith('solomonis_run_')) {
+        subtitle = solomonisRunSubtitle(info)
       } else if (type === 'support_summons') {
         subtitle = m.support_summons_subtitle({
           set: info.totalItems ?? 0,

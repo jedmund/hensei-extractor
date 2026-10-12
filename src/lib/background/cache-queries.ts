@@ -12,6 +12,7 @@ import type {
   CacheStatusResult,
   UnfMember
 } from './types.js'
+import type { SolomonisRunCacheEntry } from '../solomonis/types.js'
 
 export async function loadCachedDataForUpload(
   dataType: string
@@ -260,6 +261,18 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         isStale: stale,
         granblueId: suffix,
         itemName: (cacheEntry.itemName as string) ?? 'Unknown'
+      }
+    } else if (matchedPrefix === 'solomonis_run') {
+      const run = cacheEntry as unknown as SolomonisRunCacheEntry
+      status[dataType] = {
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
+        reportId: suffix,
+        partyName: run.deckName ?? undefined,
+        hasReport: !!run.hasReport,
+        hasBook: !!run.hasBook
       }
     } else if (
       matchedPrefix === 'unf_scores' ||

@@ -1,0 +1,30 @@
+{
+  "status_list": [
+    {
+      "name": "2-turn reduction to skill cooldowns @@(Can't be stacked)",
+      "target_type": null,
+      "target_param": "",
+      "display_ailment_id": null,
+      "status_id": 74,
+      "icon_category": 3,
+      "icon_type": 401,
+      "rarity": 3,
+      "is_duplication_possible": 0,
+      "deck_condition": 0,
+      "num": 1
+    },
+    {
+      "name": "DMG cap +10%",
+      "target_type": null,
+      "target_param": "",
+      "display_ailment_id": null,
+      "status_id": 7,
+      "icon_category": 1,
+      "icon_type": 308,
+      "rarity": 1,
+      "is_duplication_possible": 1,
+      "deck_condition": 0,
+      "num": 6
+    }
+  ]
+}

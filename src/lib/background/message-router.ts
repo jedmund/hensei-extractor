@@ -42,6 +42,9 @@ import {
   searchSummonByName
 } from './party-reference.js'
 import { uploadSupportSummons } from './support-summons.js'
+import { isSolomonisRunDataType } from '../solomonis/routes.js'
+import type { SolomonisRunCapture } from '../solomonis/types.js'
+import { uploadSolomonisRun } from '../solomonis/upload.js'
 import type { CharacterStatsEntry, PageData } from './types.js'
 import type { ParsedSupportSummonPayload } from '../parsers/support-summons.js'
 import type { WindowManager } from './window-manager.js'
@@ -159,6 +162,22 @@ export function createHandlers(
         'support_summons',
         (parsed) => uploadSupportSummons(parsed)
       ),
+
+    uploadSolomonisRun: (m) =>
+      isSolomonisRunDataType(m.dataType)
+        ? withCachedData<SolomonisRunCapture, unknown>(m.dataType, (capture) =>
+            uploadSolomonisRun(capture, {
+              name: m.name,
+              visibility: m.visibility,
+              playlistIds: m.playlistIds,
+              shareWithCrew: m.shareWithCrew,
+              updateExisting: m.updateExisting,
+              // Build capture isn't implemented yet, so there's no current
+              // Evoker's party setup to send with the report.
+              currentSetup: null
+            })
+          )
+        : Promise.resolve({ error: 'unknown_type' }),
 
     uploadUnfScores: (m) =>
       handleUploadUnfScores(m.dataType, m.round ?? 'preliminaries'),
