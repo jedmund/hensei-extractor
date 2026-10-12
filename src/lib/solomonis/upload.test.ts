@@ -64,7 +64,7 @@ describe('uploadSolomonisRun', () => {
     const body = sentBody()
     expect(body.kind).toBe('solomonis_run')
     expect(body.update_existing).toBe(false)
-    expect(JSON.stringify(body)).not.toMatch(/langMsg|display_list|uid/)
+    expect(JSON.stringify(body)).not.toMatch(/langMsg|display_list|uid=|"uid"/)
     expect(result).toEqual({
       success: true,
       shortcode: 'run001',

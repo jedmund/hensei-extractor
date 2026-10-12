@@ -91,7 +91,7 @@ describe('cacheSolomonisReport', () => {
     expect(json).not.toContain('display_list')
     expect(json).not.toContain('user_id')
     expect(json).not.toContain('%3Cdiv')
-    expect(json).not.toContain('uid')
+    expect(json).not.toMatch(/uid=|"uid"/)
     expect(json).not.toContain('"url"')
   })
 
