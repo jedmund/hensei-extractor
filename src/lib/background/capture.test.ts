@@ -14,7 +14,8 @@ const metadata = {
   masterId: null,
   stashNumber: null,
   stashName: null,
-  eventNumber: null
+  eventNumber: null,
+  reportId: null
 }
 
 function createDependencies(): CaptureDependencies {
