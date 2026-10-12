@@ -7,6 +7,7 @@ import * as referenceData from './reference-data.js'
 import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
+import { uploadSolomonisRun } from '../solomonis/upload.js'
 import {
   createHandlers,
   createMessageListener,
@@ -47,6 +48,9 @@ vi.mock('./reference-data.js', () => ({
   fetchRaidGroups: vi.fn(async () => ({})),
   fetchUserPlaylists: vi.fn(async () => ({})),
   getCollectionIds: vi.fn(async () => ({}))
+}))
+vi.mock('../solomonis/upload.js', () => ({
+  uploadSolomonisRun: vi.fn(async () => ({}))
 }))
 vi.mock('./party-reference.js', () => ({
   fetchJobSkillSlugs: vi.fn(async () => ({})),
@@ -250,6 +254,40 @@ describe('background message router', () => {
         true
       )
     )
+  })
+
+  it('forwards Solomonis run import options with the cached report', async () => {
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      name: 'Nier',
+      visibility: 1,
+      playlistIds: ['7'],
+      shareWithCrew: false,
+      updateExisting: true
+    })
+
+    await vi.waitFor(() =>
+      expect(uploadSolomonisRun).toHaveBeenCalledWith(PAGES, {
+        name: 'Nier',
+        visibility: 1,
+        playlistIds: ['7'],
+        shareWithCrew: false,
+        updateExisting: true,
+        currentSetup: null
+      })
+    )
+    expect(loadCachedDataForUpload).toHaveBeenCalledWith('solomonis_run_381099')
+  })
+
+  it('only uploads Solomonis runs from Solomonis run captures', async () => {
+    send({ action: 'uploadSolomonisRun', dataType: 'party_1_2' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'unknown_type' })
+    )
+    expect(loadCachedDataForUpload).not.toHaveBeenCalled()
+    expect(uploadSolomonisRun).not.toHaveBeenCalled()
   })
 
   // Without updateExisting the API skips owned items, so "Has updates" never applied.

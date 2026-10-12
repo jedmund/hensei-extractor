@@ -56,6 +56,15 @@ export type ExtensionMessage =
   | { action: 'previewGwPhantoms'; dataType: string }
   | { action: 'fetchLatestGwEvent' }
   | { action: 'uploadSupportSummons' }
+  | {
+      action: 'uploadSolomonisRun'
+      dataType: string
+      name?: string
+      visibility?: number
+      shareWithCrew?: boolean
+      playlistIds?: string[]
+      updateExisting?: boolean
+    }
 
 export type ExtensionAction = ExtensionMessage['action']
 
