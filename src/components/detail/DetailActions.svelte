@@ -14,12 +14,22 @@
   import { isCollectionType } from '../../lib/detail-helpers.js'
   import { previewSyncDeletions } from '../../lib/services/chrome-messages.js'
   import CopyDropdown from './CopyDropdown.svelte'
+  import { importSolomonisRun } from '../../lib/solomonis/import-run.js'
+  import { runReadiness } from '../../lib/solomonis/report.js'
+  import { isSolomonisRunDataType } from '../../lib/solomonis/routes.js'
+  import type { SolomonisRunCapture } from '../../lib/solomonis/types.js'
 
   let dataType = $derived(app.currentDetailDataType ?? '')
   let isParty = $derived(dataType.startsWith('party_'))
   let isDatabase = $derived(dataType.startsWith('detail_'))
   let isCharStats = $derived(dataType === 'character_stats')
   let isSupportSummons = $derived(dataType === 'support_summons')
+  let isSolomonisRun = $derived(isSolomonisRunDataType(dataType))
+  // A run imports once both of its report's logs are captured.
+  let solomonisRunReady = $derived(
+    isSolomonisRun &&
+      runReadiness(app.detailData as SolomonisRunCapture | null) === 'ready'
+  )
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'
   )
@@ -47,7 +57,8 @@
   let importDisabled = $derived(
     app.importState === 'importing' ||
     app.importState === 'imported' ||
-    (hasSelectableItems && app.selectedItems.size === 0)
+    (hasSelectableItems && app.selectedItems.size === 0) ||
+    (isSolomonisRun && !solomonisRunReady)
   )
 
   function importErrorMessage(error: string): string {
@@ -79,6 +90,10 @@
 
   async function handleImport() {
     if (!dataType) return
+    if (isSolomonisRun) {
+      await importSolomonisRun()
+      return
+    }
     app.importState = 'importing'
 
     try {

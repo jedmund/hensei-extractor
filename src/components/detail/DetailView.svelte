@@ -17,6 +17,7 @@
   import CharacterStatsList from './character-stats/CharacterStatsList.svelte'
   import CrewScoreDetail from './CrewScoreDetail.svelte'
   import SupportSummonsDetail from './SupportSummonsDetail.svelte'
+  import SolomonisRunView from '../solomonis/SolomonisRunView.svelte'
   import type { ParsedSupportSummonPayload } from '../../lib/parsers/support-summons.js'
 
   interface Props {
@@ -114,6 +115,8 @@
       <CollectionDetail {dataType} {data} {generation} {simplePortraits} bind:scrolled />
     {:else if kind === 'party'}
       <PartyView {dataType} {data} {generation} {simplePortraits} bind:scrolled />
+    {:else if kind === 'solomonisRun'}
+      <SolomonisRunView {dataType} {data} {generation} bind:scrolled />
     {:else}
       {#if kind === 'characterStats' || kind === 'supportSummons'}
         <div class="detail-meta">

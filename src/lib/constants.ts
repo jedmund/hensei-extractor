@@ -204,6 +204,9 @@ export function getDataTypeName(dataType: string): string {
   if (dataType.startsWith('unf_daily_scores_')) {
     return m.type_unf_daily_scores()
   }
+  if (dataType.startsWith('solomonis_run_')) {
+    return m.solomonis_extension_run_title()
+  }
   return dataType
 }
 

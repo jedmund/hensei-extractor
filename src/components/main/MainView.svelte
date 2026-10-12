@@ -94,6 +94,9 @@
       if (app.currentDetailDataType.startsWith('party_')) {
         return app.partyName || ''
       }
+      if (app.currentDetailDataType.startsWith('solomonis_run_')) {
+        return app.partyName || m.solomonis_extension_run_title()
+      }
       if (app.currentDetailDataType.startsWith('detail_') && app.detailData) {
         const d = app.detailData as { name?: string; master?: { name?: string } }
         return d.name || d.master?.name || getDataTypeName(app.currentDetailDataType)

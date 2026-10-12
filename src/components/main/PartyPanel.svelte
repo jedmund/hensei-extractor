@@ -8,7 +8,9 @@
   const partyTypes = $derived(
     Object.keys(app.cachedStatus)
       .filter(
-        (type) => type.startsWith('party_') && app.cachedStatus[type]?.available
+        (type) =>
+          (type.startsWith('party_') || type.startsWith('solomonis_run_')) &&
+          app.cachedStatus[type]?.available
       )
       .sort((a, b) => {
         const aTime = app.cachedStatus[a]?.timestamp || 0

@@ -11,9 +11,11 @@
 
   interface Props {
     scrolled?: boolean
+    /** Off for Solomonis runs, whose zone follows from the route Evoker */
+    raidSelector?: boolean
   }
 
-  let { scrolled = false }: Props = $props()
+  let { scrolled = false, raidSelector = true }: Props = $props()
 
   type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
   let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
@@ -67,6 +69,7 @@
     />
   </div>
 
+  {#if raidSelector}
   <div class="raid-selector" id="raidSelector">
     <button
       class="raid-selector-button"
@@ -86,6 +89,7 @@
       <Icon name="chevron-right" size={14} class="chevron" />
     </button>
   </div>
+  {/if}
 
   <div class="visibility-row">
     <Select options={visibilityOptions} bind:value={app.selectedVisibility} contained fullWidth />
