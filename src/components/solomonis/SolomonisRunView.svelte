@@ -51,8 +51,8 @@
           : m.solomonis_extension_outcome_failed()
       )
     }
-    const pledge = Number(report.difficulty)
-    if (Number.isFinite(pledge)) {
+    const pledge = report.difficulty
+    if (typeof pledge === 'number') {
       parts.push(
         pledge > 0
           ? m.solomonis_extension_pledge({ level: pledge })
