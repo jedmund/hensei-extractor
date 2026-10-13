@@ -23,7 +23,7 @@ export interface CacheStatusInfo {
   reportId?: string
   hasReport?: boolean
   hasBook?: boolean
-  /** Solomonis decks: the route Evoker */
+  /** Solomonis decks and runs: the route Evoker */
   evokerId?: string | null
   evokerName?: string | null
 }

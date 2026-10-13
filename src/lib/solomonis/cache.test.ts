@@ -60,6 +60,7 @@ describe('cacheSolomonisReport', () => {
     expect(stored()).toMatchObject({
       reportId: '381099',
       deckName: 'Nier Party',
+      evokerId: '3040169000',
       hasReport: true,
       hasBook: false,
       timestamp: 10

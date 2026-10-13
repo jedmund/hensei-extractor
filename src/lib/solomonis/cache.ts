@@ -12,7 +12,7 @@
 
 import { CACHE_PREFIXES } from '../constants.js'
 import { decodeHtmlEntities } from '../html-entities.js'
-import { deckEvoker, deckPriority, shapeDeck } from './deck.js'
+import { deckEvoker, deckPriority, reportEvokerId, shapeDeck } from './deck.js'
 import {
   emptyCapture,
   mergeCapture,
@@ -92,6 +92,7 @@ export async function cacheSolomonisReport(
         typeof deckName === 'string'
           ? decodeHtmlEntities(deckName).trim()
           : null,
+      evokerId: reportEvokerId(capture.report),
       hasReport: !!capture.report,
       hasBook: !!capture.statusList
     }

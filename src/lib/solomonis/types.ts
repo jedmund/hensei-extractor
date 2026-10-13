@@ -49,6 +49,8 @@ export interface SolomonisRunCacheEntry {
   timestamp: number
   reportId: string
   deckName: string | null
+  /** The route Evoker, from the expedition log (absent in older entries) */
+  evokerId?: string | null
   hasReport: boolean
   hasBook: boolean
 }

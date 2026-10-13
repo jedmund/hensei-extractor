@@ -32,6 +32,7 @@ describe('handleGetCacheStatus', () => {
     storage['gbf_cache_solomonis_run_405483'] = {
       reportId: '405483',
       deckName: 'Nier Party 1',
+      evokerId: '3040168000',
       hasReport: true,
       hasBook: true,
       timestamp
@@ -45,7 +46,8 @@ describe('handleGetCacheStatus', () => {
 
     expect(status.solomonis_run_405483).toMatchObject({
       available: true,
-      isStale: false
+      isStale: false,
+      evokerId: '3040168000'
     })
     expect(status.party_1_1).toMatchObject({ available: false, isStale: true })
   })

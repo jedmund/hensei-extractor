@@ -289,6 +289,7 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         isStale: false,
         reportId: suffix,
         partyName: run.deckName ?? undefined,
+        evokerId: run.evokerId ?? null,
         hasReport: !!run.hasReport,
         hasBook: !!run.hasBook
       }
