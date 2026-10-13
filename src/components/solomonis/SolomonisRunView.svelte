@@ -8,10 +8,12 @@
   import { matchingDecks, reportEvokerId } from '../../lib/solomonis/deck.js'
   import { isSolomonisDeckDataType } from '../../lib/solomonis/routes.js'
   import { evokerPortraitUrl } from '../../lib/solomonis/status.js'
+  import { runImportPlan, runSteps } from '../../lib/solomonis/steps.js'
   import type { SolomonisRunCapture } from '../../lib/solomonis/types.js'
   import DetailScroll from '../detail/DetailScroll.svelte'
   import PartyMeta from '../detail/party/PartyMeta.svelte'
   import Select from '../shared/Select.svelte'
+  import SolomonisSteps from './SolomonisSteps.svelte'
 
   interface Props {
     dataType: string
@@ -132,20 +134,19 @@
     if (base) img.src = base
   }
 
-  const logs = $derived([
-    {
-      key: 'report',
-      label: m.solomonis_extension_log_report(),
-      captured: !!capture?.report,
-      hint: m.solomonis_extension_open_report_hint()
-    },
-    {
-      key: 'book',
-      label: m.solomonis_extension_log_book(),
-      captured: !!capture?.statusList,
-      hint: m.solomonis_extension_open_book_hint()
-    }
-  ])
+  // The run's three captures, with a way to the game page for each one
+  // still missing, and what an import would go ahead without.
+  let steps = $derived(
+    capture
+      ? runSteps({
+          reportId: capture.reportId,
+          hasReport: !!capture.report,
+          hasBook: !!capture.statusList,
+          hasDeck: !!chosenDeck
+        })
+      : []
+  )
+  let plan = $derived(runImportPlan(steps))
 </script>
 
 <PartyMeta {scrolled} raidSelector={false} />
@@ -172,23 +173,7 @@
         </section>
       {/if}
 
-      <section class="logs" aria-live="polite">
-        {#each logs as log (log.key)}
-          <div class="log" class:captured={log.captured}>
-            <div class="log-row">
-              <span class="log-label">{log.label}</span>
-              <span class="log-state">
-                {log.captured
-                  ? m.solomonis_extension_log_captured()
-                  : m.solomonis_extension_log_missing()}
-              </span>
-            </div>
-            {#if !log.captured}
-              <p class="log-hint">{log.hint}</p>
-            {/if}
-          </div>
-        {/each}
-      </section>
+      <SolomonisSteps {steps} />
 
       <section class="setup" aria-live="polite">
         {#if decks.length > 1}
@@ -202,6 +187,12 @@
             contained
             fullWidth
           />
+        {/if}
+        {#if plan.blocking.includes('report')}
+          <p class="note">{m.solomonis_extension_note_needs_report()}</p>
+        {/if}
+        {#if plan.without.includes('book')}
+          <p class="note">{m.solomonis_extension_note_without_book()}</p>
         {/if}
         <p class="note">
           {chosenDeck
@@ -234,8 +225,7 @@
 
   .summary-line,
   .summary-ended,
-  .note,
-  .log-hint {
+  .note {
     margin: 0;
     font-size: $font-small;
   }
@@ -246,8 +236,7 @@
   }
 
   .summary-ended,
-  .note,
-  .log-hint {
+  .note {
     color: var(--color-text-secondary);
   }
 
@@ -275,36 +264,5 @@
     display: flex;
     flex-direction: column;
     gap: $unit;
-  }
-
-  .logs {
-    display: flex;
-    flex-direction: column;
-    gap: $unit;
-  }
-
-  .log {
-    display: flex;
-    flex-direction: column;
-    gap: $unit-quarter;
-  }
-
-  .log-row {
-    display: flex;
-    justify-content: space-between;
-    gap: $unit;
-    font-size: $font-small;
-  }
-
-  .log-label {
-    color: var(--color-text);
-  }
-
-  .log-state {
-    color: var(--color-text-secondary);
-  }
-
-  .log.captured .log-state {
-    color: var(--color-text);
   }
 </style>

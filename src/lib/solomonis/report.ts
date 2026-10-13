@@ -104,18 +104,23 @@ export function guidebookStackCount(statusList: SolomonisStatus[]): number {
 }
 
 /**
- * The POST /import body for a captured report, or null if either log is
- * missing. `report` is reshaped again here so nothing dropped at capture
- * time can reach the API, whatever the cache holds.
+ * The POST /import body for a captured report, or null if it can't be
+ * imported. The expedition log is required. Without the guidebook log the
+ * run imports with an empty guidebook, but an update is refused: it would
+ * clear the guidebook imported earlier. `report` is reshaped again here so
+ * nothing dropped at capture time can reach the API, whatever the cache
+ * holds.
  */
 export function buildRunImportBody(
   capture: SolomonisRunCapture,
   options: SolomonisRunImportOptions = {}
 ): SolomonisRunImportBody | null {
   const report = shapeReport(capture.report)
-  const statusList = capture.statusList
   const reportId = Number(capture.reportId)
-  if (!report || !statusList || !Number.isSafeInteger(reportId)) return null
+  if (!report || !Number.isSafeInteger(reportId)) return null
+  if (!capture.statusList && options.updateExisting) return null
+  // The API requires a list; an empty one imports an empty guidebook.
+  const statusList = capture.statusList ?? []
 
   const body: SolomonisRunImportBody = {
     kind: 'solomonis_run',

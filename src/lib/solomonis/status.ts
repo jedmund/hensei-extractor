@@ -3,7 +3,10 @@ import { BUCKET, getImageUrl } from '../constants.js'
 import type { CacheStatusInfo } from '../types/cache.js'
 import { runReadiness } from './report.js'
 
-/** The side panel row's subtitle: ready, or which screen to open next. */
+/**
+ * The side panel row's subtitle: ready, ready without the guidebook log,
+ * or that the expedition log is still needed.
+ */
 export function solomonisRunSubtitle(
   info: Pick<CacheStatusInfo, 'hasReport' | 'hasBook'>
 ): string {
@@ -18,7 +21,8 @@ export function solomonisRunSubtitle(
       return m.solomonis_extension_subtitle_needs_report()
     default:
       // A cached entry always has at least one log; the expedition log
-      // comes first in the game, so the guidebook log is what's left.
+      // comes first in the game, so the guidebook log is what's left. The
+      // run imports without it.
       return m.solomonis_extension_subtitle_needs_book()
   }
 }

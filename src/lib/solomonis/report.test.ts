@@ -181,13 +181,29 @@ describe('buildRunImportBody', () => {
     expect(body.solomonis.current_setup?.deck.pc).toEqual({ param: { hp: 1 } })
   })
 
-  it('returns null until both logs are captured', () => {
-    expect(
-      buildRunImportBody({ ...pairedCapture(), statusList: null })
-    ).toBeNull()
+  it('returns null without the expedition log', () => {
     expect(buildRunImportBody({ ...pairedCapture(), report: null })).toBeNull()
     expect(
       buildRunImportBody({ ...pairedCapture(), reportId: 'abc' })
     ).toBeNull()
+  })
+
+  it('imports without the guidebook log as an empty guidebook', () => {
+    const body = buildRunImportBody({ ...pairedCapture(), statusList: null })!
+    expect(body.solomonis.status_list).toEqual([])
+    expect(body.update_existing).toBe(false)
+  })
+
+  it("won't update an imported run without the guidebook log", () => {
+    expect(
+      buildRunImportBody(
+        { ...pairedCapture(), statusList: null },
+        { updateExisting: true }
+      )
+    ).toBeNull()
+    expect(
+      buildRunImportBody(pairedCapture(), { updateExisting: true })
+        ?.update_existing
+    ).toBe(true)
   })
 })

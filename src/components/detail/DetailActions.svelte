@@ -18,7 +18,7 @@
     importSolomonisParty,
     importSolomonisRun
   } from '../../lib/solomonis/import-run.js'
-  import { runReadiness } from '../../lib/solomonis/report.js'
+  import { canImportRun } from '../../lib/solomonis/steps.js'
   import {
     isSolomonisDeckDataType,
     isSolomonisRunDataType
@@ -32,10 +32,11 @@
   let isSupportSummons = $derived(dataType === 'support_summons')
   let isSolomonisRun = $derived(isSolomonisRunDataType(dataType))
   let isSolomonisDeck = $derived(isSolomonisDeckDataType(dataType))
-  // A run imports once both of its report's logs are captured.
+  // A run imports once its expedition log is captured; the guidebook log
+  // and party deck are recommended and optional.
   let solomonisRunReady = $derived(
     isSolomonisRun &&
-      runReadiness(app.detailData as SolomonisRunCapture | null) === 'ready'
+      canImportRun(app.detailData as SolomonisRunCapture | null)
   )
   let isCollection = $derived(
     isCollectionType(dataType) && dataType !== 'character_stats'

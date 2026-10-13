@@ -144,10 +144,16 @@ describe('uploadSolomonisRun', () => {
     expect(result).toMatchObject({ success: true, shareFailed: true })
   })
 
-  it('needs both logs and a login before posting', async () => {
-    expect(await uploadSolomonisRun({ ...capture, statusList: null })).toEqual({
+  it('needs the expedition log and a login before posting', async () => {
+    expect(await uploadSolomonisRun({ ...capture, report: null })).toEqual({
       error: 'solomonis_report_incomplete'
     })
+    expect(
+      await uploadSolomonisRun(
+        { ...capture, statusList: null },
+        { updateExisting: true }
+      )
+    ).toEqual({ error: 'solomonis_report_incomplete' })
 
     vi.mocked(getAuthToken).mockResolvedValue(null)
     expect(await uploadSolomonisRun(capture)).toEqual({
