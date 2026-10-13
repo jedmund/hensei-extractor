@@ -1,4 +1,5 @@
 import * as m from '../../paraglide/messages.js'
+import { BUCKET, getImageUrl } from '../constants.js'
 import type { CacheStatusInfo } from '../types/cache.js'
 import { runReadiness } from './report.js'
 
@@ -20,4 +21,11 @@ export function solomonisRunSubtitle(
       // comes first in the game, so the guidebook log is what's left.
       return m.solomonis_extension_subtitle_needs_book()
   }
+}
+
+/** An Evoker's square portrait, for the side panel's deck rows. */
+export function evokerPortraitUrl(evokerId: string | null | undefined): string {
+  return evokerId
+    ? getImageUrl(`${BUCKET.characterSquare}/${evokerId}_01.jpg`)
+    : ''
 }

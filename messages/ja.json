@@ -428,8 +428,8 @@
   "solomonis_extension_log_missing": "未取得",
   "solomonis_extension_open_report_hint": "ゲームでこのレポートの探索記録を開くと取得が完了します。",
   "solomonis_extension_open_book_hint": "ゲームでこのレポートのガイドブックの記録を開くと取得が完了します。",
-  "solomonis_extension_note_without_setup": "ゲームの探索レポートには武器・召喚石・アーカルムの加護が含まれません。現在の十賢者の編成をHenseiが取得していればそこから補完します。取得していない場合は、インポート後にgranblue.teamで追加できます。",
-  "solomonis_extension_note_with_setup": "ゲームの探索レポートには武器・召喚石・アーカルムの加護が含まれないため、現在の十賢者の編成からコピーします。この探索で使った編成と異なる場合があります。",
+  "solomonis_extension_note_without_setup": "このレポートの賢者の編成が取得されていないため、武器・召喚石・加護なしでインポートします。含めるには先にゲームで賢者の編成を開いてください。インポート後にgranblue.teamで追加することもできます。",
+  "solomonis_extension_note_with_setup": "レポートには武器・召喚石・加護が含まれないため、取得済みの編成「{deck}」から補完します。この探索で使った編成と異なる場合があります。",
   "solomonis_extension_outcome_cleared": "踏破",
   "solomonis_extension_outcome_failed": "失敗",
   "solomonis_extension_pledge": "誓約 {level}",
@@ -439,10 +439,12 @@
   "solomonis_extension_ended": "{date} 終了",
   "solomonis_extension_party_label": "終了時の編成",
   "solomonis_extension_duplicate_title": "インポート済み",
-  "solomonis_extension_duplicate_body": "この探索レポートはすでにインポートされています。既存の記録を更新するか、そのままにしてください。",
-  "solomonis_extension_duplicate_update": "記録を更新",
-  "solomonis_extension_duplicate_view": "記録を見る",
+  "solomonis_extension_duplicate_body": "この探索レポートはすでにインポートされています。その編成を更新するか、そのままにしてください。",
+  "solomonis_extension_duplicate_update": "編成を更新",
+  "solomonis_extension_duplicate_view": "編成を見る",
   "solomonis_extension_toast_incomplete": "先にこのレポートの探索記録とガイドブックの記録を開いてください",
-  "solomonis_extension_toast_updated": "記録を更新しました。開いています...",
-  "solomonis_extension_toast_updated_with_warnings": "記録を更新しました（警告{count}件）。開いています..."
+  "solomonis_extension_toast_updated": "編成を更新しました。開いています...",
+  "solomonis_extension_toast_updated_with_warnings": "編成を更新しました（警告{count}件）。開いています...",
+  "solomonis_extension_deck_title": "ソロモニスの編成",
+  "solomonis_extension_setup_label": "編成"
 }

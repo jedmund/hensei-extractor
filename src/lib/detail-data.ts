@@ -24,7 +24,10 @@ import type {
   RaidGroup
 } from './types/messages.js'
 import type { RaidSelection } from './state/app.svelte.js'
-import { isSolomonisRunDataType } from './solomonis/routes.js'
+import {
+  isSolomonisDeckDataType,
+  isSolomonisRunDataType
+} from './solomonis/routes.js'
 
 export interface PartyDeckData {
   deck?: {
@@ -56,6 +59,7 @@ export type DetailViewKind =
   | 'characterStats'
   | 'supportSummons'
   | 'solomonisRun'
+  | 'solomonisDeck'
   | 'collection'
   | 'other'
 
@@ -71,6 +75,7 @@ export function detailViewKind(dataType: string): DetailViewKind {
   if (dataType === 'character_stats') return 'characterStats'
   if (dataType === 'support_summons') return 'supportSummons'
   if (isSolomonisRunDataType(dataType)) return 'solomonisRun'
+  if (isSolomonisDeckDataType(dataType)) return 'solomonisDeck'
   if (isCollectionType(dataType)) return 'collection'
   return 'other'
 }

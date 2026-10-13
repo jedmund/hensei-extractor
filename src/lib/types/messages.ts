@@ -64,6 +64,16 @@ export type ExtensionMessage =
       shareWithCrew?: boolean
       playlistIds?: string[]
       updateExisting?: boolean
+      /** The captured deck (`solomonis_deck_<priority>`) sent as current_setup */
+      currentSetupDataType?: string
+    }
+  | {
+      action: 'uploadSolomonisParty'
+      dataType: string
+      name?: string
+      visibility?: number
+      shareWithCrew?: boolean
+      playlistIds?: string[]
     }
 
 export type ExtensionAction = ExtensionMessage['action']

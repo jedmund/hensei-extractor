@@ -7,9 +7,11 @@
     status: FormattedCacheStatus
     dataType: string
     onclick: () => void
+    /** A square portrait shown before the name */
+    thumbnail?: string
   }
 
-  let { status, dataType, onclick }: Props = $props()
+  let { status, dataType, onclick, thumbnail }: Props = $props()
 
   const isStash = $derived(dataType.startsWith('stash_'))
   const isDatabase = $derived(dataType.startsWith('detail_'))
@@ -29,6 +31,9 @@
   data-type={dataType}
   onclick={() => { if (status.statusClass !== 'stale') onclick() }}
 >
+  {#if thumbnail}
+    <img class="cache-thumb" src={thumbnail} alt="" />
+  {/if}
   <div class="cache-info">
     <div class="cache-name-row">
       <span class="cache-name">{displayName}</span>

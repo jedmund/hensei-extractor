@@ -42,9 +42,19 @@ import {
   searchSummonByName
 } from './party-reference.js'
 import { uploadSupportSummons } from './support-summons.js'
-import { isSolomonisRunDataType } from '../solomonis/routes.js'
-import type { SolomonisRunCapture } from '../solomonis/types.js'
-import { uploadSolomonisRun } from '../solomonis/upload.js'
+import { deckEvoker, reportEvokerId, shapeDeck } from '../solomonis/deck.js'
+import {
+  isSolomonisDeckDataType,
+  isSolomonisRunDataType
+} from '../solomonis/routes.js'
+import type {
+  SolomonisCurrentSetup,
+  SolomonisRunCapture
+} from '../solomonis/types.js'
+import {
+  uploadSolomonisParty,
+  uploadSolomonisRun
+} from '../solomonis/upload.js'
 import type { CharacterStatsEntry, PageData } from './types.js'
 import type { ParsedSupportSummonPayload } from '../parsers/support-summons.js'
 import type { WindowManager } from './window-manager.js'
@@ -69,6 +79,19 @@ async function withCachedData<T, R>(
   const data = await loadCachedDataForUpload(dataType)
   if (!data) return { error: 'no_cached_data' }
   return fn(data as T)
+}
+
+// The deck the side panel picked to send with a report, if it's a deck
+// for the Evoker the report was run with.
+async function loadCurrentSetup(
+  dataType: string | undefined,
+  capture: SolomonisRunCapture
+): Promise<SolomonisCurrentSetup | null> {
+  if (!dataType || !isSolomonisDeckDataType(dataType)) return null
+  const deck = shapeDeck(await loadCachedDataForUpload(dataType))
+  const evokerId = reportEvokerId(capture.report)
+  if (!deck || !evokerId || deckEvoker(deck)?.id !== evokerId) return null
+  return deck
 }
 
 type Pages = Record<number, PageData>
@@ -165,16 +188,31 @@ export function createHandlers(
 
     uploadSolomonisRun: (m) =>
       isSolomonisRunDataType(m.dataType)
-        ? withCachedData<SolomonisRunCapture, unknown>(m.dataType, (capture) =>
-            uploadSolomonisRun(capture, {
+        ? withCachedData<SolomonisRunCapture, unknown>(
+            m.dataType,
+            async (capture) =>
+              uploadSolomonisRun(capture, {
+                name: m.name,
+                visibility: m.visibility,
+                playlistIds: m.playlistIds,
+                shareWithCrew: m.shareWithCrew,
+                updateExisting: m.updateExisting,
+                currentSetup: await loadCurrentSetup(
+                  m.currentSetupDataType,
+                  capture
+                )
+              })
+          )
+        : Promise.resolve({ error: 'unknown_type' }),
+
+    uploadSolomonisParty: (m) =>
+      isSolomonisDeckDataType(m.dataType)
+        ? withCachedData<SolomonisCurrentSetup, unknown>(m.dataType, (deck) =>
+            uploadSolomonisParty(deck, {
               name: m.name,
               visibility: m.visibility,
               playlistIds: m.playlistIds,
-              shareWithCrew: m.shareWithCrew,
-              updateExisting: m.updateExisting,
-              // Build capture isn't implemented yet, so there's no current
-              // Evoker's party setup to send with the report.
-              currentSetup: null
+              shareWithCrew: m.shareWithCrew
             })
           )
         : Promise.resolve({ error: 'unknown_type' }),

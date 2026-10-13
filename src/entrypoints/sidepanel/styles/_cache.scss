@@ -98,6 +98,14 @@
   }
 }
 
+.cache-thumb {
+  flex-shrink: 0;
+  width: spacing.$unit-4x;
+  height: spacing.$unit-4x;
+  border-radius: layout.$item-corner-small;
+  object-fit: cover;
+}
+
 .cache-info {
   display: flex;
   flex-direction: column;

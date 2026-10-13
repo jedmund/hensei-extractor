@@ -27,7 +27,10 @@ import type {
   WeaponKeyMap,
   WeaponStatModifiers
 } from '../types/messages.js'
-import type { UploadSolomonisRunResponse } from '../solomonis/upload.js'
+import type {
+  UploadSolomonisPartyResponse,
+  UploadSolomonisRunResponse
+} from '../solomonis/upload.js'
 
 function send(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
@@ -83,6 +86,7 @@ export async function uploadSolomonisRun(options: {
   shareWithCrew?: boolean
   playlists?: Array<{ id: string }>
   updateExisting?: boolean
+  currentSetupDataType?: string
 }): Promise<UploadSolomonisRunResponse> {
   return send({
     action: 'uploadSolomonisRun',
@@ -91,8 +95,26 @@ export async function uploadSolomonisRun(options: {
     visibility: options.visibility,
     shareWithCrew: options.shareWithCrew,
     playlistIds: options.playlists?.map((p) => p.id),
-    updateExisting: options.updateExisting
+    updateExisting: options.updateExisting,
+    currentSetupDataType: options.currentSetupDataType
   }) as Promise<UploadSolomonisRunResponse>
+}
+
+export async function uploadSolomonisParty(options: {
+  dataType: string
+  name?: string
+  visibility?: number
+  shareWithCrew?: boolean
+  playlists?: Array<{ id: string }>
+}): Promise<UploadSolomonisPartyResponse> {
+  return send({
+    action: 'uploadSolomonisParty',
+    dataType: options.dataType,
+    name: options.name,
+    visibility: options.visibility,
+    shareWithCrew: options.shareWithCrew,
+    playlistIds: options.playlists?.map((p) => p.id)
+  }) as Promise<UploadSolomonisPartyResponse>
 }
 
 export async function uploadCollectionData(

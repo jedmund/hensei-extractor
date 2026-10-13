@@ -70,6 +70,8 @@ export function formatCacheStatus(
         })
       } else if (type.startsWith('solomonis_run_')) {
         subtitle = solomonisRunSubtitle(info)
+      } else if (type.startsWith('solomonis_deck_')) {
+        subtitle = info.evokerName ?? null
       } else if (type === 'support_summons') {
         subtitle = m.support_summons_subtitle({
           set: info.totalItems ?? 0,

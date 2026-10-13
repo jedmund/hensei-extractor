@@ -74,8 +74,13 @@ class AppState {
   pendingConflicts = $state<unknown[] | null>(null)
   conflictResolutions = $state<Record<string, 'import' | 'skip'> | null>(null)
 
-  /** A Solomonis report that was already imported: the run to update */
+  /** A Solomonis report that was already imported: the party to update */
   solomonisDuplicate = $state<{ shortcode: string; url: string } | null>(null)
+  /**
+   * The captured deck (`solomonis_deck_<priority>`) to send with a Solomonis
+   * report as its current setup, or null to import the report without one
+   */
+  solomonisSetupDataType = $state<string | null>(null)
 
   // Crew import
   crewImportRound = $state<string>('preliminaries')
@@ -124,6 +129,7 @@ class AppState {
     this.pendingConflicts = null
     this.conflictResolutions = null
     this.solomonisDuplicate = null
+    this.solomonisSetupDataType = null
     this.importState = 'idle'
   }
 

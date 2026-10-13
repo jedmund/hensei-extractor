@@ -209,6 +209,9 @@ export function getDataTypeName(dataType: string): string {
   if (dataType.startsWith('solomonis_run_')) {
     return m.solomonis_extension_run_title()
   }
+  if (dataType.startsWith('solomonis_deck_')) {
+    return m.solomonis_extension_deck_title()
+  }
   return dataType
 }
 

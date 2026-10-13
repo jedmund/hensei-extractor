@@ -23,10 +23,15 @@
     /** Changes whenever DetailView loads a new capture for this view */
     generation: number
     simplePortraits: boolean
+    /**
+     * An Evoking Solomonis deck: its zone follows from the route Evoker, so
+     * there's no raid to pick or suggest
+     */
+    solomonis?: boolean
     scrolled?: boolean
   }
 
-  let { dataType, data, generation, simplePortraits, scrolled = $bindable(false) }: Props = $props()
+  let { dataType, data, generation, simplePortraits, solomonis = false, scrolled = $bindable(false) }: Props = $props()
 
   // Looked up by name and id, to label the captured deck
   let friendSummon = $state<SummonSearchResult | null>(null)
@@ -61,7 +66,7 @@
     app.partyName = decodeHtmlEntities(party?.deck?.name || '')
 
     await loadSupplementary(party, current)
-    if (!current()) return
+    if (!current() || solomonis) return
 
     const { weapons, characters } = countPartyMembers(party)
     await applySuggestedRaid({
@@ -95,7 +100,7 @@
   }
 </script>
 
-<PartyMeta {scrolled} />
+<PartyMeta {scrolled} raidSelector={!solomonis} />
 
 <DetailScroll bind:scrolled>
   {#if data}

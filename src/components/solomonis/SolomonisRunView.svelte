@@ -5,9 +5,13 @@
   import { BUCKET, getImageUrl } from '../../lib/constants.js'
   import { decodeHtmlEntities } from '../../lib/html-entities.js'
   import { getCharacterBaseArtUrl } from '../../lib/images.js'
+  import { matchingDecks, reportEvokerId } from '../../lib/solomonis/deck.js'
+  import { isSolomonisDeckDataType } from '../../lib/solomonis/routes.js'
+  import { evokerPortraitUrl } from '../../lib/solomonis/status.js'
   import type { SolomonisRunCapture } from '../../lib/solomonis/types.js'
   import DetailScroll from '../detail/DetailScroll.svelte'
   import PartyMeta from '../detail/party/PartyMeta.svelte'
+  import Select from '../shared/Select.svelte'
 
   interface Props {
     dataType: string
@@ -23,9 +27,41 @@
   let capture = $derived(data as SolomonisRunCapture | null)
   let report = $derived(capture?.report ?? null)
 
-  // Build capture isn't implemented yet, so a run never has the player's
-  // current Evoker's party setup to fill in weapons, summons and blessings.
-  const hasCurrentSetup = false
+  // The report leaves out weapons, summons and Blessings, so they come from
+  // a captured party deck for the Evoker the report was run with: the most
+  // recently captured one unless the user picks another.
+  let evokerId = $derived(reportEvokerId(report))
+  let decks = $derived(
+    matchingDecks(
+      Object.entries(app.cachedStatus)
+        .filter(([type, status]) => isSolomonisDeckDataType(type) && status.available)
+        .map(([type, status]) => ({ ...status, dataType: type })),
+      evokerId
+    )
+  )
+
+  $effect(() => {
+    const chosen = app.solomonisSetupDataType
+    const first = decks[0]?.dataType ?? null
+    if (decks.some((deck) => deck.dataType === chosen)) return
+    untrack(() => {
+      if (app.currentDetailDataType !== dataType) return
+      app.solomonisSetupDataType = first
+    })
+  })
+
+  let chosenDeck = $derived(
+    decks.find((deck) => deck.dataType === app.solomonisSetupDataType) ?? null
+  )
+
+  let deckOptions = $derived(
+    decks.map((deck) => ({
+      value: deck.dataType,
+      label: deck.partyName || deck.displayName,
+      suffix: deck.ageText,
+      image: evokerPortraitUrl(deck.evokerId) || undefined
+    }))
+  )
 
   // The name field starts as the game's deck name, once. A later capture of
   // the other log doesn't overwrite what the user typed.
@@ -154,11 +190,27 @@
         {/each}
       </section>
 
-      <p class="note">
-        {hasCurrentSetup
-          ? m.solomonis_extension_note_with_setup()
-          : m.solomonis_extension_note_without_setup()}
-      </p>
+      <section class="setup" aria-live="polite">
+        {#if decks.length > 1}
+          <Select
+            label={m.solomonis_extension_setup_label()}
+            options={deckOptions}
+            value={app.solomonisSetupDataType ?? undefined}
+            onValueChange={(value) => {
+              if (value) app.solomonisSetupDataType = value
+            }}
+            contained
+            fullWidth
+          />
+        {/if}
+        <p class="note">
+          {chosenDeck
+            ? m.solomonis_extension_note_with_setup({
+                deck: chosenDeck.partyName || chosenDeck.displayName
+              })
+            : m.solomonis_extension_note_without_setup()}
+        </p>
+      </section>
     </div>
   {/if}
 </DetailScroll>
@@ -217,6 +269,12 @@
     width: 100%;
     height: auto;
     border-radius: $item-corner-small;
+  }
+
+  .setup {
+    display: flex;
+    flex-direction: column;
+    gap: $unit;
   }
 
   .logs {

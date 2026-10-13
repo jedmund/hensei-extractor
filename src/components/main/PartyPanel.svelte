@@ -4,17 +4,22 @@
   import Button from '../shared/Button.svelte'
   import EmptyState from '../shared/EmptyState.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
+  import { evokerPortraitUrl } from '../../lib/solomonis/status.js'
 
   const partyTypes = $derived(
     Object.keys(app.cachedStatus)
       .filter(
         (type) =>
-          (type.startsWith('party_') || type.startsWith('solomonis_run_')) &&
+          (type.startsWith('party_') ||
+            type.startsWith('solomonis_run_') ||
+            type.startsWith('solomonis_deck_')) &&
           app.cachedStatus[type]?.available
       )
       .sort((a, b) => {
-        const aTime = app.cachedStatus[a]?.timestamp || 0
-        const bTime = app.cachedStatus[b]?.timestamp || 0
+        const aTime =
+          app.cachedStatus[a]?.timestamp || app.cachedStatus[a]?.lastUpdated || 0
+        const bTime =
+          app.cachedStatus[b]?.timestamp || app.cachedStatus[b]?.lastUpdated || 0
         return bTime - aTime
       })
   )
@@ -40,6 +45,9 @@
         <CacheItemRow
           status={app.cachedStatus[dataType]!}
           {dataType}
+          thumbnail={dataType.startsWith('solomonis_deck_')
+            ? evokerPortraitUrl(app.cachedStatus[dataType]?.evokerId) || undefined
+            : undefined}
           onclick={() => openDetail(dataType)}
         />
       {/each}

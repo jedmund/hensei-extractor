@@ -115,6 +115,8 @@
       <CollectionDetail {dataType} {data} {generation} {simplePortraits} bind:scrolled />
     {:else if kind === 'party'}
       <PartyView {dataType} {data} {generation} {simplePortraits} bind:scrolled />
+    {:else if kind === 'solomonisDeck'}
+      <PartyView {dataType} {data} {generation} {simplePortraits} solomonis bind:scrolled />
     {:else if kind === 'solomonisRun'}
       <SolomonisRunView {dataType} {data} {generation} bind:scrolled />
     {:else}

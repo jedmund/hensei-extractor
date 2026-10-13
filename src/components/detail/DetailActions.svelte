@@ -14,9 +14,15 @@
   import { isCollectionType } from '../../lib/detail-helpers.js'
   import { previewSyncDeletions } from '../../lib/services/chrome-messages.js'
   import CopyDropdown from './CopyDropdown.svelte'
-  import { importSolomonisRun } from '../../lib/solomonis/import-run.js'
+  import {
+    importSolomonisParty,
+    importSolomonisRun
+  } from '../../lib/solomonis/import-run.js'
   import { runReadiness } from '../../lib/solomonis/report.js'
-  import { isSolomonisRunDataType } from '../../lib/solomonis/routes.js'
+  import {
+    isSolomonisDeckDataType,
+    isSolomonisRunDataType
+  } from '../../lib/solomonis/routes.js'
   import type { SolomonisRunCapture } from '../../lib/solomonis/types.js'
 
   let dataType = $derived(app.currentDetailDataType ?? '')
@@ -25,6 +31,7 @@
   let isCharStats = $derived(dataType === 'character_stats')
   let isSupportSummons = $derived(dataType === 'support_summons')
   let isSolomonisRun = $derived(isSolomonisRunDataType(dataType))
+  let isSolomonisDeck = $derived(isSolomonisDeckDataType(dataType))
   // A run imports once both of its report's logs are captured.
   let solomonisRunReady = $derived(
     isSolomonisRun &&
@@ -92,6 +99,10 @@
     if (!dataType) return
     if (isSolomonisRun) {
       await importSolomonisRun()
+      return
+    }
+    if (isSolomonisDeck) {
+      await importSolomonisParty()
       return
     }
     app.importState = 'importing'

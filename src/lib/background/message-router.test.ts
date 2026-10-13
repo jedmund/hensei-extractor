@@ -7,7 +7,10 @@ import * as referenceData from './reference-data.js'
 import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
-import { uploadSolomonisRun } from '../solomonis/upload.js'
+import {
+  uploadSolomonisParty,
+  uploadSolomonisRun
+} from '../solomonis/upload.js'
 import {
   createHandlers,
   createMessageListener,
@@ -50,7 +53,8 @@ vi.mock('./reference-data.js', () => ({
   getCollectionIds: vi.fn(async () => ({}))
 }))
 vi.mock('../solomonis/upload.js', () => ({
-  uploadSolomonisRun: vi.fn(async () => ({}))
+  uploadSolomonisRun: vi.fn(async () => ({})),
+  uploadSolomonisParty: vi.fn(async () => ({}))
 }))
 vi.mock('./party-reference.js', () => ({
   fetchJobSkillSlugs: vi.fn(async () => ({})),
@@ -278,6 +282,100 @@ describe('background message router', () => {
       })
     )
     expect(loadCachedDataForUpload).toHaveBeenCalledWith('solomonis_run_381099')
+  })
+
+  it('sends the picked deck for the report Evoker as current_setup, without the uid', async () => {
+    const report = {
+      reportId: '381099',
+      report: { thumbnail_image: '3040161000_04' },
+      statusList: []
+    }
+    const deck = {
+      deck: {
+        priority: 31001,
+        npc: { '1': { master: { id: '3040161000' } } },
+        pc: { param: { id: 12345678, hp: 1 } }
+      }
+    }
+    vi.mocked(loadCachedDataForUpload).mockImplementation(async (type) =>
+      type === 'solomonis_deck_31001' ? deck : report
+    )
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'solomonis_deck_31001'
+    })
+
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalled())
+    const options = vi.mocked(uploadSolomonisRun).mock.calls[0]![1]!
+    expect(options.currentSetup?.deck.priority).toBe(31001)
+    expect(options.currentSetup?.deck.pc).toEqual({ param: { hp: 1 } })
+  })
+
+  it("drops a picked deck for another Evoker, or that isn't a deck", async () => {
+    const report = {
+      reportId: '381099',
+      report: { thumbnail_image: '3040169000_04' },
+      statusList: []
+    }
+    const deck = {
+      deck: { priority: 31001, npc: { '1': { master: { id: '3040161000' } } } }
+    }
+    vi.mocked(loadCachedDataForUpload).mockImplementation(async (type) =>
+      type === 'solomonis_deck_31001' ? deck : report
+    )
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'solomonis_deck_31001'
+    })
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalledTimes(1))
+    expect(
+      vi.mocked(uploadSolomonisRun).mock.calls[0]![1]!.currentSetup
+    ).toBeNull()
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'party_1_1'
+    })
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalledTimes(2))
+    expect(
+      vi.mocked(uploadSolomonisRun).mock.calls[1]![1]!.currentSetup
+    ).toBeNull()
+    expect(loadCachedDataForUpload).not.toHaveBeenCalledWith('party_1_1')
+  })
+
+  it('imports a captured Solomonis deck with the party meta', async () => {
+    send({
+      action: 'uploadSolomonisParty',
+      dataType: 'solomonis_deck_31001',
+      name: 'Fraux',
+      visibility: 2,
+      playlistIds: ['7'],
+      shareWithCrew: true
+    })
+
+    await vi.waitFor(() =>
+      expect(uploadSolomonisParty).toHaveBeenCalledWith(PAGES, {
+        name: 'Fraux',
+        visibility: 2,
+        playlistIds: ['7'],
+        shareWithCrew: true
+      })
+    )
+    expect(loadCachedDataForUpload).toHaveBeenCalledWith('solomonis_deck_31001')
+  })
+
+  it('only imports Solomonis parties from Solomonis deck captures', async () => {
+    send({ action: 'uploadSolomonisParty', dataType: 'party_1_2' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'unknown_type' })
+    )
+    expect(uploadSolomonisParty).not.toHaveBeenCalled()
   })
 
   it('only uploads Solomonis runs from Solomonis run captures', async () => {

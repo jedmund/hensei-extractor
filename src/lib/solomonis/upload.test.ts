@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import detailResponse from './__fixtures__/report-detail.json'
 import spacebookResponse from './__fixtures__/report-spacebook.json'
+import deckResponse from './__fixtures__/party-deck.json'
 import { apiFetch } from '../constants.js'
 import { authenticatedPost, getAuthToken } from '../background/api-client.js'
 import { shapeReport, shapeStatusList } from './report.js'
 import type { SolomonisRunCapture } from './types.js'
-import { uploadSolomonisRun } from './upload.js'
+import { uploadSolomonisParty, uploadSolomonisRun } from './upload.js'
 
 vi.mock('../constants.js', () => ({
   apiFetch: vi.fn(),
@@ -153,5 +154,77 @@ describe('uploadSolomonisRun', () => {
       error: 'not_logged_in'
     })
     expect(apiFetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('uploadSolomonisParty', () => {
+  const posted = () =>
+    vi.mocked(authenticatedPost).mock.calls[0] as unknown as [
+      string,
+      Record<string, unknown>
+    ]
+
+  it('posts the deck to /import as a new party', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({
+      data: { party_id: 'party-1', shortcode: 'abc123', warnings: ['w', 1] }
+    })
+
+    const result = await uploadSolomonisParty(deckResponse, {
+      name: 'Fraux',
+      visibility: 2,
+      playlistIds: ['7']
+    })
+
+    const [endpoint, body] = posted()
+    expect(endpoint).toBe('/import')
+    expect(body).toMatchObject({
+      kind: 'solomonis_party',
+      name: 'Fraux',
+      visibility: 2,
+      playlist_ids: ['7']
+    })
+    expect(JSON.stringify(body)).not.toContain('12345678')
+    expect(result).toEqual({
+      success: true,
+      shortcode: 'abc123',
+      url: 'https://granblue.team/teams/abc123',
+      warnings: ['w']
+    })
+  })
+
+  it('passes API errors on', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({
+      error: 'invalid_token'
+    })
+    expect(await uploadSolomonisParty(deckResponse)).toEqual({
+      error: 'invalid_token'
+    })
+    vi.mocked(authenticatedPost).mockResolvedValueOnce({
+      error: 'invalid_data'
+    })
+    expect(await uploadSolomonisParty(deckResponse)).toEqual({
+      error: 'invalid_data'
+    })
+  })
+
+  it('shares the new party with the crew when asked', async () => {
+    vi.mocked(authenticatedPost)
+      .mockResolvedValueOnce({ data: { party_id: 'party-1', shortcode: 'a' } })
+      .mockResolvedValueOnce({ error: 'forbidden' })
+
+    const result = await uploadSolomonisParty(deckResponse, {
+      shareWithCrew: true
+    })
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith(
+      '/parties/party-1/shares',
+      {}
+    )
+    expect(result).toMatchObject({ success: true, shareFailed: true })
+  })
+
+  it('posts nothing for a capture that is not a deck', async () => {
+    expect(await uploadSolomonisParty({})).toEqual({ error: 'invalid_data' })
+    expect(authenticatedPost).not.toHaveBeenCalled()
   })
 })

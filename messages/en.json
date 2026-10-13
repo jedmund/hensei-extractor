@@ -428,8 +428,8 @@
   "solomonis_extension_log_missing": "Not captured",
   "solomonis_extension_open_report_hint": "Open this report's expedition log in the game to finish capturing it.",
   "solomonis_extension_open_book_hint": "Open this report's guidebook log in the game to finish capturing it.",
-  "solomonis_extension_note_without_setup": "The game's expedition report doesn't include weapons, summons or Arcarum Blessings. Hensei fills them in from your current Evoker's party setup when it has one; otherwise you can add them on granblue.team after importing.",
-  "solomonis_extension_note_with_setup": "The game's expedition report doesn't include weapons, summons or Arcarum Blessings, so Hensei copies them from your current Evoker's party setup. It may differ from what this run used.",
+  "solomonis_extension_note_without_setup": "No party deck for this report's Evoker has been captured, so the report imports without weapons, summons or Blessings. To include them, open the Evoker's party in the game first, or add them on granblue.team after importing.",
+  "solomonis_extension_note_with_setup": "The report doesn't include weapons, summons or Blessings, so Hensei fills them in from your captured party deck “{deck}”. It may differ from what this expedition used.",
   "solomonis_extension_outcome_cleared": "Cleared",
   "solomonis_extension_outcome_failed": "Failed",
   "solomonis_extension_pledge": "Pledge {level}",
@@ -439,10 +439,12 @@
   "solomonis_extension_ended": "Ended {date}",
   "solomonis_extension_party_label": "Party at the end",
   "solomonis_extension_duplicate_title": "Already imported",
-  "solomonis_extension_duplicate_body": "You've already imported this expedition report. Update that run with it, or leave the run as it is.",
-  "solomonis_extension_duplicate_update": "Update run",
-  "solomonis_extension_duplicate_view": "View run",
+  "solomonis_extension_duplicate_body": "You've already imported this expedition report. Update that party with it, or leave the party as it is.",
+  "solomonis_extension_duplicate_update": "Update party",
+  "solomonis_extension_duplicate_view": "View party",
   "solomonis_extension_toast_incomplete": "Open both the expedition log and the guidebook log for this report first",
-  "solomonis_extension_toast_updated": "Run updated. Opening it...",
-  "solomonis_extension_toast_updated_with_warnings": "Run updated with {count} warnings. Opening it..."
+  "solomonis_extension_toast_updated": "Party updated. Opening it...",
+  "solomonis_extension_toast_updated_with_warnings": "Party updated with {count} warnings. Opening it...",
+  "solomonis_extension_deck_title": "Solomonis party",
+  "solomonis_extension_setup_label": "Party deck"
 }

@@ -1,8 +1,10 @@
 /**
- * Uploads a captured expedition report as a run: POST /import with
- * `kind: "solomonis_run"`. A report this user already imported comes back
- * as 409 `duplicate_report`, which the side panel offers to resend with
- * `update_existing: true`.
+ * Uploads Evoking Solomonis captures to POST /import:
+ *
+ * - an expedition report, `kind: "solomonis_run"`. A report this user
+ *   already imported comes back as 409 `duplicate_report`, which the side
+ *   panel offers to resend with `update_existing: true`.
+ * - an Evoker's party deck, `kind: "solomonis_party"`: a new party each time.
  */
 
 import { apiFetch, getApiUrl, getSiteBaseUrl } from '../constants.js'
@@ -11,20 +13,25 @@ import {
   getAuthToken,
   parseErrorBody
 } from '../background/api-client.js'
+import { buildPartyImportBody } from './deck.js'
 import { buildRunImportBody } from './report.js'
-import type { SolomonisRunCapture, SolomonisRunImportOptions } from './types.js'
+import type {
+  SolomonisPartyImportOptions,
+  SolomonisRunCapture,
+  SolomonisRunImportOptions
+} from './types.js'
 
 export interface UploadSolomonisRunResponse {
   success?: boolean
   shortcode?: string
   url?: string
   warnings?: string[]
-  /** The run was imported but sharing it with the crew failed */
+  /** The party was imported but sharing it with the crew failed */
   shareFailed?: boolean
-  /** True when an existing run was updated instead of a new one created */
+  /** True when an existing party was updated instead of a new one created */
   updated?: boolean
   error?: string
-  /** With `duplicate_report`: the run this report was already imported as */
+  /** With `duplicate_report`: the party this report was already imported as */
   duplicate?: { partyId: string | null; shortcode: string; url: string }
 }
 
@@ -101,8 +108,8 @@ export async function uploadSolomonisRun(
   const shortcode = typeof data.shortcode === 'string' ? data.shortcode : null
   if (!shortcode) return { error: 'invalid_data' }
 
-  // The run is already saved, so a failed share doesn't fail the import.
-  // An updated run keeps the sharing it already had.
+  // The party is already saved, so a failed share doesn't fail the import.
+  // An updated party keeps the sharing it already had.
   let shareFailed = false
   if (
     options.shareWithCrew &&
@@ -126,6 +133,49 @@ export async function uploadSolomonisRun(
     url: partyUrl(shortcode),
     warnings,
     ...(body.update_existing && { updated: true }),
+    ...(shareFailed && { shareFailed })
+  }
+}
+
+export type UploadSolomonisPartyResponse = Omit<
+  UploadSolomonisRunResponse,
+  'updated' | 'duplicate'
+>
+
+/** Imports a captured deck as a new Solomonis party. */
+export async function uploadSolomonisParty(
+  deck: unknown,
+  options: SolomonisPartyImportOptions = {}
+): Promise<UploadSolomonisPartyResponse> {
+  const body = buildPartyImportBody(deck, options)
+  if (!body) return { error: 'invalid_data' }
+
+  const result = await authenticatedPost('/import', body)
+  if (result.error) return { error: result.error }
+
+  const data = result.data ?? {}
+  const shortcode = typeof data.shortcode === 'string' ? data.shortcode : null
+  if (!shortcode) return { error: 'invalid_data' }
+
+  // The party is already saved, so a failed share doesn't fail the import.
+  let shareFailed = false
+  if (options.shareWithCrew && typeof data.party_id === 'string') {
+    const share = await authenticatedPost(
+      `/parties/${data.party_id}/shares`,
+      {}
+    )
+    shareFailed = !!share.error
+  }
+
+  const warnings = Array.isArray(data.warnings)
+    ? data.warnings.filter((w): w is string => typeof w === 'string')
+    : []
+
+  return {
+    success: true,
+    shortcode,
+    url: `${await getSiteBaseUrl()}/teams/${shortcode}`,
+    warnings,
     ...(shareFailed && { shareFailed })
   }
 }
