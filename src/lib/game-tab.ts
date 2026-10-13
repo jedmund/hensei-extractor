@@ -30,15 +30,15 @@ export function pickGameTab<T extends GameTabCandidate>(tabs: T[]): T | null {
 }
 
 /**
- * The URL of a game page on the same host as the tab (the game also runs on
- * Mobage and Steam hosts). Keeps nothing of the tab's path or query.
+ * The URL of a game page in the tab: its own URL with only the hash
+ * changed, so the game moves to the page without reloading (it also runs on
+ * Mobage and Steam hosts, whose URLs carry a query). A new tab gets the main
+ * game host.
  */
 export function gamePageUrl(tabUrl: string | undefined, hash: string): string {
-  const origin = isGameUrl(tabUrl)
-    ? new URL(tabUrl!).origin
-    : DEFAULT_GAME_ORIGIN
-  const fragment = hash.startsWith('#') ? hash : `#${hash}`
-  return `${origin}/${fragment}`
+  const url = new URL(isGameUrl(tabUrl) ? tabUrl! : `${DEFAULT_GAME_ORIGIN}/`)
+  url.hash = hash.startsWith('#') ? hash.slice(1) : hash
+  return url.toString()
 }
 
 /** Opens a game page in the player's game tab, or in a new tab. */

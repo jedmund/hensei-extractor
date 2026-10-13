@@ -1,14 +1,9 @@
 <script lang="ts">
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
-  import { openGamePage } from '../../lib/game-tab.js'
   import { isSolomonisRunDataType } from '../../lib/solomonis/routes.js'
-  import {
-    SOLOMONIS_REPORT_LIST_PAGE,
-    matchingRuns
-  } from '../../lib/solomonis/steps.js'
+  import { matchingRuns } from '../../lib/solomonis/steps.js'
   import CacheItemRow from '../main/CacheItemRow.svelte'
-  import Button from '../shared/Button.svelte'
 
   interface Props {
     /** The open deck (`solomonis_deck_<priority>`) */
@@ -51,14 +46,6 @@
     </div>
   {:else}
     <p class="note">{m.solomonis_extension_reports_hint()}</p>
-    {#if SOLOMONIS_REPORT_LIST_PAGE}
-      {@const page = SOLOMONIS_REPORT_LIST_PAGE}
-      <div>
-        <Button size="small" onclick={() => void openGamePage(page)}>
-          {m.solomonis_extension_open_in_game()}
-        </Button>
-      </div>
-    {/if}
   {/if}
 </section>
 

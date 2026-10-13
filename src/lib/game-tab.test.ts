@@ -41,13 +41,16 @@ describe('pickGameTab', () => {
 })
 
 describe('gamePageUrl', () => {
-  it("stays on the tab's game host and drops its path and query", () => {
+  it("changes only the hash of the tab's URL, so the game doesn't reload", () => {
     expect(
       gamePageUrl(
         'https://gbf.game.mbga.jp/?uid=123#mypage',
         '#arcarum3/dungeon_report_book/id=1'
       )
-    ).toBe('https://gbf.game.mbga.jp/#arcarum3/dungeon_report_book/id=1')
+    ).toBe('https://gbf.game.mbga.jp/?uid=123#arcarum3/dungeon_report_book/id=1')
+    expect(
+      gamePageUrl('https://game.granbluefantasy.jp/#mypage', '#party/index/31001/npc/0')
+    ).toBe('https://game.granbluefantasy.jp/#party/index/31001/npc/0')
   })
 
   it('uses the main game host for a new tab', () => {

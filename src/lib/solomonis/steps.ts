@@ -10,8 +10,10 @@
  * - the Evoker's party deck (optional): weapons, summons and Blessings,
  *   which the report leaves out.
  *
- * Pages are game hashes (`#…`), opened in the player's game tab. Each one
- * carries at most the report ID from the path; never a query string.
+ * Pages are game hashes (`#…`), as the game itself shows them in the
+ * address bar, opened in the player's game tab. The game then loads them
+ * as if the player had navigated there; the extension never requests
+ * anything from the game.
  */
 
 import { matchingDecks, type DeckCandidate } from './deck.js'
@@ -19,7 +21,7 @@ import type { SolomonisRunCapture } from './types.js'
 
 /** The expedition log of one report. */
 export function reportLogPage(reportId: string): string {
-  return `#arcarum3/dungeon_report_detail/id=${reportId}`
+  return `#arcarum3/dungeon_report_detail/id=${reportId}&prev_page=1`
 }
 
 /** The guidebook log of one report. */
@@ -28,24 +30,34 @@ export function reportBookPage(reportId: string): string {
 }
 
 /**
- * The screen that loads an Evoker's party deck
- * (GET /rest/arcarum3/party/deck/<group><nn>).
- *
- * TODO(solomonis): unknown. Capture the page's hash from the game (the
- * party screen reached from the Solomonis top) and set it here. While it's
- * null, the side panel tells the player which screen to open instead of
- * offering a button.
+ * Each Evoker's character ID in the game, which is also the Solomonis party
+ * group (`combination_group_id`), by their granblue_id.
  */
-export const SOLOMONIS_PARTY_PAGE: string | null = null
+const EVOKER_CHARACTER_IDS: Record<string, string> = {
+  '3040160000': '3099', // Maria Theresa
+  '3040161000': '3100', // Fraux
+  '3040162000': '3101', // Geisenborger
+  '3040163000': '3102', // Estarriola
+  '3040164000': '3103', // Caim
+  '3040165000': '3104', // Lobelia
+  '3040166000': '3105', // Katzelia
+  '3040167000': '3106', // Alanaan
+  '3040168000': '3107', // Haaselia
+  '3040169000': '3108' // Nier
+}
 
 /**
- * The list of expedition reports.
- *
- * TODO(solomonis): unknown; the report list request hasn't been captured
- * yet (see the PRD's "Still to capture"). While it's null, the side panel
- * tells the player which screen to open instead of offering a button.
+ * An Evoker's first party, which loads its party deck
+ * (GET /rest/arcarum3/party/deck/<group><deck>). The game keeps the address
+ * when the player switches to another of the Evoker's parties, and that
+ * switch loads the other deck. Null for an unknown Evoker.
  */
-export const SOLOMONIS_REPORT_LIST_PAGE: string | null = null
+export function evokerPartyPage(
+  evokerId: string | null | undefined
+): string | null {
+  const group = evokerId ? EVOKER_CHARACTER_IDS[evokerId] : undefined
+  return group ? `#party/index/${group}1/npc/0` : null
+}
 
 export type SolomonisStepKey = 'report' | 'book' | 'deck'
 
@@ -66,6 +78,8 @@ export interface SolomonisStep {
 
 export interface SolomonisRunStepInput {
   reportId: string
+  /** The route Evoker's granblue_id, from the expedition log */
+  evokerId: string | null
   hasReport: boolean
   hasBook: boolean
   /** Whether a captured party deck goes with the report (D26 pairing) */
@@ -91,7 +105,7 @@ export function runSteps(input: SolomonisRunStepInput): SolomonisStep[] {
       key: 'deck',
       need: 'optional',
       captured: input.hasDeck,
-      page: SOLOMONIS_PARTY_PAGE
+      page: evokerPartyPage(input.evokerId)
     }
   ]
 }

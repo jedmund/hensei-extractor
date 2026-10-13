@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  SOLOMONIS_PARTY_PAGE,
   canImportRun,
   canUpdateImportedRun,
+  evokerPartyPage,
   matchingRuns,
   reportBookPage,
   reportLogPage,
@@ -11,7 +11,13 @@ import {
 } from './steps.js'
 
 const steps = (hasReport: boolean, hasBook: boolean, hasDeck: boolean) =>
-  runSteps({ reportId: '381099', hasReport, hasBook, hasDeck })
+  runSteps({
+    reportId: '381099',
+    evokerId: '3040161000',
+    hasReport,
+    hasBook,
+    hasDeck
+  })
 
 describe('runSteps', () => {
   it('lists the expedition log, guidebook log and party deck in order', () => {
@@ -20,7 +26,7 @@ describe('runSteps', () => {
         key: 'report',
         need: 'required',
         captured: false,
-        page: '#arcarum3/dungeon_report_detail/id=381099'
+        page: '#arcarum3/dungeon_report_detail/id=381099&prev_page=1'
       },
       {
         key: 'book',
@@ -32,7 +38,7 @@ describe('runSteps', () => {
         key: 'deck',
         need: 'optional',
         captured: false,
-        page: SOLOMONIS_PARTY_PAGE
+        page: '#party/index/31001/npc/0'
       }
     ])
   })
@@ -45,13 +51,18 @@ describe('runSteps', () => {
     ])
   })
 
-  it('has no page for the party deck until its screen is known', () => {
-    // Flip this when SOLOMONIS_PARTY_PAGE is filled in.
-    expect(steps(true, true, false)[2]!.page).toBeNull()
+  it("opens the Evoker's first party, and has no page for an unknown Evoker", () => {
+    expect(evokerPartyPage('3040160000')).toBe('#party/index/30991/npc/0')
+    expect(evokerPartyPage('3040164000')).toBe('#party/index/31031/npc/0')
+    expect(evokerPartyPage('3040169000')).toBe('#party/index/31081/npc/0')
+    expect(evokerPartyPage('3040999000')).toBeNull()
+    expect(evokerPartyPage(null)).toBeNull()
   })
 
   it('builds report pages from the path ID only', () => {
-    expect(reportLogPage('42')).toBe('#arcarum3/dungeon_report_detail/id=42')
+    expect(reportLogPage('42')).toBe(
+      '#arcarum3/dungeon_report_detail/id=42&prev_page=1'
+    )
     expect(reportBookPage('42')).toBe('#arcarum3/dungeon_report_book/id=42')
   })
 })

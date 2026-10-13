@@ -140,6 +140,7 @@
     capture
       ? runSteps({
           reportId: capture.reportId,
+          evokerId,
           hasReport: !!capture.report,
           hasBook: !!capture.statusList,
           hasDeck: !!chosenDeck
