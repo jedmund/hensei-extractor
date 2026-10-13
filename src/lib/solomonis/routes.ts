@@ -57,3 +57,22 @@ export function getReportId(url: string): string | null {
   const match = path.match(REPORT_ID)
   return match ? match[1]! : null
 }
+
+/**
+ * An Evoker's party deck: GET /rest/arcarum3/party/deck/<group><deck>.
+ * It contains '/party/deck', so its rule comes before the normal party rule.
+ * The query string carries the player's uid; nothing here reads it, and the
+ * deck is keyed by `deck.priority` from the body.
+ */
+export const SOLOMONIS_DECK_PATTERN = '/rest/arcarum3/party/deck/'
+
+/** The party deck data type, and the side panel prefix (`solomonis_deck_<priority>`). */
+export const SOLOMONIS_DECK = 'solomonis_deck'
+
+export function isSolomonisDeckDataType(dataType: string): boolean {
+  return /^solomonis_deck_\d+$/.test(dataType)
+}
+
+export function solomonisDeckDataType(priority: string | number): string {
+  return `${SOLOMONIS_DECK}_${priority}`
+}

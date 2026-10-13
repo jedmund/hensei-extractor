@@ -8,6 +8,8 @@
 import {
   getReportId,
   isSolomonisReportDataType,
+  SOLOMONIS_DECK,
+  SOLOMONIS_DECK_PATTERN,
   SOLOMONIS_REPORT,
   SOLOMONIS_REPORT_BOOK,
   SOLOMONIS_REPORT_BOOK_PATTERN,
@@ -58,7 +60,9 @@ export const INTERCEPT_PATTERNS = [
   '/profile/content/index/',
   // Evoking Solomonis expedition reports (expedition and guidebook logs)
   SOLOMONIS_REPORT_PATTERN,
-  SOLOMONIS_REPORT_BOOK_PATTERN
+  SOLOMONIS_REPORT_BOOK_PATTERN,
+  // Evoking Solomonis party decks (also matched by '/party/deck')
+  SOLOMONIS_DECK_PATTERN
 ]
 
 /**
@@ -117,6 +121,8 @@ export interface DataTypeRule {
  * Ordered: the first matching rule wins. Several patterns contain others,
  * so a more specific rule must come before any rule it would also match:
  *
+ * - '/rest/arcarum3/party/deck/' contains '/party/deck', so Solomonis
+ *   decks come before normal parties.
  * - '/rest/weapon/list/' contains '/weapon/list/' (same for npc, summon),
  *   so collections come before list pages.
  * - total_performance comes before todays_performance, and both need a
@@ -125,6 +131,8 @@ export interface DataTypeRule {
  * intercept-routes.test.ts checks that no rule is shadowed by an earlier one.
  */
 export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
+  // Solomonis decks before parties: their path contains '/party/deck'.
+  { dataType: SOLOMONIS_DECK, includes: [SOLOMONIS_DECK_PATTERN] },
   { dataType: 'party', includes: ['/party/deck'] },
   { dataType: 'detail_npc', includes: ['/archive/npc_detail'] },
   { dataType: 'detail_weapon', includes: ['/archive/weapon_detail'] },

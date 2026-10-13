@@ -109,6 +109,9 @@ export interface CacheStatusEntry {
   reportId?: string
   hasReport?: boolean
   hasBook?: boolean
+  /** Solomonis decks: the route Evoker */
+  evokerId?: string | null
+  evokerName?: string | null
 }
 
 export interface CacheStatusResult {

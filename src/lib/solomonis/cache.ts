@@ -1,12 +1,18 @@
 /**
- * Caches expedition reports for the side panel: one entry per report ID,
- * holding whichever of the two logs have been captured. Only the shaped
- * report and the guidebook are stored; never the request URL (it carries
- * the player's uid), `display_list`, `langMsg` or the HTML `data`.
+ * Caches expedition reports and Evokers' party decks for the side panel.
+ *
+ * Reports: one entry per report ID, holding whichever of the two logs have
+ * been captured. Only the shaped report and the guidebook are stored; never
+ * the request URL (it carries the player's uid), `display_list`, `langMsg`
+ * or the HTML `data`.
+ *
+ * Decks: one entry per `deck.priority`, read from the body. Only the shaped
+ * deck is stored (no uid), never the request URL.
  */
 
 import { CACHE_PREFIXES } from '../constants.js'
 import { decodeHtmlEntities } from '../html-entities.js'
+import { deckEvoker, deckPriority, shapeDeck } from './deck.js'
 import {
   emptyCapture,
   mergeCapture,
@@ -14,12 +20,18 @@ import {
   shapeStatusList
 } from './report.js'
 import {
+  SOLOMONIS_DECK,
   SOLOMONIS_REPORT,
   SOLOMONIS_RUN,
+  solomonisDeckDataType,
   solomonisRunDataType,
   type SolomonisReportDataType
 } from './routes.js'
-import type { SolomonisRunCacheEntry, SolomonisRunCapture } from './types.js'
+import type {
+  SolomonisDeckCacheEntry,
+  SolomonisRunCacheEntry,
+  SolomonisRunCapture
+} from './types.js'
 
 export function solomonisRunCacheKey(reportId: string): string {
   return CACHE_PREFIXES[SOLOMONIS_RUN]! + reportId
@@ -86,4 +98,36 @@ export async function cacheSolomonisReport(
     await chrome.storage.local.set({ [key]: entry })
     return solomonisRunDataType(reportId)
   })
+}
+
+export function solomonisDeckCacheKey(priority: string): string {
+  return CACHE_PREFIXES[SOLOMONIS_DECK]! + priority
+}
+
+/**
+ * Stores an Evoker's party deck, replacing an earlier capture of the same
+ * deck. Returns the side panel data type (`solomonis_deck_<priority>`), or
+ * null if the response isn't a deck.
+ */
+export async function cacheSolomonisDeck(
+  data: unknown,
+  timestamp: number
+): Promise<string | null> {
+  const deck = shapeDeck(data)
+  const priority = deck ? deckPriority(deck) : null
+  if (!deck || !priority) return null
+
+  const evoker = deckEvoker(deck)
+  const name = deck.deck.name
+  const entry: SolomonisDeckCacheEntry = {
+    data: deck,
+    timestamp,
+    priority,
+    deckName:
+      typeof name === 'string' ? decodeHtmlEntities(name).trim() || null : null,
+    evokerId: evoker?.id ?? null,
+    evokerName: evoker?.name ? decodeHtmlEntities(evoker.name) : null
+  }
+  await chrome.storage.local.set({ [solomonisDeckCacheKey(priority)]: entry })
+  return solomonisDeckDataType(priority)
 }

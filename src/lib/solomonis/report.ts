@@ -7,8 +7,8 @@
  * inventory with their user ID). None of them are kept or uploaded.
  */
 
+import { shapeDeck } from './deck.js'
 import type {
-  SolomonisCurrentSetup,
   SolomonisReport,
   SolomonisRunCapture,
   SolomonisRunImportBody,
@@ -130,7 +130,8 @@ export function buildRunImportBody(
   const name = options.name?.trim()
   if (name) body.name = name
   if (options.visibility) body.visibility = options.visibility
-  const setup: SolomonisCurrentSetup | null | undefined = options.currentSetup
+  // Shaped again so the player's uid can't reach the API with the deck.
+  const setup = options.currentSetup ? shapeDeck(options.currentSetup) : null
   if (setup) body.solomonis.current_setup = setup
   return body
 }

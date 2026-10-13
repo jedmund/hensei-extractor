@@ -1,6 +1,7 @@
 /**
- * Evoking Solomonis run import: what the extension keeps from the game's
- * expedition reports, and what it sends to POST /import.
+ * Evoking Solomonis imports: what the extension keeps from the game's
+ * expedition reports and Evokers' party decks, and what it sends to
+ * POST /import.
  */
 
 /**
@@ -53,12 +54,46 @@ export interface SolomonisRunCacheEntry {
 }
 
 /**
- * The player's party setup for the run's route Evoker, which fills in the
- * weapons, summons and blessings the report leaves out. Build capture isn't
- * implemented yet: its shape is pinned once the Evoker's party screen has
- * been captured (PRD "Builds"), so this stays the raw capture for now.
+ * An Evoker's party deck, as kept from GET /rest/arcarum3/party/deck/:
+ * the response's `deck` (the normal deck shape plus the Solomonis fields)
+ * and `bullet_info`, with `deck.pc.param.id` (the player's uid) removed.
+ * Kept as the game sends it otherwise, since the API's deck processors read
+ * it, so only the fields the extension reads are typed.
  */
-export type SolomonisCurrentSetup = Record<string, unknown>
+export interface SolomonisDeck {
+  deck: {
+    name?: string
+    group_name?: string
+    priority?: number | string
+    npc?: Record<
+      string,
+      {
+        master?: { id?: string | number; name?: string; [key: string]: unknown }
+        [key: string]: unknown
+      } | null
+    >
+    pc?: Record<string, unknown>
+    [key: string]: unknown
+  }
+  bullet_info?: unknown
+}
+
+/** The chrome.storage entry for one deck. Never holds the request URL. */
+export interface SolomonisDeckCacheEntry {
+  data: SolomonisDeck
+  timestamp: number
+  priority: string
+  deckName: string | null
+  /** The route Evoker (`deck.npc["1"].master`) */
+  evokerId: string | null
+  evokerName: string | null
+}
+
+/**
+ * The deck sent with a report as `current_setup`, which fills in the
+ * weapons and summons the report leaves out.
+ */
+export type SolomonisCurrentSetup = SolomonisDeck
 
 /** The `solomonis` object of a `solomonis_run` import. */
 export interface SolomonisRunPayload {
@@ -83,7 +118,23 @@ export interface SolomonisRunImportOptions {
   visibility?: number
   playlistIds?: string[]
   shareWithCrew?: boolean
-  /** Resend after a duplicate_report conflict to update the existing run */
+  /** Resend after a duplicate_report conflict to update the existing party */
   updateExisting?: boolean
   currentSetup?: SolomonisCurrentSetup | null
+}
+
+/** POST /import body for an Evoker's party deck. */
+export interface SolomonisPartyImportBody {
+  kind: 'solomonis_party'
+  name?: string
+  visibility?: number
+  playlist_ids: string[]
+  solomonis: { deck: SolomonisDeck }
+}
+
+export interface SolomonisPartyImportOptions {
+  name?: string
+  visibility?: number
+  playlistIds?: string[]
+  shareWithCrew?: boolean
 }

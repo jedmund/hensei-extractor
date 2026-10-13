@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import detailResponse from './__fixtures__/report-detail.json'
 import spacebookResponse from './__fixtures__/report-spacebook.json'
-import { cacheSolomonisReport, solomonisRunCacheKey } from './cache.js'
-import type { SolomonisRunCacheEntry } from './types.js'
+import deckResponse from './__fixtures__/party-deck.json'
+import {
+  cacheSolomonisDeck,
+  cacheSolomonisReport,
+  solomonisRunCacheKey
+} from './cache.js'
+import type {
+  SolomonisDeckCacheEntry,
+  SolomonisRunCacheEntry
+} from './types.js'
 
 vi.mock('../constants.js', () => ({
-  CACHE_PREFIXES: { solomonis_run: 'gbf_cache_solomonis_run_' }
+  CACHE_PREFIXES: {
+    solomonis_run: 'gbf_cache_solomonis_run_',
+    solomonis_deck: 'gbf_cache_solomonis_deck_'
+  }
 }))
 
 let storage: Record<string, unknown>
@@ -120,6 +131,53 @@ describe('cacheSolomonisReport', () => {
     expect(
       await cacheSolomonisReport('solomonis_report_book', '1', {}, 10)
     ).toBeNull()
+    expect(storage).toEqual({})
+  })
+})
+
+describe('cacheSolomonisDeck', () => {
+  const DECK_KEY = 'gbf_cache_solomonis_deck_31001'
+
+  it('keys the deck by its priority and keeps the Evoker for pairing', async () => {
+    expect(await cacheSolomonisDeck(deckResponse, 10)).toBe(
+      'solomonis_deck_31001'
+    )
+    const entry = storage[DECK_KEY] as SolomonisDeckCacheEntry
+    expect(entry).toMatchObject({
+      timestamp: 10,
+      priority: '31001',
+      deckName: 'Fraux Party 1',
+      evokerId: '3040161000',
+      evokerName: 'Fraux'
+    })
+    expect(entry.data.deck.dungeon_name).toBe('Allotropic Microcosm')
+  })
+
+  it("never stores the player's uid or a URL", async () => {
+    await cacheSolomonisDeck(deckResponse, 10)
+    const json = JSON.stringify(storage)
+    expect(json).not.toContain('12345678')
+    expect(json).not.toMatch(/uid=|"uid"|"url"|\?_=/)
+    const entry = storage[DECK_KEY] as SolomonisDeckCacheEntry
+    expect(entry.data.deck.pc?.param).not.toHaveProperty('id')
+  })
+
+  it('replaces an earlier capture of the same deck', async () => {
+    await cacheSolomonisDeck(deckResponse, 10)
+    await cacheSolomonisDeck(
+      { deck: { ...deckResponse.deck, name: 'Renamed' } },
+      20
+    )
+    expect(storage[DECK_KEY]).toMatchObject({
+      deckName: 'Renamed',
+      timestamp: 20
+    })
+    expect(Object.keys(storage)).toEqual([DECK_KEY])
+  })
+
+  it('ignores responses without a deck priority', async () => {
+    expect(await cacheSolomonisDeck({ deck: { name: 'x' } }, 10)).toBeNull()
+    expect(await cacheSolomonisDeck(null, 10)).toBeNull()
     expect(storage).toEqual({})
   })
 })

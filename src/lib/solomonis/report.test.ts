@@ -167,9 +167,18 @@ describe('buildRunImportBody', () => {
   })
 
   it('passes a current setup through when there is one', () => {
-    const setup = { deck: { name: 'Nier' } }
+    const setup = { deck: { priority: 31001, name: 'Nier' } }
     const body = buildRunImportBody(pairedCapture(), { currentSetup: setup })!
     expect(body.solomonis.current_setup).toEqual(setup)
+  })
+
+  it("never sends the player's uid with the current setup", () => {
+    const body = buildRunImportBody(pairedCapture(), {
+      currentSetup: {
+        deck: { priority: 31001, pc: { param: { id: 12345678, hp: 1 } } }
+      }
+    })!
+    expect(body.solomonis.current_setup?.deck.pc).toEqual({ param: { hp: 1 } })
   })
 
   it('returns null until both logs are captured', () => {

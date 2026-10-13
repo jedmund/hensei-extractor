@@ -51,7 +51,11 @@ const ROUTES: ReadonlyArray<readonly [dataType: string, path: string]> = [
   ['guild_info', '/rest/guild/main/guild_info'],
   ['support_summons', '/profile/content/index/12345678'],
   ['solomonis_report', '/arcarum3/dungeon/report/content/detail/381099'],
-  ['solomonis_report_book', '/arcarum3/dungeon/report/content/spacebook/381099']
+  [
+    'solomonis_report_book',
+    '/arcarum3/dungeon/report/content/spacebook/381099'
+  ],
+  ['solomonis_deck', '/rest/arcarum3/party/deck/31001']
 ]
 
 describe('getDataType', () => {
@@ -140,6 +144,22 @@ describe('getDataType', () => {
 
     it('puts party decks ahead of everything else', () => {
       expect(getDataType(gbf('/party/deck/1/3/weapon/list/1'))).toBe('party')
+    })
+
+    it('reads Solomonis decks before normal party decks', () => {
+      // '/rest/arcarum3/party/deck/' contains '/party/deck'.
+      expect(getDataType(gbf('/rest/arcarum3/party/deck/31001'))).toBe(
+        'solomonis_deck'
+      )
+      expect(getDataType(gbf('/party/deck/1/3'))).toBe('party')
+      expect(getDataType(gbf('/rest/party/deck/1/3'))).toBe('party')
+      const solomonis = DATA_TYPE_RULES.findIndex(
+        (rule) => rule.dataType === 'solomonis_deck'
+      )
+      const party = DATA_TYPE_RULES.findIndex(
+        (rule) => rule.dataType === 'party'
+      )
+      expect(solomonis).toBeLessThan(party)
     })
 
     it('matches patterns in the path only, not the query', () => {
@@ -607,5 +627,36 @@ describe('Solomonis expedition reports', () => {
     expect(
       buildInterceptMetadata(gbf('/party/deck/1/3'), {}, 'party', null).reportId
     ).toBeNull()
+  })
+})
+
+describe('Solomonis party decks', () => {
+  const url =
+    'https://game.granbluefantasy.jp/rest/arcarum3/party/deck/31001?_=1&t=2&uid=12345678'
+
+  it('never gives a deck a party ID from its URL', () => {
+    expect(
+      buildInterceptMetadata(
+        url,
+        { deck: { priority: 31001 } },
+        'solomonis_deck',
+        null
+      )
+    ).toEqual({
+      pageNumber: null,
+      partyId: null,
+      masterId: null,
+      stashNumber: null,
+      stashName: null,
+      eventNumber: null,
+      reportId: null
+    })
+  })
+
+  it('matches the deck path only in the path, never in the query', () => {
+    const query =
+      'https://game.granbluefantasy.jp/quest?next=/rest/arcarum3/party/deck/1'
+    expect(getDataType(query)).toBe('unknown')
+    expect(getDataType(url)).toBe('solomonis_deck')
   })
 })

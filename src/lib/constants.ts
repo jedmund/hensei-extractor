@@ -140,7 +140,9 @@ export const CACHE_PREFIXES: Record<string, string> = {
   unf_scores: 'gbf_cache_unf_scores_',
   unf_daily_scores: 'gbf_cache_unf_daily_scores_',
   // Evoking Solomonis expedition reports, both logs per report ID
-  solomonis_run: 'gbf_cache_solomonis_run_'
+  solomonis_run: 'gbf_cache_solomonis_run_',
+  // Evoking Solomonis party decks, one per deck priority
+  solomonis_deck: 'gbf_cache_solomonis_deck_'
 }
 
 export function resolveCacheKey(dataType: string): string | null {

@@ -12,7 +12,23 @@ import type {
   CacheStatusResult,
   UnfMember
 } from './types.js'
-import type { SolomonisRunCacheEntry } from '../solomonis/types.js'
+import type {
+  SolomonisDeckCacheEntry,
+  SolomonisRunCacheEntry
+} from '../solomonis/types.js'
+
+/**
+ * Solomonis reports and decks are kept until they're cleared, not for the
+ * 30 minutes live game data is: a finished expedition's report never
+ * changes, and a deck captured before an expedition is paired with its
+ * report after it.
+ */
+function isKeptUntilCleared(dataType: string): boolean {
+  return (
+    dataType.startsWith('solomonis_run_') ||
+    dataType.startsWith('solomonis_deck_')
+  )
+}
 
 export async function loadCachedDataForUpload(
   dataType: string
@@ -92,7 +108,7 @@ export async function handleGetCachedData(
     (cached.timestamp as number) ?? (cached.lastUpdated as number)
   const age = Date.now() - timestamp
 
-  if (age > CACHE_TTL_MS) {
+  if (age > CACHE_TTL_MS && !isKeptUntilCleared(dataType)) {
     return { error: 'stale_data' }
   }
 
@@ -275,6 +291,18 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         partyName: run.deckName ?? undefined,
         hasReport: !!run.hasReport,
         hasBook: !!run.hasBook
+      }
+    } else if (matchedPrefix === 'solomonis_deck') {
+      // Kept until cleared too, so a report can be paired with it later
+      const deck = cacheEntry as unknown as SolomonisDeckCacheEntry
+      status[dataType] = {
+        available: true,
+        lastUpdated: timestamp,
+        age,
+        isStale: false,
+        partyName: deck.deckName ?? undefined,
+        evokerId: deck.evokerId ?? null,
+        evokerName: deck.evokerName ?? null
       }
     } else if (
       matchedPrefix === 'unf_scores' ||

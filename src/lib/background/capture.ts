@@ -10,8 +10,11 @@ import {
 } from './cache-writes.js'
 import { cacheCharacterStats } from './character-stats.js'
 import { cacheSupportSummons } from './support-summons.js'
-import { cacheSolomonisReport } from '../solomonis/cache.js'
-import { isSolomonisReportDataType } from '../solomonis/routes.js'
+import { cacheSolomonisDeck, cacheSolomonisReport } from '../solomonis/cache.js'
+import {
+  isSolomonisReportDataType,
+  SOLOMONIS_DECK
+} from '../solomonis/routes.js'
 import type { PageData } from './types.js'
 
 export interface CaptureDependencies {
@@ -24,6 +27,7 @@ export interface CaptureDependencies {
   cacheSingleItem: typeof cacheSingleItem
   cacheSupportSummons: typeof cacheSupportSummons
   cacheSolomonisReport: typeof cacheSolomonisReport
+  cacheSolomonisDeck: typeof cacheSolomonisDeck
   notifyCaptured: (message: Record<string, unknown>) => Promise<unknown>
 }
 
@@ -120,6 +124,15 @@ export function createCaptureHandler(dependencies: CaptureDependencies) {
         actualDataType = 'guild_info'
       } else if (dataType === 'support_summons') {
         cached = await dependencies.cacheSupportSummons(data, timestamp, url)
+      } else if (dataType === SOLOMONIS_DECK) {
+        // Cached by the deck's priority from the body; the URL (with the
+        // player's uid in its query) isn't passed on or kept.
+        const deckDataType = await dependencies.cacheSolomonisDeck(
+          data,
+          timestamp
+        )
+        cached = deckDataType !== null
+        if (deckDataType) actualDataType = deckDataType
       } else if (isSolomonisReportDataType(dataType)) {
         // Cached by report ID from the path; the URL itself isn't kept.
         const runDataType = await dependencies.cacheSolomonisReport(
@@ -166,6 +179,7 @@ export function createDefaultCaptureHandler() {
     cacheSingleItem,
     cacheSupportSummons,
     cacheSolomonisReport,
+    cacheSolomonisDeck,
     notifyCaptured: (message) => chrome.runtime.sendMessage(message)
   })
 }

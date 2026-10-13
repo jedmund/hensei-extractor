@@ -11,6 +11,7 @@ export interface CacheStatusInfo {
   isStale: boolean
   age: number
   timestamp?: number
+  lastUpdated?: number
   totalItems?: number
   pageCount?: number
   itemName?: string
@@ -22,6 +23,9 @@ export interface CacheStatusInfo {
   reportId?: string
   hasReport?: boolean
   hasBook?: boolean
+  /** Solomonis decks: the route Evoker */
+  evokerId?: string | null
+  evokerName?: string | null
 }
 
 /** Formatted cache status for display in the UI */
