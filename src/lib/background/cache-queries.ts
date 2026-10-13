@@ -263,12 +263,14 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         itemName: (cacheEntry.itemName as string) ?? 'Unknown'
       }
     } else if (matchedPrefix === 'solomonis_run') {
+      // A finished expedition's report never changes, so it stays importable
+      // for as long as it's cached
       const run = cacheEntry as unknown as SolomonisRunCacheEntry
       status[dataType] = {
-        available: !stale,
+        available: true,
         lastUpdated: timestamp,
         age,
-        isStale: stale,
+        isStale: false,
         reportId: suffix,
         partyName: run.deckName ?? undefined,
         hasReport: !!run.hasReport,
