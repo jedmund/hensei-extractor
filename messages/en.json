@@ -476,7 +476,7 @@
   "solomonis_extension_toast_incomplete": "Open this report's expedition log in the game first",
   "solomonis_extension_toast_updated": "Party updated. Opening it...",
   "solomonis_extension_toast_updated_with_warnings": "Party updated with {count} warnings. Opening it...",
-  "solomonis_extension_deck_title": "Solomonis party",
+  "solomonis_extension_deck_title": "Solomonis Party",
   "solomonis_extension_setup_label": "Party deck",
   "solomonis_extension_note_needs_report": "Importing needs this report's expedition log.",
   "solomonis_extension_note_without_book": "Navigate to the Guidebook Log to add this expedition's guidebooks before importing.",
