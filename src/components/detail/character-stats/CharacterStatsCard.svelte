@@ -1,5 +1,5 @@
-<!-- One character's captured stats as a card: portrait, name, tags and
-     awakening in the header, then its ring, earring and Perpetuity Ring as
+<!-- One character's captured stats as a card: portrait, name and tags in
+     the header, then its awakening, Perpetuity Ring, rings and earring as
      label/value rows. Until its Character Bonuses screen has been captured,
      the card offers a button to open it; after that, a smaller one in the
      header refreshes it. -->
@@ -68,6 +68,9 @@
       ? `${character.awakening.typeName || m.stat_awakening()} Lv.${character.awakening.level || 1}`
       : null
   )
+  let hasRows = $derived(
+    !!awakening || !!character.perpetuity || rings.length > 0 || !!earring
+  )
 
   // Older captures have no bonusesCapturedAt, but rings or an earring mean
   // the screen was opened
@@ -98,9 +101,6 @@
       {#if tags}
         <CharacterTags character={tags} />
       {/if}
-      {#if awakening}
-        <span class="awakening">{awakening}</span>
-      {/if}
     </div>
     <div class="header-actions">
       {#if bonusesCaptured && character.masterId}
@@ -124,8 +124,24 @@
     </div>
   </header>
 
-  {#if rings.length > 0 || earring || character.perpetuity}
+  {#if hasRows}
     <div class="card-body">
+      {#if awakening || character.perpetuity}
+        <div class="rows">
+          {#if awakening}
+            <DetailRow label={m.stat_awakening()} value={awakening} />
+          {/if}
+          {#if character.perpetuity}
+            <DetailRow label={m.stat_perpetuity_ring()}>
+              <Tooltip content={perpetuityBonuses}>
+                <span class="perpetuity-check" aria-label={perpetuityBonuses}>
+                  <Icon name="check" size={14} />
+                </span>
+              </Tooltip>
+            </DetailRow>
+          {/if}
+        </div>
+      {/if}
       {#if rings.length > 0}
         <DetailsSection title={m.char_over_mastery()}>
           <div class="rows">
@@ -138,17 +154,6 @@
       {#if earring}
         <DetailsSection title={m.char_aetherial_mastery()}>
           <DetailRow label={earring.label} value={earring.value} />
-        </DetailsSection>
-      {/if}
-      {#if character.perpetuity}
-        <DetailsSection title={m.char_perpetuity_bonuses()}>
-          <DetailRow label={m.stat_perpetuity_ring()}>
-            <Tooltip content={perpetuityBonuses}>
-              <span class="perpetuity-check" aria-label={perpetuityBonuses}>
-                <Icon name="check" size={14} />
-              </span>
-            </Tooltip>
-          </DetailRow>
         </DetailsSection>
       {/if}
     </div>
@@ -217,11 +222,6 @@
     font-size: $font-small;
     font-weight: $medium;
     color: var(--color-text);
-  }
-
-  .awakening {
-    font-size: $font-tiny;
-    color: var(--color-text-tertiary);
   }
 
   .header-actions {
