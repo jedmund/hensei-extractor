@@ -14,13 +14,14 @@
 </script>
 
 <figure class="blessing-card">
-  <img
-    class="card"
-    src={getImageUrl(`${BUCKET.blessings}/card-list/${blessing.slug}.png`)}
-    alt={blessing.name}
-    title={blessing.name}
-    loading="lazy"
-  />
+  <div class="card">
+    <img
+      src={getImageUrl(`${BUCKET.blessings}/card-list/${blessing.slug}.png`)}
+      alt={blessing.name}
+      title={blessing.name}
+      loading="lazy"
+    />
+  </div>
   <figcaption>
     <span class="level">{m.solomonis_extension_blessing_level({ level: blessing.level })}</span>
     {#if blessing.cost != null}
@@ -42,12 +43,32 @@
     min-width: 0;
   }
 
-  // The card art is 124 × 204
+  // The card art is 124 × 204, with 7px of transparent padding and then a
+  // 1px edge on every side. The frame shows only what's inside that edge
+  // (108 × 188) and draws its own border and rounded corners.
   .card {
-    display: block;
+    position: relative;
     width: 100%;
-    aspect-ratio: 124 / 204;
+    aspect-ratio: 108 / 188;
+    overflow: hidden;
     border-radius: 4px;
+
+    img {
+      position: absolute;
+      left: calc(-100% * 8 / 108);
+      top: calc(-100% * 8 / 188);
+      width: calc(100% * 124 / 108);
+      height: calc(100% * 204 / 188);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      border-radius: inherit;
+      pointer-events: none;
+    }
   }
 
   figcaption {
