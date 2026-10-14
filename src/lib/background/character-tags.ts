@@ -27,7 +27,9 @@ export function toCharacterTagData(json: unknown): CharacterTagData | null {
     ? c.series.flatMap((entry) => {
         if (!entry || typeof entry !== 'object') return []
         const name = (entry as { name?: { en?: string; ja?: string } }).name
-        return name?.en || name?.ja ? [{ name: { en: name.en ?? '', ja: name.ja ?? '' } }] : []
+        return name?.en || name?.ja
+          ? [{ name: { en: name.en ?? '', ja: name.ja ?? '' } }]
+          : []
       })
     : []
   return {
@@ -40,7 +42,9 @@ export function toCharacterTagData(json: unknown): CharacterTagData | null {
 
 async function fetchOne(granblueId: string): Promise<CharacterTagData | null> {
   try {
-    const response = await apiFetch(await getApiUrl(`/characters/${encodeURIComponent(granblueId)}`))
+    const response = await apiFetch(
+      await getApiUrl(`/characters/${encodeURIComponent(granblueId)}`)
+    )
     if (!response.ok) return null
     return toCharacterTagData(await response.json())
   } catch {
@@ -53,10 +57,8 @@ export async function fetchCharacterTags(
   granblueIds: string[]
 ): Promise<Record<string, CharacterTagData | null>> {
   const ids = [...new Set(granblueIds.filter((id) => /^\d+$/.test(id)))]
-  const stored = ((await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] ?? {}) as Record<
-    string,
-    StoredTags
-  >
+  const stored = ((await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] ??
+    {}) as Record<string, StoredTags>
   const now = Date.now()
   const result: Record<string, CharacterTagData | null> = {}
   const missing: string[] = []
@@ -75,6 +77,7 @@ export async function fetchCharacterTags(
     })
   }
 
-  if (missing.length > 0) await chrome.storage.local.set({ [STORAGE_KEY]: stored })
+  if (missing.length > 0)
+    await chrome.storage.local.set({ [STORAGE_KEY]: stored })
   return result
 }

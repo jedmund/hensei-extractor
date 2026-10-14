@@ -47,9 +47,14 @@ describe('gamePageUrl', () => {
         'https://gbf.game.mbga.jp/?uid=123#mypage',
         '#arcarum3/dungeon_report_book/id=1'
       )
-    ).toBe('https://gbf.game.mbga.jp/?uid=123#arcarum3/dungeon_report_book/id=1')
+    ).toBe(
+      'https://gbf.game.mbga.jp/?uid=123#arcarum3/dungeon_report_book/id=1'
+    )
     expect(
-      gamePageUrl('https://game.granbluefantasy.jp/#mypage', '#party/index/31001/npc/0')
+      gamePageUrl(
+        'https://game.granbluefantasy.jp/#mypage',
+        '#party/index/31001/npc/0'
+      )
     ).toBe('https://game.granbluefantasy.jp/#party/index/31001/npc/0')
   })
 
@@ -65,6 +70,8 @@ describe('gamePageUrl', () => {
 
 describe('characterBonusesPage', () => {
   it("is the character's Character Bonuses screen", () => {
-    expect(characterBonusesPage('3040652000')).toBe('#zenith/npc/list/3040652000/-1/1')
+    expect(characterBonusesPage('3040652000')).toBe(
+      '#zenith/npc/list/3040652000/-1/1'
+    )
   })
 })

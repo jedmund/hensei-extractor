@@ -28,19 +28,25 @@ describe('reportSpaceStats', () => {
   })
 
   it('skips counts the report left out or that aren’t counts', () => {
-    expect(reportSpaceStats({ boss_count: '2', warp_count: 'x', incident_count: '' })).toEqual([
-      { key: 'boss', count: 2 }
-    ])
+    expect(
+      reportSpaceStats({ boss_count: '2', warp_count: 'x', incident_count: '' })
+    ).toEqual([{ key: 'boss', count: 2 }])
   })
 })
 
 describe('reportEconomy', () => {
   it('reads shop purchases and Sephira coins', () => {
-    expect(reportEconomy(option)).toEqual({ shopPurchases: 18, pointsEarned: 2924 })
+    expect(reportEconomy(option)).toEqual({
+      shopPurchases: 18,
+      pointsEarned: 2924
+    })
   })
 
   it('is null for missing values', () => {
-    expect(reportEconomy({})).toEqual({ shopPurchases: null, pointsEarned: null })
+    expect(reportEconomy({})).toEqual({
+      shopPurchases: null,
+      pointsEarned: null
+    })
   })
 })
 
@@ -56,9 +62,9 @@ describe('reportAllies', () => {
   })
 
   it('skips empty slots', () => {
-    expect(reportAllies({ npc1_image_id: '3040169000_04', npc2_image_id: null })).toEqual([
-      '3040169000_04'
-    ])
+    expect(
+      reportAllies({ npc1_image_id: '3040169000_04', npc2_image_id: null })
+    ).toEqual(['3040169000_04'])
   })
 })
 

@@ -16,9 +16,18 @@ const RARITIES: Record<number, GuidebookRarity> = {
   99: 'cursed'
 }
 
-export const RARITY_ORDER: readonly GuidebookRarity[] = ['unique', 'rare', 'normal', 'cursed']
+export const RARITY_ORDER: readonly GuidebookRarity[] = [
+  'unique',
+  'rare',
+  'normal',
+  'cursed'
+]
 
-export type GuideEffectIconCategory = 'offence' | 'defence' | 'special' | 'cursed'
+export type GuideEffectIconCategory =
+  | 'offence'
+  | 'defence'
+  | 'special'
+  | 'cursed'
 
 /** The game's `icon_category`, as observed: 1 offence, 2 defence, 3 special, 4 cursed. */
 const ICON_CATEGORIES: Record<number, GuideEffectIconCategory> = {
@@ -63,7 +72,8 @@ export function guidebookSections(
     const rarity = RARITIES[status.rarity ?? -1]
     const name = guidebookEffectName(status.name)
     if (!rarity || !name) continue
-    const count = Number.isInteger(status.num) && status.num! > 0 ? status.num! : 1
+    const count =
+      Number.isInteger(status.num) && status.num! > 0 ? status.num! : 1
     const entries = groups.get(rarity) ?? []
     const iconType = Number(status.icon_type)
     entries.push({
@@ -71,7 +81,9 @@ export function guidebookSections(
       name,
       count,
       rarity,
-      stackable: status.is_duplication_possible === 1 || status.is_duplication_possible === true,
+      stackable:
+        status.is_duplication_possible === 1 ||
+        status.is_duplication_possible === true,
       iconType: Number.isInteger(iconType) && iconType > 0 ? iconType : 0,
       iconCategory:
         ICON_CATEGORIES[Number(status.icon_category)] ??

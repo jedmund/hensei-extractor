@@ -1,7 +1,10 @@
 /** Localized labels for guidebook enums, as in hensei-web's guidebook labels. */
 
 import * as m from '../../../paraglide/messages.js'
-import type { GuideEffectIconCategory, GuidebookRarity } from '../../../lib/solomonis/guidebook.js'
+import type {
+  GuideEffectIconCategory,
+  GuidebookRarity
+} from '../../../lib/solomonis/guidebook.js'
 
 export function rarityLabel(rarity: GuidebookRarity): string {
   switch (rarity) {

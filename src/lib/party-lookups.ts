@@ -51,5 +51,10 @@ export async function loadPartyDeckLookups(
         : Promise.resolve({}),
       fetchWeaponStatModifiers()
     ])
-  return { friendSummon: summon, weaponKeyMap, jobSkillSlugs, weaponStatModifiers }
+  return {
+    friendSummon: summon,
+    weaponKeyMap,
+    jobSkillSlugs,
+    weaponStatModifiers
+  }
 }

@@ -4,7 +4,10 @@
  */
 
 import type { PartyDeckData } from '../detail-data.js'
-import { loadPartyDeckLookups, type PartyDeckLookups } from '../party-lookups.js'
+import {
+  loadPartyDeckLookups,
+  type PartyDeckLookups
+} from '../party-lookups.js'
 import { getCachedData } from '../services/chrome-messages.js'
 
 export class CapturedDeck {
@@ -30,7 +33,8 @@ export class CapturedDeck {
 
     const response = await getCachedData(dataType)
     if (!current()) return
-    const party = response.error || !response.data ? null : (response.data as PartyDeckData)
+    const party =
+      response.error || !response.data ? null : (response.data as PartyDeckData)
     this.party = party
     if (!party) {
       this.lookups = null

@@ -42,7 +42,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function numberOrNull(value: unknown): number | null {
   const number = Number(value)
-  return value != null && value !== '' && Number.isFinite(number) ? number : null
+  return value != null && value !== '' && Number.isFinite(number)
+    ? number
+    : null
 }
 
 /**
@@ -76,7 +78,9 @@ export function deckBlessings(party: unknown): DeckBlessings | null {
     .sort((a, b) => a.arcana - b.arcana)
     .map(({ arcana: _arcana, ...blessing }) => blessing)
 
-  const costInfo = isRecord(deck.blessing_cost_info) ? deck.blessing_cost_info : {}
+  const costInfo = isRecord(deck.blessing_cost_info)
+    ? deck.blessing_cost_info
+    : {}
   return {
     blessings,
     totalCost: numberOrNull(costInfo.total_cost),

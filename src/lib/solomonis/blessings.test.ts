@@ -28,7 +28,11 @@ describe('deckBlessings', () => {
 
   it('skips blessings it has no slug for', () => {
     const party = {
-      deck: { blessing: { 1: { blessing_id: '99', name: 'New', level: 1, is_used: true } } }
+      deck: {
+        blessing: {
+          1: { blessing_id: '99', name: 'New', level: 1, is_used: true }
+        }
+      }
     }
     expect(deckBlessings(party)?.blessings).toEqual([])
   })

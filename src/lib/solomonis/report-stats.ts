@@ -69,11 +69,15 @@ export function reportEconomy(report: SolomonisReport): {
  * image IDs (`<granblue_id>_<art>[_<variant>]`). Order carries no meaning
  * in this mode.
  */
-export function reportAllies(report: SolomonisReport | null | undefined): string[] {
+export function reportAllies(
+  report: SolomonisReport | null | undefined
+): string[] {
   if (!report) return []
   return [1, 2, 3, 4, 5]
     .map((n) => report[`npc${n}_image_id`])
-    .filter((id): id is string => typeof id === 'string' && /^\d+_\w+$/.test(id))
+    .filter(
+      (id): id is string => typeof id === 'string' && /^\d+_\w+$/.test(id)
+    )
 }
 
 /**
@@ -82,7 +86,9 @@ export function reportAllies(report: SolomonisReport | null | undefined): string
  */
 export function reportEndedAt(report: SolomonisReport): string | null {
   const ended = report.ended_at
-  return typeof ended === 'string' && ended.trim() ? `${ended.trim()} JST` : null
+  return typeof ended === 'string' && ended.trim()
+    ? `${ended.trim()} JST`
+    : null
 }
 
 /** The run's turn count, when the report has one. */

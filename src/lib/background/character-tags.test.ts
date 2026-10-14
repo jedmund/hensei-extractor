@@ -9,7 +9,9 @@ describe('toCharacterTagData', () => {
         element: 4,
         season: 3,
         style_swap: false,
-        series: [{ id: 'x', slug: 'summer', name: { en: 'Summer', ja: '水着' } }],
+        series: [
+          { id: 'x', slug: 'summer', name: { en: 'Summer', ja: '水着' } }
+        ],
         name: { en: 'Felluca' }
       })
     ).toEqual({

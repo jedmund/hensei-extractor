@@ -112,8 +112,17 @@ describe('canImportRun', () => {
 describe('runTabStep', () => {
   it('maps each tab to its capture', () => {
     const all = steps(true, false, true)
-    expect(runTabStep(all, 'party')).toMatchObject({ key: 'deck', captured: true })
-    expect(runTabStep(all, 'expedition')).toMatchObject({ key: 'report', captured: true })
-    expect(runTabStep(all, 'guidebooks')).toMatchObject({ key: 'book', captured: false })
+    expect(runTabStep(all, 'party')).toMatchObject({
+      key: 'deck',
+      captured: true
+    })
+    expect(runTabStep(all, 'expedition')).toMatchObject({
+      key: 'report',
+      captured: true
+    })
+    expect(runTabStep(all, 'guidebooks')).toMatchObject({
+      key: 'book',
+      captured: false
+    })
   })
 })

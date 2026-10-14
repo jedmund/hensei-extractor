@@ -145,7 +145,9 @@ export function partyElementKey(party: unknown): ElementIconKey | null {
   const deck = (party as { deck?: { pc?: { weapons?: unknown } } } | null)?.deck
   const weapons = deck?.pc?.weapons
   const main = (
-    Array.isArray(weapons) ? weapons[0] : (weapons as Record<string, unknown> | undefined)?.['1']
+    Array.isArray(weapons)
+      ? weapons[0]
+      : (weapons as Record<string, unknown> | undefined)?.['1']
   ) as { master?: { attribute?: string | number } } | null | undefined
   const element = toHenseiElement(main?.master?.attribute)
   return element ? (HENSEI_ELEMENT_KEYS[element] ?? null) : null
