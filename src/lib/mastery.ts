@@ -152,10 +152,11 @@ const FLAT_VALUE_STATS = new Set([
   'Supplemental DMG'
 ])
 
-export function formatModifier(
+/** A modifier as a label and its value, e.g. `ATK` and `+1,000`. */
+export function modifierParts(
   mod: MasteryModifier | null | undefined,
   nameMap: Record<number, string>
-): string | null {
+): { label: string; value: string } | null {
   if (!mod?.modifier) return null
 
   let englishName =
@@ -167,18 +168,24 @@ export function formatModifier(
     englishName = mod.typeName
   }
 
-  const displayName = getDisplayName(englishName)
+  const label = getDisplayName(englishName)
   const value = mod.strength
 
   if (englishName === 'ATK' || englishName === 'HP') {
-    return `${displayName} +${Number(value).toLocaleString()}`
+    return { label, value: `+${Number(value).toLocaleString()}` }
   }
-
   if (FLAT_VALUE_STATS.has(englishName)) {
-    return `${displayName} +${value}`
+    return { label, value: `+${value}` }
   }
+  return { label, value: `+${value}%` }
+}
 
-  return `${displayName} +${value}%`
+export function formatModifier(
+  mod: MasteryModifier | null | undefined,
+  nameMap: Record<number, string>
+): string | null {
+  const parts = modifierParts(mod, nameMap)
+  return parts ? `${parts.label} ${parts.value}` : null
 }
 
 export function formatPerpetuityBonus(

@@ -105,6 +105,9 @@ export async function cacheCharacterStats(
     }
   } else if (dataType === 'zenith_npc') {
     current.timestamp = timestamp
+    // Rings and earrings only come from this screen; a character without
+    // any looks the same as one whose screen was never opened, so record it
+    current.bonusesCapturedAt = timestamp
 
     const masteryData = parseZenithMasteryData(data)
 

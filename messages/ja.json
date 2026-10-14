@@ -162,6 +162,7 @@
   "char_aetherial_mastery": "エーテリアルプラス",
   "char_perpetuity_bonuses": "久遠の指輪ボーナス",
   "char_go_to_bonuses": "能力強化へ",
+  "char_bonuses_not_captured": "指輪と耳飾りのボーナスは未取得です",
   "raid_select": "クエストを選択",
   "raid_search": "クエストを検索...",
   "raid_refresh": "クエストを更新",
@@ -480,5 +481,11 @@
   "solomonis_extension_setup_label": "編成",
   "solomonis_extension_note_needs_report": "インポートにはこのレポートの探索記録が必要です。",
   "solomonis_extension_note_without_book": "インポートする前に導本の記録を開いて、この探索の導本効果を追加してください。",
-  "solomonis_extension_duplicate_needs_book": "更新するには、編成の導本が消えないよう、先にゲームでこのレポートの導本の記録を開いてください。"
+  "solomonis_extension_duplicate_needs_book": "更新するには、編成の導本が消えないよう、先にゲームでこのレポートの導本の記録を開いてください。",
+  "season_valentine": "バレンタイン",
+  "season_formal": "ドレスアップ",
+  "season_summer": "水着",
+  "season_halloween": "ハロウィン",
+  "season_holiday": "クリスマス",
+  "tag_style": "スタイル"
 }

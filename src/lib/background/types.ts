@@ -44,6 +44,8 @@ export interface CharacterStatsEntry {
     level: number
   }
   perpetuity?: boolean
+  /** When the Character Bonuses screen (rings and earring) was captured */
+  bonusesCapturedAt?: number
   rings?: MasteryMod[]
   earring?: MasteryMod | null
   rawData?: Record<string, unknown>

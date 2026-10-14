@@ -162,6 +162,7 @@
   "char_aetherial_mastery": "Aetherial Mastery",
   "char_perpetuity_bonuses": "Perpetuity Bonuses",
   "char_go_to_bonuses": "Go to Character Bonuses",
+  "char_bonuses_not_captured": "Ring and earring bonuses haven't been captured",
   "raid_select": "Select Raid",
   "raid_search": "Search raids...",
   "raid_refresh": "Refresh raids",
@@ -480,5 +481,11 @@
   "solomonis_extension_setup_label": "Party deck",
   "solomonis_extension_note_needs_report": "Importing needs this report's expedition log.",
   "solomonis_extension_note_without_book": "Navigate to the Guidebook Log to add this expedition's guidebooks before importing.",
-  "solomonis_extension_duplicate_needs_book": "To update it, open this report's guidebook log in the game first, so the party's guidebook isn't cleared."
+  "solomonis_extension_duplicate_needs_book": "To update it, open this report's guidebook log in the game first, so the party's guidebook isn't cleared.",
+  "season_valentine": "Valentine",
+  "season_formal": "Formal",
+  "season_summer": "Summer",
+  "season_halloween": "Halloween",
+  "season_holiday": "Holiday",
+  "tag_style": "Style"
 }
