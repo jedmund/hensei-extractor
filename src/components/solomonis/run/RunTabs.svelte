@@ -27,33 +27,27 @@
   }
 </script>
 
-<div class="run-tabs">
-  <SegmentedControl bind:value variant="blended" size="small" grow>
-    {#each RUN_TABS as tab (tab)}
-      {@const captured = !!runTabStep(steps, tab)?.captured}
-      <Segment value={tab}>
-        <span class="tab">
-          <span class="mark" class:captured aria-hidden="true">
-            {#if captured}<Icon name="check" size={10} />{/if}
-          </span>
-          {labels[tab]()}
-          <span class="visually-hidden">
-            ({captured
-              ? m.solomonis_extension_log_captured()
-              : m.solomonis_extension_log_missing()})
-          </span>
+<SegmentedControl bind:value variant="background" size="small" grow>
+  {#each RUN_TABS as tab (tab)}
+    {@const captured = !!runTabStep(steps, tab)?.captured}
+    <Segment value={tab}>
+      <span class="tab">
+        <span class="mark" class:captured aria-hidden="true">
+          {#if captured}<Icon name="check" size={10} />{/if}
         </span>
-      </Segment>
-    {/each}
-  </SegmentedControl>
-</div>
+        {labels[tab]()}
+        <span class="visually-hidden">
+          ({captured
+            ? m.solomonis_extension_log_captured()
+            : m.solomonis_extension_log_missing()})
+        </span>
+      </span>
+    </Segment>
+  {/each}
+</SegmentedControl>
 
 <style lang="scss">
   @use 'themes/spacing' as *;
-
-  .run-tabs {
-    padding: $unit $unit-2x 0;
-  }
 
   .tab {
     display: inline-flex;

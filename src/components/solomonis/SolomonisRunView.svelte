@@ -110,11 +110,13 @@
   let blessings = $derived(deckBlessings(capturedDeck.party))
 </script>
 
-<PartyMeta {scrolled} raidSelector={false} />
-
-{#if capture}
-  <RunTabs bind:value={tab} {steps} />
-{/if}
+<PartyMeta {scrolled} raidSelector={false}>
+  {#snippet footer()}
+    {#if capture}
+      <RunTabs bind:value={tab} {steps} />
+    {/if}
+  {/snippet}
+</PartyMeta>
 
 <DetailScroll bind:scrolled>
   {#if capture}
