@@ -3,13 +3,12 @@
   import { app } from '../../../lib/state/app.svelte.js'
   import { decodeHtmlEntities } from '../../../lib/html-entities.js'
   import {
-    partyLookups,
     countPartyMembers,
     applySuggestedRaid,
     type PartyDeckData
   } from '../../../lib/detail-data.js'
-  import { fetchRaidGroups, searchSummonByName, fetchWeaponKeyMap, fetchWeaponStatModifiers, fetchJobSkillSlugs } from '../../../lib/services/chrome-messages.js'
-  import { getLocale } from '../../../lib/i18n.js'
+  import { hasFriendSummon, loadPartyDeckLookups } from '../../../lib/party-lookups.js'
+  import { fetchRaidGroups } from '../../../lib/services/chrome-messages.js'
   import type { SummonSearchResult, WeaponKeyMap, WeaponStatModifiers, JobSkillSlugs } from '../../../lib/types/messages.js'
 
   import DetailScroll from '../DetailScroll.svelte'
@@ -81,23 +80,16 @@
   }
 
   async function loadSupplementary(party: PartyDeckData, current: () => boolean) {
-    const { summonName, skillNames } = partyLookups(party)
-
     friendSummon = null
-    friendSummonPending = !!summonName
-    const [summonResult, keyMap, skillSlugs, statMods] = await Promise.all([
-      summonName ? searchSummonByName(summonName) : Promise.resolve(null),
-      fetchWeaponKeyMap(getLocale()),
-      skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({}),
-      fetchWeaponStatModifiers()
-    ])
+    friendSummonPending = hasFriendSummon(party)
+    const lookups = await loadPartyDeckLookups(party)
     if (!current()) return
 
-    friendSummon = summonResult
+    friendSummon = lookups.friendSummon
     friendSummonPending = false
-    weaponKeyMap = keyMap
-    jobSkillSlugs = skillSlugs
-    weaponStatModifiers = statMods
+    weaponKeyMap = lookups.weaponKeyMap
+    jobSkillSlugs = lookups.jobSkillSlugs
+    weaponStatModifiers = lookups.weaponStatModifiers
   }
 </script>
 
