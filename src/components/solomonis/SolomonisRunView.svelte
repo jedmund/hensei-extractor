@@ -99,8 +99,7 @@
   let partyPage = $derived(runTabStep(steps, 'party')?.page ?? null)
   let allies = $derived(reportAllies(report))
 
-  // The chosen deck, loaded once for both tabs that show it, and again when
-  // it's captured again
+  // The chosen deck, loaded again when it's captured again
   const capturedDeck = new CapturedDeck()
   onDestroy(() => capturedDeck.dispose())
   $effect(() => {
@@ -125,13 +124,14 @@
         deck={chosenDeck}
         party={capturedDeck.party}
         lookups={capturedDeck.lookups}
+        {blessings}
         {allies}
         hasEvoker={!!evokerId}
         page={partyPage}
       />
     {:else if tab === 'expedition'}
       {#if report}
-        <RunExpeditionTab {report} hasDeck={!!chosenDeck} {blessings} {partyPage} />
+        <RunExpeditionTab {report} />
       {:else}
         <RunEmptyTab
           message={m.solomonis_extension_note_needs_report()}

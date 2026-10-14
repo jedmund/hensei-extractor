@@ -1,7 +1,6 @@
 /**
  * A captured party deck, loaded from the cache with the lookups PartyDetail
- * needs. The run view loads one and shares it between its tabs: the Party
- * tab shows its grid, the Expedition tab its Blessings.
+ * needs, for the run view's Party tab.
  */
 
 import type { PartyDeckData } from '../detail-data.js'

@@ -1,6 +1,6 @@
 <!-- The party a run imports: the allies at the end of the expedition as its
-     characters, with the weapons and summons of the Evoker's captured party
-     deck (the report leaves those out). The sections always show, with
+     characters, with the weapons, summons and Blessings of the Evoker's
+     captured party deck (the report leaves those out). The sections always show, with
      empty slots until there's a report and a deck, and a picker when several
      of the Evoker's decks were captured. -->
 
@@ -9,11 +9,13 @@
   import { app } from '../../../lib/state/app.svelte.js'
   import type { PartyDeckData } from '../../../lib/detail-data.js'
   import type { PartyDeckLookups } from '../../../lib/party-lookups.js'
+  import type { DeckBlessings } from '../../../lib/solomonis/blessings.js'
   import { evokerPortraitUrl } from '../../../lib/solomonis/status.js'
   import type { FormattedCacheStatus } from '../../../lib/types/cache.js'
   import PartyDetail from '../../detail/party/PartyDetail.svelte'
   import Notice from '../../shared/Notice.svelte'
   import Select from '../../shared/Select.svelte'
+  import BlessingSection from './BlessingSection.svelte'
   import GoToNotice from './GoToNotice.svelte'
 
   type Deck = FormattedCacheStatus & { dataType: string; evokerId?: string | null }
@@ -26,6 +28,8 @@
     /** The chosen deck's data and lookups, once loaded */
     party: PartyDeckData | null
     lookups: PartyDeckLookups | null
+    /** The deck's equipped Blessings, once it has loaded */
+    blessings: DeckBlessings | null
     /** The allies at the end of the run (image IDs); empty without the expedition log */
     allies: string[]
     /** Whether the Evoker is known (from the expedition log) */
@@ -34,7 +38,7 @@
     page: string | null
   }
 
-  let { decks, deck, party, lookups, allies, hasEvoker, page }: Props = $props()
+  let { decks, deck, party, lookups, blessings, allies, hasEvoker, page }: Props = $props()
 
   let options = $derived(
     decks.map((d) => ({
@@ -83,6 +87,10 @@
     placeholders
     supportSummon={false}
   />
+
+  {#if deck && blessings}
+    <BlessingSection {blessings} />
+  {/if}
 </section>
 
 <style lang="scss">
