@@ -7,6 +7,7 @@ import * as referenceData from './reference-data.js'
 import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
+import { withImportMark } from './import-marks.js'
 import {
   uploadSolomonisParty,
   uploadSolomonisRun
@@ -27,6 +28,11 @@ vi.mock('./cache-queries.js', () => ({
   handleGetCachedData: vi.fn(async () => ({})),
   handleClearCache: vi.fn(async () => ({ success: true })),
   loadCachedDataForUpload: vi.fn()
+}))
+vi.mock('./import-marks.js', () => ({
+  withImportMark: vi.fn((_dataType: string, upload: () => Promise<unknown>) =>
+    upload()
+  )
 }))
 vi.mock('./collections.js', () => ({
   checkCharacterStatsUpdates: vi.fn(async () => ({})),
@@ -225,6 +231,46 @@ describe('background message router', () => {
       )
     }
   )
+
+  it.each<[ExtensionMessage, string]>([
+    [{ action: 'uploadPartyData', dataType: 'party_1_2' }, 'party_1_2'],
+    [
+      { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
+      'detail_npc_3040001'
+    ],
+    [
+      { action: 'uploadCollectionData', dataType: 'collection_npc' },
+      'collection_npc'
+    ],
+    [{ action: 'syncCollection', dataType: 'list_weapon' }, 'list_weapon'],
+    [{ action: 'uploadCharacterStats' }, 'character_stats'],
+    [{ action: 'uploadSupportSummons' }, 'support_summons'],
+    [
+      { action: 'uploadSolomonisRun', dataType: 'solomonis_run_381099' },
+      'solomonis_run_381099'
+    ],
+    [
+      { action: 'uploadSolomonisParty', dataType: 'solomonis_deck_31001' },
+      'solomonis_deck_31001'
+    ],
+    [{ action: 'uploadUnfScores', dataType: 'unf_scores_77' }, 'unf_scores_77']
+  ])('marks the capture imported after %o', async (message, dataType) => {
+    send(message)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+    expect(withImportMark).toHaveBeenCalledTimes(1)
+    expect(withImportMark).toHaveBeenCalledWith(dataType, expect.any(Function))
+  })
+
+  it.each<ExtensionMessage>([
+    { action: 'checkConflicts', dataType: 'collection_weapon' },
+    { action: 'checkCollectionUpdates', dataType: 'collection_npc' },
+    { action: 'previewSyncDeletions', dataType: 'collection_summon' },
+    { action: 'previewGwPhantoms', dataType: 'unf_scores_77' }
+  ])('does not mark anything for %o', async (message) => {
+    send(message)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+    expect(withImportMark).not.toHaveBeenCalled()
+  })
 
   it('returns no_cached_data without calling the upload', async () => {
     vi.mocked(loadCachedDataForUpload).mockResolvedValue(null)

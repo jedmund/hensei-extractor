@@ -55,6 +55,11 @@
       color: inherit;
     }
 
+    .imported-mark {
+      color: inherit;
+      opacity: 0.7;
+    }
+
     .stash-tag {
       background: var(--element-button-bg);
       color: white;
@@ -123,6 +128,12 @@
   font-size: type.$font-small;
   font-weight: type.$medium;
   color: var(--color-text);
+}
+
+.imported-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
 }
 
 .stash-tag {

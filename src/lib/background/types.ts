@@ -1,4 +1,5 @@
 import type { ElementIconKey } from '../images.js'
+import type { ImportMark } from './import-marks.js'
 
 export interface AuthToken {
   access_token: string
@@ -7,7 +8,7 @@ export interface AuthToken {
   language?: string
 }
 
-export interface CachedListData {
+export interface CachedListData extends ImportMark {
   pages: Record<number, PageData>
   lastUpdated: number | null
   stashName?: string
@@ -118,6 +119,8 @@ export interface CacheStatusEntry {
   evokerName?: string | null
   /** Parties: the main-hand weapon's element, for the row's icon */
   element?: ElementIconKey | null
+  /** When this capture was imported, if it has been */
+  importedAt?: number
 }
 
 export interface CacheStatusResult {
@@ -125,7 +128,7 @@ export interface CacheStatusResult {
   [key: string]: CacheStatusEntry | { attached: boolean; tabs: number[] }
 }
 
-export interface CachedUnfScores {
+export interface CachedUnfScores extends ImportMark {
   eventNumber: number
   pages: Record<number, UnfMember[]>
   lastUpdated: number

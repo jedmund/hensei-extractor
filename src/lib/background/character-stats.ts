@@ -4,6 +4,7 @@ import {
   lookupAetherialTypeId,
   parseDisplayValue
 } from '../mastery.js'
+import { clearImportMark, type ImportMark } from './import-marks.js'
 import type { CharacterStatsEntry, ParsedMasteryData } from './types.js'
 
 export async function cacheCharacterStats(
@@ -14,7 +15,7 @@ export async function cacheCharacterStats(
   _url: string
 ): Promise<boolean> {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
-  const existing: {
+  const existing: ImportMark & {
     lastUpdated: number | null
     updates: Record<string, CharacterStatsEntry>
     characterCount?: number
@@ -125,6 +126,7 @@ export async function cacheCharacterStats(
 
   existing.updates[resolvedMasterId] = current
   existing.lastUpdated = timestamp
+  clearImportMark(existing)
   existing.characterCount = Object.keys(existing.updates).length
 
   await chrome.storage.local.set({

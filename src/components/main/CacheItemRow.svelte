@@ -38,6 +38,16 @@
   <div class="cache-info">
     <div class="cache-name-row">
       <span class="cache-name">{displayName}</span>
+      {#if status.importedAt}
+        <span
+          class="imported-mark"
+          role="img"
+          aria-label={m.tag_imported()}
+          title={m.tag_imported()}
+        >
+          <Icon name="check" size={12} />
+        </span>
+      {/if}
       {#if isStash}
         <span class="stash-tag">{m.tag_stash()}</span>
       {/if}

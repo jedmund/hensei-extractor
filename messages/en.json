@@ -118,6 +118,7 @@
   "type_weapon_stash": "Weapon Stash",
   "type_summon_stash": "Summon Stash",
   "tag_stash": "Stash",
+  "tag_imported": "Imported",
   "party_section_job": "Job",
   "party_section_characters": "Characters",
   "party_section_weapons": "Weapons",

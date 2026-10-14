@@ -32,6 +32,8 @@ export interface CacheStatusInfo {
   evokerName?: string | null
   /** Parties: the main-hand weapon's element, for the row's icon */
   element?: ElementIconKey | null
+  /** When this capture was imported, if it has been */
+  importedAt?: number
 }
 
 /** Formatted cache status for display in the UI */
