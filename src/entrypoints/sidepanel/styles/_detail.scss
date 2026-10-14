@@ -1004,6 +1004,12 @@ body.light #playlistCreateSubmit {
     width: 100%;
     height: auto;
   }
+
+  // An empty slot, the shape of a character's art (there's no placeholder image)
+  .character-placeholder {
+    aspect-ratio: 196 / 408;
+    background: var(--button-bg-hover);
+  }
 }
 
 /* Weapon layout: mainhand + grid */

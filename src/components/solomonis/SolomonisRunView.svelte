@@ -105,17 +105,7 @@
 <DetailScroll bind:scrolled>
   {#if capture}
     {#if tab === 'party'}
-      {#if chosenDeck}
-        <RunPartyTab {decks} deck={chosenDeck} {allies} />
-      {:else}
-        <RunEmptyTab
-          message={evokerId
-            ? m.solomonis_extension_note_without_setup()
-            : m.solomonis_extension_party_needs_report()}
-          {page}
-          actionLabel={m.solomonis_extension_go_to_party()}
-        />
-      {/if}
+      <RunPartyTab {decks} deck={chosenDeck} {allies} hasEvoker={!!evokerId} {page} />
     {:else if tab === 'expedition'}
       {#if report}
         <RunExpeditionTab {report} />
