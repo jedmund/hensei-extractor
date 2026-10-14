@@ -441,7 +441,7 @@
   "solomonis_extension_blessings_none": "No blessings",
   "solomonis_extension_blessing_level": "Lvl {level}",
   "solomonis_extension_blessing_cost": "Cost {cost}",
-  "solomonis_extension_note_with_setup": "The report doesn't include weapons, summons or Blessings, so Hensei fills them in from your captured party deck “{deck}”. It may differ from what this expedition used.",
+  "solomonis_extension_note_with_setup": "Expedition Log doesn't include weapons, summons, or blessings. Granblue.team is using data from “{deck}” instead, but that may differ from the equipment used in your expedition.",
   "solomonis_extension_outcome_cleared": "Cleared",
   "solomonis_extension_outcome_failed": "Failed",
   "solomonis_extension_outcome": "Outcome",
