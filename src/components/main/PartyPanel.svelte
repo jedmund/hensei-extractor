@@ -45,7 +45,7 @@
         <CacheItemRow
           status={app.cachedStatus[dataType]!}
           {dataType}
-          thumbnail={dataType.startsWith('solomonis_deck_')
+          thumbnail={dataType.startsWith('solomonis_deck_') || dataType.startsWith('solomonis_run_')
             ? evokerPortraitUrl(app.cachedStatus[dataType]?.evokerId) || undefined
             : undefined}
           onclick={() => openDetail(dataType)}
