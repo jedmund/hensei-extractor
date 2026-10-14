@@ -65,7 +65,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      border: 1px solid rgba(0, 0, 0, 0.16);
+      border: 2px solid rgba(0, 0, 0, 0.16);
       border-radius: inherit;
       pointer-events: none;
     }
