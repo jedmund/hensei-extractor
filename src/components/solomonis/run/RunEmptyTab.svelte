@@ -28,3 +28,10 @@
     {/if}
   {/snippet}
 </EmptyState>
+
+<style lang="scss">
+  // Messages separate their paragraphs with blank lines
+  :global(.run-empty p) {
+    white-space: pre-line;
+  }
+</style>

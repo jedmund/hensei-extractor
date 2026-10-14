@@ -470,7 +470,7 @@
   "solomonis_extension_deck_title": "Solomonis party",
   "solomonis_extension_setup_label": "Party deck",
   "solomonis_extension_note_needs_report": "Importing needs this report's expedition log.",
-  "solomonis_extension_note_without_book": "This expedition will import an empty set of guidebooks due to limitations in Granblue Fantasy. Navigate to the Guidebook Log to add this expedition's guidebooks before importing.",
+  "solomonis_extension_note_without_book": "This expedition will import an empty set of guidebooks due to limitations in Granblue Fantasy.\n\nNavigate to the Guidebook Log to add this expedition's guidebooks before importing.",
   "solomonis_extension_reports_label": "Expedition reports",
   "solomonis_extension_reports_hint": "Open one of this Evoker's expedition reports in the game to import a run with this party.",
   "solomonis_extension_reports_found": "Captured reports for this Evoker. Open one to import it as a run with this party.",

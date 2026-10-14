@@ -470,7 +470,7 @@
   "solomonis_extension_deck_title": "ソロモニスの編成",
   "solomonis_extension_setup_label": "編成",
   "solomonis_extension_note_needs_report": "インポートにはこのレポートの探索記録が必要です。",
-  "solomonis_extension_note_without_book": "グランブルーファンタジーの仕様により、この探索は導本効果が空の状態でインポートされます。インポートする前に導本の記録を開いて、この探索の導本効果を追加してください。",
+  "solomonis_extension_note_without_book": "グランブルーファンタジーの仕様により、この探索は導本効果が空の状態でインポートされます。\n\nインポートする前に導本の記録を開いて、この探索の導本効果を追加してください。",
   "solomonis_extension_reports_label": "探索レポート",
   "solomonis_extension_reports_hint": "ゲームでこの賢者の探索レポートを開くと、この編成と一緒に探索としてインポートできます。",
   "solomonis_extension_reports_found": "この賢者の取得済みレポートです。開くとこの編成と一緒に探索としてインポートできます。",
