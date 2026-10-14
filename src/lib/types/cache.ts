@@ -21,6 +21,8 @@ export interface CacheStatusInfo {
   partyName?: string
   partyId?: string
   gbfUserId?: string | null
+  /** Character stats: the characters captured, most recent first */
+  characterIds?: string[]
   /** Solomonis runs: the report ID and which of its two logs are captured */
   reportId?: string
   hasReport?: boolean

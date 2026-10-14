@@ -101,6 +101,8 @@ export interface CacheStatusEntry {
   totalItems?: number
   isComplete?: boolean
   characterCount?: number
+  /** Character stats: the characters captured, most recent first */
+  characterIds?: string[]
   partyId?: string
   partyName?: string
   stashName?: string | null

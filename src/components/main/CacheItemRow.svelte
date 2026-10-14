@@ -2,6 +2,7 @@
   import * as m from '../../paraglide/messages.js'
   import type { FormattedCacheStatus } from '../../lib/types/cache.js'
   import Icon from '../shared/Icon.svelte'
+  import CharacterThumbs from './CharacterThumbs.svelte'
 
   interface Props {
     status: FormattedCacheStatus
@@ -41,7 +42,9 @@
         <span class="stash-tag">{m.tag_stash()}</span>
       {/if}
     </div>
-    {#if isDatabase && databaseTag}
+    {#if status.characterIds && status.characterIds.length > 0}
+      <CharacterThumbs ids={status.characterIds} />
+    {:else if isDatabase && databaseTag}
       <span class="cache-subtitle">{databaseTag}</span>
     {:else if status.subtitle}
       <span class="cache-subtitle">{status.subtitle}</span>

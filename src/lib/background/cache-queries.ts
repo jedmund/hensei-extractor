@@ -187,7 +187,7 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
     const stale = age > CACHE_TTL_MS
 
     if (type === 'character_stats') {
-      const updates = (cached.updates ?? {}) as Record<string, unknown>
+      const updates = (cached.updates ?? {}) as Record<string, { timestamp?: number }>
       const characterCount = Object.keys(updates).length
       if (characterCount > 0) {
         status[type] = {
@@ -195,7 +195,10 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
           lastUpdated: timestamp,
           age,
           isStale: stale,
-          characterCount
+          characterCount,
+          characterIds: Object.entries(updates)
+            .sort(([, a], [, b]) => (b?.timestamp ?? 0) - (a?.timestamp ?? 0))
+            .map(([id]) => id)
         }
       }
     } else if (type === 'support_summons') {
