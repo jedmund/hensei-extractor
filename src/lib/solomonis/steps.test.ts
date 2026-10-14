@@ -1,0 +1,128 @@
+import { describe, expect, it } from 'vitest'
+import {
+  canImportRun,
+  canUpdateImportedRun,
+  evokerPartyPage,
+  reportBookPage,
+  reportLogPage,
+  runImportPlan,
+  runSteps,
+  runTabStep
+} from './steps.js'
+
+const steps = (hasReport: boolean, hasBook: boolean, hasDeck: boolean) =>
+  runSteps({
+    reportId: '381099',
+    evokerId: '3040161000',
+    hasReport,
+    hasBook,
+    hasDeck
+  })
+
+describe('runSteps', () => {
+  it('lists the expedition log, guidebook log and party deck in order', () => {
+    expect(steps(false, false, false)).toEqual([
+      {
+        key: 'report',
+        need: 'required',
+        captured: false,
+        page: '#arcarum3/dungeon_report_detail/id=381099&prev_page=1'
+      },
+      {
+        key: 'book',
+        need: 'recommended',
+        captured: false,
+        page: '#arcarum3/dungeon_report_book/id=381099'
+      },
+      {
+        key: 'deck',
+        need: 'optional',
+        captured: false,
+        page: '#party/index/31001/npc/0'
+      }
+    ])
+  })
+
+  it('marks what was captured', () => {
+    expect(steps(true, false, true).map((step) => step.captured)).toEqual([
+      true,
+      false,
+      true
+    ])
+  })
+
+  it("opens the Evoker's first party, and has no page for an unknown Evoker", () => {
+    expect(evokerPartyPage('3040160000')).toBe('#party/index/30991/npc/0')
+    expect(evokerPartyPage('3040164000')).toBe('#party/index/31031/npc/0')
+    expect(evokerPartyPage('3040169000')).toBe('#party/index/31081/npc/0')
+    expect(evokerPartyPage('3040999000')).toBeNull()
+    expect(evokerPartyPage(null)).toBeNull()
+  })
+
+  it('builds report pages from the path ID only', () => {
+    expect(reportLogPage('42')).toBe(
+      '#arcarum3/dungeon_report_detail/id=42&prev_page=1'
+    )
+    expect(reportBookPage('42')).toBe('#arcarum3/dungeon_report_book/id=42')
+  })
+})
+
+describe('runImportPlan', () => {
+  it('imports with everything captured', () => {
+    expect(runImportPlan(steps(true, true, true))).toEqual({
+      canImport: true,
+      blocking: [],
+      without: []
+    })
+  })
+
+  it('needs the expedition log', () => {
+    expect(runImportPlan(steps(false, true, true))).toEqual({
+      canImport: false,
+      blocking: ['report'],
+      without: []
+    })
+  })
+
+  it('imports without the guidebook log or party deck, and says so', () => {
+    expect(runImportPlan(steps(true, false, false))).toEqual({
+      canImport: true,
+      blocking: [],
+      without: ['book', 'deck']
+    })
+  })
+})
+
+describe('canUpdateImportedRun', () => {
+  it('needs the guidebook log so an update never clears the guidebook', () => {
+    expect(canUpdateImportedRun(true)).toBe(true)
+    expect(canUpdateImportedRun(false)).toBe(false)
+  })
+})
+
+describe('canImportRun', () => {
+  it('needs only the expedition log', () => {
+    const run = { reportId: '1', report: {}, statusList: null }
+    expect(canImportRun(run)).toBe(true)
+    expect(canImportRun({ ...run, report: null, statusList: [] })).toBe(false)
+    expect(canImportRun(null)).toBe(false)
+  })
+})
+
+describe('runTabStep', () => {
+  it('maps each tab to its capture', () => {
+    const all = steps(true, false, true)
+    expect(runTabStep(all, 'party')).toMatchObject({
+      key: 'deck',
+      captured: true
+    })
+    expect(runTabStep(all, 'expedition')).toMatchObject({
+      key: 'report',
+      captured: true
+    })
+    expect(runTabStep(all, 'guidebooks')).toMatchObject({
+      key: 'book',
+      captured: false
+    })
+  })
+})

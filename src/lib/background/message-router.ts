@@ -41,7 +41,22 @@ import {
   fetchWeaponStatModifiers,
   searchSummonByName
 } from './party-reference.js'
+import { fetchCharacterTags } from './character-tags.js'
 import { uploadSupportSummons } from './support-summons.js'
+import { withImportMark } from './import-marks.js'
+import { deckEvoker, reportEvokerId, shapeDeck } from '../solomonis/deck.js'
+import {
+  isSolomonisDeckDataType,
+  isSolomonisRunDataType
+} from '../solomonis/routes.js'
+import type {
+  SolomonisCurrentSetup,
+  SolomonisRunCapture
+} from '../solomonis/types.js'
+import {
+  uploadSolomonisParty,
+  uploadSolomonisRun
+} from '../solomonis/upload.js'
 import type { CharacterStatsEntry, PageData } from './types.js'
 import type { ParsedSupportSummonPayload } from '../parsers/support-summons.js'
 import type { WindowManager } from './window-manager.js'
@@ -66,6 +81,19 @@ async function withCachedData<T, R>(
   const data = await loadCachedDataForUpload(dataType)
   if (!data) return { error: 'no_cached_data' }
   return fn(data as T)
+}
+
+// The deck the side panel picked to send with a report, if it's a deck
+// for the Evoker the report was run with.
+async function loadCurrentSetup(
+  dataType: string | undefined,
+  capture: SolomonisRunCapture
+): Promise<SolomonisCurrentSetup | null> {
+  if (!dataType || !isSolomonisDeckDataType(dataType)) return null
+  const deck = shapeDeck(await loadCachedDataForUpload(dataType))
+  const evokerId = reportEvokerId(capture.report)
+  if (!deck || !evokerId || deckEvoker(deck)?.id !== evokerId) return null
+  return deck
 }
 
 type Pages = Record<number, PageData>
@@ -95,21 +123,26 @@ export function createHandlers(
     fetchWeaponKeyMap: (m) => fetchWeaponKeyMap(m.locale),
     fetchWeaponStatModifiers: () => fetchWeaponStatModifiers(),
     fetchJobSkillSlugs: (m) => fetchJobSkillSlugs(m.names),
+    fetchCharacterTags: (m) => fetchCharacterTags(m.granblueIds),
 
     uploadPartyData: (m) =>
-      withCachedData(m.dataType, (data) =>
-        uploadPartyData(
-          data,
-          m.raidId,
-          m.playlistIds,
-          m.name,
-          m.visibility,
-          m.shareWithCrew
+      withImportMark(m.dataType, () =>
+        withCachedData(m.dataType, (data) =>
+          uploadPartyData(
+            data,
+            m.raidId,
+            m.playlistIds,
+            m.name,
+            m.visibility,
+            m.shareWithCrew
+          )
         )
       ),
     uploadDetailData: (m) =>
-      withCachedData<Record<string, unknown>, unknown>(m.dataType, (data) =>
-        uploadDetailData(data, m.dataType)
+      withImportMark(m.dataType, () =>
+        withCachedData<Record<string, unknown>, unknown>(m.dataType, (data) =>
+          uploadDetailData(data, m.dataType)
+        )
       ),
 
     // checkConflicts and uploadCharacterStats ignore selectedIndices today;
@@ -127,41 +160,87 @@ export function createHandlers(
         checkCharacterStatsUpdates(stats)
       ),
     uploadCollectionData: (m) =>
-      withCachedData<Pages, unknown>(m.dataType, (pages) =>
-        uploadCollectionData(pages, m.dataType, {
-          selectedIndices: m.selectedIndices,
-          updateExisting: true,
-          conflictResolutions: m.conflictResolutions,
-          deletionIds: m.deletionIds
-        })
+      withImportMark(m.dataType, () =>
+        withCachedData<Pages, unknown>(m.dataType, (pages) =>
+          uploadCollectionData(pages, m.dataType, {
+            selectedIndices: m.selectedIndices,
+            updateExisting: true,
+            conflictResolutions: m.conflictResolutions,
+            deletionIds: m.deletionIds
+          })
+        )
       ),
     syncCollection: (m) =>
-      withCachedData<Pages, unknown>(m.dataType, (pages) =>
-        uploadCollectionData(pages, m.dataType, {
-          selectedIndices: m.selectedIndices,
-          updateExisting: true,
-          isFullInventory: true,
-          reconcileDeletions: true,
-          deletionIds: m.deletionIds
-        })
+      withImportMark(m.dataType, () =>
+        withCachedData<Pages, unknown>(m.dataType, (pages) =>
+          uploadCollectionData(pages, m.dataType, {
+            selectedIndices: m.selectedIndices,
+            updateExisting: true,
+            isFullInventory: true,
+            reconcileDeletions: true,
+            deletionIds: m.deletionIds
+          })
+        )
       ),
     previewSyncDeletions: (m) =>
       withCachedData<Pages, unknown>(m.dataType, (pages) =>
         previewSyncDeletions(pages, m.dataType)
       ),
     uploadCharacterStats: () =>
-      withCachedData<CharacterStats, unknown>('character_stats', (stats) =>
-        uploadCharacterStats(stats)
+      withImportMark('character_stats', () =>
+        withCachedData<CharacterStats, unknown>('character_stats', (stats) =>
+          uploadCharacterStats(stats)
+        )
       ),
 
     uploadSupportSummons: () =>
-      withCachedData<ParsedSupportSummonPayload, unknown>(
-        'support_summons',
-        (parsed) => uploadSupportSummons(parsed)
+      withImportMark('support_summons', () =>
+        withCachedData<ParsedSupportSummonPayload, unknown>(
+          'support_summons',
+          (parsed) => uploadSupportSummons(parsed)
+        )
       ),
 
+    // Only the report is marked, not the deck sent as its current setup
+    uploadSolomonisRun: (m) =>
+      isSolomonisRunDataType(m.dataType)
+        ? withImportMark(m.dataType, () =>
+            withCachedData<SolomonisRunCapture, unknown>(
+              m.dataType,
+              async (capture) =>
+                uploadSolomonisRun(capture, {
+                  name: m.name,
+                  visibility: m.visibility,
+                  playlistIds: m.playlistIds,
+                  shareWithCrew: m.shareWithCrew,
+                  updateExisting: m.updateExisting,
+                  currentSetup: await loadCurrentSetup(
+                    m.currentSetupDataType,
+                    capture
+                  )
+                })
+            )
+          )
+        : Promise.resolve({ error: 'unknown_type' }),
+
+    uploadSolomonisParty: (m) =>
+      isSolomonisDeckDataType(m.dataType)
+        ? withImportMark(m.dataType, () =>
+            withCachedData<SolomonisCurrentSetup, unknown>(m.dataType, (deck) =>
+              uploadSolomonisParty(deck, {
+                name: m.name,
+                visibility: m.visibility,
+                playlistIds: m.playlistIds,
+                shareWithCrew: m.shareWithCrew
+              })
+            )
+          )
+        : Promise.resolve({ error: 'unknown_type' }),
+
     uploadUnfScores: (m) =>
-      handleUploadUnfScores(m.dataType, m.round ?? 'preliminaries'),
+      withImportMark(m.dataType, () =>
+        handleUploadUnfScores(m.dataType, m.round ?? 'preliminaries')
+      ),
     createCrew: (m) => handleCreateCrew(m.name ?? ''),
     previewGwPhantoms: (m) => handlePreviewGwPhantoms(m.dataType),
     fetchLatestGwEvent: () => handleFetchLatestGwEvent()

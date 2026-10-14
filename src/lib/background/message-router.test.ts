@@ -7,6 +7,11 @@ import * as referenceData from './reference-data.js'
 import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
+import { withImportMark } from './import-marks.js'
+import {
+  uploadSolomonisParty,
+  uploadSolomonisRun
+} from '../solomonis/upload.js'
 import {
   createHandlers,
   createMessageListener,
@@ -23,6 +28,11 @@ vi.mock('./cache-queries.js', () => ({
   handleGetCachedData: vi.fn(async () => ({})),
   handleClearCache: vi.fn(async () => ({ success: true })),
   loadCachedDataForUpload: vi.fn()
+}))
+vi.mock('./import-marks.js', () => ({
+  withImportMark: vi.fn((_dataType: string, upload: () => Promise<unknown>) =>
+    upload()
+  )
 }))
 vi.mock('./collections.js', () => ({
   checkCharacterStatsUpdates: vi.fn(async () => ({})),
@@ -47,6 +57,10 @@ vi.mock('./reference-data.js', () => ({
   fetchRaidGroups: vi.fn(async () => ({})),
   fetchUserPlaylists: vi.fn(async () => ({})),
   getCollectionIds: vi.fn(async () => ({}))
+}))
+vi.mock('../solomonis/upload.js', () => ({
+  uploadSolomonisRun: vi.fn(async () => ({})),
+  uploadSolomonisParty: vi.fn(async () => ({}))
 }))
 vi.mock('./party-reference.js', () => ({
   fetchJobSkillSlugs: vi.fn(async () => ({})),
@@ -218,6 +232,46 @@ describe('background message router', () => {
     }
   )
 
+  it.each<[ExtensionMessage, string]>([
+    [{ action: 'uploadPartyData', dataType: 'party_1_2' }, 'party_1_2'],
+    [
+      { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
+      'detail_npc_3040001'
+    ],
+    [
+      { action: 'uploadCollectionData', dataType: 'collection_npc' },
+      'collection_npc'
+    ],
+    [{ action: 'syncCollection', dataType: 'list_weapon' }, 'list_weapon'],
+    [{ action: 'uploadCharacterStats' }, 'character_stats'],
+    [{ action: 'uploadSupportSummons' }, 'support_summons'],
+    [
+      { action: 'uploadSolomonisRun', dataType: 'solomonis_run_381099' },
+      'solomonis_run_381099'
+    ],
+    [
+      { action: 'uploadSolomonisParty', dataType: 'solomonis_deck_31001' },
+      'solomonis_deck_31001'
+    ],
+    [{ action: 'uploadUnfScores', dataType: 'unf_scores_77' }, 'unf_scores_77']
+  ])('marks the capture imported after %o', async (message, dataType) => {
+    send(message)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+    expect(withImportMark).toHaveBeenCalledTimes(1)
+    expect(withImportMark).toHaveBeenCalledWith(dataType, expect.any(Function))
+  })
+
+  it.each<ExtensionMessage>([
+    { action: 'checkConflicts', dataType: 'collection_weapon' },
+    { action: 'checkCollectionUpdates', dataType: 'collection_npc' },
+    { action: 'previewSyncDeletions', dataType: 'collection_summon' },
+    { action: 'previewGwPhantoms', dataType: 'unf_scores_77' }
+  ])('does not mark anything for %o', async (message) => {
+    send(message)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+    expect(withImportMark).not.toHaveBeenCalled()
+  })
+
   it('returns no_cached_data without calling the upload', async () => {
     vi.mocked(loadCachedDataForUpload).mockResolvedValue(null)
 
@@ -250,6 +304,134 @@ describe('background message router', () => {
         true
       )
     )
+  })
+
+  it('forwards Solomonis run import options with the cached report', async () => {
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      name: 'Nier',
+      visibility: 1,
+      playlistIds: ['7'],
+      shareWithCrew: false,
+      updateExisting: true
+    })
+
+    await vi.waitFor(() =>
+      expect(uploadSolomonisRun).toHaveBeenCalledWith(PAGES, {
+        name: 'Nier',
+        visibility: 1,
+        playlistIds: ['7'],
+        shareWithCrew: false,
+        updateExisting: true,
+        currentSetup: null
+      })
+    )
+    expect(loadCachedDataForUpload).toHaveBeenCalledWith('solomonis_run_381099')
+  })
+
+  it('sends the picked deck for the report Evoker as current_setup, without the uid', async () => {
+    const report = {
+      reportId: '381099',
+      report: { thumbnail_image: '3040161000_04' },
+      statusList: []
+    }
+    const deck = {
+      deck: {
+        priority: 31001,
+        npc: { '1': { master: { id: '3040161000' } } },
+        pc: { param: { id: 12345678, hp: 1 } }
+      }
+    }
+    vi.mocked(loadCachedDataForUpload).mockImplementation(async (type) =>
+      type === 'solomonis_deck_31001' ? deck : report
+    )
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'solomonis_deck_31001'
+    })
+
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalled())
+    const options = vi.mocked(uploadSolomonisRun).mock.calls[0]![1]!
+    expect(options.currentSetup?.deck.priority).toBe(31001)
+    expect(options.currentSetup?.deck.pc).toEqual({ param: { hp: 1 } })
+  })
+
+  it("drops a picked deck for another Evoker, or that isn't a deck", async () => {
+    const report = {
+      reportId: '381099',
+      report: { thumbnail_image: '3040169000_04' },
+      statusList: []
+    }
+    const deck = {
+      deck: { priority: 31001, npc: { '1': { master: { id: '3040161000' } } } }
+    }
+    vi.mocked(loadCachedDataForUpload).mockImplementation(async (type) =>
+      type === 'solomonis_deck_31001' ? deck : report
+    )
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'solomonis_deck_31001'
+    })
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalledTimes(1))
+    expect(
+      vi.mocked(uploadSolomonisRun).mock.calls[0]![1]!.currentSetup
+    ).toBeNull()
+
+    send({
+      action: 'uploadSolomonisRun',
+      dataType: 'solomonis_run_381099',
+      currentSetupDataType: 'party_1_1'
+    })
+    await vi.waitFor(() => expect(uploadSolomonisRun).toHaveBeenCalledTimes(2))
+    expect(
+      vi.mocked(uploadSolomonisRun).mock.calls[1]![1]!.currentSetup
+    ).toBeNull()
+    expect(loadCachedDataForUpload).not.toHaveBeenCalledWith('party_1_1')
+  })
+
+  it('imports a captured Solomonis deck with the party meta', async () => {
+    send({
+      action: 'uploadSolomonisParty',
+      dataType: 'solomonis_deck_31001',
+      name: 'Fraux',
+      visibility: 2,
+      playlistIds: ['7'],
+      shareWithCrew: true
+    })
+
+    await vi.waitFor(() =>
+      expect(uploadSolomonisParty).toHaveBeenCalledWith(PAGES, {
+        name: 'Fraux',
+        visibility: 2,
+        playlistIds: ['7'],
+        shareWithCrew: true
+      })
+    )
+    expect(loadCachedDataForUpload).toHaveBeenCalledWith('solomonis_deck_31001')
+  })
+
+  it('only imports Solomonis parties from Solomonis deck captures', async () => {
+    send({ action: 'uploadSolomonisParty', dataType: 'party_1_2' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'unknown_type' })
+    )
+    expect(uploadSolomonisParty).not.toHaveBeenCalled()
+  })
+
+  it('only uploads Solomonis runs from Solomonis run captures', async () => {
+    send({ action: 'uploadSolomonisRun', dataType: 'party_1_2' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'unknown_type' })
+    )
+    expect(loadCachedDataForUpload).not.toHaveBeenCalled()
+    expect(uploadSolomonisRun).not.toHaveBeenCalled()
   })
 
   // Without updateExisting the API skips owned items, so "Has updates" never applied.

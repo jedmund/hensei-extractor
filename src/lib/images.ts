@@ -128,6 +128,31 @@ export type ElementIconKey =
   | 'dark'
   | 'null'
 
+const HENSEI_ELEMENT_KEYS: Record<number, ElementIconKey> = {
+  1: 'wind',
+  2: 'fire',
+  3: 'water',
+  4: 'earth',
+  5: 'dark',
+  6: 'light'
+}
+
+/**
+ * A captured party's element: its main-hand weapon's, as in the party
+ * view. Null when the party has no main hand or it has no element.
+ */
+export function partyElementKey(party: unknown): ElementIconKey | null {
+  const deck = (party as { deck?: { pc?: { weapons?: unknown } } } | null)?.deck
+  const weapons = deck?.pc?.weapons
+  const main = (
+    Array.isArray(weapons)
+      ? weapons[0]
+      : (weapons as Record<string, unknown> | undefined)?.['1']
+  ) as { master?: { attribute?: string | number } } | null | undefined
+  const element = toHenseiElement(main?.master?.attribute)
+  return element ? (HENSEI_ELEMENT_KEYS[element] ?? null) : null
+}
+
 /** Round element icon, same file as hensei-web's getElementImage. */
 export function getElementIconUrl(key: ElementIconKey): string {
   return getImageUrl(`${BUCKET.elements}/${key}.png`)

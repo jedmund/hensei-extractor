@@ -10,6 +10,7 @@
   import MainView from './main/MainView.svelte'
   import WarningCard from './login/WarningCard.svelte'
   import ConflictModal from './modals/ConflictModal.svelte'
+  import SolomonisDuplicateModal from './solomonis/SolomonisDuplicateModal.svelte'
   import Toast from './shared/Toast.svelte'
 
   onMount(async () => {
@@ -48,6 +49,17 @@
       app.auth = (changes.gbAuth.newValue as AuthData | undefined) ?? null
     })
 
+    // Show a capture's imported mark as soon as the background worker sets it
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return
+      const marked = Object.values(changes).some(
+        (change) =>
+          (change.newValue as { importedAt?: number } | undefined)?.importedAt !==
+          (change.oldValue as { importedAt?: number } | undefined)?.importedAt
+      )
+      if (marked && app.auth?.access_token) refreshCaches()
+    })
+
     if (gbAuth?.access_token) {
       await refreshCaches()
     }
@@ -83,6 +95,7 @@
   {/if}
 
   <ConflictModal />
+  <SolomonisDuplicateModal />
   <Toast />
 {/key}
 </Tooltip.Provider>

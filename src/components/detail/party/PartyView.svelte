@@ -3,13 +3,12 @@
   import { app } from '../../../lib/state/app.svelte.js'
   import { decodeHtmlEntities } from '../../../lib/html-entities.js'
   import {
-    partyLookups,
     countPartyMembers,
     applySuggestedRaid,
     type PartyDeckData
   } from '../../../lib/detail-data.js'
-  import { fetchRaidGroups, searchSummonByName, fetchWeaponKeyMap, fetchWeaponStatModifiers, fetchJobSkillSlugs } from '../../../lib/services/chrome-messages.js'
-  import { getLocale } from '../../../lib/i18n.js'
+  import { hasFriendSummon, loadPartyDeckLookups } from '../../../lib/party-lookups.js'
+  import { fetchRaidGroups } from '../../../lib/services/chrome-messages.js'
   import type { SummonSearchResult, WeaponKeyMap, WeaponStatModifiers, JobSkillSlugs } from '../../../lib/types/messages.js'
 
   import DetailScroll from '../DetailScroll.svelte'
@@ -23,10 +22,15 @@
     /** Changes whenever DetailView loads a new capture for this view */
     generation: number
     simplePortraits: boolean
+    /**
+     * An Evoking Solomonis deck: its zone follows from the route Evoker, so
+     * there's no raid to pick or suggest
+     */
+    solomonis?: boolean
     scrolled?: boolean
   }
 
-  let { dataType, data, generation, simplePortraits, scrolled = $bindable(false) }: Props = $props()
+  let { dataType, data, generation, simplePortraits, solomonis = false, scrolled = $bindable(false) }: Props = $props()
 
   // Looked up by name and id, to label the captured deck
   let friendSummon = $state<SummonSearchResult | null>(null)
@@ -61,7 +65,7 @@
     app.partyName = decodeHtmlEntities(party?.deck?.name || '')
 
     await loadSupplementary(party, current)
-    if (!current()) return
+    if (!current() || solomonis) return
 
     const { weapons, characters } = countPartyMembers(party)
     await applySuggestedRaid({
@@ -75,27 +79,20 @@
   }
 
   async function loadSupplementary(party: PartyDeckData, current: () => boolean) {
-    const { summonName, skillNames } = partyLookups(party)
-
     friendSummon = null
-    friendSummonPending = !!summonName
-    const [summonResult, keyMap, skillSlugs, statMods] = await Promise.all([
-      summonName ? searchSummonByName(summonName) : Promise.resolve(null),
-      fetchWeaponKeyMap(getLocale()),
-      skillNames.length > 0 ? fetchJobSkillSlugs(skillNames) : Promise.resolve({}),
-      fetchWeaponStatModifiers()
-    ])
+    friendSummonPending = hasFriendSummon(party)
+    const lookups = await loadPartyDeckLookups(party)
     if (!current()) return
 
-    friendSummon = summonResult
+    friendSummon = lookups.friendSummon
     friendSummonPending = false
-    weaponKeyMap = keyMap
-    jobSkillSlugs = skillSlugs
-    weaponStatModifiers = statMods
+    weaponKeyMap = lookups.weaponKeyMap
+    jobSkillSlugs = lookups.jobSkillSlugs
+    weaponStatModifiers = lookups.weaponStatModifiers
   }
 </script>
 
-<PartyMeta {scrolled} />
+<PartyMeta {scrolled} raidSelector={!solomonis} />
 
 <DetailScroll bind:scrolled>
   {#if data}

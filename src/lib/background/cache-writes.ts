@@ -1,5 +1,6 @@
 import { CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS } from '../constants.js'
 import { decodeHtmlEntities } from '../html-entities.js'
+import { clearImportMark } from './import-marks.js'
 import type {
   CachedGuildInfo,
   CachedListData,
@@ -96,6 +97,8 @@ export async function cacheListPage(
   if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.pages = {}
   }
+  // A new page changes what would be imported
+  clearImportMark(existing)
 
   if (pageNumber != null) {
     existing.pages[pageNumber] = data
@@ -159,6 +162,7 @@ export async function cacheUnfScores(
   if (existing.lastUpdated && timestamp - existing.lastUpdated > CACHE_TTL_MS) {
     existing.pages = {}
   }
+  clearImportMark(existing)
 
   const members: UnfMember[] = rawList.map((m: unknown) => {
     const member = m as Record<string, unknown>

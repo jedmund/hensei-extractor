@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import * as m from '../../../paraglide/messages.js'
   import { app } from '../../../lib/state/app.svelte.js'
   import { BUCKET, getImageUrl } from '../../../lib/constants.js'
@@ -11,9 +12,13 @@
 
   interface Props {
     scrolled?: boolean
+    /** Off for Solomonis runs, whose zone follows from the route Evoker */
+    raidSelector?: boolean
+    /** Extra controls at the bottom of the white header, e.g. a view's tabs */
+    footer?: Snippet | undefined
   }
 
-  let { scrolled = false }: Props = $props()
+  let { scrolled = false, raidSelector = true, footer }: Props = $props()
 
   type ElementName = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark'
   let element = $derived((app.auth?.avatar?.element as ElementName) ?? undefined)
@@ -67,6 +72,7 @@
     />
   </div>
 
+  {#if raidSelector}
   <div class="raid-selector" id="raidSelector">
     <button
       class="raid-selector-button"
@@ -86,6 +92,7 @@
       <Icon name="chevron-right" size={14} class="chevron" />
     </button>
   </div>
+  {/if}
 
   <div class="visibility-row">
     <Select options={visibilityOptions} bind:value={app.selectedVisibility} contained fullWidth />
@@ -110,4 +117,8 @@
       <Icon name="chevron-right" size={14} class="chevron" />
     </button>
   </div>
+
+  {#if footer}
+    {@render footer()}
+  {/if}
 </div>

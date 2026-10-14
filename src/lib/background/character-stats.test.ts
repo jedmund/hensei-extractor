@@ -8,15 +8,12 @@ vi.mock('../mastery.js', () => ({
   },
   lookupAetherialTypeId: (typeId: number) =>
     String(typeId).endsWith('0006') ? 3 : null,
-  PERPETUITY_TYPE_ID: {
-    100002: 2
-  },
   parseDisplayValue: (value: string | undefined) =>
     parseInt(String(value ?? '').replace(/^\+/, ''), 10) || 0
 }))
 
 describe('parseZenithMasteryData', () => {
-  it('parses ring, over-mastery, earring, and perpetuity bonuses', () => {
+  it('parses ring, over-mastery and earring bonuses, ignoring the perpetuity list', () => {
     const result = parseZenithMasteryData({
       option: {
         character: { name: 'Lyria' },
@@ -75,14 +72,7 @@ describe('parseZenithMasteryData', () => {
         modifier: 3,
         strength: 12,
         typeName: 'Element ATK'
-      },
-      perpetuityBonuses: [
-        {
-          modifier: 2,
-          strength: 5,
-          typeName: 'ATK'
-        }
-      ]
+      }
     })
   })
 
@@ -90,8 +80,7 @@ describe('parseZenithMasteryData', () => {
     expect(parseZenithMasteryData({})).toEqual({
       rings: [],
       earring: null,
-      masterName: null,
-      perpetuityBonuses: []
+      masterName: null
     })
   })
 })

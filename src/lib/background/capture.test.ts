@@ -4,7 +4,6 @@ import { createCaptureHandler, type CaptureDependencies } from './capture.js'
 vi.mock('../mastery.js', () => ({
   OVER_MASTERY_TYPE_ID: {},
   lookupAetherialTypeId: () => null,
-  PERPETUITY_TYPE_ID: {},
   parseDisplayValue: () => 0
 }))
 
@@ -14,7 +13,8 @@ const metadata = {
   masterId: null,
   stashNumber: null,
   stashName: null,
-  eventNumber: null
+  eventNumber: null,
+  reportId: null
 }
 
 function createDependencies(): CaptureDependencies {
@@ -30,6 +30,8 @@ function createDependencies(): CaptureDependencies {
     cacheGuildInfo: vi.fn(async () => true),
     cacheSingleItem: vi.fn(async () => true),
     cacheSupportSummons: vi.fn(async () => true),
+    cacheSolomonisReport: vi.fn(async () => 'solomonis_run_381099'),
+    cacheSolomonisDeck: vi.fn(async () => 'solomonis_deck_31001'),
     notifyCaptured: vi.fn(async () => undefined)
   }
 }
@@ -232,6 +234,87 @@ describe('capture dispatcher', () => {
       'collection_weapon',
       metadata,
       600
+    )
+
+    expect(dependencies.notifyCaptured).not.toHaveBeenCalled()
+  })
+
+  it('caches both Solomonis report logs under the report and never passes the URL', async () => {
+    const handler = createCaptureHandler(dependencies)
+    const url =
+      'https://game.granbluefantasy.jp/arcarum3/dungeon/report/content/spacebook/381099?uid=12345678'
+    const data = { status_list: [] }
+
+    await handler(
+      url,
+      data,
+      'solomonis_report_book',
+      { ...metadata, reportId: '381099' },
+      100
+    )
+
+    expect(dependencies.cacheSolomonisReport).toHaveBeenCalledWith(
+      'solomonis_report_book',
+      '381099',
+      data,
+      100
+    )
+    expect(
+      vi.mocked(dependencies.cacheSolomonisReport).mock.calls[0]
+    ).not.toContain(url)
+    expect(dependencies.cacheSingleItem).not.toHaveBeenCalled()
+    expect(dependencies.notifyCaptured).toHaveBeenCalledWith({
+      action: 'dataCaptured',
+      dataType: 'solomonis_run_381099',
+      pageNumber: 2,
+      timestamp: 100
+    })
+  })
+
+  it('does not emit when a Solomonis report had nothing to keep', async () => {
+    vi.mocked(dependencies.cacheSolomonisReport).mockResolvedValue(null)
+    const handler = createCaptureHandler(dependencies)
+
+    await handler(
+      'https://game/arcarum3/dungeon/report/content/detail/1',
+      {},
+      'solomonis_report',
+      { ...metadata, reportId: '1' },
+      100
+    )
+
+    expect(dependencies.notifyCaptured).not.toHaveBeenCalled()
+  })
+
+  it('caches a Solomonis deck by its body, never as a normal party or with the URL', async () => {
+    const handler = createCaptureHandler(dependencies)
+    const url =
+      'https://game.granbluefantasy.jp/rest/arcarum3/party/deck/31001?_=1&uid=12345678'
+    const data = { deck: { priority: 31001 } }
+
+    await handler(url, data, 'solomonis_deck', metadata, 100)
+
+    expect(dependencies.cacheSolomonisDeck).toHaveBeenCalledWith(data, 100)
+    expect(dependencies.cacheParty).not.toHaveBeenCalled()
+    expect(dependencies.cacheSingleItem).not.toHaveBeenCalled()
+    expect(dependencies.notifyCaptured).toHaveBeenCalledWith({
+      action: 'dataCaptured',
+      dataType: 'solomonis_deck_31001',
+      pageNumber: metadata.pageNumber,
+      timestamp: 100
+    })
+  })
+
+  it('does not emit when a Solomonis deck had nothing to keep', async () => {
+    vi.mocked(dependencies.cacheSolomonisDeck).mockResolvedValue(null)
+    const handler = createCaptureHandler(dependencies)
+
+    await handler(
+      'https://game.granbluefantasy.jp/rest/arcarum3/party/deck/1',
+      {},
+      'solomonis_deck',
+      metadata,
+      100
     )
 
     expect(dependencies.notifyCaptured).not.toHaveBeenCalled()

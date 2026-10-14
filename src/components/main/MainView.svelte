@@ -64,6 +64,10 @@
         }
       }
 
+      if (dt === 'character_stats') {
+        hints.push(m.hint_character_bonuses())
+      }
+
       if (dt.includes('weapon') || dt.includes('summon')) {
         if (dt.startsWith('list_') || dt.startsWith('collection_')) {
           const capitalized = itemType ? itemType.charAt(0).toUpperCase() + itemType.slice(1) : ''
@@ -93,6 +97,12 @@
     if (app.detailViewActive && app.currentDetailDataType) {
       if (app.currentDetailDataType.startsWith('party_')) {
         return app.partyName || ''
+      }
+      if (app.currentDetailDataType.startsWith('solomonis_deck_')) {
+        return app.partyName || m.solomonis_extension_deck_title()
+      }
+      if (app.currentDetailDataType.startsWith('solomonis_run_')) {
+        return app.partyName || m.solomonis_extension_run_title()
       }
       if (app.currentDetailDataType.startsWith('detail_') && app.detailData) {
         const d = app.detailData as { name?: string; master?: { name?: string } }
