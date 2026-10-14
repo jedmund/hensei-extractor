@@ -40,16 +40,43 @@ export function toCharacterTagData(json: unknown): CharacterTagData | null {
   }
 }
 
-async function fetchOne(granblueId: string): Promise<CharacterTagData | null> {
+type Lookup =
+  | { kind: 'found'; data: CharacterTagData | null }
+  | { kind: 'failed' }
+
+/**
+ * One character's tags. A 404 is a definitive "no such character" and is
+ * cached as null; network errors, 429s and 5xx are transient and aren't
+ * cached at all, so the next view tries again.
+ */
+async function fetchOne(granblueId: string): Promise<Lookup> {
   try {
     const response = await apiFetch(
       await getApiUrl(`/characters/${encodeURIComponent(granblueId)}`)
     )
-    if (!response.ok) return null
-    return toCharacterTagData(await response.json())
+    if (response.status === 404) return { kind: 'found', data: null }
+    if (!response.ok) return { kind: 'failed' }
+    return { kind: 'found', data: toCharacterTagData(await response.json()) }
   } catch {
-    return null
+    return { kind: 'failed' }
   }
+}
+
+let pendingWrite: Promise<unknown> = Promise.resolve()
+
+/**
+ * Runs the cache's read-modify-write one at a time, so two overlapping
+ * lookups can't overwrite each other's new entries.
+ */
+function serialized<T>(write: () => Promise<T>): Promise<T> {
+  const next = pendingWrite.then(write, write)
+  pendingWrite = next.catch(() => undefined)
+  return next
+}
+
+async function readCache(): Promise<Record<string, StoredTags>> {
+  return ((await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] ??
+    {}) as Record<string, StoredTags>
 }
 
 /** Tag data for each character, from the cache where it's fresh. */
@@ -57,8 +84,7 @@ export async function fetchCharacterTags(
   granblueIds: string[]
 ): Promise<Record<string, CharacterTagData | null>> {
   const ids = [...new Set(granblueIds.filter((id) => /^\d+$/.test(id)))]
-  const stored = ((await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] ??
-    {}) as Record<string, StoredTags>
+  const stored = await readCache()
   const now = Date.now()
   const result: Record<string, CharacterTagData | null> = {}
   const missing: string[] = []
@@ -68,16 +94,28 @@ export async function fetchCharacterTags(
     else missing.push(id)
   }
 
+  const fresh: Record<string, StoredTags> = {}
   for (let i = 0; i < missing.length; i += CONCURRENCY) {
     const batch = missing.slice(i, i + CONCURRENCY)
     const fetched = await Promise.all(batch.map(fetchOne))
     batch.forEach((id, index) => {
-      result[id] = fetched[index] ?? null
-      stored[id] = { data: fetched[index] ?? null, fetchedAt: now }
+      const lookup = fetched[index]
+      if (lookup?.kind === 'found') {
+        result[id] = lookup.data
+        fresh[id] = { data: lookup.data, fetchedAt: now }
+      } else {
+        result[id] = null
+      }
     })
   }
 
-  if (missing.length > 0)
-    await chrome.storage.local.set({ [STORAGE_KEY]: stored })
+  if (Object.keys(fresh).length > 0) {
+    await serialized(async () => {
+      const latest = await readCache()
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: { ...latest, ...fresh }
+      })
+    })
+  }
   return result
 }
