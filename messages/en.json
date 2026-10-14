@@ -436,7 +436,7 @@
   "solomonis_extension_subtitle_needs_report": "Open the expedition log to import",
   "solomonis_extension_log_captured": "Captured",
   "solomonis_extension_log_missing": "Not captured",
-  "solomonis_extension_note_without_setup": "This expedition will only import the Characters from the log due to limitations in Granblue Fantasy.\n\nNavigate to your Evoking Solomonis parties to add weapons, summons, and blessings before importing, or add them later on Granblue.team.",
+  "solomonis_extension_note_without_setup": "This expedition will only import the Characters from the log due to limitations in Granblue Fantasy.\n\nNavigate to your Evoking Solomonis parties to add weapons and summons before importing, or add them later on Granblue.team.",
   "solomonis_extension_blessings": "Blessings",
   "solomonis_extension_blessings_none": "No blessings",
   "solomonis_extension_blessing_level": "Lvl {level}",

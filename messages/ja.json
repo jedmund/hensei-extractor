@@ -436,7 +436,7 @@
   "solomonis_extension_subtitle_needs_report": "インポートするには探索記録を開いてください",
   "solomonis_extension_log_captured": "取得済み",
   "solomonis_extension_log_missing": "未取得",
-  "solomonis_extension_note_without_setup": "グランブルーファンタジーの仕様により、この探索では記録にあるキャラクターのみがインポートされます。\n\nインポートする前にソロモニスの編成を開いて武器・召喚石・加護を追加するか、後からGranblue.teamで追加してください。",
+  "solomonis_extension_note_without_setup": "グランブルーファンタジーの仕様により、この探索では記録にあるキャラクターのみがインポートされます。\n\nインポートする前にソロモニスの編成を開いて武器と召喚石を追加するか、後からGranblue.teamで追加してください。",
   "solomonis_extension_blessings": "加護",
   "solomonis_extension_blessings_none": "加護なし",
   "solomonis_extension_blessing_level": "Lv{level}",
