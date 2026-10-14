@@ -27,7 +27,7 @@ beforeEach(() => {
 })
 
 describe('handleGetCacheStatus', () => {
-  it('keeps old expedition reports importable', async () => {
+  it('expires expedition reports like other captures', async () => {
     const timestamp = Date.now() - CACHE_TTL_MS * 100
     storage['gbf_cache_solomonis_run_405483'] = {
       reportId: '405483',
@@ -45,11 +45,30 @@ describe('handleGetCacheStatus', () => {
     >
 
     expect(status.solomonis_run_405483).toMatchObject({
-      available: true,
-      isStale: false,
+      available: false,
+      isStale: true,
       evokerId: '3040168000'
     })
     expect(status.party_1_1).toMatchObject({ available: false, isStale: true })
+  })
+
+  it('lists expedition reports captured within the last 30 minutes', async () => {
+    const timestamp = Date.now() - CACHE_TTL_MS / 2
+    storage['gbf_cache_solomonis_run_405483'] = {
+      reportId: '405483',
+      hasReport: true,
+      hasBook: false,
+      timestamp
+    }
+
+    const status = (await handleGetCacheStatus()) as Record<string, unknown>
+
+    expect(status.solomonis_run_405483).toMatchObject({
+      available: true,
+      isStale: false,
+      lastUpdated: timestamp,
+      reportId: '405483'
+    })
   })
 
   it('lists captured Solomonis decks with their Evoker, kept until cleared', async () => {
@@ -77,7 +96,18 @@ describe('handleGetCacheStatus', () => {
 })
 
 describe('handleGetCachedData', () => {
-  it('opens old Solomonis reports and decks, but not other old captures', async () => {
+  it('opens expedition reports captured within the last 30 minutes', async () => {
+    storage['gbf_cache_solomonis_run_405483'] = {
+      data: { reportId: '405483' },
+      timestamp: Date.now() - CACHE_TTL_MS / 2
+    }
+
+    expect(await handleGetCachedData('solomonis_run_405483')).toMatchObject({
+      data: { reportId: '405483' }
+    })
+  })
+
+  it('opens old Solomonis decks, but not old reports or other captures', async () => {
     const timestamp = Date.now() - CACHE_TTL_MS * 100
     storage['gbf_cache_solomonis_run_405483'] = {
       data: { reportId: '405483' },
@@ -89,8 +119,8 @@ describe('handleGetCachedData', () => {
     }
     storage['gbf_cache_party_1_1'] = { data: { deck: {} }, timestamp }
 
-    expect(await handleGetCachedData('solomonis_run_405483')).toMatchObject({
-      data: { reportId: '405483' }
+    expect(await handleGetCachedData('solomonis_run_405483')).toEqual({
+      error: 'stale_data'
     })
     expect(await handleGetCachedData('solomonis_deck_31001')).toMatchObject({
       data: { deck: {} }

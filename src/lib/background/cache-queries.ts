@@ -19,16 +19,13 @@ import type {
 } from '../solomonis/types.js'
 
 /**
- * Solomonis reports and decks are kept until they're cleared, not for the
- * 30 minutes live game data is: a finished expedition's report never
- * changes, and a deck captured before an expedition is paired with its
- * report after it.
+ * Solomonis decks are kept until they're cleared, not for the 30 minutes
+ * other captures are: a deck captured before an expedition is paired with
+ * its report after it. Reports expire like everything else, 30 minutes
+ * after the latest capture of either of their logs.
  */
 function isKeptUntilCleared(dataType: string): boolean {
-  return (
-    dataType.startsWith('solomonis_run_') ||
-    dataType.startsWith('solomonis_deck_')
-  )
+  return dataType.startsWith('solomonis_deck_')
 }
 
 export async function loadCachedDataForUpload(
@@ -287,14 +284,14 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         itemName: (cacheEntry.itemName as string) ?? 'Unknown'
       }
     } else if (matchedPrefix === 'solomonis_run') {
-      // A finished expedition's report never changes, so it stays importable
-      // for as long as it's cached
+      // Expires like other captures; its timestamp is the latest capture of
+      // either log
       const run = cacheEntry as unknown as SolomonisRunCacheEntry
       status[dataType] = {
-        available: true,
+        available: !stale,
         lastUpdated: timestamp,
         age,
-        isStale: false,
+        isStale: stale,
         reportId: suffix,
         partyName: run.deckName ?? undefined,
         evokerId: run.evokerId ?? null,
@@ -302,7 +299,7 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         hasBook: !!run.hasBook
       }
     } else if (matchedPrefix === 'solomonis_deck') {
-      // Kept until cleared too, so a report can be paired with it later
+      // Kept until cleared, so a report can be paired with it later
       const deck = cacheEntry as unknown as SolomonisDeckCacheEntry
       status[dataType] = {
         available: true,
