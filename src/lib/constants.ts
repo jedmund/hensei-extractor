@@ -58,6 +58,7 @@ export const BUCKET = {
   awakening: 'icons/awakening',
   axSkills: 'icons/ax-skills',
   solomonisSpaces: 'icons/solomonis-spaces',
+  blessings: 'blessings',
   raidThumbnail: 'raids/thumbnail'
 } as const
 

@@ -3,11 +3,13 @@
      A tab whose capture is missing offers to open the game page for it. -->
 
 <script lang="ts">
-  import { untrack } from 'svelte'
+  import { onDestroy, untrack } from 'svelte'
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { decodeHtmlEntities } from '../../lib/html-entities.js'
   import { matchingDecks, reportEvokerId } from '../../lib/solomonis/deck.js'
+  import { deckBlessings } from '../../lib/solomonis/blessings.js'
+  import { CapturedDeck } from '../../lib/solomonis/captured-deck.svelte.js'
   import { reportAllies } from '../../lib/solomonis/report-stats.js'
   import { isSolomonisDeckDataType } from '../../lib/solomonis/routes.js'
   import {
@@ -93,7 +95,19 @@
       : []
   )
   let page = $derived(runTabStep(steps, tab)?.page ?? null)
+  let partyPage = $derived(runTabStep(steps, 'party')?.page ?? null)
   let allies = $derived(reportAllies(report))
+
+  // The chosen deck, loaded once for both tabs that show it, and again when
+  // it's captured again
+  const capturedDeck = new CapturedDeck()
+  onDestroy(() => capturedDeck.dispose())
+  $effect(() => {
+    const deckDataType = chosenDeck?.dataType ?? null
+    void chosenDeck?.timestamp
+    untrack(() => void capturedDeck.load(deckDataType))
+  })
+  let blessings = $derived(deckBlessings(capturedDeck.party))
 </script>
 
 <PartyMeta {scrolled} raidSelector={false} />
@@ -105,10 +119,18 @@
 <DetailScroll bind:scrolled>
   {#if capture}
     {#if tab === 'party'}
-      <RunPartyTab {decks} deck={chosenDeck} {allies} hasEvoker={!!evokerId} {page} />
+      <RunPartyTab
+        {decks}
+        deck={chosenDeck}
+        party={capturedDeck.party}
+        lookups={capturedDeck.lookups}
+        {allies}
+        hasEvoker={!!evokerId}
+        page={partyPage}
+      />
     {:else if tab === 'expedition'}
       {#if report}
-        <RunExpeditionTab {report} />
+        <RunExpeditionTab {report} hasDeck={!!chosenDeck} {blessings} {partyPage} />
       {:else}
         <RunEmptyTab
           message={m.solomonis_extension_note_needs_report()}
