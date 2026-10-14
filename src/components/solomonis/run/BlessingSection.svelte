@@ -1,11 +1,11 @@
-<!-- The Arcarum Blessings the Evoker's party deck has equipped, under their
-     total cost against the limit. Like hensei-web's BlessingSection. -->
+<!-- The Arcarum Blessings the Evoker's party deck has equipped, as cards
+     side by side, under their total cost against the limit. -->
 
 <script lang="ts">
   import * as m from '../../../paraglide/messages.js'
   import type { DeckBlessings } from '../../../lib/solomonis/blessings.js'
   import DetailsSection from '../../shared/details/DetailsSection.svelte'
-  import BlessingRow from './BlessingRow.svelte'
+  import BlessingCard from './BlessingCard.svelte'
 
   interface Props {
     blessings: DeckBlessings
@@ -26,9 +26,9 @@
   empty={blessings.blessings.length === 0}
   emptyMessage={m.solomonis_extension_blessings_none()}
 >
-  <ul class="blessing-list">
+  <ul class="blessing-cards">
     {#each blessings.blessings as blessing (blessing.slug)}
-      <li><BlessingRow {blessing} /></li>
+      <li><BlessingCard {blessing} /></li>
     {/each}
   </ul>
 </DetailsSection>
@@ -36,10 +36,11 @@
 <style lang="scss">
   @use 'themes/spacing' as *;
 
-  .blessing-list {
-    display: flex;
-    flex-direction: column;
-    gap: $unit-2x;
+  // Side by side, four to a row
+  .blessing-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: $unit * 1.5;
     margin: 0;
     padding: 0 $unit;
     list-style: none;

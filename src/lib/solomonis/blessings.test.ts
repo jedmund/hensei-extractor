@@ -3,7 +3,7 @@ import deck from './__fixtures__/party-deck.json'
 import { deckBlessings } from './blessings.js'
 
 describe('deckBlessings', () => {
-  it('lists the equipped blessings in arcana order, with the game values filled in', () => {
+  it('lists the equipped blessings in arcana order', () => {
     expect(deckBlessings(deck)).toEqual({
       blessings: [
         {
@@ -11,16 +11,14 @@ describe('deckBlessings', () => {
           name: 'Justice',
           level: 2,
           maxLevel: 3,
-          cost: 60,
-          effect: 'Unseal 1 weapon'
+          cost: 60
         },
         {
           slug: 'death',
           name: 'Death',
           level: 8,
           maxLevel: 9,
-          cost: 25,
-          effect: "Set foes' HP to 1 when entering a battle space (3 times)"
+          cost: 25
         }
       ],
       totalCost: 85,

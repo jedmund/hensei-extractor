@@ -1,8 +1,8 @@
 /**
  * The Arcarum Blessings a captured party deck has equipped, for the side
  * panel. The deck lists every blessing with its level; the equipped ones
- * are `is_used`. Names and effect text are the game's, in the language the
- * deck was captured in.
+ * are `is_used`. Names are the game's, in the language the deck was
+ * captured in.
  */
 
 /** Blessing slugs by arcana number, as in hensei-api's catalogue. */
@@ -28,8 +28,6 @@ export interface DeckBlessing {
   level: number
   maxLevel: number | null
   cost: number | null
-  /** What it does at this level, with the game's value filled in */
-  effect: string | null
 }
 
 export interface DeckBlessings {
@@ -45,13 +43,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function numberOrNull(value: unknown): number | null {
   const number = Number(value)
   return value != null && value !== '' && Number.isFinite(number) ? number : null
-}
-
-/** The game's effect text: `%s` stands for the level's value. */
-function effectText(skillInfo: unknown): string | null {
-  if (!isRecord(skillInfo) || typeof skillInfo.text !== 'string') return null
-  const value = typeof skillInfo.effect_value === 'string' ? skillInfo.effect_value : ''
-  return skillInfo.text.replace('%s', value).replace(/\s+/g, ' ').trim() || null
 }
 
 /**
@@ -78,8 +69,7 @@ export function deckBlessings(party: unknown): DeckBlessings | null {
           name: typeof entry.name === 'string' ? entry.name : slug,
           level: numberOrNull(entry.level) ?? 0,
           maxLevel: numberOrNull(entry.max_level),
-          cost: numberOrNull(entry.cost),
-          effect: effectText(entry.skill_info)
+          cost: numberOrNull(entry.cost)
         }
       ]
     })
