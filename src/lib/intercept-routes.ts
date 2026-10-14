@@ -13,6 +13,7 @@ import {
   SOLOMONIS_REPORT,
   SOLOMONIS_REPORT_BOOK,
   SOLOMONIS_REPORT_BOOK_PATTERN,
+  SOLOMONIS_REPORT_BOOK_REST_PATTERN,
   SOLOMONIS_REPORT_PATTERN
 } from './solomonis/routes.js'
 
@@ -61,6 +62,7 @@ export const INTERCEPT_PATTERNS = [
   // Evoking Solomonis expedition reports (expedition and guidebook logs)
   SOLOMONIS_REPORT_PATTERN,
   SOLOMONIS_REPORT_BOOK_PATTERN,
+  SOLOMONIS_REPORT_BOOK_REST_PATTERN,
   // Evoking Solomonis party decks (also matched by '/party/deck')
   SOLOMONIS_DECK_PATTERN
 ]
@@ -159,7 +161,14 @@ export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
   { dataType: 'support_summons', includes: ['/profile/content/index/'] },
   // No other pattern is part of these paths, or contains them.
   { dataType: SOLOMONIS_REPORT, includes: [SOLOMONIS_REPORT_PATTERN] },
-  { dataType: SOLOMONIS_REPORT_BOOK, includes: [SOLOMONIS_REPORT_BOOK_PATTERN] }
+  {
+    dataType: SOLOMONIS_REPORT_BOOK,
+    includes: [SOLOMONIS_REPORT_BOOK_PATTERN]
+  },
+  {
+    dataType: SOLOMONIS_REPORT_BOOK,
+    includes: [SOLOMONIS_REPORT_BOOK_REST_PATTERN]
+  }
 ]
 
 export function getDataType(url: string): string {

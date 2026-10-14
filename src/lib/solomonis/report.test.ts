@@ -68,6 +68,12 @@ describe('shapeStatusList', () => {
   it('keeps an empty guidebook', () => {
     expect(shapeStatusList({ status_list: [] })).toEqual([])
   })
+
+  it('takes a bare list', () => {
+    expect(shapeStatusList(spacebookResponse.status_list)).toEqual(
+      spacebookResponse.status_list
+    )
+  })
 })
 
 describe('pairing', () => {

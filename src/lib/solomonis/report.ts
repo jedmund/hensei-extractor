@@ -40,10 +40,18 @@ export function shapeReport(response: unknown): SolomonisReport | null {
   return report
 }
 
-/** The guidebook log's `status_list`, unchanged. Null when missing. */
+/**
+ * The guidebook log's `status_list`, unchanged. Null when missing. Takes the
+ * page response (`{ status_list }`) or a bare list.
+ */
 export function shapeStatusList(response: unknown): SolomonisStatus[] | null {
-  if (!isRecord(response) || !Array.isArray(response.status_list)) return null
-  return response.status_list.filter(isRecord) as SolomonisStatus[]
+  const list = Array.isArray(response)
+    ? response
+    : isRecord(response)
+      ? response.status_list
+      : null
+  if (!Array.isArray(list)) return null
+  return list.filter(isRecord) as SolomonisStatus[]
 }
 
 export function emptyCapture(reportId: string): SolomonisRunCapture {

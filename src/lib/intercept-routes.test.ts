@@ -55,6 +55,10 @@ const ROUTES: ReadonlyArray<readonly [dataType: string, path: string]> = [
     'solomonis_report_book',
     '/arcarum3/dungeon/report/content/spacebook/381099'
   ],
+  [
+    'solomonis_report_book',
+    '/rest/arcarum3/dungeon/report/spacebook_status_list/381099'
+  ],
   ['solomonis_deck', '/rest/arcarum3/party/deck/31001']
 ]
 
@@ -569,10 +573,13 @@ describe('buildInterceptMetadata', () => {
 describe('Solomonis expedition reports', () => {
   const detail = '/arcarum3/dungeon/report/content/detail/381099'
   const book = '/arcarum3/dungeon/report/content/spacebook/381099'
+  const bookRest = '/rest/arcarum3/dungeon/report/spacebook_status_list/381099'
 
   it('tells the expedition log and the guidebook log apart', () => {
     expect(getDataType(gbf(detail))).toBe('solomonis_report')
     expect(getDataType(gbf(book))).toBe('solomonis_report_book')
+    expect(getDataType(gbf(bookRest))).toBe('solomonis_report_book')
+    expect(shouldIntercept(gbf(bookRest))).toBe(true)
   })
 
   it('does not classify the report list or other arcarum3 pages', () => {
@@ -594,7 +601,8 @@ describe('Solomonis expedition reports', () => {
   it('caches both logs under the report ID from the path', () => {
     for (const [path, dataType] of [
       [detail, 'solomonis_report'],
-      [book, 'solomonis_report_book']
+      [book, 'solomonis_report_book'],
+      [bookRest, 'solomonis_report_book']
     ] as const) {
       expect(buildInterceptMetadata(gbf(path), {}, dataType, null)).toEqual({
         pageNumber: null,

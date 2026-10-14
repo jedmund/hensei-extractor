@@ -4,6 +4,8 @@
  *
  * - expedition log: GET /arcarum3/dungeon/report/content/detail/<report id>
  * - guidebook log:  GET /arcarum3/dungeon/report/content/spacebook/<report id>
+ *   or, opening the guidebook log page directly,
+ *   GET /rest/arcarum3/dungeon/report/spacebook_status_list/<report id>
  *
  * Both requests carry the player's uid in the query string, so everything
  * here reads the URL's path only.
@@ -13,6 +15,8 @@ export const SOLOMONIS_REPORT_PATTERN =
   '/arcarum3/dungeon/report/content/detail/'
 export const SOLOMONIS_REPORT_BOOK_PATTERN =
   '/arcarum3/dungeon/report/content/spacebook/'
+export const SOLOMONIS_REPORT_BOOK_REST_PATTERN =
+  '/rest/arcarum3/dungeon/report/spacebook_status_list/'
 
 /** The expedition log (`detail`) data type. */
 export const SOLOMONIS_REPORT = 'solomonis_report'
@@ -44,7 +48,7 @@ export function solomonisRunDataType(reportId: string): string {
 }
 
 const REPORT_ID =
-  /\/arcarum3\/dungeon\/report\/content\/(?:detail|spacebook)\/(\d+)(?:\/|$)/
+  /\/arcarum3\/dungeon\/report\/(?:content\/(?:detail|spacebook)|spacebook_status_list)\/(\d+)(?:\/|$)/
 
 /** The report ID from a report URL's path, or null. Never reads the query. */
 export function getReportId(url: string): string | null {
