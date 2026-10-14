@@ -4,7 +4,6 @@ import { createCaptureHandler, type CaptureDependencies } from './capture.js'
 vi.mock('../mastery.js', () => ({
   OVER_MASTERY_TYPE_ID: {},
   lookupAetherialTypeId: () => null,
-  PERPETUITY_TYPE_ID: {},
   parseDisplayValue: () => 0
 }))
 

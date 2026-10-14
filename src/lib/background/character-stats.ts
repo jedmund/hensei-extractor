@@ -2,7 +2,6 @@ import { CACHE_KEYS, CACHE_TTL_MS } from '../constants.js'
 import {
   OVER_MASTERY_TYPE_ID,
   lookupAetherialTypeId,
-  PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from '../mastery.js'
 import type { CharacterStatsEntry, ParsedMasteryData } from './types.js'
@@ -119,9 +118,6 @@ export async function cacheCharacterStats(
     if (masteryData.earring) {
       current.earring = masteryData.earring
     }
-    if (masteryData.perpetuityBonuses.length > 0) {
-      current.perpetuityBonuses = masteryData.perpetuityBonuses
-    }
   }
 
   existing.updates[resolvedMasterId] = current
@@ -140,8 +136,7 @@ export function parseZenithMasteryData(
   const result: ParsedMasteryData = {
     rings: [],
     earring: null,
-    masterName: null,
-    perpetuityBonuses: []
+    masterName: null
   }
 
   const option = data.option as Record<string, unknown> | undefined
@@ -194,31 +189,6 @@ export function parseZenithMasteryData(
           typeName,
           slot: slotNum
         })
-      }
-    }
-  }
-
-  const constantData = npcaugment?.constant_data_list as
-    | Record<string, unknown[]>
-    | undefined
-  if (constantData) {
-    for (const bonuses of Object.values(constantData)) {
-      if (!Array.isArray(bonuses)) continue
-      for (const bonus of bonuses) {
-        const b = bonus as Record<string, unknown>
-        const bType = b.type as Record<string, unknown> | undefined
-        const bParam = b.param as Record<string, unknown> | undefined
-        if (!bType?.id || !bParam) continue
-        const perpetuityId = PERPETUITY_TYPE_ID[bType.id as number]
-        if (perpetuityId) {
-          result.perpetuityBonuses.push({
-            modifier: perpetuityId,
-            strength: parseDisplayValue(
-              bParam.disp_total_param as string | undefined
-            ),
-            typeName: bType.name as string
-          })
-        }
       }
     }
   }

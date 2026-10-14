@@ -5,6 +5,7 @@
   import {
     formatModifier,
     formatPerpetuityBonus,
+    PERPETUITY_BONUSES,
     OVER_MASTERY_NAMES,
     AETHERIAL_NAMES
   } from '../../../lib/mastery.js'
@@ -28,7 +29,6 @@
     perpetuity?: boolean
     rings?: MasteryModifier[]
     earring?: MasteryModifier | null
-    perpetuityBonuses?: MasteryModifier[]
   }
 
   interface Props {
@@ -73,11 +73,13 @@
     return formatModifier(char.earring, AETHERIAL_NAMES)
   }
 
+  // Only characters with the Perpetuity Ring have its bonuses, and they're
+  // the same for all of them
   function getPerpetBonusLines(char: CharacterStatsEntry): string[] {
-    if (!char.perpetuityBonuses || char.perpetuityBonuses.length === 0) return []
-    return char.perpetuityBonuses
-      .map((b) => formatPerpetuityBonus(b))
-      .filter((line): line is string => line !== null)
+    if (!char.perpetuity) return []
+    return PERPETUITY_BONUSES.map((b) => formatPerpetuityBonus(b)).filter(
+      (line): line is string => line !== null
+    )
   }
 
   function hasStats(char: CharacterStatsEntry): boolean {
@@ -85,8 +87,7 @@
       char.awakening ||
       char.perpetuity ||
       (char.rings && char.rings.length > 0) ||
-      char.earring ||
-      (char.perpetuityBonuses && char.perpetuityBonuses.length > 0)
+      char.earring
     )
   }
 </script>

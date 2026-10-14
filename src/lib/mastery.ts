@@ -122,12 +122,17 @@ export function lookupAetherialTypeId(typeId: number): number | null {
   return AETHERIAL_SUFFIX_TO_ID[suffix] ?? null
 }
 
-export const PERPETUITY_TYPE_ID: Record<number, number> = {
-  100001: 1, // EM Star Cap
-  100002: 2, // ATK
-  100003: 3, // HP
-  100004: 4 // DMG Cap
-}
+/**
+ * The Perpetuity Ring's bonuses. They're the same for every character that
+ * has the ring, so they're shown from here rather than captured: the
+ * Character Bonuses screen lists them whether or not the character has it.
+ */
+export const PERPETUITY_BONUSES: readonly MasteryModifier[] = [
+  { modifier: 1, strength: 10 }, // EM Star Cap
+  { modifier: 2, strength: 10 }, // ATK
+  { modifier: 3, strength: 10 }, // HP
+  { modifier: 4, strength: 5 } // DMG Cap
+]
 
 // ==========================================
 // DISPLAY FORMATTING

@@ -46,7 +46,6 @@ export interface CharacterStatsEntry {
   perpetuity?: boolean
   rings?: MasteryMod[]
   earring?: MasteryMod | null
-  perpetuityBonuses?: MasteryMod[]
   rawData?: Record<string, unknown>
 }
 
@@ -54,7 +53,6 @@ export interface ParsedMasteryData {
   rings: MasteryMod[]
   earring: MasteryMod | null
   masterName: string | null
-  perpetuityBonuses: MasteryMod[]
 }
 
 export interface GameFilter {
