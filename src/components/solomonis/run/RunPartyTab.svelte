@@ -22,9 +22,14 @@
     decks: Deck[]
     /** The deck the run imports with */
     deck: Deck
+    /**
+     * The allies at the end of the run (image IDs), which the import uses
+     * instead of the deck's characters. Empty without the expedition log.
+     */
+    allies: string[]
   }
 
-  let { decks, deck }: Props = $props()
+  let { decks, deck, allies }: Props = $props()
 
   let options = $derived(
     decks.map((d) => ({
@@ -97,6 +102,7 @@
       weaponKeyMap={lookups?.weaponKeyMap ?? null}
       jobSkillSlugs={lookups?.jobSkillSlugs ?? {}}
       weaponStatModifiers={lookups?.weaponStatModifiers ?? null}
+      characterImageIds={allies.length > 0 ? allies : null}
     />
   {:else if failed}
     <p class="note">{m.party_no_data()}</p>

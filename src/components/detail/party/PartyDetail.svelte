@@ -76,6 +76,12 @@
     jobSkillSlugs?: Record<string, string | null>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
+    /**
+     * Characters to show instead of the deck's, as image IDs
+     * (`<granblue_id>_<art>`): an Evoking Solomonis run shows the allies at
+     * the end of the expedition, with the deck's weapons and summons
+     */
+    characterImageIds?: string[] | null
   }
 
   let {
@@ -85,7 +91,8 @@
     weaponKeyMap = null,
     jobSkillSlugs = {},
     weaponStatModifiers = null,
-    simplePortraits = false
+    simplePortraits = false,
+    characterImageIds = null
   }: Props = $props()
 
   let data = $derived(rawData as PartyData)
@@ -246,7 +253,22 @@
     </div>
   {/if}
 
-  {#if characters.length > 0}
+  {#if characterImageIds && characterImageIds.length > 0}
+    <div class="party-section">
+      <h3 class="party-section-title">{m.party_section_characters()}</h3>
+      <div class="character-grid">
+        {#each characterImageIds as imageId, index (`${imageId}-${index}`)}
+          <div class="grid-item">
+            <img
+              src={getImageUrl(`${BUCKET.characterMain}/${imageId}.jpg`)}
+              alt=""
+              onerror={nextCharacterArt}
+            >
+          </div>
+        {/each}
+      </div>
+    </div>
+  {:else if characters.length > 0}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_characters()}</h3>
       <div class="character-grid">

@@ -8,6 +8,7 @@
   import { app } from '../../lib/state/app.svelte.js'
   import { decodeHtmlEntities } from '../../lib/html-entities.js'
   import { matchingDecks, reportEvokerId } from '../../lib/solomonis/deck.js'
+  import { reportAllies } from '../../lib/solomonis/report-stats.js'
   import { isSolomonisDeckDataType } from '../../lib/solomonis/routes.js'
   import {
     runSteps,
@@ -92,6 +93,7 @@
       : []
   )
   let page = $derived(runTabStep(steps, tab)?.page ?? null)
+  let allies = $derived(reportAllies(report))
 </script>
 
 <PartyMeta {scrolled} raidSelector={false} />
@@ -104,7 +106,7 @@
   {#if capture}
     {#if tab === 'party'}
       {#if chosenDeck}
-        <RunPartyTab {decks} deck={chosenDeck} />
+        <RunPartyTab {decks} deck={chosenDeck} {allies} />
       {:else}
         <RunEmptyTab
           message={evokerId
