@@ -436,7 +436,7 @@
   "solomonis_extension_subtitle_needs_report": "Open the expedition log to import",
   "solomonis_extension_log_captured": "Captured",
   "solomonis_extension_log_missing": "Not captured",
-  "solomonis_extension_note_without_setup": "No party deck for this report's Evoker has been captured, so the report imports without weapons, summons or Blessings. To include them, open the Evoker's party in the game first, or add them on granblue.team after importing.",
+  "solomonis_extension_note_without_setup": "This expedition will only import the Characters from the log due to limitations in Granblue Fantasy.\n\nNavigate to your Evoking Solomonis parties to add weapons and summons before importing, or add them later on Granblue.team.",
   "solomonis_extension_note_with_setup": "The report doesn't include weapons, summons or Blessings, so Hensei fills them in from your captured party deck “{deck}”. It may differ from what this expedition used.",
   "solomonis_extension_outcome_cleared": "Cleared",
   "solomonis_extension_outcome_failed": "Failed",
