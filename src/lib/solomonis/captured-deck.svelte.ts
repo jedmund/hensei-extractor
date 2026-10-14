@@ -35,11 +35,11 @@ export class CapturedDeck {
     if (!current()) return
     const party =
       response.error || !response.data ? null : (response.data as PartyDeckData)
+    // Clear the old deck's lookups with the new party, so the new deck never
+    // renders with them
+    this.lookups = null
     this.party = party
-    if (!party) {
-      this.lookups = null
-      return
-    }
+    if (!party) return
 
     // Evoking Solomonis decks have no support summon to look up
     const lookups = await loadPartyDeckLookups(party, { friendSummon: false })

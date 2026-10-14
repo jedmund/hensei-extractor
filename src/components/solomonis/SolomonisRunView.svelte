@@ -99,13 +99,19 @@
   let partyPage = $derived(runTabStep(steps, 'party')?.page ?? null)
   let allies = $derived(reportAllies(report))
 
-  // The chosen deck, loaded again when it's captured again
+  // The chosen deck, loaded again when it's captured again. chosenDeck is a
+  // new object every time the cache status refreshes, so the effect keys on
+  // its data type and capture time instead.
   const capturedDeck = new CapturedDeck()
   onDestroy(() => capturedDeck.dispose())
+  let deckKey = $derived(
+    chosenDeck
+      ? `${chosenDeck.dataType}|${chosenDeck.timestamp ?? chosenDeck.lastUpdated ?? ''}`
+      : null
+  )
   $effect(() => {
-    const deckDataType = chosenDeck?.dataType ?? null
-    void chosenDeck?.timestamp
-    untrack(() => void capturedDeck.load(deckDataType))
+    const key = deckKey
+    untrack(() => void capturedDeck.load(key ? (chosenDeck?.dataType ?? null) : null))
   })
   let blessings = $derived(deckBlessings(capturedDeck.party))
 </script>
