@@ -994,6 +994,11 @@ body.light #playlistCreateSubmit {
   color: var(--color-text-tertiary);
 }
 
+/* Empty slots: the placeholder art is a solid mid grey, drawn lighter */
+img.empty-slot {
+  opacity: 0.5;
+}
+
 /* Character grid: 5 columns */
 .character-grid {
   display: grid;
@@ -1005,10 +1010,12 @@ body.light #playlistCreateSubmit {
     height: auto;
   }
 
-  // An empty slot, the shape of a character's art (there's no placeholder image)
+  // An empty slot, the shape of a character's art (there's no placeholder
+  // image), in the same tone as the other empty slots
   .character-placeholder {
     aspect-ratio: 196 / 408;
-    background: var(--button-bg-hover);
+    background: #ccc;
+    opacity: 0.5;
   }
 }
 

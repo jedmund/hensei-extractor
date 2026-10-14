@@ -321,7 +321,7 @@
           </div>
         {:else}
           <div class="weapon-mainhand">
-            <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-main.png`)} alt="">
+            <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-main.png`)} alt="">
           </div>
         {/if}
         <div class="weapon-grid">
@@ -337,7 +337,7 @@
           {#if placeholders}
             {#each Array(Math.max(0, GRID_WEAPON_SLOTS - gridWeapons.length)) as _, index (index)}
               <div class="grid-item">
-                <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-grid.png`)} alt="">
+                <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-grid.png`)} alt="">
               </div>
             {/each}
           {/if}
@@ -358,7 +358,7 @@
           </div>
         {:else}
           <div class="summon-main">
-            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+            <img class="summon-placeholder empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
         <div class="summon-grid">
@@ -377,7 +377,7 @@
               </div>
             {:else}
               <div class="grid-item">
-                <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
+                <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
               </div>
             {/if}
           {/each}
@@ -390,7 +390,7 @@
           </div>
         {:else if !friendSummonPending}
           <div class="summon-friend">
-            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+            <img class="summon-placeholder empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
       </div>
