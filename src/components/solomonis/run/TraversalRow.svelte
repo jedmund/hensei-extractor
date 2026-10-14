@@ -1,30 +1,30 @@
-<!-- One expedition stat: an optional space icon, its name and its count.
-     Matches hensei-web's TraversalRow. -->
+<!-- One kind of space in TraversalSection: its icon, name and how many times
+     the expedition reached it. Matches hensei-web's TraversalRow. -->
 
 <script lang="ts">
+  import { BUCKET, getImageUrl } from '../../../lib/constants.js'
+  import type { SpaceStatKey } from '../../../lib/solomonis/report-stats.js'
+
   interface Props {
+    space: SpaceStatKey
     label: string
     count: number
-    /** The space's icon, when it has one */
-    icon?: string | undefined
   }
 
-  let { label, count, icon }: Props = $props()
+  let { space, label, count }: Props = $props()
 </script>
 
-<div class="stat-row">
-  {#if icon}
-    <img src={icon} alt="" class="icon" />
-  {/if}
+<div class="traversal-row">
+  <img src={getImageUrl(`${BUCKET.solomonisSpaces}/${space}.png`)} alt="" class="icon" />
   <span class="label">{label}</span>
-  <span class="count">{count.toLocaleString()}</span>
+  <span class="count">{count}</span>
 </div>
 
 <style lang="scss">
   @use 'themes/spacing' as *;
   @use 'themes/typography' as *;
 
-  .stat-row {
+  .traversal-row {
     display: flex;
     align-items: center;
     gap: $unit;

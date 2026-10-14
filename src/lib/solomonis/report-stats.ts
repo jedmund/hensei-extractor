@@ -75,3 +75,17 @@ export function reportAllies(report: SolomonisReport | null | undefined): string
     .map((n) => report[`npc${n}_image_id`])
     .filter((id): id is string => typeof id === 'string' && /^\d+_\w+$/.test(id))
 }
+
+/**
+ * When the run ended, as the game shows it ("10/11 16:38": month/day and
+ * time, no year), marked as Japan time, which the game always uses.
+ */
+export function reportEndedAt(report: SolomonisReport): string | null {
+  const ended = report.ended_at
+  return typeof ended === 'string' && ended.trim() ? `${ended.trim()} JST` : null
+}
+
+/** The run's turn count, when the report has one. */
+export function reportTurns(report: SolomonisReport): number | null {
+  return count(report, 'total_turn')
+}

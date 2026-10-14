@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import response from './__fixtures__/report-detail.json'
-import { reportAllies, reportEconomy, reportSpaceStats } from './report-stats.js'
+import {
+  reportAllies,
+  reportEconomy,
+  reportEndedAt,
+  reportSpaceStats,
+  reportTurns
+} from './report-stats.js'
 import type { SolomonisReport } from './types.js'
 
 const option = response.option as SolomonisReport
@@ -53,5 +59,23 @@ describe('reportAllies', () => {
     expect(reportAllies({ npc1_image_id: '3040169000_04', npc2_image_id: null })).toEqual([
       '3040169000_04'
     ])
+  })
+})
+
+describe('reportEndedAt', () => {
+  it('marks the game time as JST', () => {
+    expect(reportEndedAt(option)).toBe('10/11 16:38 JST')
+  })
+
+  it('is null without an end time', () => {
+    expect(reportEndedAt({ ended_at: '' })).toBeNull()
+    expect(reportEndedAt({})).toBeNull()
+  })
+})
+
+describe('reportTurns', () => {
+  it('reads the turn count', () => {
+    expect(reportTurns(option)).toBe(109)
+    expect(reportTurns({})).toBeNull()
   })
 })

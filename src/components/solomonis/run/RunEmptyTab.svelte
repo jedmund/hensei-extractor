@@ -22,7 +22,7 @@
 <EmptyState class="run-empty" {message}>
   {#snippet actions()}
     {#if page}
-      <Button variant="primary" size="small" onclick={() => void openGamePage(page)}>
+      <Button variant="raised" size="small" onclick={() => void openGamePage(page)}>
         {actionLabel}
       </Button>
     {/if}
