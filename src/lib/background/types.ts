@@ -1,3 +1,5 @@
+import type { ElementIconKey } from '../images.js'
+
 export interface AuthToken {
   access_token: string
   user: { id: string; username: string }
@@ -112,6 +114,8 @@ export interface CacheStatusEntry {
   /** Solomonis decks: the route Evoker */
   evokerId?: string | null
   evokerName?: string | null
+  /** Parties: the main-hand weapon's element, for the row's icon */
+  element?: ElementIconKey | null
 }
 
 export interface CacheStatusResult {

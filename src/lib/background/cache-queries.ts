@@ -5,6 +5,7 @@ import {
   resolveCacheKey
 } from '../constants.js'
 import { getAttachedTabs, isAttached } from '../debugger.js'
+import { partyElementKey } from '../images.js'
 import type {
   CachedDataResult,
   CachedUnfScores,
@@ -257,7 +258,8 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         partyId: suffix,
         partyName:
           (cacheEntry.partyName as string) ??
-          `Party ${suffix.replace('_', '-')}`
+          `Party ${suffix.replace('_', '-')}`,
+        element: partyElementKey(cacheEntry.data)
       }
     } else if (matchedPrefix.startsWith('stash_')) {
       status[dataType] = {

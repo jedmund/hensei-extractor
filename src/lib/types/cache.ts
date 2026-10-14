@@ -1,3 +1,5 @@
+import type { ElementIconKey } from '../images.js'
+
 /** Shape of a cache entry stored in chrome.storage.local */
 export interface CacheEntry<T = unknown> {
   data: T
@@ -26,6 +28,8 @@ export interface CacheStatusInfo {
   /** Solomonis decks and runs: the route Evoker */
   evokerId?: string | null
   evokerName?: string | null
+  /** Parties: the main-hand weapon's element, for the row's icon */
+  element?: ElementIconKey | null
 }
 
 /** Formatted cache status for display in the UI */
