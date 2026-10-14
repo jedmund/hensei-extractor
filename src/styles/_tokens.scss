@@ -121,6 +121,22 @@ $element-button-bg-hover: #999;
   --select-contained-bg: #{$input-bound-bg};
   --select-contained-bg-hover: #{$input-bound-bg-hover};
 
+  // Segmented control, matching hensei-web's light theme. Blended: a white
+  // rail for grey surfaces. Background: a grey rail for white surfaces.
+  --segmented-control-blended-bg: white;
+  --segmented-control-blended-segment-bg-hover: #efefef;
+  --segmented-control-blended-segment-bg-checked: #efefef;
+  --segmented-control-blended-segment-text: #a9a9a9;
+  --segmented-control-blended-segment-text-hover: #777;
+  --segmented-control-blended-segment-text-checked: #444;
+  --segmented-control-background-bg: #f5f5f5;
+  --segmented-control-background-segment-bg: transparent;
+  --segmented-control-background-segment-bg-hover: #efefef;
+  --segmented-control-background-segment-bg-checked: white;
+  --segmented-control-background-segment-text: #a9a9a9;
+  --segmented-control-background-segment-text-hover: #777;
+  --segmented-control-background-segment-text-checked: #444;
+
   // Shadows
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.14);

@@ -28,7 +28,7 @@
 </script>
 
 <div class="run-tabs">
-  <SegmentedControl bind:value variant="background" size="small" grow>
+  <SegmentedControl bind:value variant="blended" size="small" grow>
     {#each RUN_TABS as tab (tab)}
       {@const captured = !!runTabStep(steps, tab)?.captured}
       <Segment value={tab}>
@@ -52,7 +52,7 @@
   @use 'themes/spacing' as *;
 
   .run-tabs {
-    padding: 0 $unit-2x $unit;
+    padding: $unit $unit-2x 0;
   }
 
   .tab {
