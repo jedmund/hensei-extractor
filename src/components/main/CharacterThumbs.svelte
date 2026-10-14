@@ -38,8 +38,8 @@
     margin-top: $unit-half;
 
     img {
-      width: $unit-3x;
-      height: $unit-3x;
+      width: $unit-4x;
+      height: $unit-4x;
       border-radius: $item-corner-small;
       object-fit: cover;
     }
