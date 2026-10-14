@@ -38,14 +38,24 @@
     app.selectedItems = next
   }
 
-  // Season, series and style tags come from hensei-api, looked up once per
-  // character list
+  // Season, series and style tags come from hensei-api, looked up again
+  // only when the set of characters changes. `characters` is rebuilt on
+  // every refresh, so the effect keys on the sorted ids instead.
   let tags = $state<Record<string, CharacterTagData | null>>({})
+  let tagIdsKey = $derived(
+    [...new Set(characters.map((c) => c.masterId).filter((id): id is string => !!id))]
+      .sort()
+      .join(',')
+  )
+  let tagsSeq = 0
   $effect(() => {
-    const ids = characters.map((c) => c.masterId).filter((id): id is string => !!id)
+    const key = tagIdsKey
     untrack(() => {
+      const seq = ++tagsSeq
+      const ids = key ? key.split(',') : []
       void fetchCharacterTags(ids).then((result) => {
-        tags = result
+        // An older lookup that finishes late doesn't overwrite a newer one
+        if (seq === tagsSeq) tags = result
       })
     })
   })
