@@ -367,6 +367,7 @@
   "awakening_healing": "Healing",
   "awakening_special": "Special",
   "hint_party_switch": "You can navigate to different parties in-game using the \"Switch Parties\" button to capture their data too.",
+  "hint_character_bonuses": "Import ring and earring bonuses by going to a character's Character Bonuses screen",
   "hint_collection_pages": "Navigate to different pages in your Inventory to capture more of your {type}.",
   "hint_level1_unselected": "{type} that are Level 1 are unselected by default. Check items in the Level 1 section if you want to include them.",
   "hint_collapsed_sections": "Some sections may be collapsed by default. Click the names if you want to show the {type} in them, or use the checkbox to add the {type} to your import.",

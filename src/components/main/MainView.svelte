@@ -64,6 +64,10 @@
         }
       }
 
+      if (dt === 'character_stats') {
+        hints.push(m.hint_character_bonuses())
+      }
+
       if (dt.includes('weapon') || dt.includes('summon')) {
         if (dt.startsWith('list_') || dt.startsWith('collection_')) {
           const capitalized = itemType ? itemType.charAt(0).toUpperCase() + itemType.slice(1) : ''
