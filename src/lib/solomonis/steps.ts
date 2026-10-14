@@ -110,6 +110,26 @@ export function runSteps(input: SolomonisRunStepInput): SolomonisStep[] {
   ]
 }
 
+/** The run view's tabs, in the order they're shown. */
+export const RUN_TABS = ['party', 'expedition', 'guidebooks'] as const
+
+export type SolomonisRunTab = (typeof RUN_TABS)[number]
+
+/** The capture each tab shows. */
+const TAB_STEPS: Record<SolomonisRunTab, SolomonisStepKey> = {
+  party: 'deck',
+  expedition: 'report',
+  guidebooks: 'book'
+}
+
+/** The step behind one of the run view's tabs. */
+export function runTabStep(
+  steps: SolomonisStep[],
+  tab: SolomonisRunTab
+): SolomonisStep | undefined {
+  return steps.find((step) => step.key === TAB_STEPS[tab])
+}
+
 export interface SolomonisRunImportPlan {
   /** Every required capture is there */
   canImport: boolean
@@ -171,6 +191,7 @@ export function canImportRun(
   return runImportPlan(
     runSteps({
       reportId: capture.reportId,
+      evokerId: null,
       hasReport: !!capture.report,
       hasBook: !!capture.statusList,
       hasDeck: false

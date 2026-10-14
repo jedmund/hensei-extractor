@@ -7,7 +7,8 @@ import {
   reportBookPage,
   reportLogPage,
   runImportPlan,
-  runSteps
+  runSteps,
+  runTabStep
 } from './steps.js'
 
 const steps = (hasReport: boolean, hasBook: boolean, hasDeck: boolean) =>
@@ -121,5 +122,14 @@ describe('canImportRun', () => {
     expect(canImportRun(run)).toBe(true)
     expect(canImportRun({ ...run, report: null, statusList: [] })).toBe(false)
     expect(canImportRun(null)).toBe(false)
+  })
+})
+
+describe('runTabStep', () => {
+  it('maps each tab to its capture', () => {
+    const all = steps(true, false, true)
+    expect(runTabStep(all, 'party')).toMatchObject({ key: 'deck', captured: true })
+    expect(runTabStep(all, 'expedition')).toMatchObject({ key: 'report', captured: true })
+    expect(runTabStep(all, 'guidebooks')).toMatchObject({ key: 'book', captured: false })
   })
 })
