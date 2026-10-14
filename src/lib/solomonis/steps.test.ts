@@ -3,7 +3,6 @@ import {
   canImportRun,
   canUpdateImportedRun,
   evokerPartyPage,
-  matchingRuns,
   reportBookPage,
   reportLogPage,
   runImportPlan,
@@ -98,21 +97,6 @@ describe('canUpdateImportedRun', () => {
   it('needs the guidebook log so an update never clears the guidebook', () => {
     expect(canUpdateImportedRun(true)).toBe(true)
     expect(canUpdateImportedRun(false)).toBe(false)
-  })
-})
-
-describe('matchingRuns', () => {
-  it("lists a deck's reports by Evoker, newest first", () => {
-    const runs = [
-      { dataType: 'solomonis_run_1', evokerId: '3040169000', lastUpdated: 10 },
-      { dataType: 'solomonis_run_2', evokerId: '3040161000', lastUpdated: 30 },
-      { dataType: 'solomonis_run_3', evokerId: '3040169000', lastUpdated: 20 },
-      { dataType: 'solomonis_run_4', lastUpdated: 40 }
-    ]
-    expect(matchingRuns(runs, '3040169000').map((run) => run.dataType)).toEqual(
-      ['solomonis_run_3', 'solomonis_run_1']
-    )
-    expect(matchingRuns(runs, null)).toEqual([])
   })
 })
 

@@ -479,8 +479,5 @@
   "solomonis_extension_setup_label": "Party deck",
   "solomonis_extension_note_needs_report": "Importing needs this report's expedition log.",
   "solomonis_extension_note_without_book": "Navigate to the Guidebook Log to add this expedition's guidebooks before importing.",
-  "solomonis_extension_reports_label": "Expedition reports",
-  "solomonis_extension_reports_hint": "Open one of this Evoker's expedition reports in the game to import a run with this party.",
-  "solomonis_extension_reports_found": "Captured reports for this Evoker. Open one to import it as a run with this party.",
   "solomonis_extension_duplicate_needs_book": "To update it, open this report's guidebook log in the game first, so the party's guidebook isn't cleared."
 }

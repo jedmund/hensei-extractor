@@ -16,7 +16,6 @@
  * anything from the game.
  */
 
-import { matchingDecks, type DeckCandidate } from './deck.js'
 import type { SolomonisRunCapture } from './types.js'
 
 /** The expedition log of one report. */
@@ -161,23 +160,6 @@ export function runImportPlan(steps: SolomonisStep[]): SolomonisRunImportPlan {
  */
 export function canUpdateImportedRun(hasBook: boolean): boolean {
   return hasBook
-}
-
-export interface RunCandidate extends DeckCandidate {
-  hasReport?: boolean
-  hasBook?: boolean
-}
-
-/**
- * The captured reports that go with a party deck: those run with the deck's
- * Evoker, most recently captured first. The same pairing as a report's deck
- * (D26), read from the other side.
- */
-export function matchingRuns<T extends RunCandidate>(
-  runs: T[],
-  evokerId: string | null
-): T[] {
-  return matchingDecks(runs, evokerId)
 }
 
 /** Whether a cached run can be imported: its expedition log is captured. */

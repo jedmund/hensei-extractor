@@ -14,7 +14,6 @@
   import DetailScroll from '../DetailScroll.svelte'
   import PartyDetail from './PartyDetail.svelte'
   import PartyMeta from './PartyMeta.svelte'
-  import SolomonisDeckReports from '../../solomonis/SolomonisDeckReports.svelte'
 
   interface Props {
     dataType: string
@@ -106,8 +105,5 @@
       {weaponStatModifiers}
       {simplePortraits}
     />
-    {#if solomonis}
-      <SolomonisDeckReports {dataType} evokerId={app.cachedStatus[dataType]?.evokerId ?? null} />
-    {/if}
   {/if}
 </DetailScroll>
