@@ -129,6 +129,18 @@ $element-button-bg-hover: #999;
   --notice-yellow-bg: #fcf0c2;
   --notice-yellow-text: #776300;
 
+  // Guidebook rows and colours, matching hensei-web's light theme
+  --guide-effect-row-bg: #e9e9e9;
+  --guide-effect-row-bg-hover: #dcdcdc;
+  --danger: #d13a3a;
+  --icon-secondary: #c6c6c6;
+  --border-subtle: #efefef;
+  --list-cell-bg-hover: #efefef;
+  --offence-icon-bg: #ffcdcd;
+  --defence-icon-bg: #cdedff;
+  --special-icon-bg: #fffacd;
+  --cursed-icon-bg: #f2cdff;
+
   // Segmented control, matching hensei-web's light theme. Blended: a white
   // rail for grey surfaces. Background: a grey rail for white surfaces.
   --segmented-control-blended-bg: white;

@@ -1,6 +1,7 @@
 /**
- * The guidebook log, grouped for the side panel: one section per rarity,
- * in the order the game lists them, each effect with its stack count.
+ * The guidebook log, grouped for the side panel like hensei-web's
+ * guidebook: one section per rarity, in the order the game lists them,
+ * each effect with its stack count and icon.
  */
 
 import type { SolomonisStatus } from './types.js'
@@ -15,12 +16,27 @@ const RARITIES: Record<number, GuidebookRarity> = {
   99: 'cursed'
 }
 
-const ORDER: GuidebookRarity[] = ['unique', 'rare', 'normal', 'cursed']
+export const RARITY_ORDER: readonly GuidebookRarity[] = ['unique', 'rare', 'normal', 'cursed']
+
+export type GuideEffectIconCategory = 'offence' | 'defence' | 'special' | 'cursed'
+
+/** The game's `icon_category`, as observed: 1 offence, 2 defence, 3 special, 4 cursed. */
+const ICON_CATEGORIES: Record<number, GuideEffectIconCategory> = {
+  1: 'offence',
+  2: 'defence',
+  3: 'special',
+  4: 'cursed'
+}
 
 export interface GuidebookEntry {
   statusId: number | null
   name: string
   count: number
+  rarity: GuidebookRarity
+  stackable: boolean
+  /** The game's icon number (`book_effect_<iconType>.png`), 0 when unknown */
+  iconType: number
+  iconCategory: GuideEffectIconCategory
 }
 
 export interface GuidebookSection {
@@ -49,10 +65,21 @@ export function guidebookSections(
     if (!rarity || !name) continue
     const count = Number.isInteger(status.num) && status.num! > 0 ? status.num! : 1
     const entries = groups.get(rarity) ?? []
-    entries.push({ statusId: status.status_id ?? null, name, count })
+    const iconType = Number(status.icon_type)
+    entries.push({
+      statusId: status.status_id ?? null,
+      name,
+      count,
+      rarity,
+      stackable: status.is_duplication_possible === 1 || status.is_duplication_possible === true,
+      iconType: Number.isInteger(iconType) && iconType > 0 ? iconType : 0,
+      iconCategory:
+        ICON_CATEGORIES[Number(status.icon_category)] ??
+        (rarity === 'cursed' ? 'cursed' : 'special')
+    })
     groups.set(rarity, entries)
   }
-  return ORDER.filter((rarity) => groups.has(rarity)).map((rarity) => {
+  return RARITY_ORDER.filter((rarity) => groups.has(rarity)).map((rarity) => {
     const entries = groups.get(rarity)!
     return {
       rarity,
