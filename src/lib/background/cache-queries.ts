@@ -5,6 +5,8 @@ import {
   resolveCacheKey
 } from '../constants.js'
 import { getAttachedTabs, isAttached } from '../debugger.js'
+import { partyElementKey } from '../images.js'
+import { importedAtOf } from './import-marks.js'
 import type {
   CachedDataResult,
   CachedUnfScores,
@@ -12,6 +14,20 @@ import type {
   CacheStatusResult,
   UnfMember
 } from './types.js'
+import type {
+  SolomonisDeckCacheEntry,
+  SolomonisRunCacheEntry
+} from '../solomonis/types.js'
+
+/**
+ * Solomonis decks are kept until they're cleared, not for the 30 minutes
+ * other captures are: a deck captured before an expedition is paired with
+ * its report after it. Reports expire like everything else, 30 minutes
+ * after the latest capture of either of their logs.
+ */
+function isKeptUntilCleared(dataType: string): boolean {
+  return dataType.startsWith('solomonis_deck_')
+}
 
 export async function loadCachedDataForUpload(
   dataType: string
@@ -91,7 +107,7 @@ export async function handleGetCachedData(
     (cached.timestamp as number) ?? (cached.lastUpdated as number)
   const age = Date.now() - timestamp
 
-  if (age > CACHE_TTL_MS) {
+  if (age > CACHE_TTL_MS && !isKeptUntilCleared(dataType)) {
     return { error: 'stale_data' }
   }
 
@@ -143,6 +159,17 @@ export async function handleGetCachedData(
   }
 }
 
+// Adds when the entry's current capture was imported, if it has been
+function withImportedAt(
+  entry: CacheStatusEntry | { attached: boolean; tabs: number[] } | undefined,
+  cached: Record<string, unknown>
+): void {
+  const importedAt = importedAtOf(cached)
+  if (entry && 'available' in entry && importedAt !== undefined) {
+    entry.importedAt = importedAt
+  }
+}
+
 export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
   const allStorage = await chrome.storage.local.get(null)
   const status: Record<
@@ -169,7 +196,10 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
     const stale = age > CACHE_TTL_MS
 
     if (type === 'character_stats') {
-      const updates = (cached.updates ?? {}) as Record<string, unknown>
+      const updates = (cached.updates ?? {}) as Record<
+        string,
+        { timestamp?: number }
+      >
       const characterCount = Object.keys(updates).length
       if (characterCount > 0) {
         status[type] = {
@@ -177,7 +207,10 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
           lastUpdated: timestamp,
           age,
           isStale: stale,
-          characterCount
+          characterCount,
+          characterIds: Object.entries(updates)
+            .sort(([, a], [, b]) => (b?.timestamp ?? 0) - (a?.timestamp ?? 0))
+            .map(([id]) => id)
         }
       }
     } else if (type === 'support_summons') {
@@ -208,6 +241,7 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         isStale: stale
       }
     }
+    withImportedAt(status[type], cached)
   }
 
   for (const [key, cached] of Object.entries(allStorage)) {
@@ -240,7 +274,8 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         partyId: suffix,
         partyName:
           (cacheEntry.partyName as string) ??
-          `Party ${suffix.replace('_', '-')}`
+          `Party ${suffix.replace('_', '-')}`,
+        element: partyElementKey(cacheEntry.data)
       }
     } else if (matchedPrefix.startsWith('stash_')) {
       status[dataType] = {
@@ -261,6 +296,33 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         granblueId: suffix,
         itemName: (cacheEntry.itemName as string) ?? 'Unknown'
       }
+    } else if (matchedPrefix === 'solomonis_run') {
+      // Expires like other captures; its timestamp is the latest capture of
+      // either log
+      const run = cacheEntry as unknown as SolomonisRunCacheEntry
+      status[dataType] = {
+        available: !stale,
+        lastUpdated: timestamp,
+        age,
+        isStale: stale,
+        reportId: suffix,
+        partyName: run.deckName ?? undefined,
+        evokerId: run.evokerId ?? null,
+        hasReport: !!run.hasReport,
+        hasBook: !!run.hasBook
+      }
+    } else if (matchedPrefix === 'solomonis_deck') {
+      // Kept until cleared, so a report can be paired with it later
+      const deck = cacheEntry as unknown as SolomonisDeckCacheEntry
+      status[dataType] = {
+        available: true,
+        lastUpdated: timestamp,
+        age,
+        isStale: false,
+        partyName: deck.deckName ?? undefined,
+        evokerId: deck.evokerId ?? null,
+        evokerName: deck.evokerName ?? null
+      }
     } else if (
       matchedPrefix === 'unf_scores' ||
       matchedPrefix === 'unf_daily_scores'
@@ -277,6 +339,7 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         isComplete: unfData.isComplete
       }
     }
+    withImportedAt(status[dataType], cacheEntry)
   }
 
   return status as CacheStatusResult

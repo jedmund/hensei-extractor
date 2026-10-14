@@ -122,12 +122,17 @@ export function lookupAetherialTypeId(typeId: number): number | null {
   return AETHERIAL_SUFFIX_TO_ID[suffix] ?? null
 }
 
-export const PERPETUITY_TYPE_ID: Record<number, number> = {
-  100001: 1, // EM Star Cap
-  100002: 2, // ATK
-  100003: 3, // HP
-  100004: 4 // DMG Cap
-}
+/**
+ * The Perpetuity Ring's bonuses. They're the same for every character that
+ * has the ring, so they're shown from here rather than captured: the
+ * Character Bonuses screen lists them whether or not the character has it.
+ */
+export const PERPETUITY_BONUSES: readonly MasteryModifier[] = [
+  { modifier: 1, strength: 10 }, // EM Star Cap
+  { modifier: 2, strength: 10 }, // ATK
+  { modifier: 3, strength: 10 }, // HP
+  { modifier: 4, strength: 5 } // DMG Cap
+]
 
 // ==========================================
 // DISPLAY FORMATTING
@@ -147,10 +152,11 @@ const FLAT_VALUE_STATS = new Set([
   'Supplemental DMG'
 ])
 
-export function formatModifier(
+/** A modifier as a label and its value, e.g. `ATK` and `+1,000`. */
+export function modifierParts(
   mod: MasteryModifier | null | undefined,
   nameMap: Record<number, string>
-): string | null {
+): { label: string; value: string } | null {
   if (!mod?.modifier) return null
 
   let englishName =
@@ -162,18 +168,24 @@ export function formatModifier(
     englishName = mod.typeName
   }
 
-  const displayName = getDisplayName(englishName)
+  const label = getDisplayName(englishName)
   const value = mod.strength
 
   if (englishName === 'ATK' || englishName === 'HP') {
-    return `${displayName} +${Number(value).toLocaleString()}`
+    return { label, value: `+${Number(value).toLocaleString()}` }
   }
-
   if (FLAT_VALUE_STATS.has(englishName)) {
-    return `${displayName} +${value}`
+    return { label, value: `+${value}` }
   }
+  return { label, value: `+${value}%` }
+}
 
-  return `${displayName} +${value}%`
+export function formatModifier(
+  mod: MasteryModifier | null | undefined,
+  nameMap: Record<number, string>
+): string | null {
+  const parts = modifierParts(mod, nameMap)
+  return parts ? `${parts.label} ${parts.value}` : null
 }
 
 export function formatPerpetuityBonus(

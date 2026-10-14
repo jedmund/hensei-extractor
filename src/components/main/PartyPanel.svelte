@@ -4,18 +4,35 @@
   import Button from '../shared/Button.svelte'
   import EmptyState from '../shared/EmptyState.svelte'
   import CacheItemRow from './CacheItemRow.svelte'
+  import { getElementIconUrl } from '../../lib/images.js'
+  import { evokerPortraitUrl } from '../../lib/solomonis/status.js'
 
   const partyTypes = $derived(
     Object.keys(app.cachedStatus)
       .filter(
-        (type) => type.startsWith('party_') && app.cachedStatus[type]?.available
+        (type) =>
+          (type.startsWith('party_') ||
+            type.startsWith('solomonis_run_') ||
+            type.startsWith('solomonis_deck_')) &&
+          app.cachedStatus[type]?.available
       )
       .sort((a, b) => {
-        const aTime = app.cachedStatus[a]?.timestamp || 0
-        const bTime = app.cachedStatus[b]?.timestamp || 0
+        const aTime =
+          app.cachedStatus[a]?.timestamp || app.cachedStatus[a]?.lastUpdated || 0
+        const bTime =
+          app.cachedStatus[b]?.timestamp || app.cachedStatus[b]?.lastUpdated || 0
         return bTime - aTime
       })
   )
+
+  // Solomonis rows show the route Evoker; other parties their element
+  function rowThumbnail(dataType: string): string | undefined {
+    const status = app.cachedStatus[dataType]
+    if (dataType.startsWith('solomonis_deck_') || dataType.startsWith('solomonis_run_')) {
+      return evokerPortraitUrl(status?.evokerId) || undefined
+    }
+    return status?.element ? getElementIconUrl(status.element) : undefined
+  }
 
   function openDetail(dataType: string) {
     app.currentDetailDataType = dataType
@@ -38,6 +55,7 @@
         <CacheItemRow
           status={app.cachedStatus[dataType]!}
           {dataType}
+          thumbnail={rowThumbnail(dataType)}
           onclick={() => openDetail(dataType)}
         />
       {/each}

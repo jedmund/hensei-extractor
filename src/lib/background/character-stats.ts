@@ -2,9 +2,9 @@ import { CACHE_KEYS, CACHE_TTL_MS } from '../constants.js'
 import {
   OVER_MASTERY_TYPE_ID,
   lookupAetherialTypeId,
-  PERPETUITY_TYPE_ID,
   parseDisplayValue
 } from '../mastery.js'
+import { clearImportMark, type ImportMark } from './import-marks.js'
 import type { CharacterStatsEntry, ParsedMasteryData } from './types.js'
 
 export async function cacheCharacterStats(
@@ -15,7 +15,7 @@ export async function cacheCharacterStats(
   _url: string
 ): Promise<boolean> {
   const result = await chrome.storage.local.get(CACHE_KEYS.character_stats)
-  const existing: {
+  const existing: ImportMark & {
     lastUpdated: number | null
     updates: Record<string, CharacterStatsEntry>
     characterCount?: number
@@ -106,6 +106,9 @@ export async function cacheCharacterStats(
     }
   } else if (dataType === 'zenith_npc') {
     current.timestamp = timestamp
+    // Rings and earrings only come from this screen; a character without
+    // any looks the same as one whose screen was never opened, so record it
+    current.bonusesCapturedAt = timestamp
 
     const masteryData = parseZenithMasteryData(data)
 
@@ -119,13 +122,11 @@ export async function cacheCharacterStats(
     if (masteryData.earring) {
       current.earring = masteryData.earring
     }
-    if (masteryData.perpetuityBonuses.length > 0) {
-      current.perpetuityBonuses = masteryData.perpetuityBonuses
-    }
   }
 
   existing.updates[resolvedMasterId] = current
   existing.lastUpdated = timestamp
+  clearImportMark(existing)
   existing.characterCount = Object.keys(existing.updates).length
 
   await chrome.storage.local.set({
@@ -140,8 +141,7 @@ export function parseZenithMasteryData(
   const result: ParsedMasteryData = {
     rings: [],
     earring: null,
-    masterName: null,
-    perpetuityBonuses: []
+    masterName: null
   }
 
   const option = data.option as Record<string, unknown> | undefined
@@ -194,31 +194,6 @@ export function parseZenithMasteryData(
           typeName,
           slot: slotNum
         })
-      }
-    }
-  }
-
-  const constantData = npcaugment?.constant_data_list as
-    | Record<string, unknown[]>
-    | undefined
-  if (constantData) {
-    for (const bonuses of Object.values(constantData)) {
-      if (!Array.isArray(bonuses)) continue
-      for (const bonus of bonuses) {
-        const b = bonus as Record<string, unknown>
-        const bType = b.type as Record<string, unknown> | undefined
-        const bParam = b.param as Record<string, unknown> | undefined
-        if (!bType?.id || !bParam) continue
-        const perpetuityId = PERPETUITY_TYPE_ID[bType.id as number]
-        if (perpetuityId) {
-          result.perpetuityBonuses.push({
-            modifier: perpetuityId,
-            strength: parseDisplayValue(
-              bParam.disp_total_param as string | undefined
-            ),
-            typeName: bType.name as string
-          })
-        }
       }
     }
   }

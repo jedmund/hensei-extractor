@@ -2,6 +2,7 @@ import { formatCacheStatus } from '../cache.js'
 import type { AuthData } from '../state/app.svelte.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
 import type {
+  CharacterTagData,
   ExtensionMessage,
   CachedDataResponse,
   UploadPartyResponse,
@@ -27,6 +28,10 @@ import type {
   WeaponKeyMap,
   WeaponStatModifiers
 } from '../types/messages.js'
+import type {
+  UploadSolomonisPartyResponse,
+  UploadSolomonisRunResponse
+} from '../solomonis/upload.js'
 
 function send(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
@@ -73,6 +78,44 @@ export async function uploadPartyData(options: {
     shareWithCrew: options.shareWithCrew,
     playlistIds: options.playlists?.map((p) => p.id)
   }) as Promise<UploadPartyResponse>
+}
+
+export async function uploadSolomonisRun(options: {
+  dataType: string
+  name?: string
+  visibility?: number
+  shareWithCrew?: boolean
+  playlists?: Array<{ id: string }>
+  updateExisting?: boolean
+  currentSetupDataType?: string
+}): Promise<UploadSolomonisRunResponse> {
+  return send({
+    action: 'uploadSolomonisRun',
+    dataType: options.dataType,
+    name: options.name,
+    visibility: options.visibility,
+    shareWithCrew: options.shareWithCrew,
+    playlistIds: options.playlists?.map((p) => p.id),
+    updateExisting: options.updateExisting,
+    currentSetupDataType: options.currentSetupDataType
+  }) as Promise<UploadSolomonisRunResponse>
+}
+
+export async function uploadSolomonisParty(options: {
+  dataType: string
+  name?: string
+  visibility?: number
+  shareWithCrew?: boolean
+  playlists?: Array<{ id: string }>
+}): Promise<UploadSolomonisPartyResponse> {
+  return send({
+    action: 'uploadSolomonisParty',
+    dataType: options.dataType,
+    name: options.name,
+    visibility: options.visibility,
+    shareWithCrew: options.shareWithCrew,
+    playlistIds: options.playlists?.map((p) => p.id)
+  }) as Promise<UploadSolomonisPartyResponse>
 }
 
 export async function uploadCollectionData(
@@ -192,6 +235,22 @@ export async function searchSummonByName(
     )
   } catch {
     return null
+  }
+}
+
+/** CharacterTags data for each character, looked up from hensei-api. */
+export async function fetchCharacterTags(
+  granblueIds: string[]
+): Promise<Record<string, CharacterTagData | null>> {
+  try {
+    return (
+      ((await send({ action: 'fetchCharacterTags', granblueIds })) as Record<
+        string,
+        CharacterTagData | null
+      > | null) ?? {}
+    )
+  } catch {
+    return {}
   }
 }
 

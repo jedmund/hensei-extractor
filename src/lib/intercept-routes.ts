@@ -5,6 +5,18 @@
  * chrome APIs or holds state; debugger.ts owns both.
  */
 
+import {
+  getReportId,
+  isSolomonisReportDataType,
+  SOLOMONIS_DECK,
+  SOLOMONIS_DECK_PATTERN,
+  SOLOMONIS_REPORT,
+  SOLOMONIS_REPORT_BOOK,
+  SOLOMONIS_REPORT_BOOK_PATTERN,
+  SOLOMONIS_REPORT_BOOK_REST_PATTERN,
+  SOLOMONIS_REPORT_PATTERN
+} from './solomonis/routes.js'
+
 // ==========================================
 // ENDPOINT PATTERNS TO INTERCEPT
 // ==========================================
@@ -46,7 +58,13 @@ export const INTERCEPT_PATTERNS = [
   // Guild info (for crew ID)
   '/rest/guild/main/guild_info',
   // Profile page (for support summons — HTML payload inside JSON envelope)
-  '/profile/content/index/'
+  '/profile/content/index/',
+  // Evoking Solomonis expedition reports (expedition and guidebook logs)
+  SOLOMONIS_REPORT_PATTERN,
+  SOLOMONIS_REPORT_BOOK_PATTERN,
+  SOLOMONIS_REPORT_BOOK_REST_PATTERN,
+  // Evoking Solomonis party decks (also matched by '/party/deck')
+  SOLOMONIS_DECK_PATTERN
 ]
 
 /**
@@ -105,6 +123,8 @@ export interface DataTypeRule {
  * Ordered: the first matching rule wins. Several patterns contain others,
  * so a more specific rule must come before any rule it would also match:
  *
+ * - '/rest/arcarum3/party/deck/' contains '/party/deck', so Solomonis
+ *   decks come before normal parties.
  * - '/rest/weapon/list/' contains '/weapon/list/' (same for npc, summon),
  *   so collections come before list pages.
  * - total_performance comes before todays_performance, and both need a
@@ -113,6 +133,8 @@ export interface DataTypeRule {
  * intercept-routes.test.ts checks that no rule is shadowed by an earlier one.
  */
 export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
+  // Solomonis decks before parties: their path contains '/party/deck'.
+  { dataType: SOLOMONIS_DECK, includes: [SOLOMONIS_DECK_PATTERN] },
   { dataType: 'party', includes: ['/party/deck'] },
   { dataType: 'detail_npc', includes: ['/archive/npc_detail'] },
   { dataType: 'detail_weapon', includes: ['/archive/weapon_detail'] },
@@ -136,7 +158,17 @@ export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
     includes: ['/todays_performance/', '/teamraid']
   },
   { dataType: 'guild_info', includes: ['/rest/guild/main/guild_info'] },
-  { dataType: 'support_summons', includes: ['/profile/content/index/'] }
+  { dataType: 'support_summons', includes: ['/profile/content/index/'] },
+  // No other pattern is part of these paths, or contains them.
+  { dataType: SOLOMONIS_REPORT, includes: [SOLOMONIS_REPORT_PATTERN] },
+  {
+    dataType: SOLOMONIS_REPORT_BOOK,
+    includes: [SOLOMONIS_REPORT_BOOK_PATTERN]
+  },
+  {
+    dataType: SOLOMONIS_REPORT_BOOK,
+    includes: [SOLOMONIS_REPORT_BOOK_REST_PATTERN]
+  }
 ]
 
 export function getDataType(url: string): string {
@@ -189,6 +221,8 @@ export interface InterceptMetadata {
   stashNumber: string | null
   stashName: string | null
   eventNumber: number | null
+  /** Solomonis report ID, from the report URL's path */
+  reportId: string | null
 }
 
 /**
@@ -216,7 +250,8 @@ export function buildInterceptMetadata(
     masterId: getMasterId(url, data, dataType),
     stashNumber: isStash ? getStashNumber(url) : null,
     stashName: isStash ? stashName : null,
-    eventNumber: getEventNumber(url)
+    eventNumber: getEventNumber(url),
+    reportId: isSolomonisReportDataType(dataType) ? getReportId(url) : null
   }
 }
 

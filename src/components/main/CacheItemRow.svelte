@@ -2,14 +2,17 @@
   import * as m from '../../paraglide/messages.js'
   import type { FormattedCacheStatus } from '../../lib/types/cache.js'
   import Icon from '../shared/Icon.svelte'
+  import CharacterThumbs from './CharacterThumbs.svelte'
 
   interface Props {
     status: FormattedCacheStatus
     dataType: string
     onclick: () => void
+    /** A square portrait shown before the name */
+    thumbnail?: string
   }
 
-  let { status, dataType, onclick }: Props = $props()
+  let { status, dataType, onclick, thumbnail }: Props = $props()
 
   const isStash = $derived(dataType.startsWith('stash_'))
   const isDatabase = $derived(dataType.startsWith('detail_'))
@@ -29,14 +32,29 @@
   data-type={dataType}
   onclick={() => { if (status.statusClass !== 'stale') onclick() }}
 >
+  {#if thumbnail}
+    <img class="cache-thumb" src={thumbnail} alt="" />
+  {/if}
   <div class="cache-info">
     <div class="cache-name-row">
       <span class="cache-name">{displayName}</span>
+      {#if status.importedAt}
+        <span
+          class="imported-mark"
+          role="img"
+          aria-label={m.tag_imported()}
+          title={m.tag_imported()}
+        >
+          <Icon name="check" size={12} />
+        </span>
+      {/if}
       {#if isStash}
         <span class="stash-tag">{m.tag_stash()}</span>
       {/if}
     </div>
-    {#if isDatabase && databaseTag}
+    {#if status.characterIds && status.characterIds.length > 0}
+      <CharacterThumbs ids={status.characterIds} />
+    {:else if isDatabase && databaseTag}
       <span class="cache-subtitle">{databaseTag}</span>
     {:else if status.subtitle}
       <span class="cache-subtitle">{status.subtitle}</span>

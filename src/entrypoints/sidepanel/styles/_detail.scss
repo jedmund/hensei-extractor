@@ -797,123 +797,6 @@ body.light #playlistCreateSubmit {
   gap: spacing.$unit * 1.5;
 }
 
-.char-stats-item {
-  background: var(--color-bg);
-  border-radius: layout.$input-corner;
-  overflow: hidden;
-
-  &.new-item {
-    animation: highlight-fade 3s ease-out;
-  }
-}
-
-@keyframes highlight-fade {
-  0% {
-    background: rgba(255, 236, 153, 0.5);
-  }
-  100% {
-    background: var(--color-bg);
-  }
-}
-
-.char-stats-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem (spacing.$unit * 1.5);
-  background: rgba(0, 0, 0, 0.03);
-
-  .item-checkbox {
-    position: relative;
-    bottom: auto;
-    right: auto;
-    flex-shrink: 0;
-  }
-}
-
-.char-stats-name-row {
-  display: flex;
-  align-items: center;
-  gap: spacing.$unit;
-  flex: 1;
-  min-width: 0;
-}
-
-.char-stats-name {
-  font-size: type.$font-small;
-  font-weight: type.$medium;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.char-stats-element {
-  height: spacing.$unit * 2.5;
-  width: auto;
-  flex-shrink: 0;
-}
-
-.char-stats-image-wrapper {
-  position: relative;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.char-stats-image {
-  width: spacing.$unit-6x;
-  height: spacing.$unit-6x;
-  border-radius: layout.$item-corner-small;
-  object-fit: cover;
-  background: #e0e0e0;
-  display: block;
-}
-
-.char-stats-perpetuity {
-  position: absolute;
-  width: spacing.$unit * 3.5;
-  height: spacing.$unit * 3.5;
-  top: -(spacing.$unit-three-quarter);
-  right: -(spacing.$unit-three-quarter);
-}
-
-.char-stats-body {
-  padding: 1rem (spacing.$unit * 1.5);
-  display: flex;
-  flex-direction: column;
-  gap: spacing.$unit;
-}
-
-.char-stats-awakening {
-  font-size: type.$font-small;
-  color: var(--color-text);
-  font-weight: type.$medium;
-}
-
-.char-stats-section {
-  display: flex;
-  flex-direction: column;
-  gap: spacing.$unit-half;
-}
-
-.char-stats-subheader {
-  font-size: type.$font-small;
-  font-weight: type.$semibold;
-  color: var(--color-text-secondary);
-}
-
-.char-stats-line {
-  font-size: type.$font-small;
-  color: var(--color-text-tertiary);
-  padding-left: spacing.$unit * 1.5;
-}
-
-.char-stats-empty {
-  font-size: type.$font-small;
-  color: var(--color-text-tertiary);
-  font-style: italic;
-}
-
 /* Party Sections */
 .party-section {
   margin-bottom: spacing.$unit-2x;
@@ -994,6 +877,11 @@ body.light #playlistCreateSubmit {
   color: var(--color-text-tertiary);
 }
 
+/* Empty slots: the placeholder art is a solid mid grey, drawn lighter */
+img.empty-slot {
+  opacity: 0.5;
+}
+
 /* Character grid: 5 columns */
 .character-grid {
   display: grid;
@@ -1003,6 +891,14 @@ body.light #playlistCreateSubmit {
   .grid-item > img {
     width: 100%;
     height: auto;
+  }
+
+  // An empty slot, the shape of a character's art (there's no placeholder
+  // image), in the same tone as the other empty slots
+  .character-placeholder {
+    aspect-ratio: 196 / 408;
+    background: #ccc;
+    opacity: 0.5;
   }
 }
 

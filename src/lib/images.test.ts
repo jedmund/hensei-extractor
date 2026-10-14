@@ -4,6 +4,7 @@ import {
   getCharacterBaseArtUrl,
   toHenseiElement,
   getElementIconUrl,
+  partyElementKey,
   getImageIdSuffix,
   getPlaceholderImageUrl,
   getSummonImageUrl
@@ -113,5 +114,24 @@ describe('getElementIconUrl', () => {
   it('points at the round icon, with null for Misc', () => {
     expect(getElementIconUrl('fire')).toMatch(/\/icons\/elements\/fire\.png$/)
     expect(getElementIconUrl('null')).toMatch(/\/icons\/elements\/null\.png$/)
+  })
+})
+
+describe('partyElementKey', () => {
+  it("reads the main-hand weapon's element", () => {
+    const party = {
+      deck: { pc: { weapons: { 1: { master: { attribute: '4' } }, 2: null } } }
+    }
+    expect(partyElementKey(party)).toBe('wind')
+  })
+
+  it('is null without a main hand or an element', () => {
+    expect(
+      partyElementKey({ deck: { pc: { weapons: { 1: null } } } })
+    ).toBeNull()
+    expect(
+      partyElementKey({ deck: { pc: { weapons: { 1: { master: {} } } } } })
+    ).toBeNull()
+    expect(partyElementKey(null)).toBeNull()
   })
 })

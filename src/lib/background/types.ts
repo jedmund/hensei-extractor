@@ -1,3 +1,6 @@
+import type { ElementIconKey } from '../images.js'
+import type { ImportMark } from './import-marks.js'
+
 export interface AuthToken {
   access_token: string
   user: { id: string; username: string }
@@ -5,7 +8,7 @@ export interface AuthToken {
   language?: string
 }
 
-export interface CachedListData {
+export interface CachedListData extends ImportMark {
   pages: Record<number, PageData>
   lastUpdated: number | null
   stashName?: string
@@ -42,9 +45,10 @@ export interface CharacterStatsEntry {
     level: number
   }
   perpetuity?: boolean
+  /** When the Character Bonuses screen (rings and earring) was captured */
+  bonusesCapturedAt?: number
   rings?: MasteryMod[]
   earring?: MasteryMod | null
-  perpetuityBonuses?: MasteryMod[]
   rawData?: Record<string, unknown>
 }
 
@@ -52,7 +56,6 @@ export interface ParsedMasteryData {
   rings: MasteryMod[]
   earring: MasteryMod | null
   masterName: string | null
-  perpetuityBonuses: MasteryMod[]
 }
 
 export interface GameFilter {
@@ -99,12 +102,25 @@ export interface CacheStatusEntry {
   totalItems?: number
   isComplete?: boolean
   characterCount?: number
+  /** Character stats: the characters captured, most recent first */
+  characterIds?: string[]
   partyId?: string
   partyName?: string
   stashName?: string | null
   granblueId?: string
   itemName?: string
   gbfUserId?: string | null
+  /** Solomonis runs: the report ID and which of its two logs are captured */
+  reportId?: string
+  hasReport?: boolean
+  hasBook?: boolean
+  /** Solomonis decks: the route Evoker */
+  evokerId?: string | null
+  evokerName?: string | null
+  /** Parties: the main-hand weapon's element, for the row's icon */
+  element?: ElementIconKey | null
+  /** When this capture was imported, if it has been */
+  importedAt?: number
 }
 
 export interface CacheStatusResult {
@@ -112,7 +128,7 @@ export interface CacheStatusResult {
   [key: string]: CacheStatusEntry | { attached: boolean; tabs: number[] }
 }
 
-export interface CachedUnfScores {
+export interface CachedUnfScores extends ImportMark {
   eventNumber: number
   pages: Record<number, UnfMember[]>
   lastUpdated: number

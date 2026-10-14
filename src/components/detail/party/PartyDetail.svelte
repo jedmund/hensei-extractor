@@ -76,6 +76,20 @@
     jobSkillSlugs?: Record<string, string | null>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean
+    /**
+     * Characters to show instead of the deck's, as image IDs
+     * (`<granblue_id>_<art>`): an Evoking Solomonis run shows the allies at
+     * the end of the expedition, with the deck's weapons and summons
+     */
+    characterImageIds?: string[] | null
+    /**
+     * Always show the character, weapon and summon sections, filling empty
+     * slots with placeholders (an Evoking Solomonis run, which may not have
+     * a deck yet)
+     */
+    placeholders?: boolean
+    /** Whether the party has a support summon slot */
+    supportSummon?: boolean
   }
 
   let {
@@ -85,8 +99,14 @@
     weaponKeyMap = null,
     jobSkillSlugs = {},
     weaponStatModifiers = null,
-    simplePortraits = false
+    simplePortraits = false,
+    characterImageIds = null,
+    placeholders = false,
+    supportSummon = true
   }: Props = $props()
+
+  const CHARACTER_SLOTS = 5
+  const GRID_WEAPON_SLOTS = 9
 
   let data = $derived(rawData as PartyData)
   let deck = $derived(data?.deck)
@@ -208,7 +228,7 @@
   }
 </script>
 
-{#if !job?.master?.id && characters.length === 0 && weapons.length === 0 && summons.length === 0}
+{#if !placeholders && !job?.master?.id && characters.length === 0 && weapons.length === 0 && summons.length === 0}
   <p class="cache-empty">{m.party_no_data()}</p>
 {:else}
   {#if job?.master?.id || accessoryIds.length > 0}
@@ -246,7 +266,27 @@
     </div>
   {/if}
 
-  {#if characters.length > 0}
+  {#if characterImageIds && (characterImageIds.length > 0 || placeholders)}
+    <div class="party-section">
+      <h3 class="party-section-title">{m.party_section_characters()}</h3>
+      <div class="character-grid">
+        {#each characterImageIds as imageId, index (`${imageId}-${index}`)}
+          <div class="grid-item">
+            <img
+              src={getImageUrl(`${BUCKET.characterMain}/${imageId}.jpg`)}
+              alt=""
+              onerror={nextCharacterArt}
+            >
+          </div>
+        {/each}
+        {#if placeholders}
+          {#each Array(Math.max(0, CHARACTER_SLOTS - characterImageIds.length)) as _, index (index)}
+            <div class="grid-item character-placeholder"></div>
+          {/each}
+        {/if}
+      </div>
+    </div>
+  {:else if characters.length > 0}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_characters()}</h3>
       <div class="character-grid">
@@ -267,7 +307,7 @@
     </div>
   {/if}
 
-  {#if weapons.length > 0}
+  {#if weapons.length > 0 || placeholders}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_weapons()}</h3>
       <div class="weapon-layout">
@@ -278,6 +318,10 @@
           <div class="weapon-mainhand">
             <WeaponModifiers mods={mainMods} {weaponStatModifiers} />
             <img src={getImageUrl(`${BUCKET.weaponMain}/${mainId}${mainSuffix}.jpg`)} alt="">
+          </div>
+        {:else}
+          <div class="weapon-mainhand">
+            <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-main.png`)} alt="">
           </div>
         {/if}
         <div class="weapon-grid">
@@ -290,12 +334,19 @@
               <img src={getImageUrl(`${BUCKET.weaponGrid}/${id}${suffix}.jpg`)} alt="">
             </div>
           {/each}
+          {#if placeholders}
+            {#each Array(Math.max(0, GRID_WEAPON_SLOTS - gridWeapons.length)) as _, index (index)}
+              <div class="grid-item">
+                <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-weapon-grid.png`)} alt="">
+              </div>
+            {/each}
+          {/if}
         </div>
       </div>
     </div>
   {/if}
 
-  {#if summons.length > 0 || subSummons.length > 0 || friendSummon || friendSummonName}
+  {#if placeholders || summons.length > 0 || subSummons.length > 0 || friendSummon || friendSummonName}
     <div class="party-section">
       <h3 class="party-section-title">{m.party_section_summons()}</h3>
       <div class="summon-layout">
@@ -307,7 +358,7 @@
           </div>
         {:else}
           <div class="summon-main">
-            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+            <img class="summon-placeholder empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
         <div class="summon-grid">
@@ -326,18 +377,20 @@
               </div>
             {:else}
               <div class="grid-item">
-                <img src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
+                <img class="empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-grid.png`)} alt="">
               </div>
             {/if}
           {/each}
         </div>
-        {#if friendSummon}
+        {#if !supportSummon}
+          <!-- No support summon slot -->
+        {:else if friendSummon}
           <div class="summon-friend">
             <img src={friendArtUrl} alt="" onerror={nextFriendArt}>
           </div>
         {:else if !friendSummonPending}
           <div class="summon-friend">
-            <img class="summon-placeholder" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
+            <img class="summon-placeholder empty-slot" src={getImageUrl(`${BUCKET.placeholders}/placeholder-summon-main.png`)} alt="">
           </div>
         {/if}
       </div>
