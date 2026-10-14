@@ -1,8 +1,7 @@
-<!-- What a run imports without the Evoker's party deck, as a yellow notice
-     with a button to the party page that captures it. -->
+<!-- What a run imports without one of its captures, as a yellow notice
+     with a button to the game page that captures it. -->
 
 <script lang="ts">
-  import * as m from '../../../paraglide/messages.js'
   import { openGamePage } from '../../../lib/game-tab.js'
   import Button from '../../shared/Button.svelte'
   import Notice from '../../shared/Notice.svelte'
@@ -10,11 +9,13 @@
   interface Props {
     /** Paragraphs are separated by blank lines */
     message: string
-    /** The game page that captures the deck, when the Evoker is known */
+    /** The game page that captures it, when known */
     page: string | null
+    /** The button's label: "Go to …" */
+    actionLabel: string
   }
 
-  let { message, page }: Props = $props()
+  let { message, page, actionLabel }: Props = $props()
 </script>
 
 <Notice variant="yellow">
@@ -22,7 +23,7 @@
   {#if page}
     <div>
       <Button variant="raised" size="small" onclick={() => void openGamePage(page)}>
-        {m.solomonis_extension_go_to_party()}
+        {actionLabel}
       </Button>
     </div>
   {/if}

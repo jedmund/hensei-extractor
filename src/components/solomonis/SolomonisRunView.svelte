@@ -20,6 +20,7 @@
   import type { SolomonisRunCapture } from '../../lib/solomonis/types.js'
   import DetailScroll from '../detail/DetailScroll.svelte'
   import PartyMeta from '../detail/party/PartyMeta.svelte'
+  import GoToNotice from './run/GoToNotice.svelte'
   import RunEmptyTab from './run/RunEmptyTab.svelte'
   import RunExpeditionTab from './run/RunExpeditionTab.svelte'
   import RunGuidebookTab from './run/RunGuidebookTab.svelte'
@@ -141,7 +142,7 @@
     {:else if capture.statusList}
       <RunGuidebookTab statusList={capture.statusList} />
     {:else}
-      <RunEmptyTab
+      <GoToNotice
         message={m.solomonis_extension_note_without_book()}
         {page}
         actionLabel={m.solomonis_extension_go_to_book()}

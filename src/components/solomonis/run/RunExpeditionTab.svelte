@@ -11,7 +11,7 @@
   import BlessingSection from './BlessingSection.svelte'
   import EconomySection from './EconomySection.svelte'
   import ExpeditionSection from './ExpeditionSection.svelte'
-  import GoToPartyNotice from './GoToPartyNotice.svelte'
+  import GoToNotice from './GoToNotice.svelte'
   import TraversalSection from './TraversalSection.svelte'
 
   interface Props {
@@ -32,7 +32,11 @@
 
 <div class="expedition">
   {#if !hasDeck}
-    <GoToPartyNotice message={m.solomonis_extension_note_without_blessings()} page={partyPage} />
+    <GoToNotice
+      message={m.solomonis_extension_note_without_blessings()}
+      page={partyPage}
+      actionLabel={m.solomonis_extension_go_to_party()}
+    />
   {/if}
   <ExpeditionSection {report} />
   {#if hasDeck && blessings}

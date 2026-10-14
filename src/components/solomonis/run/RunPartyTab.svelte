@@ -14,7 +14,7 @@
   import PartyDetail from '../../detail/party/PartyDetail.svelte'
   import Notice from '../../shared/Notice.svelte'
   import Select from '../../shared/Select.svelte'
-  import GoToPartyNotice from './GoToPartyNotice.svelte'
+  import GoToNotice from './GoToNotice.svelte'
 
   type Deck = FormattedCacheStatus & { dataType: string; evokerId?: string | null }
 
@@ -52,11 +52,12 @@
       <p>{m.solomonis_extension_note_with_setup({ deck: deck.partyName || deck.displayName })}</p>
     </Notice>
   {:else}
-    <GoToPartyNotice
+    <GoToNotice
       message={hasEvoker
         ? m.solomonis_extension_note_without_setup()
         : m.solomonis_extension_party_needs_report()}
       {page}
+      actionLabel={m.solomonis_extension_go_to_party()}
     />
   {/if}
 
