@@ -14,14 +14,13 @@
 </script>
 
 <figure class="blessing-card">
-  <div class="card">
-    <img
-      src={getImageUrl(`${BUCKET.blessings}/card-list/${blessing.slug}.png`)}
-      alt={blessing.name}
-      title={blessing.name}
-      loading="lazy"
-    />
-  </div>
+  <img
+    class="card"
+    src={getImageUrl(`${BUCKET.blessings}/card/${blessing.slug}.png`)}
+    alt={blessing.name}
+    title={blessing.name}
+    loading="lazy"
+  />
   <figcaption>
     <span class="level">{m.solomonis_extension_blessing_level({ level: blessing.level })}</span>
     {#if blessing.cost != null}
@@ -43,34 +42,12 @@
     min-width: 0;
   }
 
-  // The card art is 124 × 204, with 7px of transparent padding and then a
-  // 1px edge on every side. The frame shows only what's inside that edge
-  // (108 × 188) and draws its own border and rounded corners. Everything is
-  // drawn at 3/4 scale so each edge lands on a whole pixel: the card is
-  // 81 × 141, and the art 93 × 153, shifted 6px up and left.
+  // The card art is 150 × 310, shown at half size so it's sharp on
+  // high-density screens
   .card {
-    position: relative;
-    width: 81px;
-    height: 141px;
-    overflow: hidden;
-    border-radius: 4px;
-
-    img {
-      position: absolute;
-      left: -6px;
-      top: -6px;
-      width: 93px;
-      height: 153px;
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border: 2px solid rgba(0, 0, 0, 0.16);
-      border-radius: inherit;
-      pointer-events: none;
-    }
+    display: block;
+    width: 75px;
+    height: 155px;
   }
 
   figcaption {

@@ -39,7 +39,7 @@
   // Side by side at a fixed width, so the cards sit on whole pixels
   .blessing-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 81px);
+    grid-template-columns: repeat(auto-fill, 75px);
     gap: $unit * 1.5;
     margin: 0;
     padding: 0 $unit;
