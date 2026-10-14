@@ -16,6 +16,7 @@
   import type { FormattedCacheStatus } from '../../../lib/types/cache.js'
   import PartyDetail from '../../detail/party/PartyDetail.svelte'
   import Button from '../../shared/Button.svelte'
+  import Notice from '../../shared/Notice.svelte'
   import Select from '../../shared/Select.svelte'
 
   type Deck = FormattedCacheStatus & { dataType: string; evokerId?: string | null }
@@ -96,22 +97,24 @@
   {/if}
 
   {#if deck}
-    <p class="note">
-      {m.solomonis_extension_note_with_setup({ deck: deck.partyName || deck.displayName })}
-    </p>
+    <Notice variant="blue">
+      <p>{m.solomonis_extension_note_with_setup({ deck: deck.partyName || deck.displayName })}</p>
+    </Notice>
   {:else}
-    <div class="missing-deck">
-      <p class="note">
+    <Notice variant="yellow">
+      <p class="message">
         {hasEvoker
           ? m.solomonis_extension_note_without_setup()
           : m.solomonis_extension_party_needs_report()}
       </p>
       {#if page}
-        <Button variant="raised" size="small" onclick={() => void openGamePage(page)}>
-          {m.solomonis_extension_go_to_party()}
-        </Button>
+        <div>
+          <Button variant="raised" size="small" onclick={() => void openGamePage(page)}>
+            {m.solomonis_extension_go_to_party()}
+          </Button>
+        </div>
       {/if}
-    </div>
+    </Notice>
   {/if}
 
   <PartyDetail
@@ -126,7 +129,6 @@
 </section>
 
 <style lang="scss">
-  @use 'themes/typography' as *;
   @use 'themes/spacing' as *;
 
   .run-party {
@@ -135,17 +137,7 @@
     gap: $unit-2x;
   }
 
-  .missing-deck {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: $unit;
-  }
-
-  .note {
-    margin: 0;
-    font-size: $font-small;
-    color: var(--color-text-secondary);
+  .message {
     white-space: pre-line;
   }
 </style>
