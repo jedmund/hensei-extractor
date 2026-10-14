@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
   import { BUCKET, getImageUrl } from '../../../lib/constants.js'
+  import { characterBonusesPage, openGamePage } from '../../../lib/game-tab.js'
   import { GAME_ELEMENT_NAMES } from '../../../lib/game-data.js'
   import {
     formatModifier,
@@ -10,6 +11,7 @@
     AETHERIAL_NAMES
   } from '../../../lib/mastery.js'
   import * as m from '../../../paraglide/messages.js'
+  import Button from '../../shared/Button.svelte'
   import Icon from '../../shared/Icon.svelte'
   import Tooltip from '../../shared/Tooltip.svelte'
   import EmptyState from '../../shared/EmptyState.svelte'
@@ -184,6 +186,19 @@
 
           {#if !hasStats(char)}
             <div class="char-stats-empty">{m.char_stats_no_stats()}</div>
+          {/if}
+
+          {#if char.masterId}
+            {@const masterId = char.masterId}
+            <div class="char-stats-actions">
+              <Button
+                variant="raised"
+                size="small"
+                onclick={() => void openGamePage(characterBonusesPage(masterId))}
+              >
+                {m.char_go_to_bonuses()}
+              </Button>
+            </div>
           {/if}
         </div>
       </div>

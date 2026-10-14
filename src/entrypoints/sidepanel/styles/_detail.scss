@@ -884,6 +884,10 @@ body.light #playlistCreateSubmit {
   gap: spacing.$unit;
 }
 
+.char-stats-actions {
+  display: flex;
+}
+
 .char-stats-awakening {
   font-size: type.$font-small;
   color: var(--color-text);

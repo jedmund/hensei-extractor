@@ -59,3 +59,11 @@ export async function openGamePage(hash: string): Promise<void> {
     await chrome.windows.update(tab.windowId, { focused: true })
   }
 }
+
+/**
+ * A character's Character Bonuses screen (能力強化), where its ring and
+ * earring bonuses load. Takes the character's granblue_id.
+ */
+export function characterBonusesPage(granblueId: string): string {
+  return `#zenith/npc/list/${granblueId}/-1/1`
+}

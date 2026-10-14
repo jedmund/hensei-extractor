@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gamePageUrl, pickGameTab } from './game-tab.js'
+import { characterBonusesPage, gamePageUrl, pickGameTab } from './game-tab.js'
 
 describe('pickGameTab', () => {
   it('prefers the active game tab', () => {
@@ -60,5 +60,11 @@ describe('gamePageUrl', () => {
     expect(gamePageUrl('https://example.com/', '#mypage')).toBe(
       'https://game.granbluefantasy.jp/#mypage'
     )
+  })
+})
+
+describe('characterBonusesPage', () => {
+  it("is the character's Character Bonuses screen", () => {
+    expect(characterBonusesPage('3040652000')).toBe('#zenith/npc/list/3040652000/-1/1')
   })
 })
