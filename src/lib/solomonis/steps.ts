@@ -111,7 +111,7 @@ export function runSteps(input: SolomonisRunStepInput): SolomonisStep[] {
 }
 
 /** The run view's tabs, in the order they're shown. */
-export const RUN_TABS = ['party', 'expedition', 'guidebooks'] as const
+export const RUN_TABS = ['expedition', 'party', 'guidebooks'] as const
 
 export type SolomonisRunTab = (typeof RUN_TABS)[number]
 

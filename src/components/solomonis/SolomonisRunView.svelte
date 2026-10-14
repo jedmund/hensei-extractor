@@ -1,5 +1,5 @@
 <!-- One expedition report, ready to import as a run. Its three captures are
-     tabs: the Evoker's party deck, the expedition log and the guidebook log.
+     tabs: the expedition log, the Evoker's party deck and the guidebook log.
      A tab whose capture is missing offers to open the game page for it. -->
 
 <script lang="ts">
@@ -38,7 +38,7 @@
   let capture = $derived(data as SolomonisRunCapture | null)
   let report = $derived(capture?.report ?? null)
 
-  let tab = $state<SolomonisRunTab>('party')
+  let tab = $state<SolomonisRunTab>('expedition')
 
   // The report leaves out weapons, summons and Blessings, so they come from
   // a captured party deck for the Evoker the report was run with: the most
