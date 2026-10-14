@@ -45,8 +45,17 @@
     }
   }
 
+  // The count sits in a tile the size of a portrait
   .more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $unit-4x;
+    height: $unit-4x;
+    border-radius: $item-corner-small;
+    background: var(--button-bg-hover);
     font-size: $font-tiny;
+    font-weight: $medium;
     color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
   }
