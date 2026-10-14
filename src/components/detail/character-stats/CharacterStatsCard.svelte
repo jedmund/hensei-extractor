@@ -244,6 +244,16 @@
     display: flex;
     flex-direction: column;
     gap: $unit;
+
+    // Rows and section titles line up with the card's own padding
+    :global(.detail-row) {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    :global(.details-section .header) {
+      padding: 0;
+    }
   }
 
   .rows {
