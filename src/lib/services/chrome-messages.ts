@@ -2,6 +2,7 @@ import { formatCacheStatus } from '../cache.js'
 import type { AuthData } from '../state/app.svelte.js'
 import type { CacheStatusInfo, FormattedCacheStatus } from '../types/cache.js'
 import type {
+  CharacterTagData,
   ExtensionMessage,
   CachedDataResponse,
   UploadPartyResponse,
@@ -234,6 +235,22 @@ export async function searchSummonByName(
     )
   } catch {
     return null
+  }
+}
+
+/** CharacterTags data for each character, looked up from hensei-api. */
+export async function fetchCharacterTags(
+  granblueIds: string[]
+): Promise<Record<string, CharacterTagData | null>> {
+  try {
+    return (
+      ((await send({ action: 'fetchCharacterTags', granblueIds })) as Record<
+        string,
+        CharacterTagData | null
+      > | null) ?? {}
+    )
+  } catch {
+    return {}
   }
 }
 

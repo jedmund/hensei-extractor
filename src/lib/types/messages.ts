@@ -23,6 +23,7 @@ export type ExtensionMessage =
   | { action: 'fetchWeaponKeyMap'; locale: UiLocale }
   | { action: 'fetchWeaponStatModifiers' }
   | { action: 'fetchJobSkillSlugs'; names: string[] }
+  | { action: 'fetchCharacterTags'; granblueIds: string[] }
   | {
       action: 'uploadPartyData'
       dataType: string
@@ -281,6 +282,15 @@ export interface SummonSearchResult {
   granblue_id?: string
   name?: { en?: string; ja?: string }
   uncap?: { flb?: boolean; ulb?: boolean; transcendence?: boolean }
+}
+
+/** What CharacterTags shows for a character, from GET /characters/:id */
+export interface CharacterTagData {
+  /** Hensei's element number (1 Wind … 6 Light) */
+  element: number | null
+  season: number | null
+  series: Array<{ name: { en: string; ja: string } }>
+  styleSwap: boolean
 }
 
 /** Weapon key skill id → the key's slug and localized name */

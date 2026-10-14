@@ -41,6 +41,7 @@ import {
   fetchWeaponStatModifiers,
   searchSummonByName
 } from './party-reference.js'
+import { fetchCharacterTags } from './character-tags.js'
 import { uploadSupportSummons } from './support-summons.js'
 import { deckEvoker, reportEvokerId, shapeDeck } from '../solomonis/deck.js'
 import {
@@ -121,6 +122,7 @@ export function createHandlers(
     fetchWeaponKeyMap: (m) => fetchWeaponKeyMap(m.locale),
     fetchWeaponStatModifiers: () => fetchWeaponStatModifiers(),
     fetchJobSkillSlugs: (m) => fetchJobSkillSlugs(m.names),
+    fetchCharacterTags: (m) => fetchCharacterTags(m.granblueIds),
 
     uploadPartyData: (m) =>
       withCachedData(m.dataType, (data) =>
