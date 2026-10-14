@@ -5,12 +5,12 @@ import { isSolomonisRunDataType } from './routes.js'
 import { solomonisRunSubtitle } from './status.js'
 
 describe('Solomonis run rows', () => {
-  it('say whether a report is ready or which screen to open', () => {
+  it('say Expedition, or that the expedition log is still needed', () => {
     expect(solomonisRunSubtitle({ hasReport: true, hasBook: true })).toBe(
-      m.solomonis_extension_subtitle_ready()
+      m.solomonis_extension_subtitle_expedition()
     )
     expect(solomonisRunSubtitle({ hasReport: true, hasBook: false })).toBe(
-      m.solomonis_extension_subtitle_needs_book()
+      m.solomonis_extension_subtitle_expedition()
     )
     expect(solomonisRunSubtitle({ hasReport: false, hasBook: true })).toBe(
       m.solomonis_extension_subtitle_needs_report()

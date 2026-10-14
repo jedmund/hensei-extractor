@@ -4,8 +4,8 @@ import type { CacheStatusInfo } from '../types/cache.js'
 import { runReadiness } from './report.js'
 
 /**
- * The side panel row's subtitle: ready, ready without the guidebook log,
- * or that the expedition log is still needed.
+ * The side panel row's subtitle: "Expedition", or that the expedition log
+ * is still needed (a run can't be imported without it).
  */
 export function solomonisRunSubtitle(
   info: Pick<CacheStatusInfo, 'hasReport' | 'hasBook'>
@@ -14,17 +14,9 @@ export function solomonisRunSubtitle(
     report: info.hasReport ? {} : null,
     statusList: info.hasBook ? [] : null
   })
-  switch (readiness) {
-    case 'ready':
-      return m.solomonis_extension_subtitle_ready()
-    case 'needs_report':
-      return m.solomonis_extension_subtitle_needs_report()
-    default:
-      // A cached entry always has at least one log; the expedition log
-      // comes first in the game, so the guidebook log is what's left. The
-      // run imports without it.
-      return m.solomonis_extension_subtitle_needs_book()
-  }
+  return readiness === 'needs_report'
+    ? m.solomonis_extension_subtitle_needs_report()
+    : m.solomonis_extension_subtitle_expedition()
 }
 
 /** An Evoker's square portrait, for the side panel's deck rows. */
