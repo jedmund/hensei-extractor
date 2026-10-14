@@ -36,10 +36,10 @@
 <style lang="scss">
   @use 'themes/spacing' as *;
 
-  // Side by side, four to a row
+  // Side by side at a fixed width, so the cards sit on whole pixels
   .blessing-cards {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, 81px);
     gap: $unit * 1.5;
     margin: 0;
     padding: 0 $unit;

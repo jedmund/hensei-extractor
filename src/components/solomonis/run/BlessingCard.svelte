@@ -45,20 +45,22 @@
 
   // The card art is 124 × 204, with 7px of transparent padding and then a
   // 1px edge on every side. The frame shows only what's inside that edge
-  // (108 × 188) and draws its own border and rounded corners.
+  // (108 × 188) and draws its own border and rounded corners. Everything is
+  // drawn at 3/4 scale so each edge lands on a whole pixel: the card is
+  // 81 × 141, and the art 93 × 153, shifted 6px up and left.
   .card {
     position: relative;
-    width: 100%;
-    aspect-ratio: 108 / 188;
+    width: 81px;
+    height: 141px;
     overflow: hidden;
     border-radius: 4px;
 
     img {
       position: absolute;
-      left: calc(-100% * 8 / 108);
-      top: calc(-100% * 8 / 188);
-      width: calc(100% * 124 / 108);
-      height: calc(100% * 204 / 188);
+      left: -6px;
+      top: -6px;
+      width: 93px;
+      height: 153px;
     }
 
     &::after {
