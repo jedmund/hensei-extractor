@@ -210,12 +210,15 @@
     height: 18px;
   }
 
+  // Centred against the portrait
   .identity {
     display: flex;
     flex: 1;
     flex-direction: column;
+    justify-content: center;
     gap: $unit-half;
     min-width: 0;
+    min-height: $unit-6x;
   }
 
   .name {
