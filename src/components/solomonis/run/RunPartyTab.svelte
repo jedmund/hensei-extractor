@@ -47,19 +47,6 @@
 </script>
 
 <section class="run-party" aria-live="polite">
-  {#if decks.length > 1 && deck}
-    <Select
-      label={m.solomonis_extension_setup_label()}
-      {options}
-      value={deck.dataType}
-      onValueChange={(value) => {
-        if (value) app.solomonisSetupDataType = value
-      }}
-      contained
-      fullWidth
-    />
-  {/if}
-
   {#if deck}
     <Notice variant="blue">
       <p>{m.solomonis_extension_note_with_setup({ deck: deck.partyName || deck.displayName })}</p>
@@ -70,6 +57,19 @@
         ? m.solomonis_extension_note_without_setup()
         : m.solomonis_extension_party_needs_report()}
       {page}
+    />
+  {/if}
+
+  {#if decks.length > 1 && deck}
+    <Select
+      label={m.solomonis_extension_setup_label()}
+      {options}
+      value={deck.dataType}
+      onValueChange={(value) => {
+        if (value) app.solomonisSetupDataType = value
+      }}
+      contained
+      fullWidth
     />
   {/if}
 

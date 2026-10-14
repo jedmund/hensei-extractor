@@ -31,10 +31,11 @@
 </script>
 
 <div class="expedition">
-  <ExpeditionSection {report} />
   {#if !hasDeck}
     <GoToPartyNotice message={m.solomonis_extension_note_without_blessings()} page={partyPage} />
-  {:else if blessings}
+  {/if}
+  <ExpeditionSection {report} />
+  {#if hasDeck && blessings}
     <BlessingSection {blessings} />
   {/if}
   {#if spaces.length > 0}
