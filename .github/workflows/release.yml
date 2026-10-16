@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +28,6 @@ jobs:
       - name: Build extension
         run: pnpm zip
         env:
-          WXT_UNIQUE_KEY: ${{ secrets.EXTENSION_KEY }}
           WXT_BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Rename output
@@ -39,3 +40,20 @@ jobs:
           name: Build ${{ github.run_number }}
           files: granblue-team-extension.zip
           generate_release_notes: true
+
+      # The store item has to be created by hand first; until its ID and API
+      # credentials are in the repo secrets, this step is skipped.
+      - name: Build for the Chrome Web Store
+        if: env.CHROME_EXTENSION_ID != ''
+        run: pnpm zip
+        env:
+          WXT_BUILD_NUMBER: ${{ github.run_number }}
+          WXT_STORE_BUILD: 'true'
+
+      - name: Submit to the Chrome Web Store
+        if: env.CHROME_EXTENSION_ID != ''
+        run: pnpm wxt submit --chrome-zip .output/*-chrome.zip
+        env:
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
