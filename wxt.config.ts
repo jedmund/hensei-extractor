@@ -54,8 +54,7 @@ export default defineConfig({
       'https://game.granbluefantasy.jp/*',
       'https://gbf.game.mbga.jp/*',
       'https://granblue.team/*',
-      'https://api.granblue.team/*',
-      'https://next-api.granblue.team/*'
+      'https://api.granblue.team/*'
     ],
     icons: {
       '16': 'icon16.png',
