@@ -57,6 +57,11 @@ export default defineConfig({
       'https://api.granblue.team/*',
       'https://next-api.granblue.team/*'
     ],
+    icons: {
+      '16': 'icon16.png',
+      '48': 'icon48.png',
+      '128': 'icon128.png'
+    },
     action: {
       default_icon: {
         '16': 'icon16.png',
