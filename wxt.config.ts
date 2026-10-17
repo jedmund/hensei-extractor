@@ -56,16 +56,20 @@ export default defineConfig({
       'https://granblue.team/*',
       'https://api.granblue.team/*'
     ],
+    // The small sizes are cropped to the art so it fills the toolbar; only
+    // the 128px store icon keeps Chrome's recommended padding
     icons: {
       '16': 'icon16.png',
+      '32': 'icon32.png',
       '48': 'icon48.png',
       '128': 'icon128.png'
     },
     action: {
       default_icon: {
         '16': 'icon16.png',
-        '48': 'icon48.png',
-        '128': 'icon128.png'
+        '24': 'icon24.png',
+        '32': 'icon32.png',
+        '48': 'icon48.png'
       }
     }
   }
