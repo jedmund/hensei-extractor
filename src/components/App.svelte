@@ -12,6 +12,10 @@
   import ConflictModal from './modals/ConflictModal.svelte'
   import SolomonisDuplicateModal from './solomonis/SolomonisDuplicateModal.svelte'
   import Toast from './shared/Toast.svelte'
+  import { applyTheme } from '../lib/theme.js'
+
+  // The account's theme, or the browser's when logged out
+  $effect(() => applyTheme(app.auth?.theme))
 
   onMount(async () => {
     document.documentElement.style.setProperty(

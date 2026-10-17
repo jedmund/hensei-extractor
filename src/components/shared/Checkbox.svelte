@@ -98,7 +98,7 @@
 
   :global(.checkbox:focus),
   :global(.checkbox:focus-visible) {
-    outline: 2px solid #275dc5;
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 

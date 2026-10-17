@@ -19,7 +19,7 @@
 
 .modal-content {
   position: relative;
-  background: white;
+  background: var(--color-bg-white);
   border-radius: layout.$card-corner;
   padding: spacing.$unit * 2.5;
   width: calc(100% - spacing.$unit-4x);
@@ -122,7 +122,7 @@
   border-radius: layout.$item-corner;
 
   p {
-    color: #6b4e00;
+    color: var(--color-warning-text);
     font-size: type.$font-small;
   }
 }
@@ -147,11 +147,11 @@
 /* Review button in detail header */
 #detailReview {
   background-color: var(--color-warning);
-  color: #6b4e00;
+  color: var(--color-warning-text);
   border: 1px solid var(--color-warning-border);
 
   &:hover:not(:disabled) {
-    background-color: #ffe082;
+    background-color: var(--color-warning-hover);
   }
 }
 
@@ -208,7 +208,7 @@
 
 .conflict-badge-skip {
   background: var(--color-text-tertiary);
-  color: white;
+  color: var(--color-bg-white);
 }
 
 /* Message */
@@ -230,7 +230,7 @@
   height: spacing.$unit-4x;
   border-radius: 50%;
   border: 1px solid var(--color-border);
-  background: white;
+  background: var(--color-bg-white);
   font-size: type.$font-medium;
   line-height: 1;
   cursor: pointer;

@@ -66,3 +66,31 @@ body.dark {
   --dark-nav-selected-bg: #f2cdff;
   --dark-nav-selected-text: #560075;
 }
+
+/* Dark theme: hensei-web keeps element pills pastel and brightens them */
+:root[data-theme='dark'] {
+  body.fire {
+    --element-bg: #fd9d9d;
+    --fire-nav-selected-bg: #fd9d9d;
+  }
+  body.water {
+    --element-bg: #9ddbff;
+    --water-nav-selected-bg: #9ddbff;
+  }
+  body.earth {
+    --element-bg: #fec194;
+    --earth-nav-selected-bg: #fec194;
+  }
+  body.wind {
+    --element-bg: #86f2bb;
+    --wind-nav-selected-bg: #86f2bb;
+  }
+  body.light {
+    --element-bg: #f4e880;
+    --light-nav-selected-bg: #f4e880;
+  }
+  body.dark {
+    --element-bg: #e8a4ff;
+    --dark-nav-selected-bg: #e8a4ff;
+  }
+}
