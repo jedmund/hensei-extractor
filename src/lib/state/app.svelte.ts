@@ -1,5 +1,6 @@
 import type { FormattedCacheStatus } from '../types/cache.js'
 import { toastDuration } from '../toast.js'
+import { importVisibility } from '../visibility.js'
 
 interface AuthAvatar {
   picture?: string
@@ -62,7 +63,17 @@ class AppState {
   enableFullSync = $state(false)
 
   // Party import meta
-  selectedVisibility = $state(3)
+  /** The visibility picked for this import, or null for the account default */
+  private visibilityChoice = $state<number | null>(null)
+  get selectedVisibility(): number {
+    return importVisibility(
+      this.visibilityChoice,
+      this.auth?.defaultImportVisibility
+    )
+  }
+  set selectedVisibility(value: number) {
+    this.visibilityChoice = value
+  }
   shareWithCrew = $state(false)
   partyName = $state('')
   selectedRaid = $state<RaidSelection | null>(null)
@@ -124,6 +135,7 @@ class AppState {
     this.manuallyUnchecked = new Set()
     this.enableFullSync = false
     this.partyName = ''
+    this.visibilityChoice = null
     this.selectedRaid = null
     this.selectedPlaylists = []
     this.pendingConflicts = null
