@@ -429,7 +429,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid #275dc5;
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
     }
 
@@ -511,7 +511,7 @@
   :global([data-select-content].content) {
     background: var(--dialog-bg);
     border-radius: $card-corner;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border-light);
     box-shadow: var(--shadow-lg);
     padding: 0 $unit-half;
     min-width: calc(var(--bits-select-anchor-width) + var(--content-width-offset, 0px));

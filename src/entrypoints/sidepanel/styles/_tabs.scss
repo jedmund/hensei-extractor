@@ -22,11 +22,11 @@
   transition: background-color var(--transition-fast);
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--overlay-hover);
   }
 
   &.active {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--overlay-strong);
   }
 }
 
@@ -34,7 +34,7 @@
   width: spacing.$unit * 3.5;
   height: spacing.$unit * 3.5;
   border-radius: spacing.$unit * 1.75;
-  background: #efefef;
+  background: var(--fill-hover);
   display: block;
 }
 

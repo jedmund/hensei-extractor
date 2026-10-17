@@ -15,6 +15,8 @@ export interface AuthData {
   avatar?: AuthAvatar
   displayName?: string
   defaultImportVisibility?: number
+  /** The account's theme setting: 'system', 'light' or 'dark' */
+  theme?: string
   hasCrew?: boolean
   simplePortraits?: boolean
   user?: {

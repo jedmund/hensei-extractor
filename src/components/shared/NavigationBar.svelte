@@ -46,7 +46,7 @@
     align-items: center;
     height: $unit-6x;
     padding: 0 $unit-2x;
-    background: white;
+    background: var(--color-bg-white);
     flex-shrink: 0;
     position: relative;
     z-index: 10;

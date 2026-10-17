@@ -9,10 +9,10 @@
   right: spacing.$unit * 1.5;
   padding: spacing.$unit * 1.5;
   padding-top: spacing.$unit * 2;
-  background: white;
+  background: var(--color-bg-white);
   border-radius: layout.$card-corner;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 0 0 1px var(--popover-ring, rgba(0, 0, 0, 0.04)),
     0 4px 20px rgba(0, 0, 0, 0.12);
   z-index: 101;
   animation: hint-slide-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.575s both;
@@ -37,7 +37,7 @@
   transition: background var(--transition-fast);
 
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--overlay);
     color: var(--color-text);
   }
 }
@@ -85,7 +85,7 @@
     color var(--transition-fast);
 
   &:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--overlay);
     color: var(--color-text);
   }
 

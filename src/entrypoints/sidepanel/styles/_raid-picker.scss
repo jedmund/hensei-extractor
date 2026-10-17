@@ -8,7 +8,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: white;
+  background: var(--color-bg-white);
   display: flex;
   flex-direction: column;
   z-index: 200;
@@ -87,7 +87,7 @@
   font-size: type.$font-tiny;
   font-weight: type.$semibold;
   color: var(--color-text-tertiary);
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--overlay-strong);
   padding: 1px spacing.$unit-half;
   border-radius: 0.3rem;
 }
