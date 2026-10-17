@@ -229,7 +229,7 @@
     @include smooth-transition($duration-quick, background-color);
 
     &:hover {
-      background-color: var(--color-bg-primary, #fff);
+      background-color: var(--color-bg-white);
     }
   }
 
@@ -277,13 +277,13 @@
     flex-shrink: 0;
 
     &.phantom {
-      background: var(--color-bg-tertiary, rgba(0, 0, 0, 0.06));
+      background: var(--overlay-strong);
       color: var(--color-text-tertiary);
     }
 
     &.new {
       background: var(--color-warning, #fffcd2);
-      color: var(--color-warning-text, #7a6200);
+      color: var(--color-warning-text);
     }
   }
 

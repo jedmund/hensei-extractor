@@ -65,7 +65,7 @@
     outline: none;
 
     &:focus-visible .segment-label {
-      outline: 2px solid #275dc5;
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
     }
   }
@@ -137,7 +137,7 @@
   }
 
   :global([data-radio-group-item].segment.default[data-state='checked'] .segment-label) {
-    background: white;
+    background: var(--color-bg-white);
     color: var(--color-text);
   }
 
@@ -170,7 +170,7 @@
   :global([data-radio-group-item].segment.background[data-state='checked'] .segment-label) {
     background: var(--segmented-control-background-segment-bg-checked, white);
     color: var(--segmented-control-background-segment-text-checked, var(--color-text));
-    border: 0.5px solid rgba(0, 0, 0, 0.12);
+    border: 0.5px solid var(--color-border-light);
     box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.06));
   }
 

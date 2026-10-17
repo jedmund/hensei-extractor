@@ -158,6 +158,7 @@
           role?: number
           simple_portraits?: boolean
           default_import_visibility?: number
+          theme?: string
           has_crew?: boolean
           crew_name?: string
           gamertag?: string
@@ -174,6 +175,7 @@
           defaultImportVisibility:
             userInfo.default_import_visibility ??
             app.auth.defaultImportVisibility,
+          theme: userInfo.theme || app.auth.theme,
           hasCrew: !!(
             userInfo.has_crew ||
             userInfo.crew_name ||
