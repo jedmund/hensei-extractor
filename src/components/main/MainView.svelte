@@ -5,6 +5,8 @@
   import { fetchUserInfo } from '../../lib/auth.js'
   import { getImageUrl, getDataTypeName } from '../../lib/constants.js'
   import { extractItems } from '../../lib/detail-helpers.js'
+  import { npcDetailDisplayName } from '../../lib/cache.js'
+  import { npcStyleOf, npcStyleName } from '../../lib/detail-style.js'
   const WEAPON_KEY_GROUPS = new Set([7, 10, 17, 27, 29, 30])
   const ELEMENT_CLASSES = ['fire', 'water', 'earth', 'wind', 'light', 'dark'] as const
   import { checkExtensionVersion } from '../../lib/services/chrome-messages.js'
@@ -106,7 +108,9 @@
       }
       if (app.currentDetailDataType.startsWith('detail_') && app.detailData) {
         const d = app.detailData as { name?: string; master?: { name?: string } }
-        return d.name || d.master?.name || getDataTypeName(app.currentDetailDataType)
+        const name = d.name || d.master?.name || getDataTypeName(app.currentDetailDataType)
+        if (!app.currentDetailDataType.startsWith('detail_npc_')) return name
+        return npcDetailDisplayName(name, npcStyleOf(d), npcStyleName(d))
       }
       if (app.currentDetailDataType.startsWith('unf_scores_')) {
         return m.crew_total_score()

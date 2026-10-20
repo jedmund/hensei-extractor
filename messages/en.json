@@ -487,5 +487,7 @@
   "season_summer": "Summer",
   "season_halloween": "Halloween",
   "season_holiday": "Holiday",
-  "tag_style": "Style"
+  "tag_style": "Style",
+  "tag_style_shift": "Style Shift",
+  "detail_style_shift_name": "{name} (Style Shift)"
 }

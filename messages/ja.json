@@ -487,5 +487,7 @@
   "season_summer": "水着",
   "season_halloween": "ハロウィン",
   "season_holiday": "クリスマス",
-  "tag_style": "スタイル"
+  "tag_style": "スタイル",
+  "tag_style_shift": "スタイルシフト",
+  "detail_style_shift_name": "{name}（スタイルシフト）"
 }
