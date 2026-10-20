@@ -67,10 +67,17 @@ export interface SolomonisDeck {
     name?: string
     group_name?: string
     priority?: number | string
+    combination_group_id?: number | string
     npc?: Record<
       string,
       {
-        master?: { id?: string | number; name?: string; [key: string]: unknown }
+        master?: {
+          id?: string | number
+          character_id?: string | number
+          name?: string
+          [key: string]: unknown
+        } | null
+        is_fix_evoker_npc?: boolean
         [key: string]: unknown
       } | null
     >
@@ -86,7 +93,7 @@ export interface SolomonisDeckCacheEntry {
   timestamp: number
   priority: string
   deckName: string | null
-  /** The route Evoker (`deck.npc["1"].master`) */
+  /** The route Evoker (see `deckEvoker`) */
   evokerId: string | null
   evokerName: string | null
 }

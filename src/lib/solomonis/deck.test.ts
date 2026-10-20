@@ -48,6 +48,22 @@ describe('deckPriority and deckEvoker', () => {
     expect(deckEvoker(deck)).toEqual({ id: '3040161000', name: 'Fraux' })
   })
 
+  it('finds the Evoker outside the first slot', () => {
+    const deck = shapeDeck(deckResponse)!
+    const evoker = deck.deck.npc!['1']!
+    const ally = {
+      ...evoker,
+      is_fix_evoker_npc: false,
+      master: { id: '3040265000', character_id: '9999', name: 'Ally' }
+    }
+    const moved = { deck: { ...deck.deck, npc: { '1': ally, '3': evoker } } }
+    expect(deckEvoker(moved)).toEqual({ id: '3040161000', name: 'Fraux' })
+
+    const ungrouped = { deck: { ...moved.deck } }
+    delete ungrouped.deck.combination_group_id
+    expect(deckEvoker(ungrouped)).toEqual({ id: '3040161000', name: 'Fraux' })
+  })
+
   it('has no Evoker without a first slot', () => {
     expect(deckEvoker({ deck: { priority: 1, npc: { '1': null } } })).toBeNull()
     expect(deckEvoker({ deck: { priority: 1 } })).toBeNull()

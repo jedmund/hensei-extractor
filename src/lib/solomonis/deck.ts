@@ -58,11 +58,32 @@ export function deckPriority(deck: SolomonisDeck): string | null {
   return deckPriorityOf(deck.deck)
 }
 
-/** The route Evoker: the character in the deck's first slot. */
+function idString(value: unknown): string | null {
+  if (typeof value === 'number' || typeof value === 'string') {
+    return String(value) || null
+  }
+  return null
+}
+
+/**
+ * The route Evoker, which can sit in any character slot: the character
+ * whose game character ID is the deck's group (`combination_group_id`),
+ * else the one the game marks `is_fix_evoker_npc`, else the first slot.
+ */
 export function deckEvoker(
   deck: SolomonisDeck
 ): { id: string; name: string | null } | null {
-  const master = deck.deck.npc?.['1']?.master
+  const npc = deck.deck.npc ?? {}
+  const slots = Object.keys(npc)
+    .filter((key) => /^\d{1,2}$/.test(key))
+    .sort((a, b) => Number(a) - Number(b))
+    .map((key) => npc[key])
+  const group = idString(deck.deck.combination_group_id)
+  const slot =
+    (group && slots.find((s) => idString(s?.master?.character_id) === group)) ||
+    slots.find((s) => s?.is_fix_evoker_npc === true) ||
+    npc['1']
+  const master = slot?.master
   const id = master?.id
   if (id === undefined || id === null || String(id) === '') return null
   return {
