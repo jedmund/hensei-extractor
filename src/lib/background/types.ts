@@ -109,6 +109,10 @@ export interface CacheStatusEntry {
   stashName?: string | null
   granblueId?: string
   itemName?: string
+  /** Database characters: the captured style, when it isn't the first */
+  style?: number
+  /** The style's own name from the payload, e.g. "Super Cidala" */
+  styleName?: string
   gbfUserId?: string | null
   /** Solomonis runs: the report ID and which of its two logs are captured */
   reportId?: string

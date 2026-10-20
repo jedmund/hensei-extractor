@@ -17,6 +17,10 @@ export interface CacheStatusInfo {
   totalItems?: number
   pageCount?: number
   itemName?: string
+  /** Database characters: the captured style, when it isn't the first */
+  style?: number
+  /** The style's own name from the payload, e.g. "Super Cidala" */
+  styleName?: string
   stashName?: string
   partyName?: string
   partyId?: string

@@ -5,6 +5,7 @@ import {
   resolveCacheKey
 } from '../constants.js'
 import { getAttachedTabs, isAttached } from '../debugger.js'
+import { npcStyleOf, npcStyleName, parseDetailSuffix } from '../detail-style.js'
 import { partyElementKey } from '../images.js'
 import { importedAtOf } from './import-marks.js'
 import type {
@@ -293,8 +294,17 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         lastUpdated: timestamp,
         age,
         isStale: stale,
-        granblueId: suffix,
+        granblueId: parseDetailSuffix(suffix).granblueId,
         itemName: (cacheEntry.itemName as string) ?? 'Unknown'
+      }
+      if (matchedPrefix === 'detail_npc') {
+        // Read from the payload, so captures cached before styles were
+        // keyed apart still show their style
+        const style = npcStyleOf(cacheEntry.data)
+        if (style > 1) {
+          status[dataType].style = style
+          status[dataType].styleName = npcStyleName(cacheEntry.data)
+        }
       }
     } else if (matchedPrefix === 'solomonis_run') {
       // Expires like other captures; its timestamp is the latest capture of

@@ -1,4 +1,5 @@
 import { CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS } from '../constants.js'
+import { detailCacheSuffix } from '../detail-style.js'
 import { decodeHtmlEntities } from '../html-entities.js'
 import { clearImportMark } from './import-marks.js'
 import type {
@@ -39,7 +40,9 @@ export async function cacheDetailItem(
     const cached = await cacheSingleItem(dataType, data, timestamp, url)
     return { dataType, cached }
   }
-  const cacheKey = `${prefix}${granblueId}`
+  // Style shifts share an id, so later styles are keyed apart from style 1
+  const suffix = detailCacheSuffix(dataType, String(granblueId), data)
+  const cacheKey = `${prefix}${suffix}`
 
   await chrome.storage.local.set({
     [cacheKey]: {
@@ -51,7 +54,7 @@ export async function cacheDetailItem(
     }
   })
 
-  return { dataType: `${dataType}_${granblueId}`, cached: true }
+  return { dataType: `${dataType}_${suffix}`, cached: true }
 }
 
 export async function cacheParty(
