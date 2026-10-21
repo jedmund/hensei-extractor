@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { authenticatedPost } from './api-client.js'
+import npcDetailJp from '../__fixtures__/npc-detail-jp.json'
+import { authenticatedPost, getAuthToken } from './api-client.js'
 import {
   characterStatsToItems,
   collectPageItems,
   extractFilterFromPages,
   parseGameFilter,
   resolveEndpoint,
+  uploadDetailData,
   uploadPartyData
 } from './collections.js'
 
@@ -129,5 +131,46 @@ describe('uploadPartyData', () => {
     const res = await uploadPartyData({}, undefined, [], undefined, 1, true)
 
     expect(res).toMatchObject({ success: true, shareFailed: true })
+  })
+})
+
+describe('uploadDetailData', () => {
+  beforeEach(() => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost).mockResolvedValue({ data: {} })
+    vi.mocked(getAuthToken).mockReset()
+  })
+
+  it('sends a Japanese capture as jp even when the site is in English', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'en' } as never)
+
+    await uploadDetailData(npcDetailJp, 'detail_npc')
+
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=jp',
+      npcDetailJp
+    )
+  })
+
+  it('sends an English capture as en even when the site is in Japanese', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'ja' } as never)
+    const data = { master: { id: '3040377000', name: 'Cidala' } }
+
+    await uploadDetailData(data, 'detail_npc')
+
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=en',
+      data
+    )
+  })
+
+  it('falls back to the site language when the payload has no text', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'ja' } as never)
+
+    await uploadDetailData({ id: '1040001000' }, 'detail_weapon')
+
+    expect(authenticatedPost).toHaveBeenCalledWith('/import/weapons?lang=jp', {
+      id: '1040001000'
+    })
   })
 })

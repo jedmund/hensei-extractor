@@ -1,0 +1,54 @@
+{
+  "_note": "Trimmed from a real /archive/npc_detail payload (Super Cidala, style 2) captured with the game in Japanese. Only the text fields the language check reads are kept.",
+  "master": {
+    "id": "3040377000",
+    "name": "シンダラ",
+    "evo_name": "[東北東の守護神]シンダラ",
+    "short_name": "シンダラ",
+    "attribute": 3
+  },
+  "param": {
+    "style": "2",
+    "rarity": "4",
+    "image_id_9": "3040377000_01_st2"
+  },
+  "special_skill": {
+    "name": "寅気上昇",
+    "comment": "土属性ダメージ(特大)/自分の攻撃大幅UP"
+  },
+  "ability": {
+    "1": {
+      "action_id": "244171",
+      "name": "運気揚々",
+      "comment": "<div class=prt-text-small>自分に運気揚々効果/被ダメージ時に全力でカウンター(2回)　<span class=text-blue>◆効果中、土属性追撃効果/ターン進行時に攻撃行動を2回行う</span></div>",
+      "name_en": "Luck Goes Up",
+      "comment_en": "Luck Goes Up effect to caster / Full-force counter upon taking DMG (2 hits) <span class=text-blue>(Bonus Earth DMG effect while in effect / Attacks twice each turn)</span>"
+    },
+    "2": {
+      "action_id": "244181",
+      "name": "開寅招福",
+      "comment": "<div class=prt-text-small>土属性キャラにディスペルガード効果(1回)/幻影効果(1回)/敵の全ての攻撃を回避(1回)</div>",
+      "name_en": "Bringer of Proarsperity",
+      "comment_en": "Dispel Cancel effect (1 time) to earth allies / Mirror Image effect (1 hit) / Dodge all attacks from foes (1 time)"
+    },
+    "3": {
+      "action_id": "244191",
+      "name": "運気下々",
+      "comment": "敵に12倍土属性ダメージ/運気下々効果",
+      "name_en": "Luck Goes Down",
+      "comment_en": "1200% earth DMG to a foe / Luck Goes Down effect"
+    }
+  },
+  "support_ability": {
+    "1": {
+      "action_id": "318661",
+      "name": "寅神合体",
+      "comment": "<div class=prt-text-small>敵のターゲットにされやすく奥義ゲージが溜まりにくいが必ずトリプルアタック/通常攻撃の与ダメージUP</div>"
+    },
+    "2": {
+      "action_id": "318671",
+      "name": "桃色なデート",
+      "comment": "<div class=prt-text-small>アビリティ使用時、自分の桃香Lvが1上昇(最大5)　<span class=text-blue>◆桃香Lvが5の時防御大幅DOWN/アビリティ使用不可/連続攻撃が発生しない</span></div>"
+    }
+  }
+}

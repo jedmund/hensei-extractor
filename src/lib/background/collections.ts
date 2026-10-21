@@ -1,4 +1,5 @@
 import { getSiteBaseUrl } from '../constants.js'
+import { detectPayloadLanguage } from '../detail-language.js'
 import type {
   CheckConflictsResponse,
   CollectionUpdate,
@@ -97,12 +98,13 @@ export async function uploadDetailData(
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
-  const auth = await getAuthToken()
-  let lang = 'en'
-  if (data.cjs && (data.cjs as string).includes('_jp/')) {
-    lang = 'jp'
-  } else if (auth?.language === 'ja') {
-    lang = 'jp'
+  // The payload's own text is the best signal; the cjs path and the site
+  // language only cover payloads with nothing to judge.
+  let lang = detectPayloadLanguage(data)
+  if (!lang) {
+    const auth = await getAuthToken()
+    const cjs = typeof data.cjs === 'string' ? data.cjs : ''
+    lang = cjs.includes('_jp/') || auth?.language === 'ja' ? 'jp' : 'en'
   }
 
   const result = await authenticatedPost(
