@@ -161,9 +161,13 @@ describe('importQueueAll', () => {
         error: 'server_error'
       })
     ])
-    expect(notify).toHaveBeenLastCalledWith({
+    expect(notify).toHaveBeenCalledWith({
       action: 'importQueueProgress',
       progress: { done: 3, total: 3, imported: 2, failed: 1 }
+    })
+    expect(notify).toHaveBeenLastCalledWith({
+      action: 'importQueueProgress',
+      progress: null
     })
   })
 

@@ -146,6 +146,10 @@ export async function importQueueAll(
     )
   } finally {
     progress = null
+    // Tells a side panel opened mid-run that the run is over
+    dependencies
+      .notify({ action: 'importQueueProgress', progress: null })
+      .catch(() => {})
   }
 }
 
