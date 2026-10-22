@@ -114,3 +114,57 @@
     }
   }
 }
+
+/* Import queue (Database tab) */
+.queue-header {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$unit;
+  padding: spacing.$unit spacing.$unit * 1.5 0;
+  flex-shrink: 0;
+}
+
+.queue-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: spacing.$unit-half spacing.$unit * 1.5;
+  font-size: type.$font-small;
+  font-weight: type.$medium;
+  color: var(--color-text);
+}
+
+.queue-count-langs {
+  font-weight: normal;
+  color: var(--color-text-tertiary);
+}
+
+.queue-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: spacing.$unit;
+}
+
+.queue-progress {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$unit-half;
+}
+
+.queue-progress-text {
+  font-size: type.$font-tiny;
+  color: var(--color-text-tertiary);
+}
+
+.queue-progress-track {
+  height: spacing.$unit-half;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.queue-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--element-button-bg);
+  transition: width 0.2s ease-out;
+}

@@ -489,5 +489,18 @@
   "season_holiday": "Holiday",
   "tag_style": "Style",
   "tag_style_shift": "Style Shift",
-  "detail_style_shift_name": "{name} (Style Shift)"
+  "detail_style_shift_name": "{name} (Style Shift)",
+  "queue_import_all": "Import all",
+  "queue_importing_progress": "Importing {done} of {total}...",
+  "queue_import_result": "{imported} imported · {failed} failed",
+  "queue_clear": "Clear",
+  "queue_clear_title": "Clear captured pages?",
+  "queue_clear_body": "This removes {count} captured pages that haven't been imported. Open them in game again to capture them.",
+  "queue_cleared": "Captured pages cleared",
+  "queue_type_characters": "Characters",
+  "queue_type_weapons": "Weapons",
+  "queue_type_summons": "Summons",
+  "queue_lang_en": "EN",
+  "queue_lang_jp": "JP",
+  "queue_status_failed": "Failed"
 }
