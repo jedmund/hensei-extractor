@@ -17,10 +17,10 @@
  */
 
 import type { PayloadLanguage } from '../detail-language.js'
+import { npcStyleName, npcStyleOf } from '../detail-style.js'
 
 export type QueueItemType = 'npc' | 'weapon' | 'summon'
 export type QueueStatus = 'queued' | 'importing' | 'failed'
-export type QueueStyle = 1 | 2
 
 export interface QueueEntry {
   key: string
@@ -28,7 +28,10 @@ export interface QueueEntry {
   granblueId: string
   name: string
   lang: PayloadLanguage
-  style: QueueStyle
+  /** A character's style: 1, or 2+ for a style shift */
+  style: number
+  /** A later style's own name from the payload, e.g. "Super Cidala" */
+  styleName?: string
   capturedAt: number
   status: QueueStatus
   /** The error code from the last failed import */
@@ -55,7 +58,7 @@ const QUEUE_TYPES: Record<string, QueueItemType> = {
   detail_summon: 'summon'
 }
 
-const DATA_TYPE_PATTERN = /^detail_((?:npc|weapon|summon)_.+_[12]_(?:en|jp))$/
+const DATA_TYPE_PATTERN = /^detail_((?:npc|weapon|summon)_.+_\d+_(?:en|jp))$/
 
 // ==========================================
 // KEYS
@@ -78,13 +81,6 @@ export function queueKeyFromDataType(dataType: string): string | null {
   return DATA_TYPE_PATTERN.exec(dataType)?.[1] ?? null
 }
 
-/** A character's style: 2 for a style shift, 1 otherwise. */
-export function styleOf(data: Record<string, unknown>): QueueStyle {
-  const param = data.param as Record<string, unknown> | undefined
-  const style = data.style ?? param?.style
-  return String(style) === '2' ? 2 : 1
-}
-
 /**
  * The queue metadata for a captured detail page, or null when it isn't a
  * journal detail page or has no ID.
@@ -105,7 +101,8 @@ export function describeCapture(
   }
   const granblueId = String(id)
   const name = data.name ?? master?.name
-  const style = type === 'npc' ? styleOf(data) : 1
+  const style = type === 'npc' ? npcStyleOf(data) : 1
+  const styleName = type === 'npc' ? npcStyleName(data) : undefined
 
   const capture = {
     type,
@@ -113,6 +110,7 @@ export function describeCapture(
     name: typeof name === 'string' && name ? name : granblueId,
     lang,
     style,
+    ...(styleName && { styleName }),
     capturedAt
   }
   return { key: queueKey(capture), ...capture }

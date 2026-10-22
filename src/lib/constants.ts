@@ -137,9 +137,6 @@ export const CACHE_PREFIXES: Record<string, string> = {
   party: 'gbf_cache_party_',
   stash_weapon: 'gbf_cache_stash_weapon_',
   stash_summon: 'gbf_cache_stash_summon_',
-  detail_npc: 'gbf_cache_detail_npc_',
-  detail_weapon: 'gbf_cache_detail_weapon_',
-  detail_summon: 'gbf_cache_detail_summon_',
   unf_scores: 'gbf_cache_unf_scores_',
   unf_daily_scores: 'gbf_cache_unf_daily_scores_',
   // Evoking Solomonis expedition reports, both logs per report ID

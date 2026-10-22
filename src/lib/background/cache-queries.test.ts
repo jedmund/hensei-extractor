@@ -1,3 +1,5 @@
+import 'fake-indexeddb/auto'
+import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../debugger.js', () => ({
@@ -7,10 +9,13 @@ vi.mock('../debugger.js', () => ({
 
 import { CACHE_TTL_MS } from '../constants.js'
 import { handleGetCachedData, handleGetCacheStatus } from './cache-queries.js'
+import { closeQueueDb, putCapture } from './import-queue.js'
 
 let storage: Record<string, unknown>
 
-beforeEach(() => {
+beforeEach(async () => {
+  await closeQueueDb()
+  globalThis.indexedDB = new IDBFactory()
   storage = {}
   vi.stubGlobal('chrome', {
     storage: {
@@ -131,65 +136,28 @@ describe('handleGetCachedData', () => {
   })
 })
 
-describe('handleGetCacheStatus for style shifts', () => {
-  const styleList = [
-    { name: 'Default Style', image: '3040377000_01', style: 1 },
-    { name: 'Super Cidala', image: '3040377000_01_st2', style: 2 }
-  ]
-  const entry = (style?: number) => ({
-    data: {
-      id: '3040377000',
-      name: 'Cidala',
-      ...(style != null && { style }),
-      style_list: styleList
-    },
-    timestamp: Date.now(),
-    url: 'u',
-    granblueId: '3040377000',
-    itemName: 'Cidala'
-  })
-
-  it('lists each style of a character with its granblue ID', async () => {
-    storage['gbf_cache_detail_npc_3040377000'] = entry(1)
-    storage['gbf_cache_detail_npc_3040377000_style2'] = entry(2)
-
-    const status = (await handleGetCacheStatus()) as Record<
-      string,
-      Record<string, unknown>
-    >
-
-    expect(status.detail_npc_3040377000).toMatchObject({
-      available: true,
-      granblueId: '3040377000',
-      itemName: 'Cidala'
-    })
-    expect(status.detail_npc_3040377000).not.toHaveProperty('style')
-    expect(status.detail_npc_3040377000_style2).toMatchObject({
-      available: true,
-      granblueId: '3040377000',
-      itemName: 'Cidala',
-      style: 2,
-      styleName: 'Super Cidala'
-    })
-  })
-
-  it('treats a payload without a style as the first style', async () => {
-    storage['gbf_cache_detail_npc_3040377000'] = entry()
-
-    const status = (await handleGetCacheStatus()) as Record<
-      string,
-      Record<string, unknown>
-    >
-
-    expect(status.detail_npc_3040377000).not.toHaveProperty('style')
-  })
-
+describe('handleGetCachedData for queued detail pages', () => {
   it('loads a style-2 capture by its dataType', async () => {
-    storage['gbf_cache_detail_npc_3040377000'] = entry(1)
-    storage['gbf_cache_detail_npc_3040377000_style2'] = entry(2)
+    const capture = (style: number) => ({
+      key: `npc_3040377000_${style}_en`,
+      type: 'npc' as const,
+      granblueId: '3040377000',
+      name: 'Cidala',
+      lang: 'en' as const,
+      style,
+      capturedAt: Date.now()
+    })
+    await putCapture(capture(1), { id: '3040377000', style: 1 })
+    await putCapture(capture(2), { id: '3040377000', style: 2 })
 
-    const result = await handleGetCachedData('detail_npc_3040377000_style2')
+    const result = await handleGetCachedData('detail_npc_3040377000_2_en')
 
     expect((result.data as { style: number }).style).toBe(2)
+  })
+
+  it('reports a detail page that is not queued', async () => {
+    expect(await handleGetCachedData('detail_npc_3040377000_1_en')).toEqual({
+      error: 'no_cached_data'
+    })
   })
 })

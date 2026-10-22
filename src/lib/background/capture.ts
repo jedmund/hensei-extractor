@@ -92,8 +92,7 @@ export function createCaptureHandler(dependencies: CaptureDependencies) {
         const result = await dependencies.cacheDetailItem(
           dataType,
           data as Record<string, unknown>,
-          timestamp,
-          url
+          timestamp
         )
         actualDataType = result.dataType
         cached = result.cached

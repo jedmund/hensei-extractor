@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  detailCacheSuffix,
-  npcStyleEntry,
-  npcStyleName,
-  npcStyleOf,
-  parseDetailSuffix
-} from './detail-style.js'
+import { npcStyleEntry, npcStyleName, npcStyleOf } from './detail-style.js'
 
 const styleList = [
   { name: 'Default Style', image: '3040377000_01', style: 1 },
@@ -28,6 +22,7 @@ describe('npcStyleOf', () => {
     [{ style: '2' }, 2],
     [{ style: 'x' }, 1],
     [{ style: 0 }, 1],
+    [{ param: { style: '2' } }, 2],
     [null, 1]
   ])('reads the style of %j as %i', (data, expected) => {
     expect(npcStyleOf(data)).toBe(expected)
@@ -46,37 +41,5 @@ describe('npcStyleEntry / npcStyleName', () => {
     expect(npcStyleName(style1)).toBeUndefined()
     expect(npcStyleName(noStyle)).toBeUndefined()
     expect(npcStyleName({ style: 2 })).toBeUndefined()
-  })
-})
-
-describe('detailCacheSuffix', () => {
-  it('keeps the plain id for style 1 and payloads without a style', () => {
-    expect(detailCacheSuffix('detail_npc', '3040377000', style1)).toBe(
-      '3040377000'
-    )
-    expect(detailCacheSuffix('detail_npc', '3040001000', noStyle)).toBe(
-      '3040001000'
-    )
-  })
-
-  it('keys later styles apart', () => {
-    expect(detailCacheSuffix('detail_npc', '3040377000', style2)).toBe(
-      '3040377000_style2'
-    )
-  })
-
-  it('ignores style on weapons and summons', () => {
-    expect(detailCacheSuffix('detail_weapon', '1040001000', { style: 2 })).toBe(
-      '1040001000'
-    )
-  })
-})
-
-describe('parseDetailSuffix', () => {
-  it.each([
-    ['3040377000', { granblueId: '3040377000', style: 1 }],
-    ['3040377000_style2', { granblueId: '3040377000', style: 2 }]
-  ])('splits %s', (suffix, expected) => {
-    expect(parseDetailSuffix(suffix)).toEqual(expected)
   })
 })
