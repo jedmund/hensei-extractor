@@ -72,7 +72,9 @@ export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {
     if (!auth) return { error: 'not_logged_in' }
 
     const response = await apiFetch(
-      await getApiUrl(`/users/${auth.user.username}/playlists?per_page=100`),
+      await getApiUrl(
+        `/users/${encodeURIComponent(auth.user.username)}/playlists?per_page=100`
+      ),
       {
         headers: { Authorization: `Bearer ${auth.access_token}` }
       }
@@ -225,7 +227,9 @@ export async function getCollectionIds(): Promise<
   const userId = auth.user?.id
   if (!userId) return { error: 'not_logged_in' }
 
-  const apiUrl = await getApiUrl(`/users/${userId}/collection/game_ids`)
+  const apiUrl = await getApiUrl(
+    `/users/${encodeURIComponent(userId)}/collection/game_ids`
+  )
   try {
     const response = await apiFetch(apiUrl, {
       method: 'GET',

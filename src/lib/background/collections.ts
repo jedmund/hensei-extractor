@@ -75,7 +75,7 @@ export async function uploadPartyData(
   let shareFailed = false
   if (shareWithCrew && result.data?.party_id) {
     const share = await authenticatedPost(
-      `/parties/${result.data.party_id}/shares`,
+      `/parties/${encodeURIComponent(String(result.data.party_id))}/shares`,
       {}
     )
     shareFailed = !!share.error

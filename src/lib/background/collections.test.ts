@@ -132,6 +132,22 @@ describe('uploadPartyData', () => {
 
     expect(res).toMatchObject({ success: true, shareFailed: true })
   })
+
+  it('encodes the party id in the share path', async () => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost)
+      .mockResolvedValueOnce({
+        data: { shortcode: 'abc123', party_id: 'a/b?c#d e', warnings: [] }
+      })
+      .mockResolvedValueOnce({ data: {} })
+
+    await uploadPartyData({}, undefined, [], undefined, 1, true)
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith(
+      '/parties/a%2Fb%3Fc%23d%20e/shares',
+      {}
+    )
+  })
 })
 
 describe('uploadDetailData', () => {
