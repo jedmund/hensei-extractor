@@ -21,6 +21,10 @@ import {
 // ENDPOINT PATTERNS TO INTERCEPT
 // ==========================================
 
+/**
+ * The game's hosts. This list, not the manifest's host_permissions, decides
+ * which tabs the debugger attaches to (see debugger.ts).
+ */
 export const GBF_DOMAINS = [
   'game.granbluefantasy.jp',
   'gbf.game.mbga.jp',

@@ -42,6 +42,11 @@ export default defineConfig({
       process.env.WXT_STORE_BUILD === 'true'
         ? undefined
         : 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAneysCmA4/TSeufKcsRbxlEkoick7MsfftmKKlqPsrtwekK1IM8+uftN53WwOyXcHwkgMSd68TBJIgH6QgtJt2vj56Myp+U0dJ43byt9t5KgjtjQ2pDyBPHAaSNYaKeRPdyykqfk6lE/n7UkbbQhypBKRB2eJiL8iN1RY/55vePmW2QjGkdjaj7qPwc2WtVy4P6+9gRXCuY3qH7jS/pJPNI0OS4R7iqOVPV7LLvyUbfEhg+8BLlIWAzoS/f3pDHIepTL8OCukwQomBySqqeE92elqQudMw+TWeGX5zl5qb94ZSqkWYger1RpISyF31hGTxFtdeClM60Q4MTg0ktP6gwIDAQAB',
+    // `debugger` is how game data is captured: it reads the responses the
+    // game page already receives. Chrome doesn't scope it by
+    // host_permissions, so the extension does: it only attaches to tabs on
+    // GBF_DOMAINS (src/lib/intercept-routes.ts), re-checks the URL right
+    // before attaching, and detaches when a tab leaves the game.
     permissions: [
       'storage',
       'debugger',
@@ -50,6 +55,10 @@ export default defineConfig({
       'cookies',
       'identity'
     ],
+    // The game hosts here aren't what capture depends on (that's the
+    // debugger check above). steam.granbluefantasy.com is in GBF_DOMAINS
+    // but not here on purpose: adding a host can make Chrome ask existing
+    // users to approve the update before the extension runs again.
     host_permissions: [
       'https://game.granbluefantasy.jp/*',
       'https://gbf.game.mbga.jp/*',
