@@ -54,6 +54,25 @@ export function resolveEndpoint(dataType: string): string | null {
   return null
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+/**
+ * A captured party deck without the player's uid (`deck.pc.param.id`),
+ * which the import doesn't use. Everything else is kept, and `data` is
+ * never changed, so the cached capture stays as it was.
+ */
+export function withoutPlayerUid(data: unknown): unknown {
+  if (!isRecord(data) || !isRecord(data.deck)) return data
+  const pc = data.deck.pc
+  if (!isRecord(pc) || !isRecord(pc.param)) return data
+
+  const param = { ...pc.param }
+  delete param.id
+  return { ...data, deck: { ...data.deck, pc: { ...pc, param } } }
+}
+
 export async function uploadPartyData(
   data: unknown,
   raidId?: string,
@@ -62,7 +81,7 @@ export async function uploadPartyData(
   visibility?: number,
   shareWithCrew?: boolean
 ): Promise<UploadPartyResponse> {
-  const body: Record<string, unknown> = { import: data }
+  const body: Record<string, unknown> = { import: withoutPlayerUid(data) }
   if (raidId) body.raid_id = raidId
   if (playlistIds && playlistIds.length > 0) body.playlist_ids = playlistIds
   if (name) body.name = name
