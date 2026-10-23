@@ -20,7 +20,11 @@
     status.partyName || status.displayName
   )
   const databaseTag = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return m.type_character()
+    if (dataType.startsWith('detail_npc')) {
+      return status.style && status.style > 1
+        ? `${m.type_character()}\u00A0\u00B7\u00A0${m.tag_style_shift()}`
+        : m.type_character()
+    }
     if (dataType.startsWith('detail_weapon')) return m.type_weapon()
     if (dataType.startsWith('detail_summon')) return m.type_summon()
     return ''

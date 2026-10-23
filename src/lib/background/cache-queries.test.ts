@@ -130,3 +130,66 @@ describe('handleGetCachedData', () => {
     })
   })
 })
+
+describe('handleGetCacheStatus for style shifts', () => {
+  const styleList = [
+    { name: 'Default Style', image: '3040377000_01', style: 1 },
+    { name: 'Super Cidala', image: '3040377000_01_st2', style: 2 }
+  ]
+  const entry = (style?: number) => ({
+    data: {
+      id: '3040377000',
+      name: 'Cidala',
+      ...(style != null && { style }),
+      style_list: styleList
+    },
+    timestamp: Date.now(),
+    url: 'u',
+    granblueId: '3040377000',
+    itemName: 'Cidala'
+  })
+
+  it('lists each style of a character with its granblue ID', async () => {
+    storage['gbf_cache_detail_npc_3040377000'] = entry(1)
+    storage['gbf_cache_detail_npc_3040377000_style2'] = entry(2)
+
+    const status = (await handleGetCacheStatus()) as Record<
+      string,
+      Record<string, unknown>
+    >
+
+    expect(status.detail_npc_3040377000).toMatchObject({
+      available: true,
+      granblueId: '3040377000',
+      itemName: 'Cidala'
+    })
+    expect(status.detail_npc_3040377000).not.toHaveProperty('style')
+    expect(status.detail_npc_3040377000_style2).toMatchObject({
+      available: true,
+      granblueId: '3040377000',
+      itemName: 'Cidala',
+      style: 2,
+      styleName: 'Super Cidala'
+    })
+  })
+
+  it('treats a payload without a style as the first style', async () => {
+    storage['gbf_cache_detail_npc_3040377000'] = entry()
+
+    const status = (await handleGetCacheStatus()) as Record<
+      string,
+      Record<string, unknown>
+    >
+
+    expect(status.detail_npc_3040377000).not.toHaveProperty('style')
+  })
+
+  it('loads a style-2 capture by its dataType', async () => {
+    storage['gbf_cache_detail_npc_3040377000'] = entry(1)
+    storage['gbf_cache_detail_npc_3040377000_style2'] = entry(2)
+
+    const result = await handleGetCachedData('detail_npc_3040377000_style2')
+
+    expect((result.data as { style: number }).style).toBe(2)
+  })
+})
