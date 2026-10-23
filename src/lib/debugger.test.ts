@@ -425,6 +425,30 @@ describe('tab attachment', () => {
     expect(harness.attach).not.toHaveBeenCalled()
   })
 
+  it('does not attach when the tab has left the game since the event', async () => {
+    harness.setTabUrl('https://example.com/')
+    await harness.updateTab({ status: 'complete' }, `${GAME}/#mypage`)
+
+    expect(harness.attach).not.toHaveBeenCalled()
+  })
+
+  it('does not attach when the tab is gone', async () => {
+    harness.failTabLookup()
+    await harness.updateTab({ status: 'complete' }, `${GAME}/#mypage`)
+
+    expect(harness.attach).not.toHaveBeenCalled()
+  })
+
+  it('detaches when the tab leaves the game while attaching', async () => {
+    harness.attach.mockImplementationOnce(async () => {
+      harness.setTabUrl('https://example.com/')
+    })
+    await harness.updateTab({ status: 'complete' }, `${GAME}/#mypage`)
+
+    expect(harness.attach).toHaveBeenCalled()
+    expect(harness.detach).toHaveBeenCalledWith({ tabId: TAB_ID })
+  })
+
   it('detaches when the tab navigates away from the game', async () => {
     await harness.updateTab({ status: 'complete' }, `${GAME}/#mypage`)
     await harness.updateTab(

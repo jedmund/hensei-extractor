@@ -144,6 +144,19 @@ describe('uploadSolomonisRun', () => {
     expect(result).toMatchObject({ success: true, shareFailed: true })
   })
 
+  it('encodes the party id in the share path', async () => {
+    vi.mocked(apiFetch).mockResolvedValue(
+      response(201, { party_id: 'a/b?c#d e', shortcode: 'run001' })
+    )
+
+    await uploadSolomonisRun(capture, { shareWithCrew: true })
+
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/parties/a%2Fb%3Fc%23d%20e/shares',
+      {}
+    )
+  })
+
   it('needs the expedition log and a login before posting', async () => {
     expect(await uploadSolomonisRun({ ...capture, report: null })).toEqual({
       error: 'solomonis_report_incomplete'
@@ -227,6 +240,21 @@ describe('uploadSolomonisParty', () => {
       {}
     )
     expect(result).toMatchObject({ success: true, shareFailed: true })
+  })
+
+  it('encodes the party id in the share path', async () => {
+    vi.mocked(authenticatedPost)
+      .mockResolvedValueOnce({
+        data: { party_id: 'a/b?c#d e', shortcode: 'a' }
+      })
+      .mockResolvedValueOnce({ data: {} })
+
+    await uploadSolomonisParty(deckResponse, { shareWithCrew: true })
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith(
+      '/parties/a%2Fb%3Fc%23d%20e/shares',
+      {}
+    )
   })
 
   it('posts nothing for a capture that is not a deck', async () => {

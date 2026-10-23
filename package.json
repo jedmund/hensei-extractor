@@ -27,19 +27,19 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.1.38",
-    "@wxt-dev/module-svelte": "latest",
+    "@wxt-dev/module-svelte": "2.0.5",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.23.0",
     "fake-indexeddb": "^6.2.6",
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
-    "sass": "latest",
+    "sass": "1.98.0",
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.71.0",
     "vitest": "^5.0.2",
-    "wxt": "latest"
+    "wxt": "0.20.20"
   },
   "dependencies": {
     "@inlang/paraglide-js": "^2.15.1",

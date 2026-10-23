@@ -117,7 +117,7 @@ export async function uploadSolomonisRun(
     typeof data.party_id === 'string'
   ) {
     const share = await authenticatedPost(
-      `/parties/${data.party_id}/shares`,
+      `/parties/${encodeURIComponent(data.party_id)}/shares`,
       {}
     )
     shareFailed = !!share.error
@@ -161,7 +161,7 @@ export async function uploadSolomonisParty(
   let shareFailed = false
   if (options.shareWithCrew && typeof data.party_id === 'string') {
     const share = await authenticatedPost(
-      `/parties/${data.party_id}/shares`,
+      `/parties/${encodeURIComponent(data.party_id)}/shares`,
       {}
     )
     shareFailed = !!share.error

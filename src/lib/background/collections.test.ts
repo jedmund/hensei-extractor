@@ -8,7 +8,8 @@ import {
   parseGameFilter,
   resolveEndpoint,
   uploadDetailData,
-  uploadPartyData
+  uploadPartyData,
+  withoutPlayerUid
 } from './collections.js'
 
 vi.mock('./api-client.js', () => ({
@@ -131,6 +132,71 @@ describe('uploadPartyData', () => {
     const res = await uploadPartyData({}, undefined, [], undefined, 1, true)
 
     expect(res).toMatchObject({ success: true, shareFailed: true })
+  })
+
+  it('encodes the party id in the share path', async () => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost)
+      .mockResolvedValueOnce({
+        data: { shortcode: 'abc123', party_id: 'a/b?c#d e', warnings: [] }
+      })
+      .mockResolvedValueOnce({ data: {} })
+
+    await uploadPartyData({}, undefined, [], undefined, 1, true)
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith(
+      '/parties/a%2Fb%3Fc%23d%20e/shares',
+      {}
+    )
+  })
+})
+
+describe('withoutPlayerUid', () => {
+  const deck = () => ({
+    deck: {
+      priority: 1,
+      pc: {
+        param: { id: 12345678, level: 200 },
+        job: { master: { id: '100401' } },
+        weapons: { '1': { param: { id: '991' } } }
+      },
+      npc: { '1': { param: { id: '881' } } }
+    },
+    bullet_info: []
+  })
+
+  it("removes the player's uid and keeps everything else", () => {
+    const captured = deck()
+
+    const shaped = withoutPlayerUid(captured)
+
+    const expected = deck() as { deck: { pc: { param: object } } }
+    expected.deck.pc.param = { level: 200 }
+    expect(shaped).toEqual(expected)
+    expect(captured).toEqual(deck())
+  })
+
+  it('passes a deck without player params through unchanged', () => {
+    const noParam = { deck: { pc: { job: {} }, npc: {} } }
+    expect(withoutPlayerUid(noParam)).toBe(noParam)
+    expect(withoutPlayerUid({})).toEqual({})
+    expect(withoutPlayerUid(null)).toBeNull()
+  })
+
+  it('sends the deck to /import without the uid', async () => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost).mockResolvedValue({
+      data: { shortcode: 'abc123', party_id: 'p1' }
+    })
+
+    await uploadPartyData(deck())
+
+    const [endpoint, body] = vi.mocked(authenticatedPost).mock.calls[0]!
+    expect(endpoint).toBe('/import')
+    expect(body).toMatchObject({
+      import: { deck: { pc: { param: { level: 200 } } } }
+    })
+    expect(JSON.stringify(body)).not.toContain('12345678')
   })
 })
 
