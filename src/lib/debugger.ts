@@ -121,14 +121,34 @@ function forgetPendingRequests(tabId: number): void {
   }
 }
 
+/** Whether the tab is on a game page right now. False if it's gone. */
+async function tabIsOnGame(tabId: number): Promise<boolean> {
+  try {
+    const tab = await chrome.tabs.get(tabId)
+    return isGameUrl(tab.url)
+  } catch {
+    return false
+  }
+}
+
+// Chrome doesn't limit the `debugger` permission to host_permissions: it
+// can attach to any ordinary tab. The extension needs it to read the
+// responses the game page already receives (Network.enable and
+// Network.getResponseBody only), and scopes it here instead: a tab is only
+// attached while its URL is on one of GBF_DOMAINS, checked again right
+// before attaching, and detached as soon as it leaves the game.
 async function doAttach(tabId: number): Promise<void> {
   if (attachedTabs.has(tabId)) return
+  // The tab may have navigated since it was picked.
+  if (!(await tabIsOnGame(tabId))) return
 
   try {
     await chrome.debugger.attach({ tabId }, '1.3')
     await chrome.debugger.sendCommand({ tabId }, 'Network.enable')
     attachedTabs.add(tabId)
     console.log(`[Debugger] Attached to tab ${tabId}`)
+    // A navigation during the attach found nothing to detach yet.
+    if (!(await tabIsOnGame(tabId))) await doDetach(tabId)
   } catch (e) {
     if (
       !(e as Error).message?.includes('Another debugger is already attached')
