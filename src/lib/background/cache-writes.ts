@@ -1,7 +1,8 @@
 import { CACHE_KEYS, CACHE_PREFIXES, CACHE_TTL_MS } from '../constants.js'
-import { detailCacheSuffix } from '../detail-style.js'
 import { decodeHtmlEntities } from '../html-entities.js'
+import { queueDetailCapture } from './database-queue.js'
 import { clearImportMark } from './import-marks.js'
+import { queueDataType } from './import-queue.js'
 import type {
   CachedGuildInfo,
   CachedListData,
@@ -25,36 +26,19 @@ export async function cacheSingleItem(
   return true
 }
 
+/**
+ * Adds a journal detail page to the import queue. The request URL isn't
+ * passed on: it carries the player's uid.
+ */
 export async function cacheDetailItem(
   dataType: string,
   data: Record<string, unknown>,
-  timestamp: number,
-  url: string
+  timestamp: number
 ): Promise<{ dataType: string; cached: boolean }> {
-  const master = data.master as Record<string, unknown> | undefined
-  const granblueId = (data.id as string) ?? master?.id
-  const name = (data.name as string) ?? master?.name ?? 'Unknown'
-
-  const prefix = CACHE_PREFIXES[dataType]
-  if (!prefix) {
-    const cached = await cacheSingleItem(dataType, data, timestamp, url)
-    return { dataType, cached }
-  }
-  // Style shifts share an id, so later styles are keyed apart from style 1
-  const suffix = detailCacheSuffix(dataType, String(granblueId), data)
-  const cacheKey = `${prefix}${suffix}`
-
-  await chrome.storage.local.set({
-    [cacheKey]: {
-      data,
-      timestamp,
-      url,
-      granblueId,
-      itemName: name
-    }
-  })
-
-  return { dataType: `${dataType}_${suffix}`, cached: true }
+  const key = await queueDetailCapture(dataType, data, timestamp)
+  return key
+    ? { dataType: queueDataType(key), cached: true }
+    : { dataType, cached: false }
 }
 
 export async function cacheParty(

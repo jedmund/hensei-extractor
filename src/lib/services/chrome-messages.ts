@@ -28,10 +28,16 @@ import type {
   WeaponKeyMap,
   WeaponStatModifiers
 } from '../types/messages.js'
+import type { ImportQueueState } from '../background/database-queue.js'
+import type { ImportSummary } from '../background/import-runner.js'
 import type {
   UploadSolomonisPartyResponse,
   UploadSolomonisRunResponse
 } from '../solomonis/upload.js'
+
+export type ImportQueueAllResponse = Partial<ImportSummary> & {
+  error?: string
+}
 
 function send(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message)
@@ -138,6 +144,18 @@ export async function uploadDetailData(
     action: 'uploadDetailData',
     dataType
   }) as Promise<UploadDetailResponse>
+}
+
+export async function getImportQueue(): Promise<ImportQueueState> {
+  return send({ action: 'getImportQueue' }) as Promise<ImportQueueState>
+}
+
+export async function importQueueAll(): Promise<ImportQueueAllResponse> {
+  return send({ action: 'importQueueAll' }) as Promise<ImportQueueAllResponse>
+}
+
+export async function clearImportQueue(): Promise<void> {
+  await send({ action: 'clearImportQueue' })
 }
 
 export async function uploadCharacterStats(

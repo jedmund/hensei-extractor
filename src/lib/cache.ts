@@ -103,16 +103,6 @@ export function formatCacheStatus(
         displayName = m.crew_event_label({ eventNumber: eventNum })
         const members = info.totalItems ?? 0
         subtitle = `${m.crew_daily_score()}\u00A0\u00B7\u00A0${m.crew_member_count({ count: members })}`
-      } else if (type.startsWith('detail_npc_')) {
-        displayName = npcDetailDisplayName(
-          info.itemName ?? m.type_character(),
-          info.style,
-          info.styleName
-        )
-      } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName ?? m.type_weapon()
-      } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName ?? m.type_summon()
       }
 
       formatted[type] = {

@@ -10,9 +10,11 @@
     onclick: () => void
     /** A square portrait shown before the name */
     thumbnail?: string
+    /** Why the last import of this capture failed */
+    error?: string
   }
 
-  let { status, dataType, onclick, thumbnail }: Props = $props()
+  let { status, dataType, onclick, thumbnail, error }: Props = $props()
 
   const isStash = $derived(dataType.startsWith('stash_'))
   const isDatabase = $derived(dataType.startsWith('detail_'))
@@ -58,10 +60,13 @@
     </div>
     {#if status.characterIds && status.characterIds.length > 0}
       <CharacterThumbs ids={status.characterIds} />
-    {:else if isDatabase && databaseTag}
-      <span class="cache-subtitle">{databaseTag}</span>
+    {:else if isDatabase && (status.subtitle || databaseTag)}
+      <span class="cache-subtitle">{status.subtitle || databaseTag}</span>
     {:else if status.subtitle}
       <span class="cache-subtitle">{status.subtitle}</span>
+    {/if}
+    {#if error}
+      <span class="cache-subtitle cache-item-error">{error}</span>
     {/if}
   </div>
   <div class="cache-right">

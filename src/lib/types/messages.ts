@@ -34,6 +34,9 @@ export type ExtensionMessage =
       playlistIds?: string[]
     }
   | { action: 'uploadDetailData'; dataType: string }
+  | { action: 'getImportQueue' }
+  | { action: 'importQueueAll' }
+  | { action: 'clearImportQueue' }
   | { action: 'checkConflicts'; dataType: string; selectedIndices?: number[] }
   | { action: 'checkCollectionUpdates'; dataType: string }
   | { action: 'checkCharacterStatsUpdates' }

@@ -1,5 +1,8 @@
 import { getSiteBaseUrl } from '../constants.js'
-import { detectPayloadLanguage } from '../detail-language.js'
+import {
+  detectPayloadLanguage,
+  type PayloadLanguage
+} from '../detail-language.js'
 import type {
   CheckConflictsResponse,
   CollectionUpdate,
@@ -91,24 +94,35 @@ export async function uploadPartyData(
   }
 }
 
+/**
+ * The language a detail payload was captured in. The payload's own text is
+ * the best signal; the cjs path and the account language only cover
+ * payloads with nothing to judge.
+ */
+export async function payloadLanguage(
+  data: Record<string, unknown>
+): Promise<PayloadLanguage> {
+  const detected = detectPayloadLanguage(data)
+  if (detected) return detected
+  const auth = await getAuthToken()
+  const cjs = typeof data.cjs === 'string' ? data.cjs : ''
+  return cjs.includes('_jp/') || auth?.language === 'ja' ? 'jp' : 'en'
+}
+
+/**
+ * Sends one detail payload to the game-data import. The queue passes the
+ * language it decided at capture, so the entry and the upload agree.
+ */
 export async function uploadDetailData(
   data: Record<string, unknown>,
-  dataType: string
+  dataType: string,
+  lang?: PayloadLanguage
 ): Promise<UploadDetailResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
-  // The payload's own text is the best signal; the cjs path and the site
-  // language only cover payloads with nothing to judge.
-  let lang = detectPayloadLanguage(data)
-  if (!lang) {
-    const auth = await getAuthToken()
-    const cjs = typeof data.cjs === 'string' ? data.cjs : ''
-    lang = cjs.includes('_jp/') || auth?.language === 'ja' ? 'jp' : 'en'
-  }
-
   const result = await authenticatedPost(
-    `/import/${endpoint}?lang=${lang}`,
+    `/import/${endpoint}?lang=${lang ?? (await payloadLanguage(data))}`,
     data
   )
   if (result.error) return { error: result.error }

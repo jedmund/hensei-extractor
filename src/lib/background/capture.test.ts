@@ -133,7 +133,12 @@ describe('capture dispatcher', () => {
       400
     )
 
-    expect(dependencies.cacheDetailItem).toHaveBeenCalled()
+    // The URL carries the player's uid and isn't passed to the queue
+    expect(dependencies.cacheDetailItem).toHaveBeenCalledWith(
+      'detail_npc',
+      data,
+      400
+    )
     expect(dependencies.cacheCharacterStats).toHaveBeenCalledWith(
       'character_detail',
       data,

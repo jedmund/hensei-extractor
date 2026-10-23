@@ -173,4 +173,14 @@ describe('uploadDetailData', () => {
       id: '1040001000'
     })
   })
+
+  it("sends the queue entry's language when it's given", async () => {
+    await uploadDetailData(npcDetailJp, 'detail_npc', 'en')
+
+    expect(getAuthToken).not.toHaveBeenCalled()
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=en',
+      npcDetailJp
+    )
+  })
 })
