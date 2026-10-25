@@ -289,7 +289,7 @@ export interface SummonSearchResult {
 
 /** What CharacterTags shows for a character, from GET /characters/:id */
 export interface CharacterTagData {
-  /** Hensei's element number (1 Wind … 6 Light) */
+  /** Element ID, game numbering (1 Fire … 6 Dark) */
   element: number | null
   season: number | null
   series: Array<{ name: { en: string; ja: string } }>

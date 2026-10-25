@@ -63,8 +63,18 @@ export const BUCKET = {
   raidThumbnail: 'raids/thumbnail'
 } as const
 
+// Images whose file names carry an element or proficiency number swapped names
+// when those numbers became the game's (October 2026). The query keeps a browser
+// from showing a copy it cached under the old numbering.
+const RENUMBERED_IMAGE =
+  /(?:_\d{2}_0[1-6](?:_[01])?\.jpg|\/gauph-[a-z]+-\d+\.png)$/
+
+export function withRenumberedQuery(url: string): string {
+  return RENUMBERED_IMAGE.test(url) ? `${url}?ids=game` : url
+}
+
 export function getImageUrl(path: string): string {
-  return `${IMG_URL}/${path}`
+  return withRenumberedQuery(`${IMG_URL}/${path}`)
 }
 
 export const DEFAULT_ENV = 'development'

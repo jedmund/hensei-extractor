@@ -6,9 +6,10 @@
     maxEvolutionArtSuffixes,
     type WeaponStatModifier
   } from '../../../lib/detail-helpers.js'
-  import { getCharacterArtFallbacks, toHenseiElement } from '../../../lib/images.js'
+  import { getCharacterArtFallbacks } from '../../../lib/images.js'
   import {
     CHARACTER_AWAKENING_MAPPING,
+    gameElementKey,
     NULL_ELEMENT_CHARACTER_IDS,
     resolveForgedSummonId
   } from '../../../lib/game-data.js'
@@ -165,10 +166,12 @@
   })
 
   // Null-element characters (Lyria, Young Cat) follow the party's element,
-  // which the main weapon sets, and have art for each element.
-  let partyElement = $derived(
-    toHenseiElement(mainWeapon?.master?.attribute as string | number | undefined)
-  )
+  // which the main weapon sets, and have art for each element. Their file
+  // names use the game's element ID.
+  let partyElement = $derived.by(() => {
+    const id = Number(mainWeapon?.master?.attribute)
+    return gameElementKey(id) ? id : null
+  })
 
   // When character art is missing, try the element art and then the base art
   // in turn (see getCharacterArtFallbacks). The queue is restarted whenever

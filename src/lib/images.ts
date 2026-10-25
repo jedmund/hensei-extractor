@@ -5,8 +5,12 @@
  * that's all it stores. The extension sees the game's own image ID
  * (param.image_id, data-image-id), so the suffix is taken from that instead.
  */
-import { BUCKET, getImageUrl } from './constants.js'
-import { resolveForgedSummonId } from './game-data.js'
+import { BUCKET, getImageUrl, withRenumberedQuery } from './constants.js'
+import {
+  gameElementKey,
+  resolveForgedSummonId,
+  type GameElementKey
+} from './game-data.js'
 
 export type SummonImageVariant = 'main' | 'grid' | 'square' | 'tall'
 export type PlaceholderType = 'character' | 'weapon' | 'summon'
@@ -42,28 +46,7 @@ export function getPlaceholderImageUrl(
   )
 }
 
-/**
- * The game's element IDs (`master.attribute`: 1 Fire, 2 Water, 3 Earth,
- * 4 Wind, 5 Light, 6 Dark) mapped to Hensei's (1 Wind, 2 Fire, 3 Water,
- * 4 Earth, 5 Dark, 6 Light), which image file names use. Same mapping as the
- * API's WeaponProcessor::ELEMENT_MAPPING.
- */
-const GAME_TO_HENSEI_ELEMENT: Record<string, number> = {
-  '1': 2,
-  '2': 3,
-  '3': 4,
-  '4': 1,
-  '5': 6,
-  '6': 5
-}
-
-export function toHenseiElement(
-  gameAttribute: string | number | null | undefined
-): number | null {
-  return GAME_TO_HENSEI_ELEMENT[String(gameAttribute ?? '')] ?? null
-}
-
-const CHARACTER_ART = /_(\d{2})(?:_[a-z0-9]+)*\.jpg$/
+const CHARACTER_ART = /_(\d{2})(?:_[a-z0-9]+)*\.jpg(?:\?[^#]*)?$/
 
 /**
  * The base `_01` art for a character image URL, or null when the URL is
@@ -78,14 +61,15 @@ export function getCharacterBaseArtUrl(url: string): string | null {
 /**
  * Character art to try, in order, when `url` fails to load. Null-element
  * characters such as SR Lyria follow the party's element and only have
- * element art (`{id}_{pose}_0{element}`), so with a party element those come
+ * element art (`{id}_{pose}_0{element}`, with the game's element ID), so with
+ * a party element those come
  * first: the same pose, then the base pose. The last resort is the `_01` art.
  * Characters with ordinary art never reach these, so they cost no extra
  * requests.
  */
 export function getCharacterArtFallbacks(
   url: string,
-  henseiElement: number | null = null
+  element: number | null = null
 ): string[] {
   const match = url.match(CHARACTER_ART)
   if (!match) return []
@@ -93,15 +77,17 @@ export function getCharacterArtFallbacks(
   const withSuffix = (suffix: string) =>
     url.replace(CHARACTER_ART, `${suffix}.jpg`)
 
-  const candidates = henseiElement
+  const candidates = element
     ? [
-        withSuffix(`_${pose}_0${henseiElement}`),
-        withSuffix(`_01_0${henseiElement}`),
+        withSuffix(`_${pose}_0${element}`),
+        withSuffix(`_01_0${element}`),
         withSuffix('_01')
       ]
     : [withSuffix('_01')]
 
-  return [...new Set(candidates)].filter((candidate) => candidate !== url)
+  return [...new Set(candidates.map(withRenumberedQuery))].filter(
+    (candidate) => candidate !== url
+  )
 }
 
 /**
@@ -119,23 +105,7 @@ export function getSummonImageUrl(
   return getImageUrl(`${SUMMON_BUCKETS[variant]}/${id}${suffix}.jpg`)
 }
 
-export type ElementIconKey =
-  | 'fire'
-  | 'water'
-  | 'earth'
-  | 'wind'
-  | 'light'
-  | 'dark'
-  | 'null'
-
-const HENSEI_ELEMENT_KEYS: Record<number, ElementIconKey> = {
-  1: 'wind',
-  2: 'fire',
-  3: 'water',
-  4: 'earth',
-  5: 'dark',
-  6: 'light'
-}
+export type ElementIconKey = GameElementKey | 'null'
 
 /**
  * A captured party's element: its main-hand weapon's, as in the party
@@ -149,8 +119,7 @@ export function partyElementKey(party: unknown): ElementIconKey | null {
       ? weapons[0]
       : (weapons as Record<string, unknown> | undefined)?.['1']
   ) as { master?: { attribute?: string | number } } | null | undefined
-  const element = toHenseiElement(main?.master?.attribute)
-  return element ? (HENSEI_ELEMENT_KEYS[element] ?? null) : null
+  return gameElementKey(main?.master?.attribute)
 }
 
 /** Round element icon, same file as hensei-web's getElementImage. */

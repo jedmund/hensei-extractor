@@ -52,8 +52,8 @@ describe('collection helpers', () => {
         }
       })
     ).toEqual({
-      elements: [2, 6],
-      proficiencies: [2, 10]
+      element_ids: [1, 5],
+      proficiency_ids: [2, 10]
     })
   })
 
@@ -72,7 +72,7 @@ describe('collection helpers', () => {
         1: {},
         2: { option: { filter: { '6': '000001' } } }
       })
-    ).toEqual({ elements: [5], proficiencies: null })
+    ).toEqual({ element_ids: [6], proficiency_ids: null })
   })
 
   it('converts captured character stats into import payloads', () => {
