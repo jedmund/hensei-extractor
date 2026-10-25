@@ -58,9 +58,10 @@ export interface ParsedMasteryData {
   masterName: string | null
 }
 
+/** Active collection filter, in game numbering (bit i of the game's filter = id i + 1). */
 export interface GameFilter {
-  elements: number[] | null
-  proficiencies: number[] | null
+  element_ids: number[] | null
+  proficiency_ids: number[] | null
 }
 
 export interface UploadCollectionOptions {

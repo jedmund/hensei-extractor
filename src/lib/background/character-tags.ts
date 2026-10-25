@@ -10,7 +10,11 @@
 import { apiFetch, getApiUrl } from '../constants.js'
 import type { CharacterTagData } from '../types/messages.js'
 
-const STORAGE_KEY = 'characterTagCache'
+// Versioned: v1 entries hold elements in Hensei's old numbering (1 Wind …
+// 6 Light). The API now uses the game's (1 Fire … 6 Dark), so they're
+// ignored and removed on the next write.
+const STORAGE_KEY = 'characterTagCache:v2'
+const LEGACY_STORAGE_KEY = 'characterTagCache'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const CONCURRENCY = 4
 
@@ -115,6 +119,7 @@ export async function fetchCharacterTags(
       await chrome.storage.local.set({
         [STORAGE_KEY]: { ...latest, ...fresh }
       })
+      await chrome.storage.local.remove(LEGACY_STORAGE_KEY)
     })
   }
   return result

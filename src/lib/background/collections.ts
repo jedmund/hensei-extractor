@@ -148,40 +148,35 @@ export async function uploadDetailData(
   return { success: true, ...result.data }
 }
 
+/**
+ * Reads the game's collection filter: one bit per element (key 6) or weapon
+ * kind (key 8), in the game's own order. Bit i is game id i + 1, which is
+ * also the API's numbering, so the ids go out unchanged. The `_ids` keys tell
+ * the API these are game numbers; older extension versions send Hensei's
+ * old numbering under `elements`/`proficiencies`.
+ */
 export function parseGameFilter(
   options: Record<string, unknown>
 ): GameFilter | null {
   const filter = options.filter as Record<string, string> | undefined
   if (!filter) return null
 
-  const result: GameFilter = { elements: null, proficiencies: null }
-
-  const elementStr = filter['6']
-  if (elementStr && typeof elementStr === 'string' && elementStr !== '000000') {
-    result.elements = []
-    const elementMap = [2, 3, 4, 1, 6, 5]
-    for (let i = 0; i < elementStr.length; i++) {
-      if (elementStr[i] === '1') {
-        result.elements.push(elementMap[i]!)
-      }
-    }
-    if (result.elements.length === 0) result.elements = null
+  const result: GameFilter = {
+    element_ids: activeFilterIds(filter['6']),
+    proficiency_ids: activeFilterIds(filter['8'])
   }
 
-  const profMap = [1, 2, 4, 3, 6, 9, 7, 5, 8, 10]
-  const profStr = filter['8']
-  if (profStr && typeof profStr === 'string' && profStr !== '0000000000') {
-    result.proficiencies = []
-    for (let i = 0; i < profStr.length; i++) {
-      if (profStr[i] === '1') {
-        result.proficiencies.push(profMap[i]!)
-      }
-    }
-    if (result.proficiencies.length === 0) result.proficiencies = null
-  }
-
-  if (!result.elements && !result.proficiencies) return null
+  if (!result.element_ids && !result.proficiency_ids) return null
   return result
+}
+
+function activeFilterIds(bits: unknown): number[] | null {
+  if (typeof bits !== 'string') return null
+  const ids: number[] = []
+  for (let i = 0; i < bits.length; i++) {
+    if (bits[i] === '1') ids.push(i + 1)
+  }
+  return ids.length > 0 ? ids : null
 }
 
 export function extractFilterFromPages(

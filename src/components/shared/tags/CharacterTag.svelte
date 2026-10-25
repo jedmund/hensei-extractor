@@ -4,6 +4,7 @@
 <script lang="ts">
   import * as m from '../../../paraglide/messages.js'
   import { getLocale } from '../../../lib/i18n.js'
+  import { gameElementKey } from '../../../lib/game-data.js'
   import type { CharacterTagData } from '../../../lib/types/messages.js'
 
   type TagType = 'season' | 'series' | 'style'
@@ -17,15 +18,6 @@
 
   let { character, type, seriesIndex = 0 }: Props = $props()
 
-  const ELEMENT_CLASSES: Record<number, string> = {
-    1: 'wind',
-    2: 'fire',
-    3: 'water',
-    4: 'earth',
-    5: 'dark',
-    6: 'light'
-  }
-
   // Seasons as in hensei-web's CharacterSeason
   const SEASONS: Record<number, () => string> = {
     1: m.season_valentine,
@@ -35,7 +27,7 @@
     5: m.season_holiday
   }
 
-  const elementClass = $derived(ELEMENT_CLASSES[character.element ?? 0] ?? 'neutral')
+  const elementClass = $derived(gameElementKey(character.element) ?? 'neutral')
 
   const displayText = $derived.by(() => {
     switch (type) {

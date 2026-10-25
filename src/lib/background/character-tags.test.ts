@@ -49,6 +49,9 @@ describe('fetchCharacterTags', () => {
           ),
           set: vi.fn(async (items: Record<string, unknown>) => {
             Object.assign(storage, structuredClone(items))
+          }),
+          remove: vi.fn(async (key: string) => {
+            delete storage[key]
           })
         }
       }
@@ -73,7 +76,7 @@ describe('fetchCharacterTags', () => {
     new Response(JSON.stringify(body), { status: 200 })
   const status = (code: number) => () => new Response(null, { status: code })
   const cache = () =>
-    storage.characterTagCache as Record<string, { data: unknown }>
+    storage['characterTagCache:v2'] as Record<string, { data: unknown }>
 
   it('caches a 404 as null', async () => {
     responses['3040000000'] = status(404)
@@ -91,7 +94,7 @@ describe('fetchCharacterTags', () => {
     expect(
       await fetchCharacterTags(['3040000001', '3040000002', '3040000003'])
     ).toEqual({ '3040000001': null, '3040000002': null, '3040000003': null })
-    expect(storage.characterTagCache).toBeUndefined()
+    expect(storage['characterTagCache:v2']).toBeUndefined()
 
     responses['3040000001'] = json({ element: 2 })
     const retried = await fetchCharacterTags(['3040000001'])
@@ -116,5 +119,16 @@ describe('fetchCharacterTags', () => {
     await first
 
     expect(Object.keys(cache()).sort()).toEqual(['3040000010', '3040000020'])
+  })
+
+  it('ignores and removes the old-numbered v1 cache', async () => {
+    storage.characterTagCache = {
+      '3040000030': { data: { element: 1 }, fetchedAt: Date.now() }
+    }
+    responses['3040000030'] = json({ element: 4 })
+    const { fetchCharacterTags } = await import('./character-tags.js')
+    const result = await fetchCharacterTags(['3040000030'])
+    expect(result['3040000030']?.element).toBe(4)
+    expect(storage.characterTagCache).toBeUndefined()
   })
 })

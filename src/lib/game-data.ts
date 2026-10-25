@@ -20,6 +20,34 @@ export const GAME_ELEMENT_NAMES: Record<GameElementId, string> = {
   6: 'Dark'
 }
 
+export type GameElementKey =
+  | 'fire'
+  | 'water'
+  | 'earth'
+  | 'wind'
+  | 'light'
+  | 'dark'
+
+/**
+ * Lowercase element keys by game element ID, as used in image file names and
+ * CSS classes. The API uses the same numbering.
+ */
+export const GAME_ELEMENT_KEYS: Record<GameElementId, GameElementKey> = {
+  1: 'fire',
+  2: 'water',
+  3: 'earth',
+  4: 'wind',
+  5: 'light',
+  6: 'dark'
+}
+
+/** The element key for a game element ID, or null for null/unknown. */
+export function gameElementKey(
+  id: string | number | null | undefined
+): GameElementKey | null {
+  return GAME_ELEMENT_KEYS[Number(id) as GameElementId] ?? null
+}
+
 export const GAME_PROFICIENCY_NAMES: Record<number, string> = {
   1: 'Sabre',
   2: 'Dagger',
