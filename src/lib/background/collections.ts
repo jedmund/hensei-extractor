@@ -1,4 +1,8 @@
 import { getSiteBaseUrl } from '../constants.js'
+import {
+  detectPayloadLanguage,
+  type PayloadLanguage
+} from '../detail-language.js'
 import type {
   CheckConflictsResponse,
   CollectionUpdate,
@@ -53,6 +57,25 @@ export function resolveEndpoint(dataType: string): string | null {
   return null
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+/**
+ * A captured party deck without the player's uid (`deck.pc.param.id`),
+ * which the import doesn't use. Everything else is kept, and `data` is
+ * never changed, so the cached capture stays as it was.
+ */
+export function withoutPlayerUid(data: unknown): unknown {
+  if (!isRecord(data) || !isRecord(data.deck)) return data
+  const pc = data.deck.pc
+  if (!isRecord(pc) || !isRecord(pc.param)) return data
+
+  const param = { ...pc.param }
+  delete param.id
+  return { ...data, deck: { ...data.deck, pc: { ...pc, param } } }
+}
+
 export async function uploadPartyData(
   data: unknown,
   raidId?: string,
@@ -61,7 +84,7 @@ export async function uploadPartyData(
   visibility?: number,
   shareWithCrew?: boolean
 ): Promise<UploadPartyResponse> {
-  const body: Record<string, unknown> = { import: data }
+  const body: Record<string, unknown> = { import: withoutPlayerUid(data) }
   if (raidId) body.raid_id = raidId
   if (playlistIds && playlistIds.length > 0) body.playlist_ids = playlistIds
   if (name) body.name = name
@@ -74,7 +97,7 @@ export async function uploadPartyData(
   let shareFailed = false
   if (shareWithCrew && result.data?.party_id) {
     const share = await authenticatedPost(
-      `/parties/${result.data.party_id}/shares`,
+      `/parties/${encodeURIComponent(String(result.data.party_id))}/shares`,
       {}
     )
     shareFailed = !!share.error
@@ -90,63 +113,70 @@ export async function uploadPartyData(
   }
 }
 
+/**
+ * The language a detail payload was captured in. The payload's own text is
+ * the best signal; the cjs path and the account language only cover
+ * payloads with nothing to judge.
+ */
+export async function payloadLanguage(
+  data: Record<string, unknown>
+): Promise<PayloadLanguage> {
+  const detected = detectPayloadLanguage(data)
+  if (detected) return detected
+  const auth = await getAuthToken()
+  const cjs = typeof data.cjs === 'string' ? data.cjs : ''
+  return cjs.includes('_jp/') || auth?.language === 'ja' ? 'jp' : 'en'
+}
+
+/**
+ * Sends one detail payload to the game-data import. The queue passes the
+ * language it decided at capture, so the entry and the upload agree.
+ */
 export async function uploadDetailData(
   data: Record<string, unknown>,
-  dataType: string
+  dataType: string,
+  lang?: PayloadLanguage
 ): Promise<UploadDetailResponse> {
   const endpoint = resolveEndpoint(dataType)
   if (!endpoint) return { error: 'unknown_type' }
 
-  const auth = await getAuthToken()
-  let lang = 'en'
-  if (data.cjs && (data.cjs as string).includes('_jp/')) {
-    lang = 'jp'
-  } else if (auth?.language === 'ja') {
-    lang = 'jp'
-  }
-
   const result = await authenticatedPost(
-    `/import/${endpoint}?lang=${lang}`,
+    `/import/${endpoint}?lang=${lang ?? (await payloadLanguage(data))}`,
     data
   )
   if (result.error) return { error: result.error }
   return { success: true, ...result.data }
 }
 
+/**
+ * Reads the game's collection filter: one bit per element (key 6) or weapon
+ * kind (key 8), in the game's own order. Bit i is game id i + 1, which is
+ * also the API's numbering, so the ids go out unchanged. The `_ids` keys tell
+ * the API these are game numbers; older extension versions send Hensei's
+ * old numbering under `elements`/`proficiencies`.
+ */
 export function parseGameFilter(
   options: Record<string, unknown>
 ): GameFilter | null {
   const filter = options.filter as Record<string, string> | undefined
   if (!filter) return null
 
-  const result: GameFilter = { elements: null, proficiencies: null }
-
-  const elementStr = filter['6']
-  if (elementStr && typeof elementStr === 'string' && elementStr !== '000000') {
-    result.elements = []
-    const elementMap = [2, 3, 4, 1, 6, 5]
-    for (let i = 0; i < elementStr.length; i++) {
-      if (elementStr[i] === '1') {
-        result.elements.push(elementMap[i]!)
-      }
-    }
-    if (result.elements.length === 0) result.elements = null
+  const result: GameFilter = {
+    element_ids: activeFilterIds(filter['6']),
+    proficiency_ids: activeFilterIds(filter['8'])
   }
 
-  const profMap = [1, 2, 4, 3, 6, 9, 7, 5, 8, 10]
-  const profStr = filter['8']
-  if (profStr && typeof profStr === 'string' && profStr !== '0000000000') {
-    result.proficiencies = []
-    for (let i = 0; i < profStr.length; i++) {
-      if (profStr[i] === '1') {
-        result.proficiencies.push(profMap[i]!)
-      }
-    }
-    if (result.proficiencies.length === 0) result.proficiencies = null
-  }
-
-  if (!result.elements && !result.proficiencies) return null
+  if (!result.element_ids && !result.proficiency_ids) return null
   return result
+}
+
+function activeFilterIds(bits: unknown): number[] | null {
+  if (typeof bits !== 'string') return null
+  const ids: number[] = []
+  for (let i = 0; i < bits.length; i++) {
+    if (bits[i] === '1') ids.push(i + 1)
+  }
+  return ids.length > 0 ? ids : null
 }
 
 export function extractFilterFromPages(

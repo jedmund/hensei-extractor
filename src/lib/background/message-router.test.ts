@@ -8,6 +8,7 @@ import * as partyReference from './party-reference.js'
 import * as apiClient from './api-client.js'
 import * as cacheQueries from './cache-queries.js'
 import { withImportMark } from './import-marks.js'
+import * as databaseQueue from './database-queue.js'
 import {
   uploadSolomonisParty,
   uploadSolomonisRun
@@ -33,6 +34,12 @@ vi.mock('./import-marks.js', () => ({
   withImportMark: vi.fn((_dataType: string, upload: () => Promise<unknown>) =>
     upload()
   )
+}))
+vi.mock('./database-queue.js', () => ({
+  clearImportQueue: vi.fn(async () => ({ success: true })),
+  getImportQueue: vi.fn(async () => ({})),
+  importQueueAll: vi.fn(async () => ({})),
+  importQueuedItem: vi.fn(async () => ({ success: true }))
 }))
 vi.mock('./collections.js', () => ({
   checkCharacterStatsUpdates: vi.fn(async () => ({})),
@@ -181,12 +188,6 @@ describe('background message router', () => {
 
   it.each<[ExtensionMessage, string, () => unknown, unknown[]]>([
     [
-      { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
-      'detail_npc_3040001',
-      () => collections.uploadDetailData,
-      [PAGES, 'detail_npc_3040001']
-    ],
-    [
       { action: 'checkCollectionUpdates', dataType: 'collection_npc' },
       'collection_npc',
       () => collections.checkCollectionUpdates,
@@ -235,10 +236,6 @@ describe('background message router', () => {
   it.each<[ExtensionMessage, string]>([
     [{ action: 'uploadPartyData', dataType: 'party_1_2' }, 'party_1_2'],
     [
-      { action: 'uploadDetailData', dataType: 'detail_npc_3040001' },
-      'detail_npc_3040001'
-    ],
-    [
       { action: 'uploadCollectionData', dataType: 'collection_npc' },
       'collection_npc'
     ],
@@ -275,12 +272,43 @@ describe('background message router', () => {
   it('returns no_cached_data without calling the upload', async () => {
     vi.mocked(loadCachedDataForUpload).mockResolvedValue(null)
 
+    send({ action: 'uploadCollectionData', dataType: 'collection_npc' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'no_cached_data' })
+    )
+    expect(collections.uploadCollectionData).not.toHaveBeenCalled()
+  })
+
+  it('imports a queued journal page by its queue key', async () => {
+    send({ action: 'uploadDetailData', dataType: 'detail_npc_3040001_2_jp' })
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ success: true })
+    )
+    expect(databaseQueue.importQueuedItem).toHaveBeenCalledWith(
+      'npc_3040001_2_jp'
+    )
+    expect(withImportMark).not.toHaveBeenCalled()
+  })
+
+  it('answers no_cached_data for a detail page outside the queue', async () => {
     send({ action: 'uploadDetailData', dataType: 'detail_npc_3040001' })
 
     await vi.waitFor(() =>
       expect(sendResponse).toHaveBeenCalledWith({ error: 'no_cached_data' })
     )
-    expect(collections.uploadDetailData).not.toHaveBeenCalled()
+    expect(databaseQueue.importQueuedItem).not.toHaveBeenCalled()
+  })
+
+  it.each<[ExtensionMessage, () => unknown]>([
+    [{ action: 'getImportQueue' }, () => databaseQueue.getImportQueue],
+    [{ action: 'importQueueAll' }, () => databaseQueue.importQueueAll],
+    [{ action: 'clearImportQueue' }, () => databaseQueue.clearImportQueue]
+  ])('routes %o to the import queue', async (message, target) => {
+    send(message)
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled())
+    expect(target()).toHaveBeenCalled()
   })
 
   it('forwards party import metadata', async () => {

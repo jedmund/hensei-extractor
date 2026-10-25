@@ -27,6 +27,20 @@ export function isStale(timestamp: number): boolean {
   return Date.now() - timestamp > CACHE_TTL_MS
 }
 
+/**
+ * A database character's name for its captured style: a later style shows
+ * its own name from the payload (e.g. "Super Cidala"), or the character's
+ * name marked as a style shift when the payload doesn't name it.
+ */
+export function npcDetailDisplayName(
+  name: string,
+  style: number | undefined,
+  styleName: string | undefined
+): string {
+  if (!style || style <= 1) return name
+  return styleName || m.detail_style_shift_name({ name })
+}
+
 export function formatCacheStatus(
   status: Record<string, CacheStatusInfo>
 ): Record<string, FormattedCacheStatus> {
@@ -89,12 +103,6 @@ export function formatCacheStatus(
         displayName = m.crew_event_label({ eventNumber: eventNum })
         const members = info.totalItems ?? 0
         subtitle = `${m.crew_daily_score()}\u00A0\u00B7\u00A0${m.crew_member_count({ count: members })}`
-      } else if (type.startsWith('detail_npc_')) {
-        displayName = info.itemName ?? m.type_character()
-      } else if (type.startsWith('detail_weapon_')) {
-        displayName = info.itemName ?? m.type_weapon()
-      } else if (type.startsWith('detail_summon_')) {
-        displayName = info.itemName ?? m.type_summon()
       }
 
       formatted[type] = {

@@ -7,6 +7,7 @@ import {
 import { getAttachedTabs, isAttached } from '../debugger.js'
 import { partyElementKey } from '../images.js'
 import { importedAtOf } from './import-marks.js'
+import { getEntry, getPayload, queueKeyFromDataType } from './import-queue.js'
 import type {
   CachedDataResult,
   CachedUnfScores,
@@ -27,6 +28,23 @@ import type {
  */
 function isKeptUntilCleared(dataType: string): boolean {
   return dataType.startsWith('solomonis_deck_')
+}
+
+/**
+ * A queued journal detail page. Queue entries don't expire: they stay until
+ * they're imported or cleared.
+ */
+async function getQueuedDetail(dataType: string): Promise<CachedDataResult> {
+  const key = queueKeyFromDataType(dataType)
+  const entry = key ? await getEntry(key) : null
+  const payload = entry ? await getPayload(entry.key) : null
+  if (!entry || !payload) return { error: 'no_cached_data' }
+  return {
+    data: payload,
+    timestamp: entry.capturedAt,
+    age: Date.now() - entry.capturedAt,
+    dataType
+  }
 }
 
 export async function loadCachedDataForUpload(
@@ -89,6 +107,10 @@ export async function handleGetCachedData(
       characterCount:
         cached.characterCount ?? Object.keys(cached.updates!).length
     }
+  }
+
+  if (dataType.startsWith('detail_')) {
+    return getQueuedDetail(dataType)
   }
 
   const cacheKey = resolveCacheKey(dataType)
@@ -286,15 +308,6 @@ export async function handleGetCacheStatus(): Promise<CacheStatusResult> {
         age,
         isStale: stale,
         stashName: (cacheEntry.stashName as string | null) ?? null
-      }
-    } else if (matchedPrefix.startsWith('detail_')) {
-      status[dataType] = {
-        available: !stale,
-        lastUpdated: timestamp,
-        age,
-        isStale: stale,
-        granblueId: suffix,
-        itemName: (cacheEntry.itemName as string) ?? 'Unknown'
       }
     } else if (matchedPrefix === 'solomonis_run') {
       // Expires like other captures; its timestamp is the latest capture of

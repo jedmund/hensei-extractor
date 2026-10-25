@@ -1,5 +1,6 @@
 <script lang="ts">
   import { GBF_CDN } from '../../../lib/constants.js'
+  import { npcStyleEntry, npcStyleOf } from '../../../lib/detail-style.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
   import {
     characterStatRows,
@@ -46,15 +47,24 @@
     data?.master?.specialty_weapon || data?.specialty_weapon || []
   )
 
+  // A later style's portrait is named by its style_list entry (e.g. 3040377000_01_st2)
+  let styleImage = $derived(npcStyleOf(rawData) > 1 ? npcStyleEntry(rawData)?.image : undefined)
+
   let imageUrl = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/detail/${id}_01.png`
+    if (dataType.startsWith('detail_npc')) {
+      return styleImage
+        ? `${GBF_CDN}/npc/detail/${styleImage}.png`
+        : `${GBF_CDN}/npc/detail/${id}_01.png`
+    }
     if (dataType.startsWith('detail_weapon')) return `${GBF_CDN}/weapon/b/${id}.png`
     if (dataType.startsWith('detail_summon')) return `${GBF_CDN}/summon/detail/${id}.png`
     return ''
   })
 
   let fallbackUrl = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return `${GBF_CDN}/npc/detail/${id}_01_0.png`
+    if (dataType.startsWith('detail_npc')) {
+      return styleImage ? `${GBF_CDN}/npc/detail/${id}_01.png` : `${GBF_CDN}/npc/detail/${id}_01_0.png`
+    }
     return ''
   })
 

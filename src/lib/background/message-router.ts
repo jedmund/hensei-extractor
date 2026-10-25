@@ -18,7 +18,6 @@ import {
   previewSyncDeletions,
   uploadCharacterStats,
   uploadCollectionData,
-  uploadDetailData,
   uploadPartyData
 } from './collections.js'
 import {
@@ -42,6 +41,13 @@ import {
   searchSummonByName
 } from './party-reference.js'
 import { fetchCharacterTags } from './character-tags.js'
+import {
+  clearImportQueue,
+  getImportQueue,
+  importQueueAll,
+  importQueuedItem
+} from './database-queue.js'
+import { queueKeyFromDataType } from './import-queue.js'
 import { uploadSupportSummons } from './support-summons.js'
 import { withImportMark } from './import-marks.js'
 import { deckEvoker, reportEvokerId, shapeDeck } from '../solomonis/deck.js'
@@ -138,12 +144,16 @@ export function createHandlers(
           )
         )
       ),
-    uploadDetailData: (m) =>
-      withImportMark(m.dataType, () =>
-        withCachedData<Record<string, unknown>, unknown>(m.dataType, (data) =>
-          uploadDetailData(data, m.dataType)
-        )
-      ),
+    // A queued journal page; success removes it from the queue
+    uploadDetailData: (m) => {
+      const key = queueKeyFromDataType(m.dataType)
+      return key
+        ? importQueuedItem(key)
+        : Promise.resolve({ error: 'no_cached_data' })
+    },
+    getImportQueue: () => getImportQueue(),
+    importQueueAll: () => importQueueAll(),
+    clearImportQueue: () => clearImportQueue(),
 
     // checkConflicts and uploadCharacterStats ignore selectedIndices today;
     // the whole cached capture is sent.

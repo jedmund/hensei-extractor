@@ -159,3 +159,7 @@
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
+
+.cache-subtitle.cache-item-error {
+  color: var(--color-error);
+}

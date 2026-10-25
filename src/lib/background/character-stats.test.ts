@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { parseZenithMasteryData } from './character-stats.js'
+import {
+  cacheCharacterStats,
+  parseZenithMasteryData
+} from './character-stats.js'
 
 vi.mock('../mastery.js', () => ({
   OVER_MASTERY_TYPE_ID: {
@@ -82,5 +85,28 @@ describe('parseZenithMasteryData', () => {
       earring: null,
       masterName: null
     })
+  })
+})
+
+describe('cacheCharacterStats with archive captures', () => {
+  it('leaves stats alone for an archive payload, which has no master', async () => {
+    const set = vi.fn()
+    vi.stubGlobal('chrome', {
+      storage: { local: { get: async () => ({}), set } }
+    })
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    // /archive/npc_detail sends id and style, never master or param
+    const style2 = { id: '3040377000', name: 'Cidala', style: 2 }
+    const cached = await cacheCharacterStats(
+      'character_detail',
+      style2,
+      null,
+      100,
+      'u'
+    )
+
+    expect(cached).toBe(false)
+    expect(set).not.toHaveBeenCalled()
   })
 })

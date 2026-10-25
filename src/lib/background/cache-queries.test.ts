@@ -1,3 +1,5 @@
+import 'fake-indexeddb/auto'
+import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../debugger.js', () => ({
@@ -7,10 +9,13 @@ vi.mock('../debugger.js', () => ({
 
 import { CACHE_TTL_MS } from '../constants.js'
 import { handleGetCachedData, handleGetCacheStatus } from './cache-queries.js'
+import { closeQueueDb, putCapture } from './import-queue.js'
 
 let storage: Record<string, unknown>
 
-beforeEach(() => {
+beforeEach(async () => {
+  await closeQueueDb()
+  globalThis.indexedDB = new IDBFactory()
   storage = {}
   vi.stubGlobal('chrome', {
     storage: {
@@ -127,6 +132,32 @@ describe('handleGetCachedData', () => {
     })
     expect(await handleGetCachedData('party_1_1')).toEqual({
       error: 'stale_data'
+    })
+  })
+})
+
+describe('handleGetCachedData for queued detail pages', () => {
+  it('loads a style-2 capture by its dataType', async () => {
+    const capture = (style: number) => ({
+      key: `npc_3040377000_${style}_en`,
+      type: 'npc' as const,
+      granblueId: '3040377000',
+      name: 'Cidala',
+      lang: 'en' as const,
+      style,
+      capturedAt: Date.now()
+    })
+    await putCapture(capture(1), { id: '3040377000', style: 1 })
+    await putCapture(capture(2), { id: '3040377000', style: 2 })
+
+    const result = await handleGetCachedData('detail_npc_3040377000_2_en')
+
+    expect((result.data as { style: number }).style).toBe(2)
+  })
+
+  it('reports a detail page that is not queued', async () => {
+    expect(await handleGetCachedData('detail_npc_3040377000_1_en')).toEqual({
+      error: 'no_cached_data'
     })
   })
 })

@@ -10,9 +10,11 @@
     onclick: () => void
     /** A square portrait shown before the name */
     thumbnail?: string
+    /** Why the last import of this capture failed */
+    error?: string
   }
 
-  let { status, dataType, onclick, thumbnail }: Props = $props()
+  let { status, dataType, onclick, thumbnail, error }: Props = $props()
 
   const isStash = $derived(dataType.startsWith('stash_'))
   const isDatabase = $derived(dataType.startsWith('detail_'))
@@ -20,7 +22,11 @@
     status.partyName || status.displayName
   )
   const databaseTag = $derived.by(() => {
-    if (dataType.startsWith('detail_npc')) return m.type_character()
+    if (dataType.startsWith('detail_npc')) {
+      return status.style && status.style > 1
+        ? `${m.type_character()}\u00A0\u00B7\u00A0${m.tag_style_shift()}`
+        : m.type_character()
+    }
     if (dataType.startsWith('detail_weapon')) return m.type_weapon()
     if (dataType.startsWith('detail_summon')) return m.type_summon()
     return ''
@@ -54,10 +60,13 @@
     </div>
     {#if status.characterIds && status.characterIds.length > 0}
       <CharacterThumbs ids={status.characterIds} />
-    {:else if isDatabase && databaseTag}
-      <span class="cache-subtitle">{databaseTag}</span>
+    {:else if isDatabase && (status.subtitle || databaseTag)}
+      <span class="cache-subtitle">{status.subtitle || databaseTag}</span>
     {:else if status.subtitle}
       <span class="cache-subtitle">{status.subtitle}</span>
+    {/if}
+    {#if error}
+      <span class="cache-subtitle cache-item-error">{error}</span>
     {/if}
   </div>
   <div class="cache-right">

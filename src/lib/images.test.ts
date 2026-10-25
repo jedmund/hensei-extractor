@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   getCharacterArtFallbacks,
   getCharacterBaseArtUrl,
-  toHenseiElement,
   getElementIconUrl,
   partyElementKey,
   getImageIdSuffix,
   getPlaceholderImageUrl,
   getSummonImageUrl
 } from './images.js'
+import { gameElementKey } from './game-data.js'
 
 describe('getCharacterBaseArtUrl', () => {
   const dir = 'https://siero-img.s3-us-west-2.amazonaws.com/characters/square'
@@ -36,19 +36,19 @@ describe('getCharacterBaseArtUrl', () => {
   })
 })
 
-describe('toHenseiElement', () => {
-  it("maps the game's element IDs to Hensei's", () => {
-    expect(toHenseiElement('1')).toBe(2) // Fire
-    expect(toHenseiElement(2)).toBe(3) // Water
-    expect(toHenseiElement('3')).toBe(4) // Earth
-    expect(toHenseiElement('4')).toBe(1) // Wind
-    expect(toHenseiElement('5')).toBe(6) // Light
-    expect(toHenseiElement('6')).toBe(5) // Dark
+describe('gameElementKey', () => {
+  it("names the game's element IDs", () => {
+    expect(gameElementKey('1')).toBe('fire')
+    expect(gameElementKey(2)).toBe('water')
+    expect(gameElementKey('3')).toBe('earth')
+    expect(gameElementKey('4')).toBe('wind')
+    expect(gameElementKey('5')).toBe('light')
+    expect(gameElementKey('6')).toBe('dark')
   })
 
   it('is null for no element or an unknown one', () => {
-    expect(toHenseiElement(undefined)).toBeNull()
-    expect(toHenseiElement('0')).toBeNull()
+    expect(gameElementKey(undefined)).toBeNull()
+    expect(gameElementKey('0')).toBeNull()
   })
 })
 
@@ -57,15 +57,24 @@ describe('getCharacterArtFallbacks', () => {
 
   it("tries the party element's art before the base art", () => {
     expect(getCharacterArtFallbacks(`${dir}/3030182000_03.jpg`, 2)).toEqual([
-      `${dir}/3030182000_03_02.jpg`,
-      `${dir}/3030182000_01_02.jpg`,
+      `${dir}/3030182000_03_02.jpg?ids=game`,
+      `${dir}/3030182000_01_02.jpg?ids=game`,
       `${dir}/3030182000_01.jpg`
     ])
   })
 
   it('skips the URL that just failed', () => {
     expect(getCharacterArtFallbacks(`${dir}/3030182000_01.jpg`, 5)).toEqual([
-      `${dir}/3030182000_01_05.jpg`
+      `${dir}/3030182000_01_05.jpg?ids=game`
+    ])
+  })
+
+  it('steps down from element art that already carries the query', () => {
+    expect(
+      getCharacterArtFallbacks(`${dir}/3030182000_03_02.jpg?ids=game`, 2)
+    ).toEqual([
+      `${dir}/3030182000_01_02.jpg?ids=game`,
+      `${dir}/3030182000_01.jpg`
     ])
   })
 

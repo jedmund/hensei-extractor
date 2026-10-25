@@ -58,9 +58,10 @@ export interface ParsedMasteryData {
   masterName: string | null
 }
 
+/** Active collection filter, in game numbering (bit i of the game's filter = id i + 1). */
 export interface GameFilter {
-  elements: number[] | null
-  proficiencies: number[] | null
+  element_ids: number[] | null
+  proficiency_ids: number[] | null
 }
 
 export interface UploadCollectionOptions {
@@ -109,6 +110,10 @@ export interface CacheStatusEntry {
   stashName?: string | null
   granblueId?: string
   itemName?: string
+  /** Database characters: the captured style, when it isn't the first */
+  style?: number
+  /** The style's own name from the payload, e.g. "Super Cidala" */
+  styleName?: string
   gbfUserId?: string | null
   /** Solomonis runs: the report ID and which of its two logs are captured */
   reportId?: string

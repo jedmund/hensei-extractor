@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { authenticatedPost } from './api-client.js'
+import npcDetailJp from '../__fixtures__/npc-detail-jp.json'
+import { authenticatedPost, getAuthToken } from './api-client.js'
 import {
   characterStatsToItems,
   collectPageItems,
   extractFilterFromPages,
   parseGameFilter,
   resolveEndpoint,
-  uploadPartyData
+  uploadDetailData,
+  uploadPartyData,
+  withoutPlayerUid
 } from './collections.js'
 
 vi.mock('./api-client.js', () => ({
@@ -49,8 +52,8 @@ describe('collection helpers', () => {
         }
       })
     ).toEqual({
-      elements: [2, 6],
-      proficiencies: [2, 10]
+      element_ids: [1, 5],
+      proficiency_ids: [2, 10]
     })
   })
 
@@ -69,7 +72,7 @@ describe('collection helpers', () => {
         1: {},
         2: { option: { filter: { '6': '000001' } } }
       })
-    ).toEqual({ elements: [5], proficiencies: null })
+    ).toEqual({ element_ids: [6], proficiency_ids: null })
   })
 
   it('converts captured character stats into import payloads', () => {
@@ -129,5 +132,121 @@ describe('uploadPartyData', () => {
     const res = await uploadPartyData({}, undefined, [], undefined, 1, true)
 
     expect(res).toMatchObject({ success: true, shareFailed: true })
+  })
+
+  it('encodes the party id in the share path', async () => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost)
+      .mockResolvedValueOnce({
+        data: { shortcode: 'abc123', party_id: 'a/b?c#d e', warnings: [] }
+      })
+      .mockResolvedValueOnce({ data: {} })
+
+    await uploadPartyData({}, undefined, [], undefined, 1, true)
+
+    expect(authenticatedPost).toHaveBeenLastCalledWith(
+      '/parties/a%2Fb%3Fc%23d%20e/shares',
+      {}
+    )
+  })
+})
+
+describe('withoutPlayerUid', () => {
+  const deck = () => ({
+    deck: {
+      priority: 1,
+      pc: {
+        param: { id: 12345678, level: 200 },
+        job: { master: { id: '100401' } },
+        weapons: { '1': { param: { id: '991' } } }
+      },
+      npc: { '1': { param: { id: '881' } } }
+    },
+    bullet_info: []
+  })
+
+  it("removes the player's uid and keeps everything else", () => {
+    const captured = deck()
+
+    const shaped = withoutPlayerUid(captured)
+
+    const expected = deck() as { deck: { pc: { param: object } } }
+    expected.deck.pc.param = { level: 200 }
+    expect(shaped).toEqual(expected)
+    expect(captured).toEqual(deck())
+  })
+
+  it('passes a deck without player params through unchanged', () => {
+    const noParam = { deck: { pc: { job: {} }, npc: {} } }
+    expect(withoutPlayerUid(noParam)).toBe(noParam)
+    expect(withoutPlayerUid({})).toEqual({})
+    expect(withoutPlayerUid(null)).toBeNull()
+  })
+
+  it('sends the deck to /import without the uid', async () => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost).mockResolvedValue({
+      data: { shortcode: 'abc123', party_id: 'p1' }
+    })
+
+    await uploadPartyData(deck())
+
+    const [endpoint, body] = vi.mocked(authenticatedPost).mock.calls[0]!
+    expect(endpoint).toBe('/import')
+    expect(body).toMatchObject({
+      import: { deck: { pc: { param: { level: 200 } } } }
+    })
+    expect(JSON.stringify(body)).not.toContain('12345678')
+  })
+})
+
+describe('uploadDetailData', () => {
+  beforeEach(() => {
+    vi.mocked(authenticatedPost).mockReset()
+    vi.mocked(authenticatedPost).mockResolvedValue({ data: {} })
+    vi.mocked(getAuthToken).mockReset()
+  })
+
+  it('sends a Japanese capture as jp even when the site is in English', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'en' } as never)
+
+    await uploadDetailData(npcDetailJp, 'detail_npc')
+
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=jp',
+      npcDetailJp
+    )
+  })
+
+  it('sends an English capture as en even when the site is in Japanese', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'ja' } as never)
+    const data = { master: { id: '3040377000', name: 'Cidala' } }
+
+    await uploadDetailData(data, 'detail_npc')
+
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=en',
+      data
+    )
+  })
+
+  it('falls back to the site language when the payload has no text', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({ language: 'ja' } as never)
+
+    await uploadDetailData({ id: '1040001000' }, 'detail_weapon')
+
+    expect(authenticatedPost).toHaveBeenCalledWith('/import/weapons?lang=jp', {
+      id: '1040001000'
+    })
+  })
+
+  it("sends the queue entry's language when it's given", async () => {
+    await uploadDetailData(npcDetailJp, 'detail_npc', 'en')
+
+    expect(getAuthToken).not.toHaveBeenCalled()
+    expect(authenticatedPost).toHaveBeenCalledWith(
+      '/import/characters?lang=en',
+      npcDetailJp
+    )
   })
 })

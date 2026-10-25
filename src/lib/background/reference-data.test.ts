@@ -1,11 +1,43 @@
 import { describe, expect, it, vi } from 'vitest'
-import { authenticatedPost } from './api-client.js'
-import { compareVersions, createPlaylist } from './reference-data.js'
+import { apiFetch } from '../constants.js'
+import { authenticatedPost, getAuthToken } from './api-client.js'
+import {
+  compareVersions,
+  createPlaylist,
+  fetchUserPlaylists,
+  getCollectionIds
+} from './reference-data.js'
 
 vi.mock('./api-client.js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api-client.js')>()),
-  authenticatedPost: vi.fn()
+  authenticatedPost: vi.fn(),
+  getAuthToken: vi.fn()
 }))
+vi.mock('../constants.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../constants.js')>()),
+  apiFetch: vi.fn(async () => new Response('{}', { status: 200 })),
+  getApiUrl: async (path: string) => `https://api.test/v1${path}`
+}))
+
+const AWKWARD = 'a/b?c#d e'
+
+describe('user paths', () => {
+  it('encodes the username and user id as single path segments', async () => {
+    vi.mocked(getAuthToken).mockResolvedValue({
+      access_token: 'token',
+      user: { id: AWKWARD, username: AWKWARD }
+    })
+
+    await fetchUserPlaylists()
+    await getCollectionIds()
+
+    const urls = vi.mocked(apiFetch).mock.calls.map(([url]) => String(url))
+    expect(urls).toEqual([
+      'https://api.test/v1/users/a%2Fb%3Fc%23d%20e/playlists?per_page=100',
+      'https://api.test/v1/users/a%2Fb%3Fc%23d%20e/collection/game_ids'
+    ])
+  })
+})
 
 describe('createPlaylist', () => {
   it('unwraps the playlist from the API response', async () => {

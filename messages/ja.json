@@ -487,5 +487,20 @@
   "season_summer": "水着",
   "season_halloween": "ハロウィン",
   "season_holiday": "クリスマス",
-  "tag_style": "スタイル"
+  "tag_style": "スタイル",
+  "tag_style_shift": "スタイルシフト",
+  "detail_style_shift_name": "{name}（スタイルシフト）",
+  "queue_import_all": "すべてインポート",
+  "queue_importing_progress": "インポート中... {done}/{total}",
+  "queue_import_result": "{imported}件をインポート・{failed}件失敗",
+  "queue_clear": "削除",
+  "queue_clear_title": "キャプチャデータを削除しますか？",
+  "queue_clear_body": "インポートしていない{count}件のキャプチャデータを削除します。ゲーム内でページを開き直すと再度キャプチャできます。",
+  "queue_cleared": "キャプチャデータを削除しました",
+  "queue_type_characters": "キャラクター",
+  "queue_type_weapons": "武器",
+  "queue_type_summons": "召喚石",
+  "queue_lang_en": "EN",
+  "queue_lang_jp": "JP",
+  "queue_status_failed": "失敗"
 }
