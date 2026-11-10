@@ -3,7 +3,7 @@
   import * as m from '../../paraglide/messages.js'
   import { app } from '../../lib/state/app.svelte.js'
   import { detailViewKind } from '../../lib/detail-data.js'
-  import { getCachedData, fetchElementVariants } from '../../lib/services/chrome-messages.js'
+  import { getCachedData } from '../../lib/services/chrome-messages.js'
   import { translateError } from '../../lib/i18n.js'
 
   import { onMount } from 'svelte'
@@ -71,10 +71,6 @@
       }
     }
     chrome.runtime.onMessage.addListener(onMessage)
-    // Warm the element-variant map so weapon image fallbacks are ready before
-    // the first render. Cached with a long TTL in background.ts; this is a no-op
-    // on cache hit.
-    void fetchElementVariants()
     return () => chrome.runtime.onMessage.removeListener(onMessage)
   })
 

@@ -12,7 +12,6 @@ export type ExtensionMessage =
   | { action: 'getDebuggerStatus' }
   | { action: 'popOutWindow' }
   | { action: 'fetchRaidGroups'; forceRefresh?: boolean }
-  | { action: 'fetchElementVariants'; forceRefresh?: boolean }
   | { action: 'fetchUserPlaylists' }
   | {
       action: 'createPlaylist'
@@ -232,19 +231,6 @@ export interface RaidGroup {
 /** Response from fetchRaidGroups */
 export interface FetchRaidGroupsResponse {
   data?: RaidGroup[]
-  error?: string
-}
-
-/** A weapon's element-variant ID map (element index → game variant ID) */
-export interface ElementVariantEntry {
-  id?: string
-  granblue_id: string
-  element_variant_ids: Record<string, string>
-}
-
-/** Response from fetchElementVariants */
-export interface FetchElementVariantsResponse {
-  data?: ElementVariantEntry[]
   error?: string
 }
 
