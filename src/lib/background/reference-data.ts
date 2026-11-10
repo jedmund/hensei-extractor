@@ -1,17 +1,14 @@
 import type {
   CheckVersionResponse,
   CreatePlaylistResponse,
-  FetchElementVariantsResponse,
   FetchPlaylistsResponse,
   FetchRaidGroupsResponse,
-  ElementVariantEntry,
   Playlist,
   RaidGroup
 } from '../types/messages.js'
 import {
   apiFetch,
   CACHE_KEYS,
-  ELEMENT_VARIANTS_CACHE_TTL_MS,
   getApiUrl,
   RAID_GROUPS_CACHE_TTL_MS
 } from '../constants.js'
@@ -143,51 +140,6 @@ export async function fetchRaidGroups(
   const apiUrl = await getApiUrl('/raid_groups')
   try {
     const response = await apiFetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${auth.access_token}`
-      }
-    })
-
-    if (!response.ok) {
-      return { error: await parseErrorResponse(response) }
-    }
-
-    const data = await response.json()
-
-    await chrome.storage.local.set({
-      [cacheKey]: { data, timestamp: Date.now() }
-    })
-
-    return { data }
-  } catch {
-    return { error: 'request_failed' }
-  }
-}
-
-export async function fetchElementVariants(
-  forceRefresh = false
-): Promise<FetchElementVariantsResponse> {
-  const cacheKey = CACHE_KEYS.element_variants!
-  const result = await chrome.storage.local.get(cacheKey)
-  const cached = result[cacheKey] as
-    | { timestamp: number; data: ElementVariantEntry[] }
-    | undefined
-
-  if (
-    !forceRefresh &&
-    cached?.timestamp &&
-    Date.now() - cached.timestamp < ELEMENT_VARIANTS_CACHE_TTL_MS
-  ) {
-    return { data: cached.data }
-  }
-
-  const auth = await getAuthToken()
-  if (!auth) return { error: 'not_logged_in' }
-
-  const apiUrl = await getApiUrl('/weapons/element_variants')
-  try {
-    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${auth.access_token}`
