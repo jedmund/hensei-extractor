@@ -98,8 +98,6 @@ export const AUGMENT_ICON_MAP: Record<string, string> = {
   ex_skill_ailment_enhance_down: 'befoul_debuff_down'
 }
 
-export const WEAPON_KEY_SERIES = new Set([3, 13, 17, 19, 27, 40, 44])
-
 /**
  * Null-element characters (element 0 in Hensei's database): they follow the
  * party's element and have art for each element, `{id}_{pose}_0{element}`.

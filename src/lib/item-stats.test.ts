@@ -9,6 +9,7 @@ import {
   getWeaponModifiers,
   type RawGameItem
 } from './detail-helpers.js'
+import type { WeaponKeyMap } from './types/messages.js'
 import {
   artifactLabelIcons,
   characterStatRows,
@@ -370,5 +371,54 @@ describe('befoulment value', () => {
       label: 'Befoulment',
       value: { kind: 'text', text: '-10%' }
     })
+  })
+})
+
+describe('weapon keys', () => {
+  // Real skill ids: Optimus Teluma grants Zion's Majesty (1232), which is
+  // also Sword of Repudiation's own first skill
+  const keyMap: WeaponKeyMap = {
+    '1232': {
+      slug: 'teluma-optimus',
+      name: 'Optimus Teluma',
+      series: [27, 40]
+    },
+    '2205': { slug: 'pendulum-beta', name: 'β Pendulum', series: [3] },
+    '1726': {
+      slug: 'chain-falsehood',
+      name: 'Chain of Falsehood',
+      series: [3]
+    },
+    '1590': {
+      slug: 'gauph-strength',
+      name: 'Gauph Key of Strength',
+      series: [13]
+    }
+  }
+
+  function keySlugs(seriesId: number, skillIds: string[], kind = '1') {
+    const item: Record<string, unknown> = {
+      master: { series_id: seriesId, kind }
+    }
+    skillIds.forEach((id, i) => (item[`skill${i + 1}`] = { id }))
+    return getWeaponModifiers(item as RawGameItem, keyMap).weaponKeys.map(
+      (key) => key.slug
+    )
+  }
+
+  it("skips a weapon's own skill that shares a key id from another series", () => {
+    // Sword of Repudiation at level 210
+    expect(keySlugs(3, ['1232', '2205', '1726'])).toEqual([
+      'pendulum-beta',
+      'chain-falsehood'
+    ])
+  })
+
+  it('shows keys that fit the weapon series', () => {
+    expect(keySlugs(27, ['1232'])).toEqual(['teluma-optimus'])
+  })
+
+  it('adds the proficiency to first-slot gauph keys', () => {
+    expect(keySlugs(13, ['1590'], '6')).toEqual(['gauph-strength-6'])
   })
 })
