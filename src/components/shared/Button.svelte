@@ -221,7 +221,7 @@
   }
 
   :global([data-button-root].subtle) {
-    background-color: var(--card-bg, white);
+    background-color: var(--card-bg);
     color: var(--color-text);
     border: 1px solid var(--button-bg);
 
@@ -232,7 +232,7 @@
   }
 
   :global([data-button-root].raised) {
-    background-color: var(--card-bg, white);
+    background-color: var(--card-bg);
     color: var(--color-text);
 
     &:hover:not(:disabled) {
