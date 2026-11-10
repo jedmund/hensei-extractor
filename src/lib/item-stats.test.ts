@@ -375,15 +375,18 @@ describe('befoulment value', () => {
 })
 
 describe('weapon keys', () => {
+  // Real skill ids: Optimus Teluma grants Zion's Majesty (1232), which is
+  // also Sword of Repudiation's own first skill
   const keyMap: WeaponKeyMap = {
-    '1446': {
-      slug: 'teluma-endurance',
-      name: 'Endurance Teluma',
+    '1232': {
+      slug: 'teluma-optimus',
+      name: 'Optimus Teluma',
       series: [27, 40]
     },
-    '700': {
-      slug: 'pendulum-strength',
-      name: 'Pendulum of Strength',
+    '2205': { slug: 'pendulum-beta', name: 'β Pendulum', series: [3] },
+    '1726': {
+      slug: 'chain-falsehood',
+      name: 'Chain of Falsehood',
       series: [3]
     },
     '1590': {
@@ -404,12 +407,15 @@ describe('weapon keys', () => {
   }
 
   it("skips a weapon's own skill that shares a key id from another series", () => {
-    // An Opus weapon's first skill shares its id with a teluma
-    expect(keySlugs(3, ['1446', '700'])).toEqual(['pendulum-strength'])
+    // Sword of Repudiation at level 210
+    expect(keySlugs(3, ['1232', '2205', '1726'])).toEqual([
+      'pendulum-beta',
+      'chain-falsehood'
+    ])
   })
 
   it('shows keys that fit the weapon series', () => {
-    expect(keySlugs(40, ['1446'])).toEqual(['teluma-endurance'])
+    expect(keySlugs(27, ['1232'])).toEqual(['teluma-optimus'])
   })
 
   it('adds the proficiency to first-slot gauph keys', () => {
