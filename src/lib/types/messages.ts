@@ -297,7 +297,14 @@ export interface CharacterTagData {
 }
 
 /** Weapon key skill id → the key's slug and localized name */
-export type WeaponKeyMap = Record<string, { slug: string; name: string }>
+/**
+ * Weapon key by game skill id. `series` lists the game series ids of the
+ * weapons the key fits: a weapon's own skill can share a key's skill id.
+ */
+export type WeaponKeyMap = Record<
+  string,
+  { slug: string; name: string; series: number[] }
+>
 
 /** A weapon stat modifier's names, keyed by slug in WeaponStatModifiers */
 export interface WeaponStatModifier {
