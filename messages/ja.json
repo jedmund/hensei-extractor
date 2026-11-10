@@ -38,6 +38,7 @@
   "warning_p3": "granblue.teamは使用に起因するアカウント停止やBANについて一切の責任を負いません。",
   "profile_logged_in_as": "ログイン中",
   "profile_language": "言語",
+  "profile_theme": "テーマ",
   "profile_clear_cache": "キャプチャデータを削除",
   "profile_show_disclaimer": "拡張機能の免責事項を表示",
   "profile_pop_out": "ウィンドウで開く",
