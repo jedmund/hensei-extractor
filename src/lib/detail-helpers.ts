@@ -4,14 +4,11 @@
  */
 
 import { BUCKET, getImageUrl } from './constants.js'
-import {
-  WEAPON_AWAKENING_ICONS,
-  WEAPON_KEY_SERIES,
-  AUGMENT_ICON_MAP
-} from './game-data.js'
+import { WEAPON_AWAKENING_ICONS, AUGMENT_ICON_MAP } from './game-data.js'
 import { getBaseGranblueIdForVariant } from './element-variants.js'
 import { getImageIdSuffix, getSummonImageUrl } from './images.js'
 import * as m from '../paraglide/messages.js'
+import type { WeaponKeyMap } from './types/messages.js'
 
 // ==========================================
 // RAW API ITEM SHAPES
@@ -341,9 +338,18 @@ export interface WeaponModifiers {
   weaponKeys: { slug: string; name: string }[]
 }
 
+const GAUPH_SLOT0 = [
+  'gauph-courage',
+  'gauph-strength',
+  'gauph-strife',
+  'gauph-vitality',
+  'gauph-will',
+  'gauph-zeal'
+]
+
 export function getWeaponModifiers(
   item: RawGameItem,
-  weaponKeyMap: Record<string, { slug: string; name: string }> | null = null
+  weaponKeyMap: WeaponKeyMap | null = null
 ): WeaponModifiers {
   const param = item.param ?? ({} as RawParam)
   const odiant = param.odiant ?? ({} as RawOdiant)
@@ -352,31 +358,19 @@ export function getWeaponModifiers(
   const weaponKeys: { slug: string; name: string }[] = []
   if (weaponKeyMap) {
     const seriesId = parseInt(String(item.master?.series_id))
-    if (WEAPON_KEY_SERIES.has(seriesId)) {
-      const weaponProficiency = parseInt(String(item.master?.kind)) || null
-      for (const skillKey of ['skill1', 'skill2', 'skill3'] as const) {
-        const skillRef = item[skillKey] as RawWeaponSkillRef | undefined
-        const skillId = skillRef?.id
-        if (skillId && weaponKeyMap[skillId]) {
-          const entry = weaponKeyMap[skillId]
-          const GAUPH_SLOT0 = [
-            'gauph-courage',
-            'gauph-strength',
-            'gauph-strife',
-            'gauph-vitality',
-            'gauph-will',
-            'gauph-zeal'
-          ]
-          const needsSuffix =
-            GAUPH_SLOT0.includes(entry.slug) && weaponProficiency
-          weaponKeys.push({
-            slug: needsSuffix
-              ? `${entry.slug}-${weaponProficiency}`
-              : entry.slug,
-            name: entry.name
-          })
-        }
-      }
+    const weaponProficiency = parseInt(String(item.master?.kind)) || null
+    for (const skillKey of ['skill1', 'skill2', 'skill3'] as const) {
+      const skillRef = item[skillKey] as RawWeaponSkillRef | undefined
+      const entry = skillRef?.id ? weaponKeyMap[skillRef.id] : undefined
+      // A weapon's own skill can share a key's skill id, so the key must
+      // also fit the weapon's series
+      if (!entry || !entry.series.includes(seriesId)) continue
+
+      const needsSuffix = GAUPH_SLOT0.includes(entry.slug) && weaponProficiency
+      weaponKeys.push({
+        slug: needsSuffix ? `${entry.slug}-${weaponProficiency}` : entry.slug,
+        name: entry.name
+      })
     }
   }
 

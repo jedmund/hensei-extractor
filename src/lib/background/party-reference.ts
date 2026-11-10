@@ -55,17 +55,22 @@ export async function fetchWeaponKeyMap(
     ])
     if (!skillMapRes.ok || !weaponKeysRes.ok) return null
     const skillMap: Record<string, string> = await skillMapRes.json()
-    const weaponKeys: Array<{ slug: string; name: Record<string, string> }> =
-      await weaponKeysRes.json()
+    const weaponKeys: Array<{
+      slug: string
+      name: Record<string, string>
+      game_series_ids?: number[]
+    }> = await weaponKeysRes.json()
 
-    const slugToName: Record<string, string> = {}
-    for (const key of weaponKeys) {
-      slugToName[key.slug] = key.name[locale] || key.name.en || key.slug
-    }
+    const keysBySlug = new Map(weaponKeys.map((key) => [key.slug, key]))
 
     const result: WeaponKeyMap = {}
     for (const [skillId, slug] of Object.entries(skillMap)) {
-      result[skillId] = { slug, name: slugToName[slug] || slug }
+      const key = keysBySlug.get(slug)
+      result[skillId] = {
+        slug,
+        name: key?.name[locale] || key?.name.en || slug,
+        series: key?.game_series_ids ?? []
+      }
     }
 
     weaponKeyMapCache[locale] = result

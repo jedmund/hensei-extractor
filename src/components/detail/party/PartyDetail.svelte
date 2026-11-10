@@ -14,6 +14,7 @@
     resolveForgedSummonId
   } from '../../../lib/game-data.js'
   import * as m from '../../../paraglide/messages.js'
+  import type { WeaponKeyMap } from '../../../lib/types/messages.js'
   import Tooltip from '../../shared/Tooltip.svelte'
   import CharacterModifiers from '../modifiers/CharacterModifiers.svelte'
   import WeaponModifiers from '../modifiers/WeaponModifiers.svelte'
@@ -73,7 +74,7 @@
     friendSummon?: SummonSearchResult | null
     /** True while the support summon is being looked up by name */
     friendSummonPending?: boolean
-    weaponKeyMap?: Record<string, { slug: string; name: string }> | null
+    weaponKeyMap?: WeaponKeyMap | null
     jobSkillSlugs?: Record<string, string | null>
     weaponStatModifiers?: Record<string, WeaponStatModifier> | null
     simplePortraits?: boolean

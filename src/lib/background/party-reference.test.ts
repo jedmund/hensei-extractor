@@ -75,7 +75,8 @@ describe('fetchWeaponKeyMap', () => {
         : ok([
             {
               slug: 'pendulum-strength',
-              name: { en: 'Pendulum of Strength', ja: '強壮のペンデュラム' }
+              name: { en: 'Pendulum of Strength', ja: '強壮のペンデュラム' },
+              game_series_ids: [3]
             }
           ])
     )
@@ -85,8 +86,12 @@ describe('fetchWeaponKeyMap', () => {
     mockKeyEndpoints()
 
     await expect(fetchWeaponKeyMap('ja')).resolves.toEqual({
-      '1001': { slug: 'pendulum-strength', name: '強壮のペンデュラム' },
-      '1002': { slug: 'unknown-key', name: 'unknown-key' }
+      '1001': {
+        slug: 'pendulum-strength',
+        name: '強壮のペンデュラム',
+        series: [3]
+      },
+      '1002': { slug: 'unknown-key', name: 'unknown-key', series: [] }
     })
     expect(apiFetch).toHaveBeenCalledWith(
       'https://api.test/v1/weapon_keys/skill_map'
