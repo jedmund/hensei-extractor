@@ -61,6 +61,7 @@ $element-button-bg-hover: #999;
   --color-link: #{$color-link};
   --color-bg: #{$color-bg};
   --color-bg-white: #{$color-bg-white};
+  --card-bg: white;
   --color-border: #{$color-border};
   --color-border-light: #{$color-border-light};
   --color-error: #{$color-error};
@@ -191,6 +192,7 @@ $element-button-bg-hover: #999;
   --color-link: #6195f4;
   --color-bg: #191919;
   --color-bg-white: #212121;
+  --card-bg: #212121;
   --color-border: rgba(255, 255, 255, 0.14);
   --color-border-light: rgba(255, 255, 255, 0.08);
 
