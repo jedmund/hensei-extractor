@@ -5,6 +5,7 @@
   import { getImageUrl, getSiteBaseUrl } from '../../lib/constants.js'
   import MenuItem from '../shared/MenuItem.svelte'
   import LanguageToggle from '../shared/LanguageToggle.svelte'
+  import ThemeToggle from '../shared/ThemeToggle.svelte'
   import {
     clearCache,
     popOutWindow
@@ -99,6 +100,7 @@
     </a>
 
     <LanguageToggle />
+    <ThemeToggle />
 
     <div class="popover-divider"></div>
 

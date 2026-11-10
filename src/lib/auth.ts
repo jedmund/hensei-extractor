@@ -120,12 +120,13 @@ export async function fetchUserInfo(accessToken: string): Promise<unknown> {
   return authenticatedFetch('/users/me', accessToken)
 }
 
-export async function updateUserLanguage(
+/** Saves account settings that the extension changes (language, theme). */
+export async function updateUserSettings(
   accessToken: string,
-  language: string
+  settings: { language?: string; theme?: string }
 ): Promise<unknown> {
   return authenticatedFetch('/users/me', accessToken, {
     method: 'PUT',
-    body: { user: { language } }
+    body: { user: settings }
   })
 }
