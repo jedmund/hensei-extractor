@@ -7,7 +7,6 @@ vi.mock('../constants.js', () => ({
   apiFetch: vi.fn(),
   getApiUrl: async (path: string) => `https://example.test${path}`,
   CACHE_KEYS: {},
-  ELEMENT_VARIANTS_CACHE_TTL_MS: 1000,
   RAID_GROUPS_CACHE_TTL_MS: 1000
 }))
 

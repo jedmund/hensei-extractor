@@ -17,7 +17,6 @@ import type {
   CheckUpdatesResponse,
   PreviewSyncDeletionsResponse,
   FetchRaidGroupsResponse,
-  FetchElementVariantsResponse,
   FetchPlaylistsResponse,
   CreatePlaylistResponse,
   CollectionIdsResponse,
@@ -206,15 +205,6 @@ export async function fetchRaidGroups(
     action: 'fetchRaidGroups',
     forceRefresh
   }) as Promise<FetchRaidGroupsResponse>
-}
-
-export async function fetchElementVariants(
-  forceRefresh = false
-): Promise<FetchElementVariantsResponse> {
-  return send({
-    action: 'fetchElementVariants',
-    forceRefresh
-  }) as Promise<FetchElementVariantsResponse>
 }
 
 export async function fetchUserPlaylists(): Promise<FetchPlaylistsResponse> {

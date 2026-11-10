@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../../../lib/state/app.svelte.js'
-  import { getItemImageUrl, getItemImageFallbackUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
+  import { getItemImageUrl, getGridClass, getCharacterModifiers, getWeaponModifiers, getOwnershipId, type WeaponStatModifier } from '../../../lib/detail-helpers.js'
   import { getCharacterBaseArtUrl } from '../../../lib/images.js'
   import * as m from '../../../paraglide/messages.js'
   import type { RawGameItem } from '../../../lib/detail-helpers.js'
@@ -31,23 +31,6 @@
   let isCharacterType = $derived(dataType.includes('npc') || dataType.includes('character'))
   let isWeaponType = $derived(dataType.includes('weapon') || dataType.startsWith('stash_weapon'))
 
-  // Per-item element-variant fallback URLs (resolved asynchronously from the
-  // cached /weapons/element_variants map). Keyed by originalIndex.
-  let variantFallbackUrls = $state<Map<number, string>>(new Map())
-
-  $effect(() => {
-    const currentItems = items
-    currentItems.forEach(({ item, originalIndex }) => {
-      if (variantFallbackUrls.has(originalIndex)) return
-      void getItemImageFallbackUrl(dataType, item).then((url) => {
-        if (!url) return
-        const next = new Map(variantFallbackUrls)
-        next.set(originalIndex, url)
-        variantFallbackUrls = next
-      })
-    })
-  })
-
   function toggleItem(index: number) {
     const next = new Set(app.selectedItems)
     const unchecked = new Set(app.manuallyUnchecked)
@@ -62,7 +45,7 @@
     app.manuallyUnchecked = unchecked
   }
 
-  function handleImageError(index: number, e: Event) {
+  function handleImageError(e: Event) {
     const img = e.target as HTMLImageElement
     const stage = img.dataset.fallbackStage ?? '0'
 
@@ -75,15 +58,6 @@
       if (stripped && stripped !== img.src) {
         img.dataset.fallbackStage = '1'
         img.src = stripped
-        return
-      }
-    }
-
-    if (stage === '0' || stage === '1') {
-      const variantFallback = variantFallbackUrls.get(index)
-      if (variantFallback && variantFallback !== img.src) {
-        img.dataset.fallbackStage = '2'
-        img.src = variantFallback
         return
       }
     }
@@ -131,7 +105,7 @@
             <img
               src={getItemImageUrl(dataType, item, simplePortraits)}
               alt=""
-              onerror={(e) => handleImageError(originalIndex, e)}
+              onerror={handleImageError}
             />
           </RichTooltip>
         </div>
@@ -140,7 +114,7 @@
         <img
           src={getItemImageUrl(dataType, item, simplePortraits)}
           alt=""
-          onerror={(e) => handleImageError(originalIndex, e)}
+          onerror={handleImageError}
         />
       {/if}
       {#if isCollection}

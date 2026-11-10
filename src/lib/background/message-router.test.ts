@@ -60,7 +60,6 @@ vi.mock('./crew.js', () => ({
 vi.mock('./reference-data.js', () => ({
   checkExtensionVersion: vi.fn(async () => null),
   createPlaylist: vi.fn(async () => ({})),
-  fetchElementVariants: vi.fn(async () => ({})),
   fetchRaidGroups: vi.fn(async () => ({})),
   fetchUserPlaylists: vi.fn(async () => ({})),
   getCollectionIds: vi.fn(async () => ({}))
@@ -118,11 +117,6 @@ describe('background message router', () => {
       { action: 'fetchRaidGroups', forceRefresh: true },
       () => referenceData.fetchRaidGroups,
       [true]
-    ],
-    [
-      { action: 'fetchElementVariants', forceRefresh: false },
-      () => referenceData.fetchElementVariants,
-      [false]
     ],
     [
       { action: 'fetchUserPlaylists' },

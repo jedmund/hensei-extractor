@@ -29,7 +29,6 @@ import {
 import {
   checkExtensionVersion,
   createPlaylist,
-  fetchElementVariants,
   fetchRaidGroups,
   fetchUserPlaylists,
   getCollectionIds
@@ -121,7 +120,6 @@ export function createHandlers(
     popOutWindow: () => windowManager.popOutWindow(),
 
     fetchRaidGroups: (m) => fetchRaidGroups(m.forceRefresh),
-    fetchElementVariants: (m) => fetchElementVariants(m.forceRefresh),
     fetchUserPlaylists: () => fetchUserPlaylists(),
     createPlaylist: (m) => createPlaylist(m.data),
     getCollectionIds: () => getCollectionIds(),
