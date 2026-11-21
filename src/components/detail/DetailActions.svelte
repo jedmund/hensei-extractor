@@ -9,6 +9,7 @@
     uploadDetailData,
     uploadCharacterStats,
     uploadSupportSummons,
+    uploadWonders,
     checkConflicts
   } from '../../lib/services/chrome-messages.js'
   import { isCollectionType } from '../../lib/detail-helpers.js'
@@ -30,6 +31,7 @@
   let isDatabase = $derived(dataType.startsWith('detail_'))
   let isCharStats = $derived(dataType === 'character_stats')
   let isSupportSummons = $derived(dataType === 'support_summons')
+  let isWonders = $derived(dataType === 'wonders')
   let isSolomonisRun = $derived(isSolomonisRunDataType(dataType))
   let isSolomonisDeck = $derived(isSolomonisDeckDataType(dataType))
   // A run imports once its expedition log is captured; the guidebook log
@@ -117,6 +119,7 @@
             shareFailed?: boolean
             created?: number
             updated?: number
+            skipped?: number
             unknownSummons?: string[]
           }
         | undefined
@@ -132,6 +135,8 @@
         })
       } else if (isSupportSummons) {
         response = await uploadSupportSummons()
+      } else if (isWonders) {
+        response = await uploadWonders()
       } else if (isDatabase) {
         response = await uploadDetailData(dataType)
       } else if (isCharStats) {
@@ -193,6 +198,15 @@
         app.importState = 'imported'
       } else if (isSupportSummons) {
         app.showToast(m.toast_saved_support_summons({ count: response?.created ?? 0 }))
+        app.importState = 'imported'
+      } else if (isWonders) {
+        app.showToast(
+          m.toast_imported_wonders({
+            created: response?.created ?? 0,
+            updated: response?.updated ?? 0,
+            skipped: response?.skipped ?? 0
+          })
+        )
         app.importState = 'imported'
       } else if (response?.created !== undefined) {
         const total = response.created + (response.updated || 0)

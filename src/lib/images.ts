@@ -5,12 +5,18 @@
  * that's all it stores. The extension sees the game's own image ID
  * (param.image_id, data-image-id), so the suffix is taken from that instead.
  */
-import { BUCKET, getImageUrl, withRenumberedQuery } from './constants.js'
+import {
+  BUCKET,
+  GBF_CDN,
+  getImageUrl,
+  withRenumberedQuery
+} from './constants.js'
 import {
   gameElementKey,
   resolveForgedSummonId,
   type GameElementKey
 } from './game-data.js'
+import { wonderLevel, type WonderItem } from './wonders.js'
 
 export type SummonImageVariant = 'main' | 'grid' | 'square' | 'tall'
 export type PlaceholderType = 'character' | 'weapon' | 'summon'
@@ -125,4 +131,29 @@ export function partyElementKey(party: unknown): ElementIconKey | null {
 /** Round element icon, same file as hensei-web's getElementImage. */
 export function getElementIconUrl(key: ElementIconKey): string {
   return getImageUrl(`${BUCKET.elements}/${key}.png`)
+}
+
+/**
+ * A Wonder's image, from the `image` granblue.team returns for it (e.g.
+ * "9008_20" for a level 20 Seal, "9015_10" for Symbolum, "29" otherwise).
+ */
+export function getWonderImageUrl(image: string): string {
+  return getImageUrl(`${BUCKET.wonders}/${image}.jpg`)
+}
+
+/** The game's own copy of a Wonder image, for one not uploaded to us yet. */
+export function getGameWonderImageUrl(image: string): string {
+  return `${GBF_CDN}/item/memorial/s/${image}.jpg`
+}
+
+/**
+ * The image name granblue.team stores for a Wonder from the Wonders page.
+ * Leveled Wonders (Seals, Yupei) have art for every level, `<id>_<level>`,
+ * while the page sends only their id. Every other Wonder uses the page's
+ * own `image`, which is already suffixed for Symbolum Amicitiae.
+ */
+export function capturedWonderImage(item: WonderItem): string {
+  const level = wonderLevel(item)
+  if (level !== null) return `${item.item_id}_${level}`
+  return String(item.image || item.item_id)
 }
