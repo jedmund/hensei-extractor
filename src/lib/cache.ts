@@ -91,6 +91,8 @@ export function formatCacheStatus(
           set: info.totalItems ?? 0,
           total: SUPPORT_SUMMON_SLOTS
         })
+      } else if (type === 'wonders') {
+        subtitle = m.wonders_subtitle({ count: info.totalItems ?? 0 })
       }
 
       if (type.startsWith('unf_scores_')) {

@@ -48,6 +48,7 @@ import {
 } from './database-queue.js'
 import { queueKeyFromDataType } from './import-queue.js'
 import { uploadSupportSummons } from './support-summons.js'
+import { uploadWonders } from './wonders.js'
 import { withImportMark } from './import-marks.js'
 import { deckEvoker, reportEvokerId, shapeDeck } from '../solomonis/deck.js'
 import {
@@ -206,6 +207,14 @@ export function createHandlers(
         withCachedData<ParsedSupportSummonPayload, unknown>(
           'support_summons',
           (parsed) => uploadSupportSummons(parsed)
+        )
+      ),
+
+    // The captured Wonders page goes out as it was received
+    uploadWonders: () =>
+      withImportMark('wonders', () =>
+        withCachedData<unknown, unknown>('wonders', (data) =>
+          uploadWonders(data)
         )
       ),
 
