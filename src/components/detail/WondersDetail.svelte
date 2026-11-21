@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as m from '../../paraglide/messages.js'
   import {
     capturedWonderImage,
     getGameWonderImageUrl,
@@ -54,9 +53,6 @@
                   <span class="list-item-level">Lv.{level}</span>
                 {/if}
               </span>
-              {#if !active}
-                <span class="wonder-state">{m.wonders_inactive()}</span>
-              {/if}
             </div>
           </div>
         {/each}
@@ -96,8 +92,4 @@
     }
   }
 
-  .wonder-state {
-    font-size: $font-small;
-    color: var(--color-text-secondary);
-  }
 </style>

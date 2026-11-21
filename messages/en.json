@@ -112,7 +112,6 @@
   "type_support_summons": "Support Summons",
   "type_wonders": "Wonders",
   "wonders_subtitle": "{count} Wonders",
-  "wonders_inactive": "Off",
   "support_summons_subtitle": "{set} of {total} slots set",
   "support_summons_user_id": "Player ID {id}",
   "support_summons_level": "Lv. {level}",
