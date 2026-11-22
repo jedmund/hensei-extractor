@@ -46,6 +46,8 @@ export const INTERCEPT_PATTERNS = [
   '/rest/npc/list/',
   '/rest/summon/list/',
   '/rest/artifact/list/',
+  // Wonders page (/item/memorial_list/1)
+  '/item/memorial_list/',
   // Character detail page (for awakening data)
   '/npc/npc/',
   // Zenith/EMP pages (for mastery bonuses)
@@ -153,6 +155,7 @@ export const DATA_TYPE_RULES: readonly DataTypeRule[] = [
   { dataType: 'collection_npc', includes: ['/rest/npc/list/'] },
   { dataType: 'collection_summon', includes: ['/rest/summon/list/'] },
   { dataType: 'collection_artifact', includes: ['/rest/artifact/list/'] },
+  { dataType: 'wonders', includes: ['/item/memorial_list/'] },
   { dataType: 'list_npc', includes: ['/npc/list/'] },
   { dataType: 'list_weapon', includes: ['/weapon/list/'] },
   { dataType: 'list_summon', includes: ['/summon/list/'] },

@@ -17,8 +17,10 @@
   import CharacterStatsList from './character-stats/CharacterStatsList.svelte'
   import CrewScoreDetail from './CrewScoreDetail.svelte'
   import SupportSummonsDetail from './SupportSummonsDetail.svelte'
+  import WondersDetail from './WondersDetail.svelte'
   import SolomonisRunView from '../solomonis/SolomonisRunView.svelte'
   import type { ParsedSupportSummonPayload } from '../../lib/parsers/support-summons.js'
+  import type { WonderCategory } from '../../lib/wonders.js'
 
   interface Props {
     title?: string
@@ -134,6 +136,8 @@
             <CharacterStatsList data={data as Record<string, Record<string, unknown>>} />
           {:else if kind === 'supportSummons'}
             <SupportSummonsDetail data={data as ParsedSupportSummonPayload} />
+          {:else if kind === 'wonders'}
+            <WondersDetail data={data as unknown as WonderCategory[]} />
           {/if}
         {/if}
       </DetailScroll>

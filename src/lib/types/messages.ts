@@ -59,6 +59,7 @@ export type ExtensionMessage =
   | { action: 'previewGwPhantoms'; dataType: string }
   | { action: 'fetchLatestGwEvent' }
   | { action: 'uploadSupportSummons' }
+  | { action: 'uploadWonders' }
   | {
       action: 'uploadSolomonisRun'
       dataType: string
@@ -172,6 +173,16 @@ export interface UploadSupportSummonsResponse {
   error?: string
   /** granblue_ids granblue.team doesn't have yet, when error is 'unknown_summons' */
   unknownSummons?: string[]
+}
+
+/** Response from uploadWonders */
+export interface UploadWondersResponse {
+  success?: boolean
+  created?: number
+  updated?: number
+  /** How many Wonders granblue.team doesn't know yet, so didn't save */
+  skipped?: number
+  error?: string
 }
 
 /** Response from checkConflicts */

@@ -64,6 +64,9 @@ vi.mock('./reference-data.js', () => ({
   fetchUserPlaylists: vi.fn(async () => ({})),
   getCollectionIds: vi.fn(async () => ({}))
 }))
+vi.mock('./wonders.js', () => ({
+  uploadWonders: vi.fn(async () => ({}))
+}))
 vi.mock('../solomonis/upload.js', () => ({
   uploadSolomonisRun: vi.fn(async () => ({})),
   uploadSolomonisParty: vi.fn(async () => ({}))
@@ -236,6 +239,7 @@ describe('background message router', () => {
     [{ action: 'syncCollection', dataType: 'list_weapon' }, 'list_weapon'],
     [{ action: 'uploadCharacterStats' }, 'character_stats'],
     [{ action: 'uploadSupportSummons' }, 'support_summons'],
+    [{ action: 'uploadWonders' }, 'wonders'],
     [
       { action: 'uploadSolomonisRun', dataType: 'solomonis_run_381099' },
       'solomonis_run_381099'

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  capturedWonderImage,
+  getGameWonderImageUrl,
+  getWonderImageUrl,
   getCharacterArtFallbacks,
   getCharacterBaseArtUrl,
   getElementIconUrl,
@@ -142,5 +145,58 @@ describe('partyElementKey', () => {
       partyElementKey({ deck: { pc: { weapons: { 1: { master: {} } } } } })
     ).toBeNull()
     expect(partyElementKey(null)).toBeNull()
+  })
+})
+
+describe('Wonder images', () => {
+  it('builds our image URL from the image the API returns', () => {
+    expect(getWonderImageUrl('9008_20')).toBe(
+      'https://siero-img.s3-us-west-2.amazonaws.com/wonders/square/9008_20.jpg'
+    )
+  })
+
+  it('builds the game image URL used as a fallback', () => {
+    expect(getGameWonderImageUrl('29')).toBe(
+      'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets/item/memorial/s/29.jpg'
+    )
+  })
+
+  it('names captured Wonders the way the API stores them', () => {
+    // Leveled: a Seal at level 20 and a Yupei at level 10
+    expect(
+      capturedWonderImage({
+        item_id: '9008',
+        image: '9008',
+        level: '20',
+        max_level: 20
+      })
+    ).toBe('9008_20')
+    expect(
+      capturedWonderImage({
+        item_id: '1001',
+        image: '1001',
+        level: '10',
+        max_level: '10'
+      })
+    ).toBe('1001_10')
+    // Symbolum keeps the image it's sent
+    expect(
+      capturedWonderImage({
+        item_id: '9015',
+        image: '9015_10',
+        level: '1',
+        max_level: 0
+      })
+    ).toBe('9015_10')
+    // Fixed Wonders, with and without level fields
+    expect(
+      capturedWonderImage({
+        item_id: '9013',
+        image: '9013',
+        level: '1',
+        max_level: 1
+      })
+    ).toBe('9013')
+    expect(capturedWonderImage({ item_id: '29', image: '29' })).toBe('29')
   })
 })
