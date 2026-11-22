@@ -151,7 +151,7 @@ describe('partyElementKey', () => {
 describe('Wonder images', () => {
   it('builds our image URL from the image the API returns', () => {
     expect(getWonderImageUrl('9008_20')).toBe(
-      'https://siero-img.s3-us-west-2.amazonaws.com/wonders/9008_20.jpg'
+      'https://siero-img.s3-us-west-2.amazonaws.com/wonders/square/9008_20.jpg'
     )
   })
 
