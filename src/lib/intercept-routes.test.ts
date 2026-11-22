@@ -43,6 +43,7 @@ const ROUTES: ReadonlyArray<readonly [dataType: string, path: string]> = [
   ['collection_npc', '/rest/npc/list/1/0'],
   ['collection_summon', '/rest/summon/list/1/0'],
   ['collection_artifact', '/rest/artifact/list/1/0'],
+  ['wonders', '/item/memorial_list/1'],
   ['list_npc', '/npc/list/2/0'],
   ['list_weapon', '/weapon/list/2/0'],
   ['list_summon', '/summon/list/2/0'],
@@ -516,6 +517,12 @@ describe('buildInterceptMetadata', () => {
     expect(
       buildInterceptMetadata(gbf('/party/deck/1/3'), {}, 'party', 'Stash')
     ).toEqual({ ...empty, partyId: '1_3' })
+  })
+
+  it('keeps nothing from the Wonders URL, its uid included', () => {
+    expect(
+      buildInterceptMetadata(gbf('/item/memorial_list/1'), [], 'wonders', 'S')
+    ).toEqual(empty)
   })
 
   it('builds list metadata with the URL page number', () => {

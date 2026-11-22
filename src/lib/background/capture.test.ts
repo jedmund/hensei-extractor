@@ -30,6 +30,7 @@ function createDependencies(): CaptureDependencies {
     cacheGuildInfo: vi.fn(async () => true),
     cacheSingleItem: vi.fn(async () => true),
     cacheSupportSummons: vi.fn(async () => true),
+    cacheWonders: vi.fn(async () => true),
     cacheSolomonisReport: vi.fn(async () => 'solomonis_run_381099'),
     cacheSolomonisDeck: vi.fn(async () => 'solomonis_deck_31001'),
     notifyCaptured: vi.fn(async () => undefined)
@@ -192,6 +193,14 @@ describe('capture dispatcher', () => {
       'cacheSupportSummons',
       [{ data: '' }, 700, 'https://game/data'],
       'support_summons'
+    ],
+    [
+      'wonders',
+      [{ category_id: '1', item: [] }],
+      metadata,
+      'cacheWonders',
+      [[{ category_id: '1', item: [] }], 700],
+      'wonders'
     ],
     [
       'other',
